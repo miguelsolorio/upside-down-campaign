@@ -1,0 +1,1712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Character Face Variations</title>
+<meta name="description" content="Four takes on each hero's face and hair, drawn in the game's own pixel format. Pick one per character.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --red: #c8202e; --hot: #ff4a4a;
+    --stage: #124a2c;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+
+  /* top matter */
+  .hero { padding: 36px 0 20px; }
+  .hero .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 14px; }
+  .hero h1 { margin: 0 0 14px; line-height: 1; }
+  .hero p { margin: 0 0 8px; max-width: 70ch; color: var(--bone); }
+  .hero p.muted, .muted { color: var(--mist); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 16px; font: 12px/1.4 var(--mono); color: var(--mist); }
+  .legend b { color: var(--bone); font-weight: 600; }
+
+  /* sticky pick bar */
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 10px; }
+  #picks { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pickchip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 2px solid var(--dusk); text-decoration: none; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); background: var(--ink); }
+  .pickchip .v { display: inline-grid; place-items: center; min-width: 20px; height: 20px; background: var(--shadow); color: var(--mist); }
+  .pickchip.has { border-color: var(--amber); color: var(--bone); }
+  .pickchip.has .v { background: var(--amber); color: var(--ink); }
+  .pickchip:hover { border-color: var(--slate); }
+  .bar .spacer { flex: 1; }
+  .bar .count { font: 12px/1 var(--mono); color: var(--mist); }
+  .btn { padding: 7px 12px; background: var(--shadow); border: 2px solid var(--slate); font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+  .btn:hover { background: var(--dusk); }
+  .btn.primary { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+  .btn.primary:hover { background: var(--cream); border-color: var(--cream); }
+  .seg { display: inline-flex; align-items: center; gap: 0; font: 600 12px/1 var(--mono); color: var(--mist); }
+  .seg > span { margin-right: 8px; }
+  .seg button { padding: 7px 10px; background: var(--ink); border: 2px solid var(--dusk); margin-left: -2px; text-transform: uppercase; letter-spacing: .04em; font: inherit; color: var(--mist); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--bone); border-color: var(--slate); position: relative; }
+
+  /* character sections */
+  .char { padding: 36px 0 12px; border-bottom: 2px solid var(--shadow); }
+  .char-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px 32px; margin-bottom: 20px; }
+  .char-head h2 { margin: 0; display: inline-block; vertical-align: middle; }
+  .role { margin-left: 14px; font: 600 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mist); }
+  .real { list-style: none; margin: 14px 0 0; padding: 0; max-width: 62ch; color: var(--mist); font-size: 14px; }
+  .real li { padding-left: 16px; position: relative; margin-bottom: 3px; }
+  .real li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; background: var(--red); }
+  .now { background: var(--night); border: 2px dashed var(--dusk); padding: 10px 12px 12px; align-self: flex-start; }
+  .now .label { display: block; font: 600 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mist); margin-bottom: 10px; }
+  .now-art { display: flex; gap: 12px; align-items: flex-end; }
+  .now .stage { display: flex; gap: 6px; padding: 8px; }
+
+  .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 1279px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 639px) { .cards { grid-template-columns: minmax(0, 1fr); } .wrap { padding: 0 16px; } .bar { position: static; } html { scroll-padding-top: 12px; } }
+  .card { background: var(--night); border: 2px solid var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .card.picked { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber) inset; }
+  .card header { display: flex; align-items: center; gap: 10px; }
+  .card h3 { margin: 0; font-size: 16px; line-height: 1.2; font-weight: 650; }
+  .badge { flex: none; display: grid; place-items: center; width: 26px; height: 26px; background: var(--red); color: #fff; font: 700 13px/1 var(--mono); }
+  .card.picked .badge { background: var(--amber); color: var(--ink); }
+  .portrait { align-self: center; padding: 0; border: 2px solid var(--dusk); background: none; line-height: 0; }
+  .portrait:hover { border-color: var(--cream); }
+  .exprs { display: flex; justify-content: space-between; }
+  .stage { background: var(--stage); padding: 8px; }
+  .card .stage { margin-inline: -14px; padding: 8px 10px; }
+  .sprites { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 4px; }
+  .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips li { font: 600 11px/1 var(--mono); letter-spacing: .02em; color: var(--bone); border: 1px solid var(--slate); padding: 5px 7px; background: var(--shadow); }
+  .blurb { margin: 0; color: var(--mist); font-size: 14px; flex: 1; }
+  .pick { padding: 10px 12px; background: var(--shadow); border: 2px solid var(--slate); font: 700 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+  .pick:hover { background: var(--dusk); }
+  .pick[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+  .pick.wide { align-self: stretch; }
+
+  /* picks summary + footer */
+  .summary { padding: 32px 0 56px; }
+  .summary h2 { margin: 0 0 6px; font-size: 18px; }
+  .summary textarea { width: 100%; max-width: 520px; height: 168px; resize: vertical; background: var(--night); color: var(--bone); border: 2px solid var(--dusk); padding: 10px 12px; font: 13px/1.5 var(--mono); }
+  #status { min-height: 1.5em; font: 12px/1.5 var(--mono); color: var(--cream); margin: 6px 0 0; }
+
+  /* zoom dialog */
+  dialog { width: min(980px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; padding: 0; background: var(--night); color: var(--bone); border: 2px solid var(--slate); }
+  dialog::backdrop { background: rgba(10, 10, 20, .86); }
+  #zoom-body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .z-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .z-head h2 { margin: 0; font-size: 18px; }
+  .z-nav { display: flex; gap: 6px; }
+  .z-nav button { padding: 7px 12px; background: var(--shadow); border: 2px solid var(--slate); font: 700 12px/1 var(--mono); }
+  .z-nav button:hover { background: var(--dusk); }
+  .z-exprs { display: flex; flex-wrap: wrap; gap: 12px; }
+  .z-exprs figure, .z-sprites figure { margin: 0; }
+  figcaption { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); margin-top: 6px; }
+  .z-exprs canvas { border: 2px solid var(--dusk); }
+  .z-sprites { display: flex; flex-wrap: wrap; gap: 20px; padding: 14px; }
+  .z-sprites figcaption { color: var(--bone); opacity: .8; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="kicker">Stranger Things 8-bit / art pass</p>
+      <h1 id="title-slot"><span class="sr">Face treatments</span></h1>
+      <p>Four takes on each character's face and hair, closer to the show than the generic kid head the game uses now. Pick one per character and the winners get built into the game.</p>
+      <p class="muted">Every take is drawn in the game's own pixel format and palette, so a winner drops straight in. Click any portrait to zoom, then use the arrow keys to flip between versions.</p>
+      <div class="legend">
+        <span><b>Portrait</b> 24x24, the dialogue box</span>
+        <span><b>Sprite</b> 16x16, in the world (down, side, up, walking)</span>
+        <span><b>Small row</b> happy, worried, determined, hurt, shocked</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="bar" role="region" aria-label="Your picks">
+    <div class="wrap">
+      <nav id="picks" aria-label="Jump to a character"></nav>
+      <span class="spacer"></span>
+      <span class="count" id="count" aria-live="polite"></span>
+      <div class="seg" role="group" aria-label="Sprite background">
+        <span>Stage</span>
+        <button class="stage-opt" type="button" data-stage="forest" aria-pressed="true">Forest</button>
+        <button class="stage-opt" type="button" data-stage="night" aria-pressed="false">Night</button>
+        <button class="stage-opt" type="button" data-stage="basement" aria-pressed="false">Basement</button>
+      </div>
+      <button class="btn primary" id="copy" type="button">Copy picks</button>
+      <button class="btn" id="clear" type="button">Clear</button>
+    </div>
+  </div>
+
+  <main id="app" class="wrap"></main>
+
+  <section class="summary">
+    <div class="wrap">
+      <h2>Your picks</h2>
+      <p class="muted">They save in this browser. Copy them and paste them back to me.</p>
+      <textarea id="summary" readonly aria-label="Your picks as text"></textarea>
+      <p id="status" role="status"></p>
+    </div>
+  </section>
+
+  <dialog id="zoom" aria-label="Zoomed character"><div id="zoom-body"></div></dialog>
+
+  <script>const BASE = {"PAL":{"black":"#000000","ink":"#0a0a14","night":"#10142a","shadow":"#1c2340","dusk":"#2c3a63","slate":"#4a5a85","mist":"#8190b8","bone":"#d8dce8","white":"#ffffff","grey1":"#34343f","grey2":"#6a6a7a","grey3":"#a0a0b0","pine0":"#0a2218","pine1":"#124a2c","pine2":"#1f7038","pine3":"#38a048","leaf":"#6cc35a","soil0":"#2a1a14","soil1":"#4a2e1e","soil2":"#7a4d2c","soil3":"#a8743f","sand":"#d4a86a","blood0":"#3a0a14","blood1":"#7a1020","red":"#c8202e","hot":"#ff4a4a","pink":"#ff8fb0","rose":"#d8567a","orange":"#e8801c","amber":"#ffb830","yellow":"#ffe14a","cream":"#fff0b0","teal0":"#0e3a4a","teal1":"#1a7a8a","cyan":"#4ae0ff","blue":"#3a6ae0","sky":"#78a8ff","purple0":"#3a1a5a","purple":"#7a3aaa","magenta":"#ff4fd8","skin0":"#f8d0a8","skin1":"#e0a070","skin2":"#a86a40","skin3":"#6a3c24"},"KID":{"head":{"down":{"y":2,"rows":[".....ssssss.....","....ssssssss....","....ssssssss....","....ssssssss....","....ssssssss....","....ssssssss....",".....ssssss....."]},"up":{"y":2,"rows":[".....ssssss.....","....ssssssss....","....ssssssss....","....ssssssss....","....ssssssss....","....ssssssss....",".....ssssss....."]},"side":{"y":2,"rows":[".....ssssss.....","....ssssssss....","....ssssssss....","....ssssssss....","....sssdsssss...","....ssssssss....",".....ssssss....."]}},"face":{"open":{"down":{"y":5,"rows":["......e..e......","......e..e......"]},"up":{"y":5,"rows":[]},"side":{"y":5,"rows":["..........e.....","..........e....."]}},"closed":{"down":{"y":6,"rows":["......e..e......"]},"up":{"y":6,"rows":[]},"side":{"y":6,"rows":["..........e....."]}},"ko":{"down":{"y":5,"rows":[".....e.ee.e.....","......e..e......",".....e.ee.e....."]},"up":{"y":5,"rows":[]},"side":{"y":5,"rows":[".........e.e....","..........e.....",".........e.e...."]}},"hurt":{"down":{"y":5,"rows":[".....ee..ee.....","......e..e......",".......ee......."]},"up":{"y":5,"rows":[]},"side":{"y":5,"rows":[".........ee.....","..........e.....","..........ee...."]}}},"torso":{"down":{"y":9,"rows":[".....aaaaaa.....",".....aaaaaa.....",".....aaaaaa....."]},"up":{"y":9,"rows":[".....aaaaaa.....",".....aaaaaa.....",".....aaaaaa....."]},"side":{"y":9,"rows":["......aaaa......","......aaaa......","......aaaa......"]}},"legs":{"down":{"stand":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..pp.....",".....ff..ff....."]},"stepA":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..ff.....",".....ff........."]},"stepB":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....ff..pp.....","..........ff...."]},"wide":{"y":11,"rows":["....pp....pp....","....pp....pp....","....pp....pp....","....ff....ff...."]}},"up":{"stand":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..pp.....",".....ff..ff....."]},"stepA":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..ff.....",".....ff........."]},"stepB":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....ff..pp.....","..........ff...."]},"wide":{"y":11,"rows":["....pp....pp....","....pp....pp....","....pp....pp....","....ff....ff...."]}},"side":{"stand":{"y":11,"rows":["......pppp......","......pppp......","......pppp......","......fffff....."]},"stepA":{"y":11,"rows":["......pppp......","......pppp......",".....qq..pp.....","....ff....fff..."]},"stepB":{"y":11,"rows":["......pppp......","......pppp......",".....pp..qq.....","....ff....fff..."]},"wide":{"y":11,"rows":[".....pppppp.....","....qq....pp....","...qq......pp...","..ff.......fff.."]}}},"shoulder":{"down":[[5,9],[10,9]],"up":[[5,9],[10,9]],"side":[[7,9],[8,9]]},"arms":{"down":{"rest":[[5,11],[10,11]],"swingA":[[5,10],[10,12]],"swingB":[[5,12],[10,10]],"windup":[[5,11],[12,5]],"strike":[[5,11],[8,12]],"raise":[[3,6],[12,6]],"thrust":[[7,10],[8,10]],"back":[[4,10],[11,10]],"flail":[[3,9],[12,9]]},"up":{"rest":[[5,11],[10,11]],"swingA":[[5,10],[10,12]],"swingB":[[5,12],[10,10]],"windup":[[5,11],[12,5]],"strike":[[5,11],[7,4]],"raise":[[3,6],[12,6]],"thrust":[[5,8],[10,8]],"back":[[4,10],[11,10]],"flail":[[3,9],[12,9]]},"side":{"rest":[[7,11],[8,11]],"swingA":[[5,11],[10,10]],"swingB":[[9,10],[6,11]],"windup":[[5,10],[6,7]],"strike":[[7,10],[12,9]],"raise":[[9,6],[11,7]],"thrust":[[10,9],[13,9]],"back":[[4,10],[5,11]],"flail":[[5,7],[4,10]]}}},"ADULT":{"head":{"down":{"y":2,"rows":[".....ssssss.....","....ssssssss....","....ssssssss....","....ssssssss....","....ssssssss....",".....ssssss....."]},"up":{"y":2,"rows":[".....ssssss.....","....ssssssss....","....ssssssss....","....ssssssss....","....ssssssss....",".....ssssss....."]},"side":{"y":2,"rows":[".....ssssss.....","....ssssssss....","....ssssssss....","....sssdsssss...","....ssssssss....",".....ssssss....."]}},"face":{"open":{"down":{"y":4,"rows":["......e..e......","......e..e......"]},"up":{"y":4,"rows":[]},"side":{"y":4,"rows":["..........e.....","..........e....."]}},"closed":{"down":{"y":5,"rows":["......e..e......"]},"up":{"y":5,"rows":[]},"side":{"y":5,"rows":["..........e....."]}},"ko":{"down":{"y":4,"rows":[".....e.ee.e.....","......e..e......",".....e.ee.e....."]},"up":{"y":4,"rows":[]},"side":{"y":4,"rows":[".........e.e....","..........e.....",".........e.e...."]}},"hurt":{"down":{"y":4,"rows":[".....ee..ee.....","......e..e......",".......ee......."]},"up":{"y":4,"rows":[]},"side":{"y":4,"rows":[".........ee.....","..........e.....","..........ee...."]}}},"torso":{"down":{"y":8,"rows":[".....aaaaaa.....",".....aaaaaa.....",".....aaaaaa.....",".....aaaaaa....."]},"up":{"y":8,"rows":[".....aaaaaa.....",".....aaaaaa.....",".....aaaaaa.....",".....aaaaaa....."]},"side":{"y":8,"rows":["......aaaa......","......aaaa......","......aaaa......","......aaaa......"]}},"legs":{"down":{"stand":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..pp.....",".....ff..ff....."]},"stepA":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..ff.....",".....ff........."]},"stepB":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....ff..pp.....","..........ff...."]},"wide":{"y":11,"rows":["....pp....pp....","....pp....pp....","....pp....pp....","....ff....ff...."]}},"up":{"stand":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..pp.....",".....ff..ff....."]},"stepA":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....pp..ff.....",".....ff........."]},"stepB":{"y":11,"rows":[".....pp..pp.....",".....pp..pp.....",".....ff..pp.....","..........ff...."]},"wide":{"y":11,"rows":["....pp....pp....","....pp....pp....","....pp....pp....","....ff....ff...."]}},"side":{"stand":{"y":11,"rows":["......pppp......","......pppp......","......pppp......","......fffff....."]},"stepA":{"y":11,"rows":["......pppp......","......pppp......",".....qq..pp.....","....ff....fff..."]},"stepB":{"y":11,"rows":["......pppp......","......pppp......",".....pp..qq.....","....ff....fff..."]},"wide":{"y":11,"rows":[".....pppppp.....","....qq....pp....","...qq......pp...","..ff.......fff.."]}}},"shoulder":{"down":[[5,8],[10,8]],"up":[[5,8],[10,8]],"side":[[7,8],[8,8]]},"arms":{"down":{"rest":[[5,11],[10,11]],"swingA":[[5,10],[10,12]],"swingB":[[5,12],[10,10]],"windup":[[5,11],[12,5]],"strike":[[5,11],[8,12]],"raise":[[3,6],[12,6]],"thrust":[[7,10],[8,10]],"back":[[4,10],[11,10]],"flail":[[3,9],[12,9]]},"up":{"rest":[[5,11],[10,11]],"swingA":[[5,10],[10,12]],"swingB":[[5,12],[10,10]],"windup":[[5,11],[12,5]],"strike":[[5,11],[7,4]],"raise":[[3,6],[12,6]],"thrust":[[5,8],[10,8]],"back":[[4,10],[11,10]],"flail":[[3,9],[12,9]]},"side":{"rest":[[7,11],[8,11]],"swingA":[[5,11],[10,10]],"swingB":[[9,10],[6,11]],"windup":[[5,10],[6,7]],"strike":[[7,10],[12,9]],"raise":[[9,6],[11,7]],"thrust":[[10,9],[13,9]],"back":[[4,10],[5,11]],"flail":[[5,7],[4,10]]}}},"SPECS":{"mike":{"id":"mike","body":"kid","torso":"stripes","weapon":"bat","pal":{"s":"skin0","d":"skin0","e":"ink","h":"soil1","i":"ink","a":"red","b":"dusk","p":"dusk","q":"dusk","f":"bone","x":"bone","y":"bone","g":"soil3","G":"soil3"},"hair":{"down":[{"y":1,"rows":["......hhhh......","....hhihhhhh....","...hhhihhhhhh...","...hhh.hhhhhh...","....h......h....","....h......h...."]}],"up":[{"y":1,"rows":["......hhhh......","....hhhhhhhh....","...hhhhihhhhh...","...hhhhhhhhhh...","....hhhhhhhh....","....hhhhhhhh....","....hhhhhhhh...."]}],"side":[{"y":1,"rows":[".....hhhh.......","...hhhhhhhh.....","..hhhhihhhhh....","..hhhhhhhhhhh...","...hhhhh........","...hhhh.........","....hhh........."]}]},"trim":{"down":[{"y":10,"rows":["...........y....","...........x....","...........x...."]}],"up":[{"y":10,"rows":["....y...........","....x...........","....x..........."]}],"side":[{"y":10,"rows":[".....y..........",".....x..........",".....x.........."]}]}},"dustin":{"id":"dustin","body":"kid","torso":"plain","weapon":"candy","pal":{"s":"skin0","d":"skin0","e":"ink","h":"soil3","i":"soil3","g":"leaf","G":"yellow","H":"yellow","a":"blue","b":"blue","p":"soil3","q":"soil3","f":"bone","x":"yellow","y":"soil3"},"hair":{"down":[{"y":1,"rows":[".....ggHHgg.....","....gggHHggg....","...hgggHHgggh...","...GGGGGGGGGG...","...hh......hh...","...h........h..."]}],"up":[{"y":1,"rows":[".....gggggg.....","....gggggggg....","...hggggggggh...","...hggGGGGggh...","...hhhhhhhhhh...","....hhhhhhhh....",".....hhhhhh....."]}],"side":[{"y":1,"rows":[".....gggHHg.....","....ggggggHH....","...hggggggHH....","..hhGGGGGGGGGGG.","..hhh...........","..hhh...........","...hh..........."]}]}},"lucas":{"id":"lucas","body":"kid","torso":"plain","weapon":"sling","pal":{"s":"skin2","d":"skin2","e":"ink","h":"ink","i":"ink","g":"pine2","G":"soil2","H":"pine0","a":"sand","b":"sand","p":"soil2","q":"soil2","f":"bone","x":"soil2","y":"bone"},"hair":{"down":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","...ggGGgHHGgg...","...HGggGGgHHg...","................","................"]}],"up":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","...gGHggGHgg....","...HggGHggHG....","....hhhGGhhh....","....hhhHGhhh....","....hhhhhhhh...."]}],"side":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","..GgGHggGHgg....",".HGgHggGHggH....","..HGhhh.........","...hhhh.........","....hhh........."]}]}},"eleven":{"id":"eleven","body":"kid","torso":"dress","weapon":"none","pal":{"s":"skin0","d":"skin0","e":"ink","h":"soil2","i":"soil2","a":"pink","b":"rose","w":"white","p":"skin0","q":"skin0","f":"white","r":"hot"},"hair":{"down":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","....hhhhhhhh....","...hhh.hhhhh....","....h......h....","....h......h...."]}],"up":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","....hhhhihhh....","....hhhhhhhh....","....hhhhhhhh....","....hhhhhhhh....",".....hhhhhh....."]}],"side":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","...hhhhhhhhh....","...hhhhhhhhhh...","...hhhhh........","...hhhh.........","....hh.........."]}]},"trim":{"down":[{"y":9,"rows":[".....awwwwa.....",".......ww.......","....aaaaaaaa....","....bbbbbbbb...."]}],"up":[{"y":9,"rows":["................","................","....aaaaaaaa....","....bbbbbbbb...."]}],"side":[{"y":9,"rows":[".......ww.......","................",".....aaaaaa.....",".....bbbbbb....."]}]}},"will":{"id":"will","body":"kid","torso":"plaid","weapon":"none","pal":{"s":"skin0","d":"skin0","e":"ink","h":"soil3","i":"soil3","a":"soil2","b":"amber","c":"amber","p":"blue","q":"blue","f":"bone","x":"bone","y":"bone"},"hair":{"down":[{"y":1,"rows":[".....hhhhhh.....","....hhhhihhh....","...hhhhhhhhhh...","...hhhhhhhhhh...","...hh......hh...","...hh......hh..."]}],"up":[{"y":1,"rows":[".....hhhhhh.....","....hhhhhhhh....","...hhhhihhhhh...","...hhhhhhhhhh...","...hhhhhhhhhh...","....hhhhhhhh....",".....hhhhhh....."]}],"side":[{"y":1,"rows":[".....hhhhhh.....","....hhhhihhh....","..hhhhhhhhhh....","..hhhhhhhhhhhh..","..hhhhhh........","..hhhhh.........","...hhh.........."]}]},"trim":{"down":[{"y":10,"rows":["...xx...........","...xy...........","...xx..........."]}],"up":[{"y":10,"rows":["...xx...........","...xy...........","...xx..........."]}],"side":[{"y":10,"rows":[".......xx.......",".......xy.......",".......xx......."]}]}},"joyce":{"id":"joyce","body":"adult","torso":"cardigan","weapon":"none","pal":{"s":"skin0","d":"skin0","e":"ink","h":"soil1","i":"soil1","a":"purple","b":"cream","p":"slate","q":"slate","f":"soil1"},"hair":{"down":[{"y":1,"rows":[".....hhhhhh.....","...hhhhhhhhhh...","..hhhihhhhhhhh..","..hhh......hhh..","..hhh......hhh..","..hhh......hhh..","...hh......hh...","...hh......hh..."]}],"up":[{"y":1,"rows":[".....hhhhhh.....","...hhhhhhhhhh...","..hhhhihhhhhhh..","..hhhhhhhhhhhh..","..hhhhhhhhhhhh..","..hhhhhhhhhhhh..","..hhhhhhhhhhhh..","...hhhhhhhhhh..."]}],"side":[{"y":1,"rows":[".....hhhhh......","...hhhhhhhhh....","..hhhhihhhhhh...","..hhhhhh........","..hhhhhh........","..hhhhh.........","..hhhh..........","...hhh.........."]}]}}},"HEAD":{"y":4,"rows":["......SSSSSSSSSSSS......",".....SSSSSSSSSSSSSS.....",".....SSSSSSSSSSSSSS.....",".....SSSSSSSSSSSSSS.....",".....SSSSSSSSSSSSSS.....","....dSSSSSSSSSSSSSSd....","....dSSSSSSSSSSSSSSd....","....dSSSSSSSSSSSSSSd....",".....SSSSSSSSSSSSSS.....",".....SSSSSSSSSSSSSS.....","......SSSSSSSSSSSS......",".......SSSSSSSSSS.......","........SSSSSSSS........"]},"NOSE":{"y":12,"rows":["...........dd..........."]},"SHOULDERS":{"y":17,"rows":[".........dSSSSd.........",".....AAAAdSSSSdAAAA.....","...AAAAAAAdSSdAAAAAAA...","..AAAAAAAAAddAAAAAAAAA..","..AAAAAAAAAAAAAAAAAAAA..","..AAAAAAAAAAAAAAAAAAAA..","..AAAAAAAAAAAAAAAAAAAA.."]},"EXPR":{"neutral":[{"y":8,"rows":[".......hhhh..hhhh......."]},{"y":9,"rows":["........we....we........","........ee....ee........","........ee....ee........"]},{"y":14,"rows":["..........eeee.........."]}],"happy":[{"y":7,"rows":[".......hhhh..hhhh......."]},{"y":9,"rows":["........ee....ee........",".......e..e..e..e......."]},{"y":12,"rows":[".......rr......rr......."]},{"y":13,"rows":[".........e....e.........","..........eeee.........."]}],"worried":[{"y":7,"rows":[".........hh..hh.........",".......hh......hh......."]},{"y":9,"rows":["........we....we........","........ee....ee........","........ee....ee........"]},{"y":7,"rows":["....................z...","...................zzz.."]},{"y":14,"rows":["..........eeee..........",".........e....e........."]}],"determined":[{"y":8,"rows":[".......hhhh..hhhh.......","..........h....h........"]},{"y":10,"rows":["........ee....ee........","........ee....ee........"]},{"y":14,"rows":[".........eeeeee........."]}],"hurt":[{"y":7,"rows":[".........hh..hh.........",".......hh......hh......."]},{"y":9,"rows":["........e....e..........",".........e..e...........","........e....e.........."]},{"y":13,"rows":[".........eeeeee.........",".........emmmme.........",".........emmmme.........","..........eeee.........."]}],"shocked":[{"y":6,"rows":[".......hhhh..hhhh......."]},{"y":8,"rows":[".......wwww..wwww.......",".......weew..weew.......",".......weew..weew.......",".......wwww..wwww......."]},{"y":13,"rows":["..........eeee..........",".........emmmme.........","..........eeee.........."]}]},"PORTRAITS":{"mike":{"bg":"teal0","shirt":"stripes","pal":{"s":"skin0","d":"skin1","h":"soil1","i":"soil2","j":"soil0","a":"red","b":"dusk","c":"red"},"back":[],"front":[{"y":2,"rows":[".......hhhhhhhhhh.......",".....hhhhhihhhhhhhh.....","....hhhhhiihhhhhhhhh....","....hhhhhhhhhhhhhhhh....","....hhjhhhhhhhhhhjhh....","....hh.hhh.hhh.hhhhh....","....h..............h....","....h..............h...."]}],"trim":[{"y":18,"rows":[".......wwdSSSSdww.......","........wwdSSdww........"]}]},"dustin":{"bg":"purple0","shirt":"plain","pal":{"s":"skin0","d":"skin1","h":"soil3","i":"sand","j":"soil2","g":"leaf","G":"pine3","H":"yellow","J":"pine1","a":"blue","b":"sky","c":"blue"},"back":[{"y":7,"rows":["...hhh............hhh...","...hhhh..........hhhh...","..hhhhh..........hhhhh..","..hhihh..........hhihh..","...hhhh..........hhhh...","....hhh..........hhh....",".....hh..........hh....."]}],"front":[{"y":2,"rows":[".......gggggggggg.......",".....gggHHHHHHHHggg.....","....gggHHHHHHHHHHggg....","....gggHHHHHHHHHHggg....","...GGGGGGGGGGGGGGGGGG...","...JJJJJJJJJJJJJJJJJJ..."]}],"trim":[],"grin":[{"y":13,"rows":["........eeeeeeee........","........ewweewwe........",".........eeeeee........."]}]},"lucas":{"bg":"slate","shirt":"jacket","pal":{"s":"skin2","d":"skin3","h":"soil0","i":"soil1","j":"ink","g":"pine2","G":"soil2","H":"pine0","a":"sand","b":"soil3","c":"sand"},"back":[],"front":[{"y":3,"rows":["........hhhhhhhh........","......hhhhhhhhhhhh......"]},{"y":5,"rows":[".....CCCCCCCCCCCCCC.....","....CCCCCCCCCCCCCCCC....",".....CCCCCCCCCCCCCC.CC..","....................CCC.",".....................CC."]}],"trim":[]},"eleven":{"bg":"blood1","shirt":"plain","pal":{"s":"skin0","d":"skin1","h":"soil2","i":"soil3","j":"soil1","a":"pink","b":"rose","c":"pink"},"back":[],"front":[{"y":3,"rows":["........hhhhhhhh........","......hhhhhhhhhhhh......",".....hhhhhhhhhhhhhh.....","....hhhhihhhhhhhhhhh....","....hhhhhhhhhhhhhhhh....","....hhhh.hhhhh.hhhhh....","....hh............hh....","....hh............hh....","....hh............hh...."]}],"trim":[{"y":18,"rows":[".....wwwwdSSSSdwwww.....","...wwwwwwwdSSdwwwwwww...","..wwwwwwwwwddwwwwwwwww.."]}]},"will":{"bg":"dusk","shirt":"plaid","pal":{"s":"skin0","d":"skin1","h":"soil3","i":"sand","j":"soil2","a":"soil2","b":"amber","c":"soil1"},"back":[],"front":[{"y":2,"rows":[".......hhhhhhhhhh.......",".....hhhhhhhhhhhhhh.....","....hhhhhhhhihhhhhhh....","....hhhhhhhhhhhhhhhh....","....hhhhhhhhhhhhhhhh....","....hhhhhhhhhhhhhhhh....","....hhh..........hhh....","....hhh..........hhh....","....hhh..........hhh...."]}],"trim":[]},"joyce":{"bg":"shadow","shirt":"cardigan","pal":{"s":"skin0","d":"skin1","h":"soil1","i":"soil2","j":"soil0","a":"purple","b":"cream","c":"purple"},"back":[{"y":1,"rows":[".......hhhhhhhhhh.......","....hhhhhhihhhhhhhhh....","...hhhihhhhhhhhihhhhh...","..hhhhhhhhhhhhhhhhhhhh..","..hhihhhhhhhhhhhhhihhh..","..hhhhhhhhhhhhhhhhhhhh..","..hhhhhhhhhhhhhhhhhhhh..","..hhhihhhhhhhhhhhihhhh..","..hhhhhhhhhhhhhhhhhhhh..","..hhhhhhhhhhhhhhhhhhhh..","...hhhhhhhhhhhhhhhhhh...","...hhhhh..........hhhh..","....hhhh..........hhh..."]}],"front":[{"y":3,"rows":[".......hhhhhhhhhh.......",".....hhhhhjhhhhhhhh.....","....hhihhhhhhhhhhhhh....","....hhhhhhhhhhihhhhh....","....hhhh.hhhhhh.hhhh....","....hhh..........hhh....","....hhh..........hhh....","....hhh..........hhh...."]}],"trim":[]}},"GLYPHS":{"0":".###./#...#/#..##/#.#.#/##..#/#...#/.###.","1":"..#../.##../..#../..#../..#../..#../.###.","2":".###./#...#/....#/...#./..#../.#.../#####","3":".###./#...#/....#/..##./....#/#...#/.###.","4":"...#./..##./.#.#./#..#./#####/...#./...#.","5":"#####/#..../####./....#/....#/#...#/.###.","6":"..##./.#.../#..../####./#...#/#...#/.###.","7":"#####/....#/...#./..#../.#.../.#.../.#...","8":".###./#...#/#...#/.###./#...#/#...#/.###.","9":".###./#...#/#...#/.####/....#/...#./.##..","A":".###./#...#/#...#/#####/#...#/#...#/#...#","B":"####./#...#/#...#/####./#...#/#...#/####.","C":".###./#...#/#..../#..../#..../#...#/.###.","D":"####./#...#/#...#/#...#/#...#/#...#/####.","E":"#####/#..../#..../####./#..../#..../#####","F":"#####/#..../#..../####./#..../#..../#....","G":".###./#...#/#..../#.###/#...#/#...#/.###.","H":"#...#/#...#/#...#/#####/#...#/#...#/#...#","I":".###./..#../..#../..#../..#../..#../.###.","J":"..###/...#./...#./...#./...#./#..#./.##..","K":"#...#/#..#./#.#../##.../#.#../#..#./#...#","L":"#..../#..../#..../#..../#..../#..../#####","M":"#...#/##.##/#.#.#/#.#.#/#...#/#...#/#...#","N":"#...#/##..#/#.#.#/#..##/#...#/#...#/#...#","O":".###./#...#/#...#/#...#/#...#/#...#/.###.","P":"####./#...#/#...#/####./#..../#..../#....","Q":".###./#...#/#...#/#...#/#.#.#/#..#./.##.#","R":"####./#...#/#...#/####./#.#../#..#./#...#","S":".####/#..../#..../.###./....#/....#/####.","T":"#####/..#../..#../..#../..#../..#../..#..","U":"#...#/#...#/#...#/#...#/#...#/#...#/.###.","V":"#...#/#...#/#...#/#...#/#...#/.#.#./..#..","W":"#...#/#...#/#...#/#.#.#/#.#.#/##.##/#...#","X":"#...#/#...#/.#.#./..#../.#.#./#...#/#...#","Y":"#...#/#...#/.#.#./..#../..#../..#../..#..","Z":"#####/....#/...#./..#../.#.../#..../#####",".":"...../...../...../...../...../.##../.##..",",":"...../...../...../...../.##../..#../.#...","!":"..#../..#../..#../..#../..#../...../..#..","?":".###./#...#/....#/...#./..#../...../..#..","'":"..#../..#../.#.../...../...../...../.....",":":"...../..#../...../...../...../..#../.....",";":"...../..#../...../...../..#../..#../.#...","-":"...../...../...../#####/...../...../.....","+":"...../..#../..#../#####/..#../..#../.....","%":"##..#/##..#/...#./..#../.#.../#..##/#..##","/":"....#/....#/...#./..#../.#.../#..../#....","(":"...#./..#../.#.../.#.../.#.../..#../...#.",")":".#.../..#../...#./...#./...#./..#../.#...","\"":".#.#./.#.#./.#.#./...../...../...../.....","#":".#.#./.#.#./#####/.#.#./#####/.#.#./.#.#.","&":".##../#..#./#.#../.#.../#.#.#/#..#./.##.#","=":"...../...../#####/...../#####/...../.....","x":"...../...../#...#/.#.#./..#../.#.#./#...#"}};</script>
+  <script>/* Renderer: ports the game's portrait builder and paper-doll sprite composer, plus a face generator
+   so every variant can have its own eyes, brows, nose and mouth. Same pixel grids and palette as the game. */
+'use strict';
+
+const CELL = 16;
+const SHARED = { e: 'ink', w: 'white', m: 'blood1', r: 'rose', z: 'cyan', N: 'hot', n: 'red' };
+
+function hash2(x, y, s = 0) {
+  let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x9e3779b1);
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+// ------------------------------------------------------------------ portraits (24x24)
+function shirtRole(kind, x, y) {
+  switch (kind) {
+    case 'stripes': return ((y - 18) >> 1) & 1 ? 'b' : 'a';
+    case 'plaid': { const v = x % 6 < 2, h = (y - 18) % 5 < 2; return v ? 'b' : h ? 'c' : 'a'; }
+    case 'jacket': return (x === 11 || x === 12) && y >= 20 ? 'b' : 'a';
+    case 'cardigan': return y >= 20 && x >= 9 && x <= 14 ? 'b' : 'a';
+    default: return 'a';
+  }
+}
+function camoRole(x, y) { const n = hash2(x >> 1, y >> 1, 3) % 5; return n < 2 ? 'g' : n < 4 ? 'G' : 'H'; }
+
+// ---- face generator -------------------------------------------------------------------------
+// Eyes: rows are drawn with the top row at kit.eyeY + dy. w is the eye width. 'e' ink, 'w' white, 'u' under-eye shadow.
+const EYE = {
+  dot:   { w: 2, open: { rows: ['we', 'ee', 'ee'], dy: 0 }, narrow: { rows: ['ee', 'ee'], dy: 1 } },
+  bead:  { w: 2, open: { rows: ['ee', 'ee'], dy: 1 }, narrow: { rows: ['ee', 'ee'], dy: 1 } },
+  tall:  { w: 1, open: { rows: ['e', 'e', 'e'], dy: 0 }, narrow: { rows: ['e', 'e'], dy: 1 } },
+  big:   { w: 3, open: { rows: ['eee', 'wee', 'eee'], dy: 0 }, narrow: { rows: ['eee', 'eee'], dy: 1 } },
+  lid:   { w: 3, open: { rows: ['eee', 'wee'], dy: 1 }, narrow: { rows: ['eee', '.ee'], dy: 1 } },
+  round: { w: 3, open: { rows: ['.e.', 'wee', '.e.'], dy: 0 }, narrow: { rows: ['eee', 'eee'], dy: 1 } },
+  stare: { w: 4, open: { rows: ['wwww', 'weew', 'weew', 'wwww'], dy: -1 }, narrow: { rows: ['eeee', 'weew'], dy: 1 } },
+  glint: { w: 2, open: { rows: ['ee', 'we', 'ee'], dy: 0 }, narrow: { rows: ['ee', 'ee'], dy: 1 } },
+};
+const BROW = {
+  flat: (bw) => ['h'.repeat(bw)],
+  thin: (bw) => ['.' + 'h'.repeat(bw - 1)],
+  thick: (bw) => ['h'.repeat(bw), 'h'.repeat(bw)],
+  slant: (bw) => { const a = Math.ceil(bw / 2); return ['h'.repeat(a) + '.'.repeat(bw - a), '.'.repeat(bw - a) + 'h'.repeat(a)]; },
+  raise: (bw) => { const a = Math.ceil(bw / 2); return ['.'.repeat(bw - a) + 'h'.repeat(a), 'h'.repeat(a) + '.'.repeat(bw - a)]; },
+  arch: (bw) => ['.' + 'h'.repeat(bw - 2) + '.', 'h' + '.'.repeat(bw - 2) + 'h'],
+  low: (bw) => ['h'.repeat(bw), '.' + 'h'.repeat(bw - 1)],
+};
+// Mouths: rows centered on the face line; y is the first row.
+const MOUTH = {
+  line:    { rows: ['eeee'], y: 14 },
+  short:   { rows: ['ee'], y: 14 },
+  long:    { rows: ['eeeeee'], y: 14 },
+  smile:   { rows: ['e....e', '.eeee.'], y: 13 },
+  wide:    { rows: ['e......e', '.eeeeee.'], y: 13 },
+  smirk:   { rows: ['....ee', '.eeee.'], y: 13 },
+  smirkL:  { rows: ['ee....', '.eeee.'], y: 13 },
+  tilt:    { rows: ['.....e', 'eeeee.'], y: 14 },
+  frown:   { rows: ['.eeee.', 'e....e'], y: 14 },
+  flat6:   { rows: ['eeeeee'], y: 14 },
+  open:    { rows: ['eeeeee', 'emmmme', 'emmmme', '.eeee.'], y: 13 },
+  o:       { rows: ['.eeee.', 'emmmme', '.eeee.'], y: 13 },
+  oSmall:  { rows: ['.ee.', 'e..e', '.ee.'], y: 13 },
+  grin:    { rows: ['mmmmmmmm', 'mwwmmwwm', '.mmmmmm.'], y: 13 },
+  grinW:   { rows: ['mmmmmmmm', 'mwwwwwwm', '.mmmmmm.'], y: 13 },
+  teeth:   { rows: ['eeeeee', 'ewwwwe', '.eeee.'], y: 13 },
+  pout:    { rows: ['.eeee.', 'e....e'], y: 15 },
+  none:    { rows: [], y: 14 },
+};
+const DEFAULT_MOUTHS = { neutral: 'line', happy: 'smile', worried: 'frown', determined: 'flat6', hurt: 'open', shocked: 'o' };
+
+function newGrid(w, h) { return Array.from({ length: h }, () => Array(w).fill('.')); }
+function stamp(g, x, y, rows, flip = false, only = null) {
+  rows.forEach((r, j) => {
+    for (let i = 0; i < r.length; i++) {
+      const ch = r[i];
+      if (ch === '.' || ch === ' ') continue;
+      if (only && !only.includes(ch)) continue;
+      const xx = x + (flip ? r.length - 1 - i : i);
+      if (g[y + j] && xx >= 0 && xx < g[0].length) g[y + j][xx] = ch;
+    }
+  });
+}
+const gridRows = (g) => g.map((r) => r.join(''));
+
+/** Builds the face layers for one expression. Returns { base: Part[], late: Part[] }. */
+function genFace(kit, expr) {
+  const g = newGrid(24, 24), late = newGrid(24, 24);
+  const E = EYE[kit.eye || 'dot'];
+  const w = E.w, inner = kit.inner ?? 4, ey = kit.eyeY ?? 9;
+  const lx = 12 - inner / 2 - w, rx = 12 + inner / 2;
+  const bch = kit.browCh || 'h';
+  const swapBrow = (rows) => rows.map((r) => r.replace(/h/g, bch));
+
+  // nose
+  const nose = kit.nose ?? 'dot';
+  if (nose === 'dot') stamp(g, 11, 12, ['dd']);
+  else if (nose === 'wide') stamp(g, 10, 12, ['dddd']);
+  else if (nose === 'long') { stamp(g, 12, 11, ['d']); stamp(g, 11, 12, ['dd']); }
+  else if (nose === 'tall') { stamp(g, 12, 10, ['d']); stamp(g, 12, 11, ['d']); stamp(g, 11, 12, ['dd']); }
+  else if (nose === 'tiny') stamp(g, 11, 12, ['d']);
+  else if (nose === 'tip') { stamp(g, 11, 12, ['dd']); stamp(g, 11, 13, ['..']); }
+  else if (nose === 'hook') { stamp(g, 12, 11, ['d']); stamp(g, 11, 12, ['dd']); stamp(g, 10, 12, ['d']); }
+
+  // brows
+  const bw = w + 2;
+  const by = kit.browY ?? 8;
+  const brows = (style, y) => {
+    if (kit.brow === 'none') return;
+    const rows = swapBrow(BROW[style](bw));
+    stamp(g, lx - 1, y, rows, false);
+    stamp(g, rx - 1, y, rows, true);
+  };
+  const base = kit.brow || 'flat';
+  if (expr === 'neutral') brows(base, by);
+  else if (expr === 'happy') brows(base === 'slant' || base === 'low' ? 'flat' : base, by - 1);
+  else if (expr === 'worried') brows('raise', by - 1);
+  else if (expr === 'determined') brows(kit.brow === 'low' ? 'low' : 'slant', by);
+  else if (expr === 'hurt') brows('raise', by - 1);
+  else if (expr === 'shocked') brows('flat', by - 2);
+
+  // eyes
+  const eyeBottom = { v: ey + 2 };
+  if (expr === 'happy' && kit.happyEyes !== 'open') {
+    for (const x0 of [lx, rx]) { stamp(g, x0, ey, ['e'.repeat(w)]); g[ey + 1][x0 - 1] = 'e'; g[ey + 1][x0 + w] = 'e'; }
+    eyeBottom.v = ey + 1;
+  } else if (expr === 'hurt') {
+    const pts = [[0, 0], [1, 1], [0, 2]];
+    for (const [dx, dy] of pts) { g[ey + dy][lx + dx] = 'e'; g[ey + dy][rx + w - 1 - dx] = 'e'; }
+  } else if (expr === 'shocked') {
+    const boxW = w + 2;
+    for (const x0 of [lx - 1, rx - 1]) {
+      const rows = [];
+      rows.push('w'.repeat(boxW));
+      for (let i = 0; i < 2; i++) rows.push('w' + 'e'.repeat(boxW - 2) + 'w');
+      rows.push('w'.repeat(boxW));
+      stamp(g, x0, ey - 1, rows);
+    }
+    eyeBottom.v = ey + 2;
+  } else {
+    const st = expr === 'determined' ? E.narrow : E.open;
+    for (const x0 of [lx, rx]) stamp(g, x0, ey + st.dy, st.rows);
+    eyeBottom.v = ey + st.dy + st.rows.length - 1;
+  }
+
+  // mouth
+  const mset = { ...DEFAULT_MOUTHS, ...(kit.mouth || {}) };
+  const mdef = MOUTH[mset[expr]] || MOUTH.line;
+  const mw = mdef.rows.length ? mdef.rows[0].length : 0;
+  const my = mdef.y + (kit.mouthDY || 0);
+  if (mw) stamp(g, 12 - mw / 2, my, mdef.rows);
+
+  // extras
+  for (const ex of kit.extras || []) {
+    if (ex === 'freckles') {
+      for (const [x, y] of [[7, 12], [9, 12], [8, 13], [16, 12], [14, 12], [15, 13]]) g[y][x] = 'f';
+    } else if (ex === 'freckles-light') {
+      for (const [x, y] of [[8, 12], [15, 12], [7, 13], [16, 13]]) g[y][x] = 'f';
+    } else if (ex === 'blush' || (ex === 'blush-happy' && expr === 'happy')) {
+      for (const x of [7, 8, 15, 16]) g[12][x] = 'r';
+    } else if (ex === 'circles') {
+      const y = eyeBottom.v + 1;
+      for (const x0 of [lx, rx]) for (let i = 0; i < w; i++) g[y][x0 + i] = 'u';
+    } else if (ex === 'lip') {
+      const mh = mdef.rows.length;
+      if (mh && (expr === 'neutral' || expr === 'determined')) stamp(g, 12 - 2, my + mh, ['xxxx']);
+    } else if (ex === 'cheek') {
+      g[12][6] = 'd'; g[12][17] = 'd';
+    } else if (ex === 'brow-scar') {
+      g[by][rx + 1] = 'd';
+    }
+  }
+  if ((kit.extras || []).includes('nosebleed') && (expr === 'determined' || expr === 'hurt' || expr === 'shocked')) {
+    g[13][12] = 'N'; g[14][12] = 'N'; if (expr !== 'determined') g[15][12] = 'n';
+  }
+  // sweat drop sits on top of the hair
+  if (expr === 'worried') { stamp(late, 20, 7, ['z']); stamp(late, 19, 8, ['zzz']); }
+
+  const base0 = [{ y: 0, rows: gridRows(g) }];
+  const extra = (kit.over && kit.over[expr]) || [];
+  return { base: [...base0, ...extra], late: [{ y: 0, rows: gridRows(late) }] };
+}
+
+function paintPart(ctx, part, color, fill) {
+  part.rows.forEach((row, j) => {
+    for (let i = 0; i < row.length; i++) {
+      let ch = row[i];
+      if (ch === '.' || ch === ' ') continue;
+      if (fill) ch = fill(ch, i, part.y + j);
+      const c = color(ch);
+      if (c) { ctx.fillStyle = BASE.PAL[c]; ctx.fillRect(i, part.y + j, 1, 1); }
+    }
+  });
+}
+
+/** Portrait spec: the game's own entry for the character, overlaid with a variant's changes. */
+function resolvePortrait(charId, over) {
+  const b = BASE.PORTRAITS[charId];
+  if (!over) return { ...b, kit: null };
+  return { ...b, ...over, pal: { ...b.pal, ...(over.pal || {}) } };
+}
+
+const portraitCache = new Map();
+function portraitCanvas(p, expr, key) {
+  const ck = key + ':' + expr;
+  if (portraitCache.has(ck)) return portraitCache.get(ck);
+  const c = mkCanvas(24, 24), ctx = c.getContext('2d');
+  ctx.fillStyle = BASE.PAL[p.bg]; ctx.fillRect(0, 0, 24, 24);
+  const color = (ch) => (ch === 'S' ? p.pal.s : p.pal[ch] || SHARED[ch] || null);
+  const shirtFill = (ch, x, y) => (ch === 'A' ? shirtRole(p.shirt, x, y) : ch);
+  const camoFill = (ch, x, y) => (ch === 'C' ? camoRole(x, y) : ch);
+  paintPart(ctx, BASE.SHOULDERS, color, shirtFill);
+  for (const t of p.trim || []) paintPart(ctx, t, color);
+  for (const t of p.back || []) paintPart(ctx, t, color);
+  const head = p.head || BASE.HEAD;
+  paintPart(ctx, head, color);
+  const late = [];
+  if (p.kit) {
+    const f = genFace(p.kit, expr);
+    for (const part of f.base) paintPart(ctx, part, color);
+    late.push(...f.late);
+  } else {
+    paintPart(ctx, BASE.NOSE, color);
+    for (const part of BASE.EXPR[expr]) {
+      if (expr === 'happy' && p.grin && part.y === 13) { for (const gp of p.grin) paintPart(ctx, gp, color); continue; }
+      if (part.rows.some((r) => r.includes('z'))) late.push(part); else paintPart(ctx, part, color);
+    }
+  }
+  for (const t of p.front || []) paintPart(ctx, t, color, camoFill);
+  for (const t of late) paintPart(ctx, t, color);
+  ctx.fillStyle = BASE.PAL.ink;
+  ctx.fillRect(0, 0, 24, 1); ctx.fillRect(0, 23, 24, 1); ctx.fillRect(0, 0, 1, 24); ctx.fillRect(23, 0, 1, 24);
+  portraitCache.set(ck, c);
+  return c;
+}
+
+// ------------------------------------------------------------------ sprites (16x16 paper doll)
+const POSE = {
+  idle0: { legs: 'stand', arms: 'rest', bob: 0 },
+  idle1: { legs: 'stand', arms: 'rest', bob: 1 },
+  walk0: { legs: 'stepA', arms: 'swingA', bob: 1 },
+  walk1: { legs: 'stand', arms: 'rest', bob: 0 },
+  walk2: { legs: 'stepB', arms: 'swingB', bob: 1 },
+  walk3: { legs: 'stand', arms: 'rest', bob: 0 },
+};
+
+function sprFace(kit, view, closed) {
+  if (view === 'up') return { y: 0, rows: [] };
+  const g = newGrid(16, 16);
+  const DY = kit.dy || 0;
+  const set = (x, y, ch) => { y += DY; if (y >= 0 && y < 16 && x >= 0 && x < 16) g[y][x] = ch; };
+  const eyeCh = 'e';
+  if (view === 'down') {
+    const [lx, rx] = kit.eyeX || [6, 9];
+    const eye = closed ? 'one' : kit.eye || 'tall';
+    for (const x of [lx, rx]) {
+      if (eye === 'tall') { set(x, 5, eyeCh); set(x, 6, eyeCh); }
+      else if (eye === 'one') set(x, 6, eyeCh);
+      else if (eye === 'high') set(x, 5, eyeCh);
+      else if (eye === 'big') { set(x, 5, eyeCh); set(x, 6, eyeCh); }
+      else if (eye === 'lid') { set(x, 6, eyeCh); }
+    }
+    if (eye === 'big' && !closed) { set(lx - 1, 5, 'w'); set(lx - 1, 6, 'w'); set(rx + 1, 5, 'w'); set(rx + 1, 6, 'w'); }
+    if (eye === 'lid' && !closed) { set(lx - 1, 5, eyeCh); set(lx, 5, eyeCh); set(rx, 5, eyeCh); set(rx + 1, 5, eyeCh); }
+    if (kit.brow && !closed) {
+      const bc = kit.browCh || 'h';
+      if (kit.brow === 'flat') { for (const x of [lx - 1, lx, rx, rx + 1]) set(x, 4, bc); }
+      else if (kit.brow === 'slant') { set(lx - 1, 3, bc); set(lx, 4, bc); set(rx + 1, 3, bc); set(rx, 4, bc); set(lx - 1, 4, bc); set(rx + 1, 4, bc); }
+      else if (kit.brow === 'raise') { set(lx - 1, 4, bc); set(lx, 3, bc); set(rx + 1, 4, bc); set(rx, 3, bc); }
+      else if (kit.brow === 'thick') { for (const x of [lx - 1, lx, rx, rx + 1]) { set(x, 4, bc); set(x, 3, bc); } }
+    }
+    const m = kit.mouth;
+    if (m === 'dot') set(7, 7, 'm');
+    else if (m === 'flat') { set(7, 7, 'm'); set(8, 7, 'm'); }
+    else if (m === 'smile') { set(6, 7, 'm'); set(9, 7, 'm'); set(7, 8, 'm'); set(8, 8, 'm'); }
+    else if (m === 'smirk') { set(7, 7, 'm'); set(8, 7, 'm'); set(9, 6, 'm'); }
+    else if (m === 'grin') { set(6, 7, 'm'); set(7, 7, 'w'); set(8, 7, 'w'); set(9, 7, 'm'); }
+    else if (m === 'gap') { set(5, 7, 'm'); set(6, 7, 'w'); set(7, 7, 'm'); set(8, 7, 'm'); set(9, 7, 'w'); set(10, 7, 'm'); }
+    else if (m === 'o') { set(7, 7, 'm'); set(8, 7, 'm'); set(7, 8, 'm'); set(8, 8, 'm'); }
+    else if (m === 'frown') { set(7, 7, 'm'); set(8, 7, 'm'); set(6, 8, 'm'); set(9, 8, 'm'); }
+  } else {
+    const x = kit.eyeSideX ?? 10;
+    const eye = closed ? 'one' : kit.eye || 'tall';
+    if (eye === 'tall' || eye === 'big') { set(x, 5, eyeCh); set(x, 6, eyeCh); }
+    else if (eye === 'one' || eye === 'lid') set(x, 6, eyeCh);
+    else if (eye === 'high') set(x, 5, eyeCh);
+    if (eye === 'big' && !closed) { set(x - 1, 5, 'w'); set(x - 1, 6, 'w'); }
+    if (eye === 'lid' && !closed) { set(x - 1, 5, eyeCh); set(x, 5, eyeCh); }
+    if (kit.brow && !closed) {
+      const bc = kit.browCh || 'h';
+      set(x, 4, bc); set(x - 1, 4, bc);
+      if (kit.brow === 'thick') { set(x, 3, bc); set(x - 1, 3, bc); }
+      if (kit.brow === 'slant') { set(x + 1, 4, bc); set(x - 1, 3, bc); }
+    }
+    const m = kit.mouth;
+    if (m === 'dot' || m === 'flat' || m === 'smile' || m === 'o') set(11, 7, 'm');
+    else if (m === 'smirk') { set(11, 7, 'm'); set(11, 6, 'm'); }
+    else if (m === 'grin' || m === 'gap') { set(10, 7, 'm'); set(11, 7, 'w'); }
+    else if (m === 'frown') { set(11, 7, 'm'); set(10, 8, 'm'); }
+  }
+  for (const e of kit.extra || []) if (!e.view || e.view === view) set(e.x, e.y, e.ch);
+  return { y: 0, rows: gridRows(g) };
+}
+
+function blitRows(buf, rows, ox, oy) {
+  for (let r = 0; r < rows.length; r++) {
+    const y = oy + r; if (y < 0 || y >= CELL) continue;
+    const row = rows[r];
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c]; if (ch === '.' || ch === ' ') continue;
+      const x = ox + c; if (x >= 0 && x < CELL) buf[y * CELL + x] = ch.charCodeAt(0);
+    }
+  }
+}
+function blit(buf, part, dx, dy) { if (part && part.rows.length) blitRows(buf, part.rows, dx, part.y + dy); }
+
+function arm(buf, from, to, dx, dy, sleeve) {
+  let x = from[0] + dx, y = from[1] + dy;
+  const ex = to[0] + dx, ey = to[1] + dy;
+  const adx = Math.abs(ex - x), ady = -Math.abs(ey - y);
+  const sx = x < ex ? 1 : -1, sy = y < ey ? 1 : -1;
+  let err = adx + ady;
+  const put = (px, py, ch) => { if (px >= 0 && px < CELL && py >= 0 && py < CELL) buf[py * CELL + px] = ch.charCodeAt(0); };
+  for (let i = 0; i < 40; i++) {
+    const last = x === ex && y === ey;
+    if (last) put(x, y, 's');
+    else if (!buf[y * CELL + x]) put(x, y, sleeve);
+    if (last) break;
+    const e2 = 2 * err;
+    if (e2 >= ady) { err += ady; x += sx; }
+    if (e2 <= adx) { err += adx; y += sy; }
+  }
+}
+
+function shirtPart(spec, part) {
+  if (spec.torso === 'plain' || spec.torso === 'dress') return part;
+  return { y: part.y, rows: part.rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      if (ch !== 'a') { out += ch; continue; }
+      if (spec.torso === 'stripes') out += r % 2 === 1 ? 'b' : 'a';
+      else if (spec.torso === 'plaid') out += c % 3 === 0 || r === 1 ? 'b' : 'a';
+      else if (spec.torso === 'cardigan') out += c === 7 || c === 8 ? 'b' : 'a';
+      else out += ch;
+    }
+    return out;
+  }) };
+}
+
+function outline(buf) {
+  const src = buf.slice();
+  for (let y = 0; y < CELL; y++) for (let x = 0; x < CELL; x++) {
+    if (src[y * CELL + x]) continue;
+    if ((x > 0 && src[y * CELL + x - 1]) || (x < CELL - 1 && src[y * CELL + x + 1]) || (y > 0 && src[(y - 1) * CELL + x]) || (y < CELL - 1 && src[(y + 1) * CELL + x])) buf[y * CELL + x] = 107;
+  }
+}
+
+function composeSprite(spec, view, poseKey) {
+  const body = spec.body === 'adult' ? BASE.ADULT : BASE.KID;
+  const pose = POSE[poseKey];
+  const buf = new Uint8Array(CELL * CELL);
+  const dx = 0, dy = pose.bob;
+  const sh = body.shoulder[view];
+  const hands = body.arms[view][pose.arms];
+  const trim = (spec.trim && spec.trim[view]) || [];
+  if (view === 'side') arm(buf, sh[0], hands[0], dx, dy, 'a');
+  blit(buf, body.legs[view][pose.legs], 0, 0);
+  blit(buf, shirtPart(spec, body.torso[view]), dx, dy);
+  for (const t of trim) blit(buf, t, dx, dy);
+  if (view === 'side') arm(buf, sh[1], hands[1], dx, dy, 'a');
+  else { arm(buf, sh[0], hands[0], dx, dy, 'a'); arm(buf, sh[1], hands[1], dx, dy, 'a'); }
+  blit(buf, body.head[view], dx, dy);
+  if (spec.face) blit(buf, sprFace(spec.face, view, false), dx, dy);
+  else blit(buf, body.face.open[view], dx, dy);
+  for (const h of spec.hair[view]) blit(buf, h, dx, dy);
+  outline(buf);
+  return buf;
+}
+
+function resolveSprite(charId, over) {
+  const b = BASE.SPECS[charId];
+  if (!over) return b;
+  const hair = over.hair || b.hair;
+  return { ...b, ...over, hair, pal: { m: 'soil2', n: 'rose', ...b.pal, ...(over.pal || {}) } };
+}
+
+const spriteCache = new Map();
+function spriteCanvas(spec, view, poseKey, key, flip) {
+  const ck = [key, view, poseKey, flip ? 'f' : ''].join(':');
+  if (spriteCache.has(ck)) return spriteCache.get(ck);
+  const buf = composeSprite(spec, view, poseKey);
+  const c = mkCanvas(CELL, CELL), ctx = c.getContext('2d');
+  for (let y = 0; y < CELL; y++) for (let x = 0; x < CELL; x++) {
+    const v = buf[y * CELL + x]; if (!v) continue;
+    const ch = String.fromCharCode(v);
+    const name = ch === 'k' ? 'ink' : spec.pal[ch] || 'white';
+    ctx.fillStyle = BASE.PAL[name];
+    ctx.fillRect(flip ? CELL - 1 - x : x, y, 1, 1);
+  }
+  spriteCache.set(ck, c);
+  return c;
+}
+
+// ------------------------------------------------------------------ pixel text (the game's 5x7 font)
+function pixelText(text, color, scale) {
+  const ADV = 6, H = 7;
+  const c = mkCanvas(Math.max(1, text.length * ADV - 1) * scale, H * scale);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color;
+  [...text.toUpperCase()].forEach((ch, i) => {
+    const g = BASE.GLYPHS[ch]; if (!g) return;
+    g.split('/').forEach((row, y) => {
+      for (let x = 0; x < 5; x++) if (row[x] === '#') ctx.fillRect((i * ADV + x) * scale, y * scale, scale, scale);
+    });
+  });
+  return c;
+}
+</script>
+  <script>/* The six characters that have portraits and sprites in the game, with what the real character looks like. */
+const CHARS = [
+  { id: 'mike', name: 'Mike', role: 'Paladin', real: [
+    'Dark brown, nearly black, straight mop with a long fringe that falls over the brow.',
+    'Strong straight brows, big dark eyes, a longer nose and a wide mouth in a narrow face.',
+    'Striped rugby shirt, walkie on the belt.',
+  ] },
+  { id: 'dustin', name: 'Dustin', role: 'Bard', real: [
+    'Curly dark-blond hair that sticks out around a trucker cap.',
+    'Round face, wide bright eyes and pink cheeks.',
+    'A big gap-toothed grin that is on most of the time.',
+  ] },
+  { id: 'lucas', name: 'Lucas', role: 'Ranger', real: [
+    'Short, dark, tightly textured hair under a camo bandana.',
+    'Straight serious brows and a wary, skeptical stare. He checks the exits.',
+    'Wrist rocket, camo jacket.',
+  ] },
+  { id: 'eleven', name: 'Eleven', role: 'Sorcerer', real: [
+    'Shaved head in the first season, then a blonde wig and a pink smock dress with a white collar.',
+    'Huge unblinking eyes, thin straight brows and a small, flat mouth.',
+    'A nosebleed whenever she pushes her powers.',
+  ] },
+  { id: 'will', name: 'Will', role: 'Wizard', real: [
+    'A soft, shaggy bowl cut with a heavy fringe, ears half hidden.',
+    'Big round eyes, pale skin and a gentle, worried look.',
+    'Plaid flannel and a sketchbook.',
+  ] },
+  { id: 'joyce', name: 'Joyce', role: 'Keeper of the lights', real: [
+    'Big, messy, shoulder-length dark brown waves with flyaway strands.',
+    'Wide, tired eyes with shadows under them and thin arched brows.',
+    'One bad night away from covering the wall in Christmas lights.',
+  ] },
+];
+</script>
+  <script>/* The 24 variants. Art is in the game's own format: ASCII rows, one role letter per pixel.
+   Portrait rows are 24 wide, sprite rows 16 wide. The helpers only save counting dots:
+     S24(...spans) / S16(...spans)  a row from [from, to, letter] spans (later spans win; letter defaults to h)
+     M24(left12)   / M16(left8)     a symmetric row from its left half
+   Portrait roles: s skin, d skin shade, h hair, i hair light, j hair dark, f freckle, u under-eye shade,
+   x lip, a b c shirt, g G H J gear, w white, e ink, r blush, N n blood. Sprite roles: s skin, h hair, i hair light,
+   m mouth, w white, e ink. */
+
+const row = (n, spans) => { const r = Array(n).fill('.'); for (const [a, b, ch = 'h'] of spans) for (let x = a; x <= b; x++) r[x] = ch; return r.join(''); };
+const S24 = (...spans) => row(24, spans);
+const S16 = (...spans) => row(16, spans);
+const mirror = (l, n) => { l = l.padEnd(n / 2, '.'); return l + [...l].reverse().join(''); };
+const M24 = (l) => mirror(l, 24);
+const M16 = (l) => mirror(l, 16);
+const P = (y, ...rows) => ({ y, rows });
+/** Every other pixel from a to b, for stubble and fuzz. */
+const D24 = (a, b, ch = 'h', phase = 0) => { const r = Array(24).fill('.'); for (let x = a; x <= b; x++) if (((x + phase) & 1) === 0) r[x] = ch; return r.join(''); };
+
+/* Head shapes for the 24x24 portraits (13 rows from y=4). 'd' marks the ear. Skin extents per row:
+   STD    the game's own head
+   NARROW 12 wide, long face
+   ROUND  16 wide with full cheeks
+   SQUARE blunt, wide jaw
+   POINT  narrow with a small pointed chin */
+const HEADS = {
+  NARROW: P(4,
+    S24([7, 16, 'S']),
+    S24([6, 17, 'S']), S24([6, 17, 'S']), S24([6, 17, 'S']), S24([6, 17, 'S']),
+    S24([5, 5, 'd'], [6, 17, 'S'], [18, 18, 'd']), S24([5, 5, 'd'], [6, 17, 'S'], [18, 18, 'd']), S24([5, 5, 'd'], [6, 17, 'S'], [18, 18, 'd']),
+    S24([6, 17, 'S']), S24([6, 17, 'S']),
+    S24([7, 16, 'S']), S24([7, 16, 'S']),
+    S24([8, 15, 'S'])),
+  ROUND: P(4,
+    S24([6, 17, 'S']),
+    S24([5, 18, 'S']),
+    S24([4, 19, 'S']), S24([4, 19, 'S']), S24([4, 19, 'S']),
+    S24([3, 3, 'd'], [4, 19, 'S'], [20, 20, 'd']), S24([3, 3, 'd'], [4, 19, 'S'], [20, 20, 'd']), S24([3, 3, 'd'], [4, 19, 'S'], [20, 20, 'd']),
+    S24([4, 19, 'S']), S24([4, 19, 'S']),
+    S24([5, 18, 'S']),
+    S24([6, 17, 'S']),
+    S24([7, 16, 'S'])),
+  SQUARE: P(4,
+    S24([6, 17, 'S']),
+    S24([5, 18, 'S']), S24([5, 18, 'S']), S24([5, 18, 'S']), S24([5, 18, 'S']),
+    S24([4, 4, 'd'], [5, 18, 'S'], [19, 19, 'd']), S24([4, 4, 'd'], [5, 18, 'S'], [19, 19, 'd']), S24([4, 4, 'd'], [5, 18, 'S'], [19, 19, 'd']),
+    S24([5, 18, 'S']), S24([5, 18, 'S']), S24([5, 18, 'S']),
+    S24([6, 17, 'S']),
+    S24([7, 16, 'S'])),
+  POINT: P(4,
+    S24([7, 16, 'S']),
+    S24([6, 17, 'S']),
+    S24([5, 18, 'S']), S24([5, 18, 'S']), S24([5, 18, 'S']),
+    S24([4, 4, 'd'], [5, 18, 'S'], [19, 19, 'd']), S24([4, 4, 'd'], [5, 18, 'S'], [19, 19, 'd']), S24([4, 4, 'd'], [5, 18, 'S'], [19, 19, 'd']),
+    S24([5, 18, 'S']),
+    S24([6, 17, 'S']), S24([6, 17, 'S']),
+    S24([7, 16, 'S']),
+    S24([9, 14, 'S'])),
+};
+
+/** Overlays b on a: any non-dot pixel of b wins. */
+const OV = (a, b) => [...a].map((c, i) => (b[i] !== '.' ? b[i] : c)).join('');
+
+const VARIANTS = [];
+
+// ============================================================== MIKE  (narrow face, dark mop)
+VARIANTS.push(
+  {
+    id: 'mike-a', char: 'mike', name: 'Side sweep',
+    blurb: 'A neat dark mop swept off one temple, ears out. Straight dark brows and a long nose give the narrow, earnest face.',
+    tags: ['Swept fringe', 'Straight brows', 'Long nose', 'Wide smile'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: { h: 'soil0', i: 'soil1', j: 'ink' },
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17]),
+        S24([5, 18], [10, 12, 'i']),
+        S24([5, 18], [8, 10, 'i']),
+        S24([5, 18]),
+        S24([5, 12]),
+        S24([5, 6]))],
+      kit: { eye: 'dot', brow: 'flat', browCh: 'j', nose: 'long', mouth: { happy: 'wide' } },
+    },
+    sprite: {
+      pal: { h: 'soil0', i: 'soil1' },
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 12]), S16([3, 9]), S16([3, 4]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([4, 11]), S16([4, 11]), S16([5, 10]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([3, 7]), S16([3, 6]), S16([4, 6]))],
+      },
+      face: { eye: 'tall', brow: 'flat', browCh: 'e', mouth: 'flat' },
+    },
+  },
+  {
+    id: 'mike-b', char: 'mike', name: 'Bowl mop',
+    blurb: 'Heavy straight fringe down to the brows and thick sides that cover the ears. Bigger, softer eyes and a small shy mouth.',
+    tags: ['Straight fringe', 'Ears hidden', 'Big eyes', 'Small mouth'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: { h: 'soil0', i: 'soil1', j: 'ink' },
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17]),
+        S24([5, 18], [9, 11, 'i']),
+        S24([4, 19], [7, 9, 'i']),
+        S24([4, 19]),
+        S24([4, 8], [10, 13], [15, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 5], [18, 19]))],
+      kit: { eye: 'glint', eyeY: 10, brow: 'thin', browCh: 'j', browY: 9, nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['blush-happy'] },
+    },
+    sprite: {
+      pal: { h: 'soil0', i: 'soil1' },
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 5], [10, 12]), S16([3, 4], [11, 12]), S16([3, 3], [12, 12]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([4, 11]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([2, 8]), S16([2, 7]), S16([3, 7]))],
+      },
+      face: { eye: 'one', mouth: 'dot' },
+    },
+  },
+  {
+    id: 'mike-c', char: 'mike', name: 'Center part',
+    blurb: 'Longer dark hair parted in the middle and falling to the jaw. Narrow, serious eyes set wide, with a crooked half smile.',
+    tags: ['Center part', 'Jaw length', 'Narrow eyes', 'Crooked smile'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: { h: 'soil0', i: 'soil1', j: 'ink' },
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17]),
+        S24([5, 10], [13, 18], [9, 10, 'i']),
+        S24([5, 9], [14, 18]),
+        S24([5, 8], [15, 18]),
+        S24([5, 7], [16, 18]),
+        S24([5, 6], [17, 18]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([5, 7], [16, 18]),
+        S24([5, 6], [17, 18]))],
+      kit: { eye: 'bead', inner: 6, brow: 'flat', browCh: 'j', nose: 'long', mouth: { neutral: 'tilt', happy: 'smirk' } },
+    },
+    sprite: {
+      pal: { h: 'soil0', i: 'soil1' },
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 7], [8, 12]), S16([3, 6], [9, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([4, 11]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 11]), S16([2, 8]), S16([2, 8]), S16([2, 8]), S16([3, 7]))],
+      },
+      face: { eye: 'one', eyeX: [5, 10], mouth: 'smirk' },
+    },
+  },
+  {
+    id: 'mike-d', char: 'mike', name: 'Messy tufts',
+    blurb: 'Choppy, uneven fringe with a cowlick. Angled brows and a tilted smirk: the bossy party leader, a scowl in training.',
+    tags: ['Cowlick', 'Angled brows', 'Smirk', 'Ears out'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: { h: 'soil0', i: 'soil1', j: 'ink' },
+      front: [P(1,
+        S24([10, 11], [14, 14]),
+        S24([8, 15], [11, 11, 'i']),
+        S24([6, 17]),
+        S24([5, 18], [8, 9, 'i']),
+        S24([5, 18]),
+        S24([5, 18]),
+        S24([5, 7], [9, 11], [13, 14], [16, 18]),
+        S24([5, 6], [10, 10], [17, 18]))],
+      kit: { eye: 'tall', brow: 'slant', browY: 7, browCh: 'j', nose: 'long', mouth: { neutral: 'tilt', happy: 'smirk' } },
+    },
+    sprite: {
+      pal: { h: 'soil0', i: 'soil1' },
+      hair: {
+        down: [P(0, S16([8, 8]), S16([6, 9], [11, 11]), S16([4, 12], [6, 7, 'i']), S16([3, 12]), S16([3, 5], [7, 8], [10, 12]), S16([3, 4], [11, 12]))],
+        up: [P(0, S16([8, 8]), S16([6, 9], [11, 11]), S16([4, 12]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([4, 11]), S16([4, 11]), S16([5, 10]))],
+        side: [P(0, S16([6, 6], [8, 8]), S16([4, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([2, 8], [10, 11]), S16([3, 6]), S16([3, 6]))],
+      },
+      face: { eye: 'tall', brow: 'slant', browCh: 'e', mouth: 'smirk' },
+    },
+  },
+);
+
+// ============================================================== DUSTIN  (round face, trucker cap, curls, gap-toothed grin)
+const DUSTIN_PAL = { h: 'soil3', i: 'sand', j: 'soil2', g: 'leaf', G: 'yellow', H: 'yellow', J: 'pine1' };
+const DUSTIN_SPR = { h: 'soil3', i: 'sand', g: 'leaf', G: 'yellow', H: 'yellow', J: 'pine1', m: 'soil1' };
+VARIANTS.push(
+  {
+    id: 'dustin-a', char: 'dustin', name: 'Gap grin',
+    blurb: 'Full round cheeks, wide-set bright eyes and the grin that is always on, with the gap in the front teeth drawn in even when he is just standing there.',
+    tags: ['Round face', 'Gap-toothed grin', 'Wide-set eyes', 'Rosy cheeks'],
+    portrait: {
+      head: HEADS.ROUND,
+      pal: DUSTIN_PAL,
+      back: [P(6,
+        S24([3, 3], [20, 20]),
+        S24([2, 3], [20, 21]),
+        S24([1, 3], [20, 22]),
+        S24([1, 2], [21, 22]),
+        S24([1, 2], [21, 22]),
+        S24([2, 2], [21, 21]))],
+      front: [P(2,
+        S24([7, 16, 'g']),
+        S24([5, 7, 'g'], [8, 15, 'H'], [16, 18, 'g']),
+        S24([4, 6, 'g'], [7, 16, 'H'], [17, 19, 'g']),
+        S24([4, 6, 'g'], [7, 16, 'H'], [17, 19, 'g']),
+        S24([3, 20, 'G']),
+        S24([3, 20, 'J']))],
+      kit: { eye: 'dot', inner: 6, brow: 'arch', browCh: 'j', nose: 'dot', mouth: { neutral: 'grin', happy: 'grinW' }, extras: ['blush'] },
+    },
+    sprite: {
+      pal: DUSTIN_SPR,
+      hair: {
+        down: [P(1, S16([5, 10, 'g'], [7, 8, 'H']), S16([4, 11, 'g'], [7, 8, 'H']), S16([3, 12, 'g'], [7, 8, 'H'], [3, 3], [12, 12]), S16([3, 12, 'G']), S16([3, 4], [11, 12]), S16([3, 3], [12, 12]))],
+        up: [P(1, S16([5, 10, 'g']), S16([4, 11, 'g']), S16([3, 12, 'g'], [3, 3], [12, 12]), S16([3, 12, 'g'], [5, 10, 'G'], [3, 3], [12, 12]), S16([3, 12]), S16([4, 11]), S16([5, 10]))],
+        side: [P(1, S16([5, 10, 'g'], [8, 9, 'H']), S16([4, 11, 'g'], [10, 11, 'H']), S16([3, 9, 'g'], [3, 3], [10, 11, 'H']), S16([2, 14, 'G']), S16([2, 4]), S16([2, 4]), S16([3, 4]))],
+      },
+      face: { eye: 'tall', mouth: 'gap', extra: [{ view: 'down', x: 4, y: 7, ch: 'n' }, { view: 'down', x: 11, y: 7, ch: 'n' }] },
+    },
+  },
+  {
+    id: 'dustin-b', char: 'dustin', name: 'Cheeky',
+    blurb: 'The cap pushed back with a curly fringe falling out the front and big fluffy curls at the sides. A crooked smirk until something funny happens, then the full grin.',
+    tags: ['Cap pushed back', 'Curly fringe', 'Smirk', 'Big side curls'],
+    portrait: {
+      head: HEADS.ROUND,
+      pal: DUSTIN_PAL,
+      back: [P(5,
+        S24([3, 3], [20, 20]),
+        S24([2, 3], [20, 21]),
+        S24([1, 3], [20, 22]),
+        S24([1, 3], [20, 22]),
+        S24([1, 2], [21, 22]),
+        S24([1, 2], [21, 22]),
+        S24([1, 2], [21, 22]),
+        S24([2, 2], [21, 21]))],
+      front: [P(0,
+        S24([8, 15, 'g']),
+        S24([6, 17, 'g']),
+        S24([5, 7, 'g'], [8, 15, 'H'], [16, 18, 'g']),
+        S24([4, 6, 'g'], [7, 16, 'H'], [17, 19, 'g']),
+        S24([4, 6, 'g'], [7, 16, 'H'], [17, 19, 'g']),
+        S24([3, 20, 'G']),
+        S24([3, 20, 'J']),
+        S24([4, 7], [9, 10], [13, 14], [16, 19]),
+        S24([4, 5], [10, 10], [18, 19]))],
+      kit: { eye: 'glint', inner: 6, brow: 'arch', browCh: 'j', browY: 9, mouth: { neutral: 'smirk', happy: 'grin' }, extras: ['blush'] },
+    },
+    sprite: {
+      pal: DUSTIN_SPR,
+      hair: {
+        down: [P(0, S16([6, 9, 'g']), S16([4, 11, 'g'], [7, 8, 'H']), S16([3, 12, 'g'], [7, 8, 'H'], [3, 3], [12, 12]), S16([3, 12, 'G']), S16([3, 4], [6, 6], [9, 9], [11, 12]), S16([2, 3], [12, 13]), S16([2, 3], [12, 13]), S16([3, 3], [12, 12]))],
+        up: [P(0, S16([6, 9, 'g']), S16([4, 11, 'g'], [7, 8, 'H']), S16([3, 12, 'g'], [3, 3], [12, 12]), S16([3, 12, 'G']), S16([2, 13]), S16([2, 13], [5, 6, 'i']), S16([3, 12]), S16([4, 11]))],
+        side: [P(0, S16([5, 10, 'g']), S16([4, 11, 'g'], [9, 10, 'H']), S16([3, 9, 'g'], [3, 3], [10, 11, 'H']), S16([2, 14, 'G']), S16([1, 5], [8, 8]), S16([1, 4]), S16([1, 4]), S16([2, 4]))],
+      },
+      face: { eye: 'one', mouth: 'smirk' },
+    },
+  },
+  {
+    id: 'dustin-c', char: 'dustin', name: 'Hatless curls',
+    blurb: 'No cap: a big springy mop of dark-blond curls. Wide open eyes and an open smile, the way he looks when he is explaining something he is sure about.',
+    tags: ['No cap', 'Big curls', 'Open smile', 'Wide eyes'],
+    portrait: {
+      head: HEADS.ROUND,
+      pal: DUSTIN_PAL,
+      front: [P(0,
+        S24([6, 7], [10, 13], [16, 17]),
+        S24([4, 19], [8, 10, 'i']),
+        S24([2, 21], [6, 8, 'i'], [16, 16, 'j']),
+        S24([2, 21], [12, 13, 'i'], [5, 5, 'j'], [9, 9, 'j'], [19, 19, 'j']),
+        S24([2, 21], [4, 4, 'j'], [8, 8, 'j'], [14, 14, 'j'], [17, 17, 'j']),
+        S24([2, 21], [3, 3, 'j'], [6, 6, 'j'], [11, 11, 'j'], [15, 15, 'j'], [20, 20, 'j']),
+        S24([2, 6], [8, 10], [13, 15], [17, 21]),
+        S24([2, 5], [9, 9], [14, 14], [18, 21]),
+        S24([2, 4], [19, 21]),
+        S24([1, 2], [21, 22]),
+        S24([1, 2], [21, 22]))],
+      kit: { eye: 'big', inner: 6, brow: 'flat', browY: 7, browCh: 'j', mouth: { neutral: 'teeth', happy: 'grinW' }, extras: ['blush'] },
+    },
+    sprite: {
+      pal: DUSTIN_SPR,
+      hair: {
+        down: [P(0, S16([5, 6], [9, 10]), S16([3, 12], [6, 7, 'i']), S16([2, 13]), S16([2, 13]), S16([2, 5], [7, 8], [10, 13]), S16([2, 3], [12, 13]), S16([2, 3], [12, 13]))],
+        up: [P(0, S16([5, 6], [9, 10]), S16([3, 12], [6, 7, 'i']), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([2, 13], [5, 6, 'i']), S16([3, 12]), S16([4, 11]))],
+        side: [P(0, S16([4, 5], [8, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([1, 12]), S16([1, 6], [8, 11]), S16([1, 5]), S16([1, 5]), S16([2, 5]))],
+      },
+      face: { eye: 'big', mouth: 'grin' },
+    },
+  },
+  {
+    id: 'dustin-d', char: 'dustin', name: 'Low brim',
+    blurb: 'The cap pulled down so its shadow falls across the brows, leaving two big eyes peeking out. A closed, wide smile that turns into the grin when he is pleased with himself.',
+    tags: ['Cap pulled low', 'Brim shadow', 'Big eyes', 'Wide smile'],
+    portrait: {
+      head: HEADS.ROUND,
+      pal: { ...DUSTIN_PAL, d: 'skin1' },
+      back: [P(7,
+        S24([2, 3], [20, 21]),
+        S24([2, 3], [20, 21]),
+        S24([1, 2], [21, 22]))],
+      front: [P(3,
+        S24([7, 16, 'g']),
+        S24([5, 7, 'g'], [8, 15, 'H'], [16, 18, 'g']),
+        S24([4, 6, 'g'], [7, 16, 'H'], [17, 19, 'g']),
+        S24([3, 20, 'G']),
+        S24([3, 20, 'J']),
+        S24([4, 19, 'd']))],
+      kit: { eye: 'big', inner: 4, brow: 'none', mouth: { neutral: 'smile', happy: 'grin' }, extras: ['blush'] },
+    },
+    sprite: {
+      pal: { ...DUSTIN_SPR, d: 'skin1' },
+      hair: {
+        down: [P(1, S16([5, 10, 'g'], [7, 8, 'H']), S16([4, 11, 'g'], [7, 8, 'H']), S16([3, 12, 'g'], [7, 8, 'H']), S16([3, 12, 'G']), S16([4, 11, 'J']), S16([3, 3], [12, 12]), S16([3, 3], [12, 12]))],
+        up: [P(1, S16([5, 10, 'g']), S16([4, 11, 'g']), S16([3, 12, 'g']), S16([3, 12, 'g'], [5, 10, 'G']), S16([3, 12]), S16([4, 11]), S16([5, 10]))],
+        side: [P(1, S16([5, 10, 'g'], [8, 9, 'H']), S16([4, 11, 'g'], [10, 11, 'H']), S16([3, 9, 'g'], [10, 11, 'H']), S16([2, 14, 'G']), S16([2, 4], [6, 12, 'J']), S16([2, 4]), S16([3, 4]))],
+      },
+      face: { eye: 'one', mouth: 'smile' },
+    },
+  },
+);
+
+// ============================================================== LUCAS  (square jaw, camo bandana, wary stare)
+const LUCAS_PAL = { s: 'skin2', d: 'skin3', h: 'shadow', i: 'dusk', j: 'ink', g: 'pine2', G: 'soil2', H: 'pine0', x: 'soil1', u: 'skin3' };
+const LUCAS_SPR = { h: 'shadow', i: 'dusk', g: 'pine2', G: 'soil2', H: 'pine0', m: 'skin3' };
+VARIANTS.push(
+  {
+    id: 'lucas-a', char: 'lucas', name: 'Headband',
+    blurb: 'The camo bandana worn as a headband with the knot at the side, short curls on top. Heavy-lidded eyes, a flat mouth and a wide nose: the skeptic who checks the exits.',
+    tags: ['Camo headband', 'Heavy lids', 'Square jaw', 'Flat mouth'],
+    portrait: {
+      head: HEADS.SQUARE,
+      pal: LUCAS_PAL,
+      front: [
+        P(2,
+          S24([9, 10], [13, 14]),
+          S24([7, 16]),
+          S24([6, 17], [9, 11, 'i'])),
+        P(5,
+          S24([5, 18, 'C']),
+          S24([4, 19, 'C'], [20, 21, 'C']),
+          S24([5, 18, 'C'], [20, 22, 'C']),
+          S24([21, 22, 'C']),
+          S24([22, 22, 'C'])),
+      ],
+      kit: { eye: 'lid', brow: 'flat', browCh: 'j', nose: 'wide', mouth: { neutral: 'flat6', happy: 'wide' }, extras: ['lip'] },
+    },
+    sprite: {
+      pal: LUCAS_SPR,
+      hair: {
+        down: [P(1, S16([5, 10]), S16([4, 11]), S16([3, 12, 'g'], [5, 6, 'G'], [8, 9, 'H'], [11, 11, 'G']), S16([3, 12, 'H'], [4, 5, 'G'], [7, 8, 'g'], [10, 11, 'G']), S16([13, 13, 'g']), S16([13, 13, 'H'], [14, 14, 'g']))],
+        up: [P(1, S16([5, 10]), S16([4, 11]), S16([3, 12, 'g'], [5, 6, 'G'], [8, 9, 'H']), S16([3, 12, 'H'], [4, 5, 'g'], [7, 8, 'G'], [10, 11, 'g']), S16([4, 6], [7, 8, 'G'], [9, 11]), S16([4, 6], [7, 8, 'H'], [9, 11]), S16([4, 11]))],
+        side: [P(1, S16([5, 10]), S16([4, 11]), S16([2, 11, 'g'], [4, 5, 'G'], [7, 8, 'H']), S16([1, 11, 'H'], [3, 4, 'G'], [6, 7, 'g'], [9, 10, 'G'], [0, 0, 'g']), S16([2, 2, 'H'], [3, 6]), S16([3, 7]), S16([4, 7]))],
+      },
+      face: { eye: 'lid', mouth: 'flat' },
+    },
+  },
+  {
+    id: 'lucas-b', char: 'lucas', name: 'Flying tails',
+    blurb: 'The bandana knotted behind with both tails flicking out at the sides, and a taller crown of tight curls. Wide alert eyes, raised brows and a half smile: ready to run or fight.',
+    tags: ['Tails out', 'Tall crown', 'Alert eyes', 'Half smile'],
+    portrait: {
+      head: HEADS.SQUARE,
+      pal: LUCAS_PAL,
+      back: [P(6,
+        S24([3, 4, 'C'], [19, 20, 'C']),
+        S24([1, 3, 'C'], [20, 22, 'C']),
+        S24([0, 2, 'C'], [21, 23, 'C']),
+        S24([1, 2, 'C'], [21, 22, 'C']))],
+      front: [
+        P(1,
+          S24([9, 10], [13, 14]),
+          S24([7, 16], [9, 11, 'i']),
+          S24([6, 17])),
+        P(4,
+          S24([5, 18, 'C']),
+          S24([4, 19, 'C']),
+          S24([5, 18, 'C'])),
+      ],
+      kit: { eye: 'big', brow: 'flat', browY: 7, browCh: 'j', nose: 'wide', mouth: { neutral: 'smirk', happy: 'wide' }, extras: ['lip'] },
+    },
+    sprite: {
+      pal: LUCAS_SPR,
+      hair: {
+        down: [P(0, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 12, 'g'], [5, 6, 'G'], [8, 9, 'H']), S16([3, 12, 'H'], [4, 5, 'G'], [7, 8, 'g'], [10, 11, 'G']), S16([2, 2, 'g'], [13, 13, 'g']), S16([1, 1, 'H'], [14, 14, 'H']))],
+        up: [P(0, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 12, 'g'], [5, 6, 'G'], [8, 9, 'H']), S16([3, 12, 'H'], [4, 5, 'g'], [7, 8, 'G'], [10, 11, 'g']), S16([1, 2, 'g'], [4, 11], [13, 14, 'g']), S16([4, 11]), S16([4, 11]), S16([5, 10]))],
+        side: [P(0, S16([5, 9]), S16([3, 10], [5, 6, 'i']), S16([2, 11, 'g'], [4, 5, 'G'], [7, 8, 'H']), S16([2, 11, 'H'], [3, 4, 'G'], [6, 7, 'g'], [9, 10, 'G']), S16([1, 1, 'g'], [2, 7]), S16([0, 0, 'H'], [3, 7]), S16([3, 7]), S16([4, 7]))],
+      },
+      face: { eye: 'tall', brow: 'slant', browCh: 'e', mouth: 'smirk' },
+    },
+  },
+  {
+    id: 'lucas-c', char: 'lucas', name: 'Fresh crop',
+    blurb: 'No bandana: close-cropped hair with a clean hairline and tapered temples. Small, hard eyes, a straight strong brow and a scowl that says he is not buying it.',
+    tags: ['No bandana', 'Sharp hairline', 'Small eyes', 'Scowl'],
+    portrait: {
+      head: HEADS.SQUARE,
+      pal: LUCAS_PAL,
+      front: [P(3,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18]),
+        S24([5, 6], [17, 18]))],
+      kit: { eye: 'bead', brow: 'flat', browCh: 'j', nose: 'wide', mouth: { neutral: 'frown', happy: 'smile' }, extras: ['lip'] },
+    },
+    sprite: {
+      pal: LUCAS_SPR,
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([4, 11]), S16([4, 5], [10, 11]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([4, 11]), S16([4, 11]), S16([5, 10]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([3, 10], [5, 6, 'i']), S16([3, 10]), S16([3, 7]), S16([3, 6]), S16([4, 6]))],
+      },
+      face: { eye: 'one', brow: 'flat', browCh: 'e', mouth: 'flat' },
+    },
+  },
+  {
+    id: 'lucas-d', char: 'lucas', name: 'Low bandana',
+    blurb: 'The bandana pulled low over the brows with a big textured mop above it. Brighter, younger eyes and an easy smile: the loyal friend who backs the plan.',
+    tags: ['Low bandana', 'Big textured top', 'Bright eyes', 'Easy smile'],
+    portrait: {
+      head: HEADS.SQUARE,
+      pal: LUCAS_PAL,
+      front: [
+        P(2,
+          S24([8, 9], [12, 13], [15, 16]),
+          S24([6, 17], [8, 10, 'i']),
+          S24([5, 18]),
+          S24([5, 18])),
+        P(6,
+          S24([5, 18, 'C']),
+          S24([4, 19, 'C'], [20, 21, 'C']),
+          S24([5, 18, 'C'], [20, 22, 'C']),
+          S24([21, 22, 'C'])),
+      ],
+      kit: { eye: 'glint', brow: 'none', nose: 'wide', mouth: { neutral: 'smile', happy: 'wide' }, extras: ['lip'] },
+    },
+    sprite: {
+      pal: LUCAS_SPR,
+      hair: {
+        down: [P(0, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 12]), S16([3, 12], [5, 6, 'i']), S16([3, 12, 'g'], [5, 6, 'G'], [8, 9, 'H'], [11, 11, 'G']), S16([3, 12, 'H'], [4, 5, 'G'], [7, 8, 'g'], [10, 11, 'G'], [13, 13, 'g']), S16([13, 13, 'H']))],
+        up: [P(0, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12, 'g'], [5, 6, 'G'], [8, 9, 'H']), S16([3, 12, 'H'], [4, 5, 'g'], [7, 8, 'G'], [10, 11, 'g']), S16([4, 6], [7, 8, 'G'], [9, 11]), S16([4, 11]))],
+        side: [P(0, S16([5, 9]), S16([3, 10], [5, 6, 'i']), S16([2, 11]), S16([2, 11]), S16([1, 11, 'g'], [3, 4, 'G'], [6, 7, 'H'], [9, 10, 'G']), S16([1, 11, 'H'], [2, 3, 'G'], [5, 6, 'g'], [8, 9, 'G'], [0, 0, 'g']), S16([2, 6]), S16([3, 6]))],
+      },
+      face: { eye: 'one', mouth: 'smile' },
+    },
+  },
+);
+
+// ============================================================== ELEVEN  (small pointed face, huge eyes, nosebleed)
+const ELEVEN_SPR = { m: 'blood1' };
+VARIANTS.push(
+  {
+    id: 'eleven-a', char: 'eleven', name: 'Blonde wig',
+    blurb: 'The wig Mike hands her: a wavy blonde bob with ragged bangs. Huge round eyes set low in a small pointed face, thin brows and a tiny flat mouth.',
+    tags: ['Blonde wavy bob', 'Huge eyes', 'Pointed chin', 'Tiny mouth'],
+    portrait: {
+      head: HEADS.POINT,
+      pal: { h: 'sand', i: 'cream', j: 'soil3' },
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18], [8, 9, 'i']),
+        S24([4, 19]),
+        S24([4, 19]),
+        S24([4, 8], [10, 13], [15, 19]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]),
+        S24([3, 5], [18, 20]),
+        S24([4, 5], [18, 19]))],
+      kit: { eye: 'big', eyeY: 10, brow: 'thin', browY: 8, browCh: 'j', nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['nosebleed'] },
+    },
+    sprite: {
+      pal: { ...ELEVEN_SPR, h: 'sand', i: 'cream' },
+      hair: {
+        down: [P(1, S16([5, 10]), S16([4, 11], [6, 7, 'i']), S16([3, 12]), S16([3, 5], [7, 8], [10, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([2, 3], [12, 13]), S16([3, 3], [12, 12]))],
+        up: [P(1, S16([5, 10]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([2, 13]), S16([3, 12]))],
+        side: [P(1, S16([5, 10]), S16([3, 11]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([2, 7]), S16([2, 7]), S16([1, 6]), S16([2, 5]))],
+      },
+      face: { eye: 'big', mouth: 'dot' },
+    },
+  },
+  {
+    id: 'eleven-b', char: 'eleven', name: 'Buzz cut',
+    blurb: 'The shaved head from the lab: a shadow of stubble and ears that stick out. With no hair to hide behind, the huge unblinking eyes and thin brows do all the work.',
+    tags: ['Shaved head', 'Ears showing', 'Unblinking stare', 'Thin brows'],
+    portrait: {
+      head: HEADS.POINT,
+      pal: { h: 'soil2', i: 'skin1', j: 'soil1' },
+      front: [P(3,
+        S24([9, 14, 'i']),
+        OV(S24([7, 16, 'i']), S24([9, 9, 'h'], [12, 12, 'h'], [15, 15, 'h'])),
+        OV(S24([6, 17, 'i']), S24([8, 8, 'h'], [11, 11, 'h'], [13, 13, 'h'], [16, 16, 'h'])),
+        OV(S24([6, 17, 'i']), S24([7, 7, 'h'], [10, 10, 'h'], [14, 14, 'h'], [17, 17, 'h'])),
+        OV(S24([7, 8, 'i'], [15, 16, 'i']), S24([8, 8, 'h'], [16, 16, 'h'])))],
+      kit: { eye: 'big', brow: 'thin', browY: 7, browCh: 'j', nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['nosebleed'] },
+    },
+    sprite: {
+      pal: { ...ELEVEN_SPR, h: 'soil2', i: 'skin1' },
+      hair: {
+        down: [P(2, S16([5, 10, 'i']), S16([4, 11, 'i'], [6, 6], [9, 9], [8, 8]), S16([3, 3, 'i'], [12, 12, 'i']))],
+        up: [P(2, S16([5, 10, 'i'], [8, 8]), S16([4, 11, 'i'], [6, 6], [10, 10]), S16([4, 11, 'i'], [7, 7], [9, 9]), S16([4, 11, 'i']), S16([3, 3, 'i'], [12, 12, 'i']), S16([5, 10, 'i']))],
+        side: [P(2, S16([5, 10, 'i'], [7, 7], [9, 9]), S16([4, 11, 'i'], [6, 6], [8, 8]), S16([4, 8, 'i'], [5, 5], [7, 7]), S16([4, 7, 'i']), S16([5, 6, 'i']))],
+      },
+      face: { eye: 'big', mouth: 'dot', extra: [{ view: 'down', x: 3, y: 5, ch: 'i' }, { view: 'down', x: 12, y: 5, ch: 'i' }] },
+    },
+  },
+  {
+    id: 'eleven-c', char: 'eleven', name: 'Curly bob',
+    blurb: 'Short brown curls, grown out and springy, with a curly fringe over the brows. Round curious eyes and a small mouth, a little less guarded than the lab.',
+    tags: ['Curly bob', 'Curly fringe', 'Curious eyes', 'Small mouth'],
+    portrait: {
+      head: HEADS.POINT,
+      pal: { h: 'soil2', i: 'soil3', j: 'soil1' },
+      front: [P(1,
+        S24([7, 8], [10, 13], [15, 16]),
+        S24([5, 18], [8, 10, 'i']),
+        S24([4, 19], [9, 11, 'i']),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 6], [8, 11], [13, 16], [18, 20]),
+        S24([3, 5], [9, 9], [14, 14], [18, 20]),
+        S24([3, 5], [18, 20]),
+        S24([2, 4], [19, 21]),
+        S24([2, 5], [18, 21]),
+        S24([3, 5], [18, 20]),
+        S24([3, 5], [18, 20]),
+        S24([4, 6], [17, 19]))],
+      kit: { eye: 'dot', brow: 'flat', browY: 8, browCh: 'j', nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['nosebleed'] },
+    },
+    sprite: {
+      pal: { ...ELEVEN_SPR, h: 'soil2', i: 'soil3' },
+      hair: {
+        down: [P(0, S16([5, 6], [9, 10]), S16([3, 12], [6, 7, 'i']), S16([2, 13]), S16([2, 13]), S16([2, 5], [7, 8], [10, 13]), S16([2, 3], [12, 13]), S16([2, 3], [12, 13]), S16([3, 4], [11, 12]))],
+        up: [P(0, S16([5, 6], [9, 10]), S16([3, 12], [6, 7, 'i']), S16([2, 13]), S16([2, 13]), S16([2, 13], [5, 6, 'i']), S16([2, 13]), S16([3, 12]), S16([3, 12]), S16([4, 11]))],
+        side: [P(0, S16([4, 5], [8, 9]), S16([3, 10], [5, 6, 'i']), S16([2, 11]), S16([1, 12]), S16([1, 6], [8, 11]), S16([1, 5]), S16([1, 5]), S16([2, 5]), S16([3, 5]))],
+      },
+      face: { eye: 'tall', mouth: 'dot' },
+    },
+  },
+  {
+    id: 'eleven-d', char: 'eleven', name: 'Long waves',
+    blurb: 'Long, wavy light-brown hair with a center part and feathered bangs. A hard stare under angled brows and a straight mouth: the look right before something gets thrown.',
+    tags: ['Long waves', 'Feathered bangs', 'Angled brows', 'Hard stare'],
+    portrait: {
+      head: HEADS.POINT,
+      pal: { h: 'soil3', i: 'sand', j: 'soil2' },
+      back: [P(12,
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([4, 7], [16, 19]),
+        S24([3, 7], [16, 20]),
+        S24([3, 8], [15, 20]),
+        S24([2, 8], [15, 21]),
+        S24([3, 8], [15, 20]),
+        S24([3, 7], [16, 20]))],
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 10, 'i']),
+        S24([5, 10], [13, 18]),
+        S24([4, 9], [14, 19]),
+        S24([4, 8], [15, 19]),
+        S24([4, 7], [16, 19]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]))],
+      kit: { eye: 'bead', brow: 'slant', browY: 7, browCh: 'j', nose: 'tiny', mouth: { neutral: 'line', happy: 'smile' }, extras: ['nosebleed'] },
+    },
+    sprite: {
+      pal: { ...ELEVEN_SPR, h: 'soil3', i: 'sand' },
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 6], [9, 12]), S16([3, 5], [10, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([2, 4], [11, 13]), S16([3, 4], [11, 12]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([2, 13]), S16([3, 12]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 11]), S16([1, 8]), S16([1, 7]), S16([1, 7]), S16([1, 7]), S16([2, 7]), S16([2, 6]))],
+      },
+      face: { eye: 'tall', brow: 'slant', browCh: 'e', mouth: 'flat' },
+    },
+  },
+);
+
+// ============================================================== WILL  (soft face, worried eyes, golden-brown hair)
+const WILL_PAL = { h: 'soil3', i: 'sand', j: 'soil2' };
+const WILL_SPR = { h: 'soil3', i: 'sand', m: 'soil2' };
+VARIANTS.push(
+  {
+    id: 'will-a', char: 'will', name: 'Bowl cut',
+    blurb: 'The round, heavy bowl: a soft fringe that stops at the brows, sides that cover the ears. Big shiny eyes set low, a small mouth and a faint blush.',
+    tags: ['Round bowl', 'Ears hidden', 'Shiny big eyes', 'Soft cheeks'],
+    portrait: {
+      pal: WILL_PAL,
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18], [7, 9, 'i']),
+        S24([4, 19]),
+        S24([4, 19]),
+        S24([4, 10], [13, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 5], [18, 19]))],
+      kit: { eye: 'glint', eyeY: 10, brow: 'thin', browY: 8, browCh: 'j', nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['blush-happy'] },
+    },
+    sprite: {
+      pal: WILL_SPR,
+      hair: {
+        down: [P(1, S16([5, 10]), S16([4, 11], [6, 7, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]))],
+        up: [P(1, S16([5, 10]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([4, 11]), S16([5, 10]))],
+        side: [P(1, S16([5, 10]), S16([3, 11]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([2, 8]), S16([2, 7]), S16([3, 6]))],
+      },
+      face: { eye: 'big', mouth: 'dot' },
+    },
+  },
+  {
+    id: 'will-b', char: 'will', name: 'Sleepless',
+    blurb: 'A thinner, paler face under a wispy, uneven fringe. Shadows under the eyes and brows that tip up in the middle: he looks worried even when nothing is wrong.',
+    tags: ['Narrow pale face', 'Wispy fringe', 'Eye shadows', 'Worried brows'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: { ...WILL_PAL, u: 'skin1' },
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18], [8, 9, 'i']),
+        S24([5, 18]),
+        S24([5, 10], [12, 18]),
+        S24([5, 8], [10, 10], [13, 14], [16, 18]),
+        S24([5, 6], [17, 18]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 5], [18, 19]))],
+      kit: { eye: 'dot', eyeY: 10, brow: 'raise', browY: 8, browCh: 'j', nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['circles'] },
+    },
+    sprite: {
+      pal: WILL_SPR,
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 5], [7, 8], [10, 12]), S16([3, 4], [6, 6], [9, 9], [11, 12]), S16([3, 3], [12, 12]), S16([3, 3], [12, 12]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([4, 11]), S16([5, 10]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 10], [5, 6, 'i']), S16([2, 7], [9, 11]), S16([2, 7]), S16([3, 6]), S16([3, 5]))],
+      },
+      face: { eye: 'tall', brow: 'raise', browCh: 'e', mouth: 'dot', extra: [{ view: 'down', x: 6, y: 7, ch: 'd' }, { view: 'down', x: 9, y: 7, ch: 'd' }] },
+    },
+  },
+  {
+    id: 'will-c', char: 'will', name: 'Shaggy flip',
+    blurb: 'Longer, shaggier hair parted to one side, flipping out at the ears. Big wide-open eyes under arched brows: he has just noticed something nobody else has.',
+    tags: ['Shaggy side part', 'Flipped ends', 'Wide eyes', 'Arched brows'],
+    portrait: {
+      pal: WILL_PAL,
+      front: [P(1,
+        S24([9, 13]),
+        S24([7, 16], [9, 11, 'i']),
+        S24([5, 18], [8, 10, 'i']),
+        S24([4, 19]),
+        S24([4, 19]),
+        S24([4, 19]),
+        S24([4, 12], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([3, 5], [18, 20]),
+        S24([2, 4], [19, 21]))],
+      kit: { eye: 'big', eyeY: 10, brow: 'arch', browY: 8, browCh: 'j', nose: 'tiny', mouth: { neutral: 'short', happy: 'smile' }, extras: ['blush-happy'] },
+    },
+    sprite: {
+      pal: WILL_SPR,
+      hair: {
+        down: [P(1, S16([5, 10]), S16([4, 11], [6, 7, 'i']), S16([3, 12]), S16([3, 9], [11, 12]), S16([3, 4], [11, 12]), S16([2, 4], [11, 13]), S16([2, 3], [12, 13]))],
+        up: [P(1, S16([5, 10]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([2, 13]), S16([2, 3], [12, 13]))],
+        side: [P(1, S16([5, 10]), S16([3, 11]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([2, 8]), S16([1, 7]), S16([1, 6]))],
+      },
+      face: { eye: 'big', mouth: 'dot' },
+    },
+  },
+  {
+    id: 'will-d', char: 'will', name: 'Soft curtains',
+    blurb: 'Chin-length golden hair parted in the middle, one side falling forward and the other tucked behind an ear. A soft half smile and calm, open eyes: the quiet one who notices first.',
+    tags: ['Center part', 'One ear tucked', 'Calm eyes', 'Half smile'],
+    portrait: {
+      pal: WILL_PAL,
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 10, 'i']),
+        S24([5, 10], [13, 18]),
+        S24([4, 9], [14, 19]),
+        S24([4, 8], [15, 19]),
+        S24([4, 7], [16, 19]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6]),
+        S24([3, 6]),
+        S24([3, 6]),
+        S24([4, 6]),
+        S24([4, 6]),
+        S24([5, 7]))],
+      kit: { eye: 'dot', brow: 'flat', browY: 7, browCh: 'j', nose: 'tiny', mouth: { neutral: 'smile', happy: 'wide' }, extras: ['blush-happy'] },
+    },
+    sprite: {
+      pal: WILL_SPR,
+      hair: {
+        down: [P(1, S16([6, 9]), S16([4, 11], [6, 7, 'i']), S16([3, 7], [9, 12]), S16([3, 6], [10, 12]), S16([3, 4]), S16([3, 4]), S16([3, 4]))],
+        up: [P(1, S16([6, 9]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([4, 11]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 11]), S16([2, 8]), S16([2, 8]), S16([3, 7]))],
+      },
+      face: { eye: 'tall', mouth: 'smile' },
+    },
+  },
+);
+
+// ============================================================== JOYCE  (long worn face, wide eyes, dark hair)
+const JOYCE_PAL = { h: 'soil1', i: 'soil2', j: 'soil0', u: 'skin1' };
+const JOYCE_SPR = { h: 'soil1', i: 'soil2', m: 'soil2' };
+VARIANTS.push(
+  {
+    id: 'joyce-a', char: 'joyce', name: 'Frazzled mane',
+    blurb: 'A big, messy cloud of dark waves with flyaway strands, around a thin, tired face. Wide eyes with shadows under them and arched brows: three nights without sleep.',
+    tags: ['Big messy waves', 'Flyaways', 'Eye shadows', 'Arched brows'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: JOYCE_PAL,
+      back: [P(3,
+        S24([6, 17]),
+        S24([4, 19]),
+        S24([3, 20]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([2, 21]),
+        S24([3, 8], [15, 20]),
+        S24([2, 7], [16, 21]),
+        S24([3, 7], [16, 20]))],
+      front: [P(1,
+        S24([10, 10], [14, 14]),
+        S24([8, 15], [10, 12, 'i']),
+        S24([6, 17]),
+        S24([5, 18], [8, 9, 'i']),
+        S24([4, 19]),
+        S24([4, 19]),
+        S24([4, 8], [10, 10], [12, 13], [15, 19]),
+        S24([4, 6], [17, 19], [9, 9]),
+        S24([3, 6], [17, 20]),
+        S24([3, 5], [18, 20]),
+        S24([3, 6], [17, 20]),
+        S24([2, 5], [18, 21]))],
+      kit: { eye: 'dot', brow: 'arch', browY: 7, browCh: 'j', nose: 'dot', mouth: { neutral: 'line', happy: 'smile' }, extras: ['circles'] },
+    },
+    sprite: {
+      pal: JOYCE_SPR,
+      hair: {
+        down: [P(1, S16([5, 5], [8, 8], [10, 10]), S16([4, 11], [6, 7, 'i']), S16([2, 13]), S16([2, 13]), S16([1, 4], [11, 14]), S16([1, 3], [12, 14]), S16([2, 4], [11, 13]), S16([1, 3], [12, 14]), S16([2, 4], [11, 13]))],
+        up: [P(1, S16([5, 5], [8, 8], [10, 10]), S16([4, 11]), S16([2, 13], [6, 8, 'i']), S16([2, 13]), S16([1, 14]), S16([1, 14]), S16([2, 13]), S16([1, 14]), S16([2, 13]))],
+        side: [P(1, S16([5, 5], [7, 9]), S16([3, 10]), S16([1, 10], [4, 5, 'i']), S16([1, 11]), S16([0, 8]), S16([1, 7]), S16([0, 7]), S16([1, 7]), S16([1, 6]))],
+      },
+      face: { dy: -1, eye: 'tall', brow: 'raise', browCh: 'e', mouth: 'flat' },
+    },
+  },
+  {
+    id: 'joyce-b', char: 'joyce', name: 'Wavy lob',
+    blurb: 'A neater chin-length wavy bob with a side part and the ends flipped out. A rested face, arched brows and a tired half smile: Joyce on a good day.',
+    tags: ['Wavy bob', 'Side part', 'Flipped ends', 'Tired half smile'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: JOYCE_PAL,
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18], [7, 9, 'i']),
+        S24([5, 18]),
+        S24([5, 18]),
+        S24([5, 12], [17, 18]),
+        S24([5, 6], [17, 18]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]),
+        S24([3, 5], [18, 20]))],
+      kit: { eye: 'dot', brow: 'arch', browY: 7, browCh: 'j', nose: 'dot', mouth: { neutral: 'tilt', happy: 'smile' } },
+    },
+    sprite: {
+      pal: JOYCE_SPR,
+      hair: {
+        down: [P(1, S16([5, 10]), S16([3, 12], [6, 7, 'i']), S16([3, 9], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([2, 4], [11, 13]), S16([2, 3], [12, 13]))],
+        up: [P(1, S16([5, 10]), S16([3, 12], [6, 8, 'i']), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([3, 12]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 10], [5, 6, 'i']), S16([2, 11]), S16([2, 8]), S16([2, 7]), S16([2, 7]), S16([1, 6]))],
+      },
+      face: { dy: -1, eye: 'tall', brow: 'flat', browCh: 'e', mouth: 'smirk' },
+    },
+  },
+  {
+    id: 'joyce-c', char: 'joyce', name: 'Pinned back',
+    blurb: 'Hair clipped back off the face so nothing hides the worry: bare forehead, ears out, brows tipped up and huge anxious eyes with shadows underneath.',
+    tags: ['Clipped back', 'Forehead showing', 'Anxious brows', 'Huge eyes'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: JOYCE_PAL,
+      back: [P(4,
+        S24([5, 18]),
+        S24([4, 19]),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 20]),
+        S24([3, 7], [16, 20]),
+        S24([2, 7], [16, 21]),
+        S24([3, 8], [15, 20]),
+        S24([3, 8], [15, 20]),
+        S24([4, 8], [15, 19]))],
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18], [8, 9, 'i']),
+        S24([5, 7], [16, 18]),
+        S24([5, 6], [17, 18, 'h'], [6, 6, 'b'], [17, 17, 'b']))],
+      kit: { eye: 'big', brow: 'raise', browY: 7, browCh: 'j', nose: 'dot', mouth: { neutral: 'short', happy: 'smile' }, extras: ['circles'] },
+    },
+    sprite: {
+      pal: { ...JOYCE_SPR, b: 'cream' },
+      hair: {
+        down: [P(1, S16([5, 10]), S16([4, 11], [6, 7, 'i']), S16([4, 5], [10, 11]), S16([4, 4, 'b'], [11, 11, 'b']), S16([3, 3], [12, 12]), S16([3, 3], [12, 12]), S16([3, 3], [12, 12]), S16([2, 3], [12, 13]))],
+        up: [P(1, S16([5, 10]), S16([4, 11]), S16([3, 12], [6, 8, 'i']), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([3, 12]), S16([4, 11]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 9], [5, 6, 'i']), S16([2, 7], [9, 9, 'b']), S16([2, 7]), S16([1, 7]), S16([1, 7]), S16([1, 6]), S16([2, 5]))],
+      },
+      face: { dy: -1, eye: 'big', brow: 'raise', browCh: 'e', mouth: 'dot' },
+    },
+  },
+  {
+    id: 'joyce-d', char: 'joyce', name: 'Heavy bangs',
+    blurb: 'Thick bangs over the brows and hair falling to the shoulders. Heavy-lidded, exhausted eyes with deep shadows and a flat mouth: running on coffee and nerve.',
+    tags: ['Thick bangs', 'Heavy lids', 'Deep eye shadows', 'Flat mouth'],
+    portrait: {
+      head: HEADS.NARROW,
+      pal: JOYCE_PAL,
+      back: [P(13,
+        S24([3, 6], [17, 20]),
+        S24([3, 7], [16, 20]),
+        S24([3, 7], [16, 20]),
+        S24([2, 7], [16, 21]),
+        S24([3, 8], [15, 20]))],
+      front: [P(2,
+        S24([8, 15]),
+        S24([6, 17], [9, 11, 'i']),
+        S24([5, 18], [8, 9, 'i']),
+        S24([4, 19]),
+        S24([4, 19]),
+        S24([4, 7], [9, 10], [13, 14], [16, 19]),
+        S24([4, 6], [17, 19]),
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([3, 6], [17, 20]),
+        S24([3, 7], [16, 20]),
+        S24([4, 7], [16, 19]),
+        S24([4, 6], [17, 19]))],
+      kit: { eye: 'lid', brow: 'flat', browY: 8, browCh: 'j', nose: 'dot', mouth: { neutral: 'flat6', happy: 'tilt' }, extras: ['circles'] },
+    },
+    sprite: {
+      pal: JOYCE_SPR,
+      hair: {
+        down: [P(1, S16([5, 10]), S16([3, 12], [6, 7, 'i']), S16([3, 12]), S16([3, 5], [7, 8], [10, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]), S16([3, 4], [11, 12]))],
+        up: [P(1, S16([5, 10]), S16([3, 12], [6, 8, 'i']), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([2, 13]), S16([3, 12]))],
+        side: [P(1, S16([5, 9]), S16([3, 10]), S16([2, 11], [5, 6, 'i']), S16([2, 12]), S16([2, 8]), S16([2, 7]), S16([2, 7]), S16([2, 6]))],
+      },
+      face: { dy: -1, eye: 'lid', mouth: 'flat' },
+    },
+  },
+);
+</script>
+  <script>/* Page: one section per character, four variant cards each, picks that persist, a zoom dialog. */
+'use strict';
+
+const EXPRS = ['neutral', 'happy', 'worried', 'determined', 'hurt', 'shocked'];
+const STORE_KEY = 'stranger-ninjas:face-picks:v1';
+const STAGE_KEY = 'stranger-ninjas:face-stage:v1';
+const STAGES = { forest: '#124a2c', night: '#1c2340', basement: '#4a2e1e' };
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+const $ = (sel, root = document) => root.querySelector(sel);
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null) e.append(kid);
+  return e;
+}
+function show(src, scale, label) {
+  const c = mkCanvas(src.width, src.height);
+  c.getContext('2d').drawImage(src, 0, 0);
+  c.style.width = src.width * scale + 'px';
+  c.style.height = src.height * scale + 'px';
+  if (label) { c.setAttribute('role', 'img'); c.setAttribute('aria-label', label); } else c.setAttribute('aria-hidden', 'true');
+  return c;
+}
+const safe = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage can be blocked on file:// */ } },
+};
+
+// ------------------------------------------------------------------ data helpers
+const variantsOf = (charId) => VARIANTS.filter((v) => v.char === charId);
+function portraitFor(v) { return resolvePortrait(v.char, v.portrait || {}); }
+function spriteFor(v) { return resolveSprite(v.char, v.sprite || {}); }
+const current = (charId) => ({ id: charId + '-now', char: charId, name: 'Now in the game', portrait: null, sprite: null });
+function pCanvas(v, expr) { return portraitCanvas(v.id.endsWith('-now') ? resolvePortrait(v.char, null) : portraitFor(v), expr, v.id); }
+function sCanvas(v, view, pose, flip) { return spriteCanvas(v.id.endsWith('-now') ? BASE.SPECS[v.char] : spriteFor(v), view, pose, v.id, flip); }
+
+// ------------------------------------------------------------------ state
+let picks = {};
+try { picks = JSON.parse(safe.get(STORE_KEY) || '{}') || {}; } catch { picks = {}; }
+const tickers = [];
+let zoomTickers = [];
+
+function savePicks() { safe.set(STORE_KEY, JSON.stringify(picks)); }
+function pickedVariant(charId) { return VARIANTS.find((v) => v.id === picks[charId]); }
+
+function summaryText() {
+  const lines = ['Face picks:'];
+  for (const c of CHARS) {
+    const v = pickedVariant(c.id);
+    lines.push(v ? `${c.name}: ${LETTERS[variantsOf(c.id).indexOf(v)]} (${v.name})` : `${c.name}: no pick yet`);
+  }
+  return lines.join('\n');
+}
+
+// ------------------------------------------------------------------ cards
+function animated(srcFrames, scale, label, bucket = tickers) {
+  const c = show(srcFrames[0], scale, label);
+  const ctx = c.getContext('2d');
+  bucket.push((n) => { ctx.clearRect(0, 0, c.width, c.height); ctx.drawImage(srcFrames[n % srcFrames.length], 0, 0); });
+  return c;
+}
+const walkFrames = (v, view, flip) => ['walk0', 'walk1', 'walk2', 'walk3'].map((p) => sCanvas(v, view, p, flip));
+
+function spriteRow(v, scale) {
+  const name = CHARS.find((c) => c.id === v.char).name;
+  return el('div', { class: 'sprites' },
+    show(sCanvas(v, 'down', 'idle0'), scale, `${name} sprite facing down`),
+    show(sCanvas(v, 'side', 'idle0'), scale, `${name} sprite facing right`),
+    show(sCanvas(v, 'up', 'idle0'), scale, `${name} sprite facing up`),
+    animated(walkFrames(v, 'down'), scale, `${name} walking`));
+}
+
+function card(c, v, i) {
+  const letter = LETTERS[i];
+  const portrait = show(pCanvas(v, 'neutral'), 8, `${c.name} ${letter}, neutral portrait`);
+  const zoomBtn = el('button', { class: 'portrait', type: 'button', 'aria-label': `Zoom ${c.name} ${letter}`, onclick: () => openZoom(c.id, i) }, portrait);
+  const strip = el('div', { class: 'exprs' }, EXPRS.slice(1).map((x) => show(pCanvas(v, x), 2, `${x} expression`)));
+  const pick = el('button', { class: 'pick', type: 'button', 'aria-pressed': 'false', 'data-char': c.id, 'data-id': v.id,
+    onclick: () => togglePick(c.id, v.id) }, el('span', { class: 'pick-label', text: `Pick ${c.name} ${letter}` }));
+  return el('article', { class: 'card', 'data-id': v.id },
+    el('header', {}, el('span', { class: 'badge', text: letter }), el('h3', { text: v.name })),
+    zoomBtn, strip,
+    el('div', { class: 'stage' }, spriteRow(v, 4)),
+    el('ul', { class: 'chips' }, (v.tags || []).map((t) => el('li', { text: t }))),
+    el('p', { class: 'blurb', text: v.blurb }),
+    pick);
+}
+
+function section(c) {
+  const cur = current(c.id);
+  const now = el('div', { class: 'now' },
+    el('span', { class: 'label', text: 'Now in the game' }),
+    el('div', { class: 'now-art' },
+      show(pCanvas(cur, 'neutral'), 4, `${c.name} as drawn in the game now`),
+      el('div', { class: 'stage' }, show(sCanvas(cur, 'down', 'idle0'), 4, `${c.name} sprite now`), show(sCanvas(cur, 'side', 'idle0'), 4, `${c.name} sprite now, side`))));
+  const title = el('h2', { id: c.id }, show(pixelText(c.name, '#fff0b0', 3), 1), el('span', { class: 'sr', text: c.name }));
+  title.firstChild.setAttribute('aria-hidden', 'true');
+  return el('section', { class: 'char' },
+    el('div', { class: 'char-head' },
+      el('div', {}, title, el('span', { class: 'role', text: c.role }),
+        el('ul', { class: 'real' }, c.real.map((t) => el('li', { text: t })))),
+      now),
+    el('div', { class: 'cards' }, variantsOf(c.id).map((v, i) => card(c, v, i))));
+}
+
+// ------------------------------------------------------------------ picks UI
+function refresh() {
+  document.querySelectorAll('.card').forEach((cardEl) => {
+    const id = cardEl.dataset.id, charId = VARIANTS.find((v) => v.id === id).char;
+    const on = picks[charId] === id;
+    cardEl.classList.toggle('picked', on);
+    const b = $('.pick', cardEl);
+    b.setAttribute('aria-pressed', String(on));
+    $('.pick-label', b).textContent = on ? 'Picked' : `Pick ${CHARS.find((c) => c.id === charId).name} ${LETTERS[variantsOf(charId).findIndex((v) => v.id === id)]}`;
+  });
+  document.querySelectorAll('.pickchip').forEach((chip) => {
+    const v = pickedVariant(chip.dataset.char);
+    chip.classList.toggle('has', !!v);
+    $('.v', chip).textContent = v ? LETTERS[variantsOf(chip.dataset.char).indexOf(v)] : '-';
+  });
+  $('#summary').value = summaryText();
+  const n = CHARS.filter((c) => picks[c.id]).length;
+  $('#count').textContent = `${n} of ${CHARS.length} picked`;
+}
+function togglePick(charId, id) {
+  if (picks[charId] === id) delete picks[charId]; else picks[charId] = id;
+  savePicks(); refresh();
+}
+async function copyPicks() {
+  const text = summaryText();
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch { /* fall through */ }
+  if (!ok) { const ta = $('#summary'); ta.focus(); ta.select(); try { ok = document.execCommand('copy'); } catch { ok = false; } }
+  const status = $('#status');
+  status.textContent = ok ? 'Copied. Paste it into the chat.' : 'Select the text below and copy it.';
+  clearTimeout(copyPicks.t);
+  copyPicks.t = setTimeout(() => { status.textContent = ''; }, 3500);
+}
+
+// ------------------------------------------------------------------ zoom dialog
+let zoomState = null;
+function openZoom(charId, index) {
+  const c = CHARS.find((x) => x.id === charId);
+  const list = [current(charId), ...variantsOf(charId)];
+  zoomState = { c, list, index: index + 1 };
+  renderZoom();
+  const d = $('#zoom');
+  if (!d.open) d.showModal();
+}
+function renderZoom() {
+  const { c, list, index } = zoomState;
+  const v = list[index];
+  const letter = index === 0 ? 'Now' : LETTERS[index - 1];
+  const body = $('#zoom-body');
+  zoomTickers = [];
+  body.replaceChildren(
+    el('div', { class: 'z-head' },
+      el('h2', { text: `${c.name} ${letter}: ${v.name}` }),
+      el('div', { class: 'z-nav' },
+        el('button', { type: 'button', 'aria-label': 'Previous version', onclick: () => { zoomState.index = (index + list.length - 1) % list.length; renderZoom(); } }, '<'),
+        el('button', { type: 'button', 'aria-label': 'Next version', onclick: () => { zoomState.index = (index + 1) % list.length; renderZoom(); } }, '>'),
+        el('button', { type: 'button', 'aria-label': 'Close', onclick: () => $('#zoom').close() }, 'Close'))),
+    el('div', { class: 'z-exprs' }, EXPRS.map((x) => el('figure', {}, show(pCanvas(v, x), 6, `${c.name} ${x}`), el('figcaption', { text: x })))),
+    el('div', { class: 'z-sprites stage' },
+      ['down', 'side', 'up'].map((view) => el('figure', {}, show(sCanvas(v, view, 'idle0'), 8, `${c.name} ${view}`), el('figcaption', { text: view }))),
+      el('figure', {}, animated(walkFrames(v, 'down'), 8, `${c.name} walking down`, zoomTickers), el('figcaption', { text: 'walk' })),
+      el('figure', {}, animated(walkFrames(v, 'side'), 8, `${c.name} walking right`, zoomTickers), el('figcaption', { text: 'walk, side' }))),
+    index > 0 ? el('p', { class: 'blurb', text: v.blurb }) : el('p', { class: 'blurb', text: 'The art as it is in the game today, for comparison.' }),
+    index > 0 ? el('button', { class: 'pick wide', type: 'button', 'aria-pressed': String(picks[c.id] === v.id), onclick: () => { togglePick(c.id, v.id); renderZoom(); } },
+      picks[c.id] === v.id ? 'Picked (click to undo)' : `Pick ${c.name} ${letter}`) : null);
+}
+
+// ------------------------------------------------------------------ boot
+function applyStage(name) {
+  const key = STAGES[name] ? name : 'forest';
+  document.documentElement.style.setProperty('--stage', STAGES[key]);
+  document.querySelectorAll('.stage-opt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.stage === key)));
+  safe.set(STAGE_KEY, key);
+}
+
+function boot() {
+  const app = $('#app');
+  app.append(...CHARS.map(section));
+  const bar = $('#picks');
+  CHARS.forEach((c) => bar.append(el('a', { class: 'pickchip', href: '#' + c.id, 'data-char': c.id },
+    el('span', { class: 'n', text: c.name }), el('span', { class: 'v', text: '-' }))));
+  $('#copy').addEventListener('click', copyPicks);
+  $('#clear').addEventListener('click', () => { picks = {}; savePicks(); refresh(); });
+  document.querySelectorAll('.stage-opt').forEach((b) => b.addEventListener('click', () => applyStage(b.dataset.stage)));
+  applyStage(safe.get(STAGE_KEY) || 'forest');
+  $('#zoom').addEventListener('click', (e) => { if (e.target === $('#zoom')) $('#zoom').close(); });
+  $('#zoom').addEventListener('keydown', (e) => {
+    if (!zoomState) return;
+    if (e.key === 'ArrowRight') { zoomState.index = (zoomState.index + 1) % zoomState.list.length; renderZoom(); }
+    if (e.key === 'ArrowLeft') { zoomState.index = (zoomState.index + zoomState.list.length - 1) % zoomState.list.length; renderZoom(); }
+  });
+  refresh();
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) { let n = 0; setInterval(() => { n++; tickers.forEach((t) => t(n)); zoomTickers.forEach((t) => t(n)); }, 130); }
+}
+boot();
+</script>
+  <script>
+    (function () {
+      var slot = document.getElementById('title-slot');
+      var c = pixelText('FACE TREATMENTS', '#fff0b0', 4);
+      c.setAttribute('aria-hidden', 'true');
+      slot.append(c);
+    })();
+  </script>
+</body>
+</html>

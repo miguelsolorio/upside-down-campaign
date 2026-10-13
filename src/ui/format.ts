@@ -1,0 +1,180 @@
+// Pure helpers for the UI: bulbs, clocks, typewriter, fades, dice. No DOM, no audio, so Node can test them.
+import type { StatKey } from '../core/types.ts';
+
+export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+// ---------------------------------------------------------------- HP bulbs and pips
+/** Most bulbs the HUD string shows. Past this, each bulb stands for more than 10 HP. */
+export const MAX_BULBS = 16;
+
+/** One bulb per 10 max HP, rounded up, at least one. */
+export function bulbCount(hpMax: number, cap: number = MAX_BULBS): number {
+  if (!(hpMax > 0)) return 1;
+  return Math.max(1, Math.min(cap, Math.ceil(hpMax / 10)));
+}
+
+/** How lit bulb i of n is, 0..1. Each bulb owns 10 HP, the last one may own fewer. Capped strings share HP evenly. */
+export function bulbFill(hp: number, hpMax: number, i: number, n: number): number {
+  const per = n * 10 >= hpMax ? 10 : hpMax / n;
+  const start = i * per;
+  const len = Math.min(per, hpMax - start);
+  if (len <= 0) return 0;
+  return clamp01((hp - start) / len);
+}
+
+/** Below this share of max HP the bulbs flicker. */
+export const LOW_HP = 0.3;
+export function isLowHp(hp: number, hpMax: number): boolean {
+  return hp > 0 && hpMax > 0 && hp / hpMax <= LOW_HP;
+}
+
+/** Whether a lit bulb is dark on this frame while HP is low. About one frame in five, never when flashing is reduced. */
+export function bulbDark(t: number, i: number, low: boolean, reduceFlashing: boolean): boolean {
+  if (!low || reduceFlashing) return false;
+  return ((((t >> 2) * 7) + i * 13) % 5) === 0;
+}
+
+/** Lit pips on a small HP bar. Any HP at all keeps one pip lit. */
+export function pipCount(hp: number, hpMax: number, pips = 4): number {
+  if (hp <= 0 || hpMax <= 0) return 0;
+  return Math.max(1, Math.min(pips, Math.ceil((hp / hpMax) * pips - 1e-9)));
+}
+
+// ---------------------------------------------------------------- clocks and numbers
+/** Frames to m:ss. Seconds are floored and minutes do not wrap. */
+export function formatTime(frames: number, fps = 60): string {
+  const s = Math.max(0, Math.floor(frames / fps));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/** A number that climbs to its target over `dur` frames, starting at frame `from`. */
+export function countUp(target: number, t: number, from: number, dur: number): number {
+  return Math.round(target * clamp01((t - from) / dur));
+}
+
+// ---------------------------------------------------------------- typewriter
+/** How many characters are showing after `frames` frames of typing. */
+export function typeCount(frames: number, total: number, cps = 30, fps = 60): number {
+  return Math.max(0, Math.min(total, Math.floor((frames * cps) / fps)));
+}
+
+/** Frames until the whole line is showing. */
+export function typeFrames(total: number, cps = 30, fps = 60): number {
+  return Math.ceil((total * fps) / cps);
+}
+
+/** A speech blip on every second character, never on a space. n is how many characters are showing. */
+export function wantsBlip(n: number, ch: string): boolean {
+  return n % 2 === 0 && ch.trim() !== '';
+}
+
+/** Splits wrapped lines into pages that fit the box. Scripts are written to fit, so this is usually one page. */
+export function pagesOf(lines: string[], rows = 3): string[][] {
+  const out: string[][] = [];
+  for (let i = 0; i < lines.length; i += rows) out.push(lines.slice(i, i + rows));
+  return out.length ? out : [['']];
+}
+
+// ---------------------------------------------------------------- fades
+/** 0..1 across a fade in, a hold and a fade out. */
+export function fadeLevel(t: number, fadeIn: number, hold: number, fadeOut: number): number {
+  if (t <= 0) return 0;
+  if (t < fadeIn) return t / fadeIn;
+  if (t < fadeIn + hold) return 1;
+  const k = (t - fadeIn - hold) / fadeOut;
+  return k >= 1 ? 0 : 1 - k;
+}
+
+/** Picks a step from a color ramp. a is 0..1. */
+export function rampIndex(len: number, a: number): number {
+  return Math.round(clamp01(a) * (len - 1));
+}
+
+// ---------------------------------------------------------------- dice
+/** Frames at which the tumbling die shows a new face. The gaps grow, so the die seems to slow down. */
+export function tumbleTicks(land: number): number[] {
+  const out: number[] = [];
+  let t = 0;
+  let gap = 3;
+  for (;;) {
+    t += Math.round(gap);
+    if (t >= land - 4) return out;
+    out.push(t);
+    gap *= 1.18;
+  }
+}
+
+function mix(k: number, seed: number): number {
+  let h = Math.imul(k + 1, 0x9e3779b1) ^ Math.imul(seed + 7, 0x85ebca6b);
+  h ^= h >>> 15;
+  h = Math.imul(h, 0x2c1b3c6d);
+  h ^= h >>> 12;
+  return (h >>> 0) % 20 + 1;
+}
+
+/** The face a die shows at a frame: random while tumbling, never the same twice in a row, `roll` once landed. */
+export function dieFace(frame: number, roll: number, seed: number, land: number): number {
+  if (frame >= land) return roll;
+  const k = tumbleTicks(land).filter((t) => t <= frame).length;
+  const away = (n: number, a: number): number => {
+    let v = n;
+    while (v === a || v === roll) v = (v % 20) + 1;
+    return v;
+  };
+  // Never the answer before the die lands, never the same face twice in a row.
+  let face = away(mix(0, seed), -1);
+  for (let i = 1; i <= k; i++) face = away(mix(i, seed), face);
+  return face;
+}
+
+/** The second die when rolling with advantage: 1..roll, so the kept die is always the higher one. */
+export function otherDie(roll: number, seed = 0): number {
+  const r = Math.max(1, Math.min(20, Math.round(roll)));
+  return 1 + ((Math.imul(r + seed * 31 + 11, 0x9e3779b1) >>> 0) % r);
+}
+
+// ---------------------------------------------------------------- title wall
+/** Which letters of Joyce's wall are lit at frame t: R, then U, then N, then all three, then dark, on a 330 frame loop. */
+export function wallLit(t: number): string {
+  const p = ((t % 330) + 330) % 330;
+  if (p < 50) return '';
+  if (p < 90) return 'R';
+  if (p < 130) return 'U';
+  if (p < 170) return 'N';
+  if (p < 260) return 'RUN';
+  return '';
+}
+
+// ---------------------------------------------------------------- stats and settings
+export const STAT_ORDER: StatKey[] = ['hp', 'mp', 'atk', 'def', 'spd'];
+const STAT_LABEL: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: 'ATK', def: 'DEF', spd: 'SPD' };
+
+/** Gains in a fixed order, zero and missing stats left out. */
+export function gainRows(gains: Partial<Record<StatKey, number>>): { label: string; amount: number }[] {
+  const out: { label: string; amount: number }[] = [];
+  for (const k of STAT_ORDER) {
+    const n = gains[k] ?? 0;
+    if (n > 0) out.push({ label: STAT_LABEL[k], amount: n });
+  }
+  return out;
+}
+
+/** Volume steps of one tenth, clamped to 0..1. */
+export function stepVolume(v: number, dir: -1 | 1): number {
+  return Math.round(clamp01(v + dir * 0.1) * 10) / 10;
+}
+export function volSegments(v: number): number {
+  return Math.round(clamp01(v) * 10);
+}
+
+const SHAKE_STEPS = [0, 0.5, 1];
+/** Screen shake cycles off, half, full. Anything in between snaps to the nearest step first. */
+export function cycleShake(v: number, dir: -1 | 1): number {
+  let near = 0;
+  SHAKE_STEPS.forEach((s, i) => { if (Math.abs(s - v) < Math.abs((SHAKE_STEPS[near] as number) - v)) near = i; });
+  const n = SHAKE_STEPS.length;
+  return SHAKE_STEPS[(near + dir + n) % n] as number;
+}
+export function shakeLabel(v: number): string {
+  return v <= 0 ? 'OFF' : v < 1 ? 'HALF' : 'FULL';
+}

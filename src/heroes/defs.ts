@@ -1,0 +1,160 @@
+// Hero data for the four Level 1 heroes. Pure data and tiny helpers. The moves themselves live in
+// mike.ts, dustin.ts, lucas.ts and eleven.ts and read their numbers from here.
+import type { HeroId, SfxId, Utility } from '../core/types.ts';
+import { CHAR_NAMES } from '../core/config.ts';
+import { STAT_KEYS, emptyStats } from '../progression/xp.ts';
+import type { Stats } from '../progression/xp.ts';
+import { TALENTS, hasTalent } from '../progression/talents.ts';
+import type { Talent } from '../progression/talents.ts';
+
+export interface AbilityDef {
+  name: string;
+  /** MP cost, 0 for free. */
+  mp: number;
+  /** Frames before this slot can fire again. */
+  cd: number;
+  /** Damage multiplier of one hit. 0 means the move deals none. */
+  power: number;
+  /** Animation length in frames. */
+  dur: number;
+  /** Frame, counted from the press, when the effect lands. */
+  at: number;
+  /** Move speed multiplier while the animation plays. */
+  lock: number;
+  /** Reach in px. Arc radius, shot range, beam length or throw distance, depending on the move. */
+  reach: number;
+  /** Knockback speed in px per frame. */
+  kb: number;
+  sfx: SfxId;
+  /** Move-specific numbers: half angles, lifetimes, radii. */
+  x: Record<string, number>;
+}
+
+export interface DashDef {
+  name: string;
+  /** Frames from one dash start to the next. */
+  cd: number;
+  /** Frames of invulnerability, from the first frame of the dash. */
+  iframes: number;
+  dur: number;
+  /** px per frame while dashing. */
+  speed: number;
+}
+
+export interface HeroDef {
+  id: HeroId;
+  name: string;
+  role: string;
+  /** Lv 1 stats. hp and mp are maxima. */
+  base: Stats;
+  /** Fixed gain per level. Fractions accumulate: the stat at level L is base + floor(growth x (L - 1)). */
+  growth: Stats;
+  /** d20 bonus points are spread over the stats by these weights. */
+  weights: Stats;
+  /** px per frame at SPD 1 level. */
+  speed: number;
+  /** Added to the 5 percent base crit chance. */
+  crit: number;
+  utilities: Utility[];
+  basic: AbilityDef;
+  special: AbilityDef;
+  dash: DashDef;
+  talent: Talent;
+}
+
+const st = (hp: number, mp: number, atk: number, def: number, spd: number): Stats => ({ hp, mp, atk, def, spd });
+
+const DASH: DashDef = { name: 'Dash', cd: 42, iframes: 12, dur: 12, speed: 3.2 };
+
+export const BASE_CRIT = 0.05;
+
+export const HERO_DEFS: Record<HeroId, HeroDef> = {
+  mike: {
+    id: 'mike', name: CHAR_NAMES.mike, role: 'Paladin',
+    base: st(48, 16, 9, 5, 8), growth: st(7, 2, 1.5, 1.2, 0.4), weights: st(3, 1, 3, 3, 0),
+    speed: 0.9, crit: 0, utilities: [],
+    basic: {
+      name: 'Bat', mp: 0, cd: 11, power: 1, dur: 14, at: 6, lock: 0.35, reach: 28, kb: 2.4, sfx: 'swing',
+      // half: arc half-angle in degrees. The third swing is wider, harder and stuns.
+      x: { half: 65, chainGap: 18, thirdPower: 1.35, thirdReach: 5, thirdHalf: 15, thirdKb: 1.8, thirdCd: 26, thirdDur: 20, thirdAt: 8, stun: 30 },
+    },
+    special: {
+      name: 'DM screen', mp: 6, cd: 30, power: 0, dur: 18, at: 8, lock: 0.2, reach: 20, kb: 0, sfx: 'shield',
+      // life: frames the screen stands. half: radius in px of the dome the art draws and the sim blocks with.
+      x: { life: 300, half: 15 },
+    },
+    dash: DASH, talent: TALENTS.mike,
+  },
+  dustin: {
+    id: 'dustin', name: CHAR_NAMES.dustin, role: 'Bard',
+    base: st(38, 24, 7, 3, 9), growth: st(5, 3, 1.2, 0.8, 0.5), weights: st(2, 3, 2, 1, 2),
+    speed: 1, crit: 0, utilities: ['burn', 'compass'],
+    basic: {
+      name: 'Candy lure', mp: 0, cd: 36, power: 1.2, dur: 16, at: 6, lock: 0.6, reach: 76, kb: 2.5, sfx: 'lure',
+      // land: flight frames. blast: radius px. lure: frames the bait lasts. pull: radius px enemies notice it.
+      // assist: auto-aim range px. cone: auto-aim half angle in degrees.
+      x: { land: 24, blast: 20, lure: 180, pull: 64, assist: 110, cone: 40 },
+    },
+    special: {
+      name: 'Farrah spray', mp: 8, cd: 40, power: 0.45, dur: 30, at: 8, lock: 0.25, reach: 54, kb: 0.6, sfx: 'flame',
+      // half: cone half angle in degrees. life and tick in frames. burn: burn frames. burnTick: frames between burn ticks.
+      x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30 },
+    },
+    dash: DASH, talent: TALENTS.dustin,
+  },
+  lucas: {
+    id: 'lucas', name: CHAR_NAMES.lucas, role: 'Ranger',
+    base: st(40, 18, 8, 3, 10), growth: st(5.5, 2, 1.4, 0.8, 0.6), weights: st(1, 1, 3, 1, 3),
+    speed: 1, crit: 0.03, utilities: ['shoot'],
+    basic: {
+      name: 'Wrist rocket', mp: 0, cd: 22, power: 1, dur: 12, at: 4, lock: 0.6, reach: 152, kb: 2, sfx: 'rock',
+      // speed: px per frame. r: hit radius px.
+      x: { speed: 3.8, r: 5 },
+    },
+    special: {
+      name: 'Triple shot', mp: 5, cd: 28, power: 0.85, dur: 16, at: 8, lock: 0.45, reach: 130, kb: 2, sfx: 'rock',
+      // fan: degrees between shots. n: shots.
+      x: { speed: 3.8, r: 5, fan: 18, n: 3 },
+    },
+    dash: DASH, talent: TALENTS.lucas,
+  },
+  eleven: {
+    id: 'eleven', name: CHAR_NAMES.eleven, role: 'Sorcerer',
+    base: st(34, 28, 8, 2, 8), growth: st(4.5, 3.5, 1.5, 0.5, 0.4), weights: st(1, 4, 3, 0, 1),
+    speed: 0.9, crit: 0.02, utilities: ['push', 'sense'],
+    basic: {
+      name: 'Push', mp: 0, cd: 24, power: 1, dur: 14, at: 5, lock: 0.5, reach: 38, kb: 5.2, sfx: 'push',
+      // half: cone half angle in degrees. flip*: the Lv 3 talent multipliers and extra reach.
+      x: { half: 55, stagger: 16, flipPower: 1.4, flipKb: 1.6, flipReach: 8 },
+    },
+    special: {
+      name: 'Mind Blast', mp: 8, cd: 40, power: 2.4, dur: 26, at: 10, lock: 0.15, reach: 132, kb: 3.2, sfx: 'beam',
+      // width: beam half width px. life: frames the beam is drawn.
+      x: { width: 8, life: 12 },
+    },
+    dash: DASH, talent: TALENTS.eleven,
+  },
+};
+
+export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
+
+/** The stat at `level`: base, plus floored fixed growth, plus the d20 bonus received so far (in stat units). */
+export function statsAt(def: HeroDef, level: number, bonus: Stats = emptyStats()): Stats {
+  const out = emptyStats();
+  for (const k of STAT_KEYS) out[k] = def.base[k] + Math.floor(def.growth[k] * (level - 1) + 1e-9) + bonus[k];
+  return out;
+}
+
+/** Fixed gain when going from `level` to `level + 1`, before the d20 bonus. */
+export function fixedGain(def: HeroDef, level: number): Stats {
+  const a = statsAt(def, level);
+  const b = statsAt(def, level + 1);
+  const out = emptyStats();
+  for (const k of STAT_KEYS) out[k] = b[k] - a[k];
+  return out;
+}
+
+/** Crit chance 0..1: 5 percent, the hero's bonus and Lucas's Sharp eye. */
+export function critChance(def: HeroDef, level: number): number {
+  return BASE_CRIT + def.crit + (def.id === 'lucas' && hasTalent('lucas', level) ? 0.15 : 0);
+}

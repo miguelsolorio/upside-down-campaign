@@ -1,0 +1,30 @@
+// PUBLIC API of the simulation. Owner: Sim agent.
+// Pure TypeScript: no DOM, no gfx, no audio. Sound is requested with { t: 'sfx' } events.
+//
+// Conventions the other modules can rely on:
+// - 60 Hz. step() returns the events of that tick. Calls made between ticks (recruit, spawnGroup, openProp,
+//   healParty, dev.*) queue their events and sounds, and the next step() returns them.
+// - Tile spawns put an actor's feet at x = tx * 16 + 8, y = ty * 16 + 12. A prop's tx, ty is its top-left tile,
+//   w and h are in px (default 16 by 16, van 48 by 32). Solid by default: log, gate, van, crate, floodlight.
+//   Props start 'closed', lights and floodlights start 'off'. A log defaults to pushBy 'push', a target to hitBy 'shoot'.
+// - skipSpawns drops enemies, items and npcs by id. openProps opens gates and logs and lights targets.
+//   openProp(id) clears a log, opens a gate, lights a target, and switches lights and floodlights on (state 'open').
+// - xp (PartySeed, HeroSnapshot, PartyHud) is the XP carried toward the next level, not a running total.
+//   party() snapshots also carry the d20 bonus as an extra `bonus` field. Pass them back as PartySeeds to keep stats.
+// - Hero shots fly over terrain (the creek is solid) but stop at solid props. Enemy darts stop at trees and walls.
+// - Dormant enemies are not in view().actors but do count in enemiesAlive(). spawnGroup() wakes them already hunting.
+// - view().fx positions are effect centers in world px. Projectiles and slashes sit at chest height, rings and dust at
+//   the feet. For cone effects (slash, push, flame) w is the reach and h the chord width at the far edge. A beam has
+//   w as length and h as width. 'shield' is the DM screen: w across, h thick, angle is the way Mike faces.
+//   'candy' is the lobbed bar in flight (h is its height off the ground) and then the bait on the ground (h is 0).
+// - view().floaters start at x, y and the renderer rises them as t grows. Enemies show 'ko' for about 22 frames
+//   after death. A KO'd hero lies where it fell ('ko' anim) for about 100 frames.
+// - Shake and flash settings come in through setShakeScale() and setReduceFlashing().
+import type { Sim, SimOptions } from '../core/types.ts';
+import { buildSim } from './sim.ts';
+
+export { setShakeScale, setReduceFlashing } from './view.ts';
+
+export function createSim(opts: SimOptions): Sim {
+  return buildSim(opts).sim;
+}

@@ -164,7 +164,7 @@ export function drawControlsCorner(ctx: Ctx, fade = 0): void {
 }
 
 // ---------------------------------------------------------------- night light and flash
-/** Every pool of light in view, in screen px: stage lamps, lit windows, lit Christmas lights, floodlights and the lantern. */
+/** Every pool of light in view, in screen px: stage lamps, lit windows, lit Christmas lights, floodlights, the lantern, a lit fire-door box and burning vines. */
 function glowLights(stage: Stage, view: SimView, cam: Camera, flicker: number): Glow[] {
   const sx = (wx: number): number => wx - cam.x + view.shake.x;
   const sy = (wy: number): number => wy - cam.y + VIEW_TOP + view.shake.y;
@@ -178,6 +178,9 @@ function glowLights(stage: Stage, view: SimView, cam: Camera, flicker: number): 
     if (p.kind === 'lights' && on) out.push({ x: sx(cx), y: sy(cy), r: 40, flicker: 0.4 + flicker * 0.6 });
     else if (p.kind === 'floodlight' && p.state !== 'off') out.push({ x: sx(cx), y: sy(cy - 6), r: 64, k: 1.15, flicker: 0.1 + flicker * 0.4 });
     else if (p.kind === 'target') out.push({ x: sx(cx), y: sy(cy), r: on ? 34 : 22, flicker: 0.3 });
+    // The fire-door box glows once it is lit, and vines throw a flickering light while they burn.
+    else if (p.kind === 'firebox' && on) out.push({ x: sx(cx), y: sy(cy), r: 30, k: 1.1, flicker: 0.5 + flicker * 0.6 });
+    else if (p.kind === 'vines' && p.state === 'lit') out.push({ x: sx(cx), y: sy(cy), r: 36, k: 1.2, flicker: 0.8 + flicker * 0.5 });
   }
   return out;
 }

@@ -9,7 +9,10 @@ export type TileName =
   | 'fence' | 'labfence'
   | 'housewall' | 'houseroof' | 'housedoor' | 'shedwall' | 'shedroof'
   | 'lamp' | 'mailbox'
-  | 'labfloor' | 'labfloor2' | 'hazard' | 'labwall' | 'labcap' | 'vent' | 'pipe' | 'glass' | 'cage';
+  | 'labfloor' | 'labfloor2' | 'hazard' | 'labwall' | 'labcap' | 'vent' | 'pipe' | 'glass' | 'cage'
+  // Lab dressing, so each room has its own look. Floors, cables, drains, stains and creeping vines are walkable.
+  | 'locker' | 'bench' | 'cabinet' | 'shelf' | 'cable' | 'drain' | 'stain' | 'vines' | 'mass'
+  | 'tilegreen' | 'carpet' | 'wallsign' | 'plate';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -50,6 +53,23 @@ export const TILES: Record<string, TileDef> = {
   'i': { name: 'pipe', solid: true },
   'G': { name: 'glass', solid: true },
   'c': { name: 'cage', solid: true },
+  // Lab dressing. A locker, bench, cabinet or shelf is furniture you walk around. A mass is Upside Down growth
+  // that has swollen out of the wall. Vines creep across the floor and can be walked through.
+  'L': { name: 'locker', solid: true },
+  'B': { name: 'bench', solid: true },
+  'C': { name: 'cabinet', solid: true },
+  'N': { name: 'shelf', solid: true },
+  'q': { name: 'cable', solid: false },
+  'D': { name: 'drain', solid: false },
+  'x': { name: 'stain', solid: false },
+  'U': { name: 'vines', solid: false },
+  'M': { name: 'mass', solid: true },
+  // Room floors: green tile for the animal lab, dark carpet for the records wing, a metal plate under a hazard.
+  'a': { name: 'tilegreen', solid: false },
+  'e': { name: 'carpet', solid: false },
+  'E': { name: 'plate', solid: false },
+  // A wall face with a painted sign or number on it. Solid like any wall.
+  'Y': { name: 'wallsign', solid: true },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

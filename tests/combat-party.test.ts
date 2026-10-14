@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixedGain, HERO_DEFS } from '../src/heroes/index.ts';
 import { POINT_VALUE, STAT_KEYS, xpToNext } from '../src/progression/index.ts';
-import { agent, inp, makeSim, makeWhite, ofType, press, rat, run, sfxIds, tc, tf } from './sim-helpers.ts';
+import { agent, arena, inp, makeSim, makeWhite, ofType, press, rat, run, sfxIds, tc, tf } from './sim-helpers.ts';
+import { footBlocked } from '../src/combat/space.ts';
+import { hurtHero } from '../src/combat/damage.ts';
 import type { SimSpawn, SimEvent, Sim, LevelUpInfo } from '../src/core/types.ts';
 import { SWAP_COOLDOWN, SWAP_LOCK } from '../src/combat/party.ts';
 
@@ -107,6 +109,145 @@ test('the bench trails the active hero as followers with no collision', () => {
   }
   run(sim, 120);
   for (const h of sim.view().actors.filter((a) => a.kind === 'hero')) assert.equal(h.anim, 'idle');
+});
+
+/** The leader's feet, and the feet of every hero who is not standing exactly on them. */
+function standing(sim: Sim): { lead: { x: number; y: number }; others: { x: number; y: number }[] } {
+  const lead = sim.heroPos();
+  const others = sim.view().actors.filter((a) => a.kind === 'hero').map((a) => ({ x: a.x, y: a.y }))
+    .filter((q) => Math.hypot(q.x - lead.x, q.y - lead.y) > 0.01);
+  return { lead, others };
+}
+
+test('stopping: nobody steps back. Walking or standing they keep the same gap, and the ones further back only close up', () => {
+  const sim = makeSim({ start: { x: tc(5), y: tf(8) } });
+  const others = (): { id: string; x: number; y: number }[] => {
+    const active = sim.view().hud.party.find((m) => m.active)?.id;
+    return sim.view().actors.filter((a) => a.kind === 'hero' && a.id !== active).map((a) => ({ id: a.id, x: a.x, y: a.y }));
+  };
+  const gapOf = (f: { x: number; y: number }): number => Math.hypot(f.x - sim.heroPos().x, f.y - sim.heroPos().y);
+  // A steady walk right. The nearest follower already keeps its gap (14 px) rather than the 11 px his trail would give.
+  run(sim, 120, inp({ mx: 1 }));
+  const walking = others().map(gapOf).sort((p, q) => p - q);
+  assert.ok(walking[0]! >= 13.5 && walking[0]! <= 17, `the nearest follower walks ${walking[0]!.toFixed(1)} px behind`);
+  // He stops. For the next three seconds no follower may move away from him or back along where he came from.
+  let prev = others();
+  let moves = 0;
+  for (let f = 0; f < 180; f++) {
+    sim.step(inp());
+    const now = others();
+    for (const o of now) {
+      const before = prev.find((q) => q.id === o.id)!;
+      assert.ok(o.x >= before.x - 1e-6, `frame ${f}: ${o.id} stepped back from ${before.x.toFixed(2)} to ${o.x.toFixed(2)}`);
+      assert.ok(gapOf(o) <= gapOf(before) + 1e-6, `frame ${f}: ${o.id} moved away from the standing leader (${gapOf(before).toFixed(2)} to ${gapOf(o).toFixed(2)})`);
+      if (Math.hypot(o.x - before.x, o.y - before.y) > 0.01) moves++;
+    }
+    prev = now;
+  }
+  const rest = others().map(gapOf).sort((p, q) => p - q);
+  assert.ok(rest[0]! >= 13.5, `the nearest follower stops ${rest[0]!.toFixed(1)} px behind, not on top of him`);
+  assert.ok(rest[1]! >= 18.5, `and the next one ${rest[1]!.toFixed(1)} px behind`);
+  assert.ok(rest[1]! <= 24, 'close enough to stack up behind him');
+  assert.ok(moves > 0, 'the one further back did still close up');
+});
+
+test('standing still: the followers wait just behind the leader, stacked close together, and never on top of him', () => {
+  const sim = makeSim({ start: { x: tc(5), y: tf(8) } });
+  run(sim, 60, inp({ mx: 1 }));
+  run(sim, 200);
+  const { lead, others } = standing(sim);
+  assert.equal(others.length, 2, 'neither follower is hidden on his feet');
+  for (const o of others) {
+    assert.ok(o.x < lead.x - 10 && o.x > lead.x - 30, `a follower at ${o.x.toFixed(1)} should be close behind (left of) the leader at ${lead.x.toFixed(1)}`);
+    assert.ok(Math.abs(o.y - lead.y) < 3, 'in a line with him');
+  }
+  assert.ok(Math.abs(others[0]!.x - others[1]!.x) <= 12, 'and stacked against each other');
+});
+
+test('standing still: "behind" is the way he walked, whichever of the four that was', () => {
+  const cases: [string, Partial<Parameters<typeof inp>[0]>, (o: { x: number; y: number }, l: { x: number; y: number }) => boolean][] = [
+    ['right', { mx: 1 }, (o, l) => o.x < l.x - 10 && Math.abs(o.y - l.y) < 3],
+    ['left', { mx: -1 }, (o, l) => o.x > l.x + 10 && Math.abs(o.y - l.y) < 3],
+    ['down', { my: 1 }, (o, l) => o.y < l.y - 10 && Math.abs(o.x - l.x) < 3],
+    ['up', { my: -1 }, (o, l) => o.y > l.y + 10 && Math.abs(o.x - l.x) < 3],
+  ];
+  for (const [name, input, behind] of cases) {
+    const sim = makeSim({ start: { x: tc(12), y: tf(8) } });
+    run(sim, 40, inp(input));
+    run(sim, 200);
+    const { lead, others } = standing(sim);
+    assert.equal(others.length, 2, `walked ${name}: nobody is on his feet`);
+    for (const o of others) assert.ok(behind(o, lead), `walked ${name}: a follower at ${o.x.toFixed(1)},${o.y.toFixed(1)} is not behind the leader at ${lead.x.toFixed(1)},${lead.y.toFixed(1)}`);
+    for (const h of sim.view().actors.filter((a) => a.kind === 'hero')) assert.equal(h.anim, 'idle', `walked ${name}: everyone has stopped walking`);
+    for (const h of sim.view().actors.filter((a) => a.kind === 'hero')) assert.equal(h.dir, name, `walked ${name}: everyone faces that way`);
+  }
+});
+
+test('standing still: a knockback does not change which side is behind him', () => {
+  const { sim, s } = makeWhite({ start: { x: tc(12), y: tf(8) } });
+  run(sim, 40, inp({ mx: 1 }));
+  run(sim, 100);
+  const lead = s.heroes[0]!;
+  hurtHero(s, lead, lead.x + 20, lead.y, 1, 10);
+  run(sim, 120);
+  const { lead: at, others } = standing(sim);
+  assert.equal(others.length, 2);
+  for (const o of others) assert.ok(o.x < at.x - 10, `a follower at ${o.x.toFixed(1)} should still be left of the leader at ${at.x.toFixed(1)}`);
+});
+
+test('standing still: they walk to their spots at a steady pace and never sprint, even after a swap', () => {
+  const sim = makeSim({ start: { x: tc(12), y: tf(8) } });
+  const last = new Map<string, { x: number; y: number }>();
+  let fastest = 0;
+  const watch = (): void => {
+    for (const a of sim.view().actors.filter((q) => q.kind === 'hero')) {
+      const before = last.get(a.id);
+      if (before && a.id !== sim.view().hud.party.find((m) => m.active)?.id) fastest = Math.max(fastest, Math.hypot(a.x - before.x, a.y - before.y));
+      last.set(a.id, { x: a.x, y: a.y });
+    }
+  };
+  const go = (n: number, input = inp()): void => { for (let i = 0; i < n; i++) { sim.step(input); watch(); } };
+  go(60, inp({ mx: 1 }));
+  go(80);
+  press(sim, { swapDelta: 1 });
+  last.clear();
+  go(120);
+  go(40, inp({ my: 1 }));
+  go(80);
+  assert.ok(fastest <= 2.01, `a follower moved ${fastest.toFixed(2)} px in one frame`);
+});
+
+test('standing against a wall or in a one-tile corridor: nobody rests inside a wall or on top of him', () => {
+  // Against the west wall, with "behind" being that wall: they take the free spots beside him instead.
+  const wall = makeWhite({ start: { x: tc(1), y: tf(8) } });
+  run(wall.sim, 200);
+  for (const h of wall.s.heroes) assert.ok(!footBlocked(wall.s, h.x, h.y), `${h.id} is standing in the wall at ${h.x.toFixed(1)},${h.y.toFixed(1)}`);
+  const w = standing(wall.sim);
+  assert.equal(w.others.length, 2);
+  assert.ok(w.others.every((o) => Math.hypot(o.x - w.lead.x, o.y - w.lead.y) >= 8), 'and none of them is hidden on his feet');
+
+  // A corridor one tile wide, running north and south, walked up: behind him is open, and nobody is in a wall.
+  const marks: Record<string, string> = {};
+  for (let y = 2; y <= 13; y++) { marks[`9,${y}`] = 'T'; marks[`11,${y}`] = 'T'; }
+  const hall = makeWhite({ grid: arena(24, 16, marks), start: { x: tc(10), y: tf(10) } });
+  run(hall.sim, 60, inp({ my: -1 }));
+  run(hall.sim, 200);
+  for (const h of hall.s.heroes) assert.ok(!footBlocked(hall.s, h.x, h.y), `${h.id} is inside the corridor wall at ${h.x.toFixed(1)},${h.y.toFixed(1)}`);
+  const c = standing(hall.sim);
+  assert.ok(c.others.length === 2 && c.others.every((o) => o.y > c.lead.y + 10), 'they wait behind him, down the corridor');
+});
+
+test('standing still, then walking again: the followers leave their spots and trail him', () => {
+  const sim = makeSim({ start: { x: tc(5), y: tf(8) } });
+  run(sim, 100);
+  run(sim, 90, inp({ mx: 1 }));
+  const { lead, others } = standing(sim);
+  assert.equal(others.length, 2);
+  for (const o of others) {
+    assert.ok(o.x < lead.x - 5, `a follower at ${o.x.toFixed(1)} should be behind the leader at ${lead.x.toFixed(1)}`);
+    assert.ok(Math.abs(o.y - lead.y) < 6, 'on his path');
+  }
+  assert.ok(sim.view().actors.filter((a) => a.kind === 'hero' && Math.abs(a.x - lead.x) > 0.01).every((a) => a.anim === 'walk'));
 });
 
 test('KO: hp 0 drops the hero, the next living hero swaps in, and the last KO ends the run', () => {

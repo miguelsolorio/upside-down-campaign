@@ -9,6 +9,7 @@ import { drawAlphabetWall, drawLogo } from './logo.ts';
 import { drawFx } from './fx.ts';
 import { PAL } from './palette.ts';
 import { drawLabProps } from './sheet_lab.ts';
+import { drawLab2Overlays, drawLab2Props } from './sheet_lab2.ts';
 import type { Page } from './sheet_a.ts';
 
 function bg(ctx: Ctx, color: keyof typeof PAL): void {
@@ -18,9 +19,11 @@ function bg(ctx: Ctx, color: keyof typeof PAL): void {
 
 const props: Page = {
   title: 'PROPS ITEMS ICONS',
-  subs: 2,
+  subs: 4,
   draw(ctx, t, sub) {
     if (sub === 1) { drawLabProps(ctx, t); return; }
+    if (sub === 2) { drawLab2Props(ctx, t); return; }
+    if (sub === 3) { drawLab2Overlays(ctx, t); return; }
     bg(ctx, 'pine2');
     drawText(ctx, 'PROPS, ITEMS AND ICONS', 4, 3, 'white', { shadow: true });
     const row = (kind: PropKind, states: PropState[], x: number, y: number, w: number, h: number, gap: number): void => {

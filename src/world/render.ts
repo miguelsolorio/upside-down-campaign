@@ -1,14 +1,16 @@
-// Drawing for the play scene: the world pass (with the light pools at night), the flash, the scare figure and the small overlays.
+// Drawing for the play scene: the world pass (with the light pools at night, the floor hazards and the camera cones), the
+// flash, the scare figure and the small overlays.
 // World-space draws assume the caller translated by (-camX, VIEW_TOP - camY); drawWorld does that itself.
 import type { ActorView, Floater, HeroId, PropView, SimView, Vec2 } from '../core/types.ts';
 import type { Camera } from '../core/camera.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
+import { isSolidTile } from '../core/tiles.ts';
 import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped, dither } from '../ui/kit.ts';
 import { clamp01 } from '../ui/format.ts';
-import { drawActor, drawFx, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -88,7 +90,22 @@ function drawBoxes(ctx: Ctx, view: SimView): void {
   for (const p of view.props) ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, p.h - 1);
 }
 
-/** Stage, ground items, then props and actors in one painter's pass by their bottom edge, then fx and floaters. */
+/** Solid-tile lookups for the camera cones, one per stage grid, so a cone stops at the first wall it meets. */
+const solidLookups = new WeakMap<Stage, (tx: number, ty: number) => boolean>();
+function solidAt(stage: Stage): (tx: number, ty: number) => boolean {
+  let fn = solidLookups.get(stage);
+  if (!fn) {
+    const grid = stage.grid;
+    fn = (tx, ty) => isSolidTile(grid, tx, ty);
+    solidLookups.set(stage, fn);
+  }
+  return fn;
+}
+
+/**
+ * Stage, the ground layer (light pools at night, camera cones, floor hazards, items), then props and actors in one
+ * painter's pass by their bottom edge, then fx and floaters.
+ */
 export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t: number, o: WorldOpts): void {
   ctx.save();
   // Nothing in the world may draw into the HUD strip, whatever the camera does.
@@ -96,10 +113,19 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   ctx.rect(0, VIEW_TOP, SCREEN_W, SCREEN_H - VIEW_TOP);
   ctx.clip();
   ctx.translate(-cam.x + view.shake.x, VIEW_TOP - cam.y + view.shake.y);
-  drawStage(ctx, stage.baked, cam.x - view.shake.x, cam.y - view.shake.y, t);
+  const camX = cam.x - view.shake.x, camY = cam.y - view.shake.y;
+  drawStage(ctx, stage.baked, camX, camY, t);
   const night = stage.time === 'night';
   // The pools go on the ground, under everything that moves, so the party is never tinted by them.
   if (night) paintGlow(ctx, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);
+  // Cones and hazards lie on the floor too: after the tiles and the pools, before anything that stands on them.
+  for (const p of view.props) {
+    // A cone is a few hundred rays, so one whose reach cannot touch the screen is skipped.
+    if (!p.cam || p.x + p.w + p.cam.range < camX || p.x - p.cam.range > camX + SCREEN_W) continue;
+    if (p.y + p.h + p.cam.range < camY || p.y - p.cam.range > camY + SCREEN_H - VIEW_TOP) continue;
+    drawCamCone(ctx, p, solidAt(stage), camX, camY, t);
+  }
+  for (const h of view.hazards) drawHazard(ctx, h, camX, camY, t);
   for (const it of view.items) drawItem(ctx, it);
   const order: { y: number; actor?: ActorView; prop?: PropView }[] = [];
   for (const p of view.props) order.push({ y: p.y + p.h, prop: p });

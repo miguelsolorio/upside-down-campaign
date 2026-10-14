@@ -1,0 +1,68 @@
+// "Trying it": a hero swings or fires toward a gate, door, log, crate, lantern or console that is still shut, or pushes
+// against one. The sim only reports the attempt, as `{ t: 'poked', propId, hero }`, whichever hero it was. The stage
+// decides whether that hero was the wrong one for the puzzle and shows the hint (see world/puzzles.ts).
+import type { HeroId, PropKind } from '../core/types.ts';
+import type { Hero, Prop, S } from './state.ts';
+import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './space.ts';
+
+/** Props that can be a puzzle. A crate or lantern only counts if it asks for something: a decor crate does not. */
+const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'target', 'console']);
+/** Frames before the same prop reports another attempt. */
+const POKE_GAP = 45;
+/** Frames of pushing against a shut prop before it counts as trying it. A third of a second. */
+const BUMP_FRAMES = 20;
+/** How far past its reach an attack still counts as aimed at a prop, in px. */
+const REACH_SLACK = 6;
+/** How wide a cone an attack counts as aimed: wide for a swing, narrow for a shot down a line. */
+const MELEE_HALF = 0.96;
+const SHOT_HALF = 0.38;
+/** A hero with an enemy this close that has noticed him is fighting, not trying a door. */
+const FIGHT_RANGE = 200;
+
+/** Is this prop a shut puzzle? */
+function shut(p: Prop): boolean {
+  if (!PUZZLE_KINDS.has(p.kind) || p.state === 'open' || p.state === 'lit') return false;
+  return p.kind === 'gate' || p.kind === 'door' || p.hitBy !== undefined || p.pushBy !== undefined;
+}
+
+function report(s: S, p: Prop, hero: HeroId): void {
+  if (p.pokeCd > 0) return;
+  p.pokeCd = POKE_GAP;
+  s.events.push({ t: 'poked', propId: p.id, hero });
+}
+
+/**
+ * A hero starts an attack or a special that reaches `reach` px along `h.aim`. Every shut puzzle prop inside that cone
+ * is being tried. Skipped while an enemy who has noticed him is close: then he is fighting, and the door behind the
+ * enemy is not what he is trying.
+ */
+export function pokeAimed(s: S, h: Hero, reach: number): void {
+  if (s.enemies.some((e) => e.aware && !e.dead && !e.dormant && dist(e.x, e.y, h.x, h.y) < FIGHT_RANGE)) return;
+  const half = reach <= 60 ? MELEE_HALF : SHOT_HALF;
+  const hy = h.y - 2;
+  for (const p of s.props) {
+    if (!shut(p)) continue;
+    // The nearest point of the prop to his feet: inside it counts, and so does a prop he is leaning on.
+    const nx = Math.max(p.x, Math.min(h.x, p.x + p.w)), ny = Math.max(p.y, Math.min(hy, p.y + p.h));
+    const d = dist(h.x, hy, nx, ny);
+    if (d > reach + REACH_SLACK) continue;
+    if (d > 2 && angleDiff(Math.atan2(ny - hy, nx - h.x), h.aim) > half) continue;
+    report(s, p, h.id);
+  }
+}
+
+/**
+ * Called each tick after the active hero has moved. (ux, uy) is the way he is pushing the stick, `speed` how far he
+ * meant to go and `moved` how far he got. Pressed against a shut puzzle prop and going nowhere for a third of a second
+ * is trying it.
+ */
+export function trackBump(s: S, h: Hero, ux: number, uy: number, speed: number, moved: number): void {
+  let hit: Prop | null = null;
+  if ((ux !== 0 || uy !== 0) && speed > 0 && moved < speed * 0.3) {
+    const l = h.x + ux * 3 - FOOT_W / 2, t = h.y + uy * 3 - FOOT_H;
+    hit = s.props.find((p) => shut(p) && propBlocks(p) && rectsOverlap(l, t, FOOT_W, FOOT_H, p.x, p.y, p.w, p.h)) ?? null;
+  }
+  if (!hit) { s.bump = null; return; }
+  if (s.bump?.id === hit.id) s.bump.t++; else s.bump = { id: hit.id, t: 1 };
+  if (s.bump.t >= BUMP_FRAMES) { report(s, hit, h.id); s.bump.t = 0; }
+}

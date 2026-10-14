@@ -1,13 +1,15 @@
 // ?audio=1 audio lab. Owner: Audio agent. A small menu to play every track, toggle the combat layer, fire every
 // effect and render a track to a WAV file in music/.
 //   Up, Down: select    Enter: play    Space: combat layer    R: render 30 s and save    Left, Right: music volume
+//   E: render the selected effect offline through the limiter and show its peak, RMS and limiter reduction
 import type { Game, Scene } from '../core/scene.ts';
 import type { AudioMetrics, ColorName, JingleId, SfxId, Speaker, StingerId, TrackId } from '../core/types.ts';
 import { drawText } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import { audio } from './index.ts';
 import { position } from './live.ts';
-import { SFX } from './sfx.ts';
+import { renderWith } from './render.ts';
+import { playSfx, SFX } from './sfx.ts';
 import { JINGLES, STINGERS } from './tracks/jingles.ts';
 import { TRACKS, TRACK_IDS } from './tracks/index.ts';
 import { BLIPS } from './cues.ts';
@@ -104,6 +106,26 @@ export function createAudioLabScene(): Scene {
     }
   };
 
+  /** Renders the selected effect at its designed level, alone, and shows the numbers. Peaks should be near 0.5 for impacts and 0.3 for interface sounds. */
+  const measureSfx = async (): Promise<void> => {
+    const it = ITEMS[sel];
+    if (busy || it.kind !== 'sfx') {
+      if (!busy) status = 'SELECT AN SFX TO MEASURE';
+      return;
+    }
+    busy = true;
+    status = `MEASURING ${it.id.toUpperCase()}...`;
+    try {
+      const r = await renderWith(1.5, (ctx, g, t0) => playSfx(ctx, g.sfx, it.id as SfxId, t0));
+      metrics = r.metrics;
+      status = `MEASURED ${it.id.toUpperCase()}`;
+    } catch {
+      status = 'MEASURE FAILED';
+    } finally {
+      busy = false;
+    }
+  };
+
   const move = (d: number): void => {
     sel = (sel + d + ITEMS.length) % ITEMS.length;
     if (sel < top) top = sel;
@@ -124,6 +146,7 @@ export function createAudioLabScene(): Scene {
         status = combat ? 'COMBAT LAYER ON' : 'COMBAT LAYER OFF';
         break;
       case 'KeyR': void render(); break;
+      case 'KeyE': void measureSfx(); break;
       case 'ArrowLeft': case 'ArrowRight': {
         if (!game) break;
         const s = game.settings;
@@ -182,7 +205,7 @@ export function createAudioLabScene(): Scene {
       }
       drawText(ctx, status, 6, 182, busy ? 'amber' : 'leaf');
       drawText(ctx, 'UP DOWN SELECT   ENTER PLAY', 6, 196, 'mist');
-      drawText(ctx, 'SPACE COMBAT LAYER   R RENDER WAV', 6, 205, 'mist');
+      drawText(ctx, 'SPACE COMBAT   R RENDER   E MEASURE SFX', 6, 205, 'mist');
       drawText(ctx, `LEFT RIGHT MUSIC VOLUME ${game ? Math.round(game.settings.musicVol * 100) : 0}%`, 6, 214, 'mist');
     },
   };

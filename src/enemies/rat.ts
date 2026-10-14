@@ -63,7 +63,7 @@ export function ratUpdate(s: S, e: Enemy, hero: Hero): void {
       e.mode = 'chase';
       const clear = los(s, e.x, e.y, hero.x, hero.y);
       if (d > 13) {
-        const moved = chaseHero(s, e, hero, def.speed * speedMul(e.stat), clear);
+        const moved = chaseHero(s, e, hero, def.speed * e.spd * speedMul(e.stat), clear);
         setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
       } else {
         faceHero(e, hero);
@@ -72,7 +72,7 @@ export function ratUpdate(s: S, e: Enemy, hero: Hero): void {
       if (d <= x.range && e.cd <= 0 && clear) {
         e.mode = 'windup';
         e.modeT = def.windup;
-        e.cd = def.cooldown;
+        e.cd = Math.round(def.cooldown * e.cdMul);
         sfx(s, 'alert');
         setEnemyAnim(e, 'attack');
       }

@@ -1,6 +1,6 @@
 // Internal state of one simulation. Only src/combat, src/heroes and src/enemies import this.
 import type {
-  AnimId, CharId, Dir, EnemyKind, Floater, FxView, Grid, HeroId, ItemKind, PropKind, PropState,
+  AnimId, CamDef, CharId, Dir, EnemyKind, Floater, FxView, Grid, HazardDef, HeroId, ItemKind, PropKind, PropState,
   RunStats, SimEvent, SfxId, Utility,
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
@@ -88,6 +88,24 @@ export interface Enemy {
   noLure: number;
   by: HeroId | null;
   stat: Statuses;
+  /** The XP a kill is worth, quarter drop chance and multipliers. Elites carry the scaled values, everyone else the def's. */
+  xp: number; drop: number;
+  /** Elite tier: true when the spawn asked for it. spd scales every walking speed, cdMul every attack cooldown. */
+  elite: boolean;
+  spd: number; cdMul: number;
+  /** Guards and wardens only (zero on everything else). */
+  /** Frames the shield stays broken. */
+  broken: number;
+  /** Frames after a break during which another break does nothing. */
+  grace: number;
+  /** Frames the hero has been in the blind side. The guard turns when this reaches its turn time. */
+  turnT: number;
+  /** Attacks started so far. Every third one is a slam for the warden. */
+  swings: number;
+  /** The current wind-up and recover are the warden's slam. */
+  slam: boolean;
+  /** The growing ring that telegraphs a slam, so a break can remove it. */
+  ring: FxView | null;
 }
 
 export interface Proj {
@@ -129,6 +147,10 @@ export interface Prop {
   x: number; y: number; w: number; h: number;
   solid: boolean; state: PropState; t: number;
   hitBy?: Utility; pushBy?: Utility;
+  /** Cameras only: the sweep, and the frames the head has been turning. */
+  cam?: CamDef; camT: number;
+  /** Frames before this prop can report another attempt (see pokes.ts). */
+  pokeCd: number;
 }
 export interface Npc { id: CharId; x: number; y: number; dir: Dir; t: number }
 export interface Body { id: HeroId; x: number; y: number; dir: Dir; t: number }
@@ -153,6 +175,8 @@ export interface S {
   /** Cosmetic randomness only (shake, dust). Never feeds gameplay. */
   frng: Rng;
   mult: number;
+  /** The stage's own enemy factor (StageData.enemyMult): enemy HP and the damage enemies deal, not hazards. 1 by default. */
+  foeMult: number;
   frame: number;
   heroes: Hero[];
   active: number;
@@ -161,6 +185,12 @@ export interface S {
   /** Frames until any swap is allowed. */
   swapLock: number;
   trailX: Float32Array; trailY: Float32Array; trailHead: number;
+  /** Frames the active hero has stood still. The followers settle behind him once it passes a few frames. */
+  standT: number;
+  /** The way the active hero last walked (not the way he aims). Standing followers rest on the opposite side. */
+  walkDir: Dir;
+  /** The shut prop the active hero has been pushing against, and for how many frames. */
+  bump: { id: string; t: number } | null;
   enemies: Enemy[];
   projs: Proj[];
   zones: Zone[];
@@ -170,6 +200,8 @@ export interface S {
   floaters: Floater[];
   items: Item[];
   props: Prop[];
+  /** Floor hazards, and the clock they run on. It stops whenever play does (hit-stop, burst, game over). */
+  hazards: HazardDef[]; hazT: number; hazPrev: ('off' | 'warn' | 'on')[];
   npcs: Npc[];
   bodies: Body[];
   timers: Timer[];

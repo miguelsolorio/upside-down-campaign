@@ -122,7 +122,7 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
       for (const e of ev) {
         if (e.t === 'groupCleared') {
           groupDone(e.group);
-        } else if (e.t === 'targetHit' || e.t === 'propCleared') {
+        } else if (e.t === 'targetHit' || e.t === 'propCleared' || e.t === 'spotted') {
           for (const b of beats) if ('event' in b.when && b.when.event === e.t && b.when.prop === e.propId) fire(b);
         }
       }

@@ -1,5 +1,5 @@
 // World types: the options for the play scene and the shape of stage data. Pure types, no DOM.
-import type { HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
+import type { HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
 import type { BotWaypoint } from '../combat/bot.ts';
 import type { SaveData } from '../core/save.ts';
 
@@ -40,7 +40,7 @@ export type BeatWhen =
   | { rect: TileRect; needs?: string }
   | { cleared: string }
   | { after: string }
-  | { event: 'targetHit' | 'propCleared'; prop: string };
+  | { event: 'targetHit' | 'propCleared' | 'spotted'; prop: string };
 
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
@@ -52,8 +52,10 @@ export interface PuzzleDef {
   beat: string;
   /** The prop to point at (and to watch: open or lit means solved). */
   prop: string;
-  /** The hero whose bench slot pulses with the highlight. */
+  /** The hero who solves it, and the one whose bench slot pulses with the hint. */
   hero: HeroId;
+  /** Other props that count as trying this puzzle: the gate or door it opens. Trying `prop` itself counts too. */
+  blocks?: string[];
 }
 
 /** Where the party stands again after a retry, once this lights prop has been lit. Feet position in px. */
@@ -81,5 +83,9 @@ export interface StageData {
   music: TrackId;
   checkpoints: Checkpoint[];
   scare: ScareDef;
+  /** Floor hazards that cycle on and off. Stages without any leave this out. */
+  hazards?: HazardDef[];
+  /** How much tougher this stage's enemies are than the difficulty setting makes them: HP and damage dealt. 1 if left out. */
+  enemyMult?: number;
   waypoints: BotWaypoint[];
 }

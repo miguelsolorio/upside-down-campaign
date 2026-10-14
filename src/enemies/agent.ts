@@ -13,7 +13,8 @@ import { chaseHero, faceHero, setEnemyAnim, stepToward } from './steer.ts';
 const PATROL_WAIT = 40;
 const MIN_FIRE_RANGE = 24;
 
-function patrol(s: S, e: Enemy, speed: number): void {
+/** Walks the patrol route, pausing at each stop. Shared with the guards. */
+export function patrol(s: S, e: Enemy, speed: number): void {
   if (e.patrol.length === 0) { setEnemyAnim(e, 'idle'); return; }
   if (e.wait > 0) { e.wait--; setEnemyAnim(e, 'idle'); return; }
   const t = e.patrol[e.pi % e.patrol.length] as { x: number; y: number };
@@ -59,7 +60,7 @@ export function agentUpdate(s: S, e: Enemy, hero: Hero): void {
   const clear = los(s, e.x, e.y, hero.x, hero.y);
   if (!e.aware) {
     if (clear && d <= def.aggro) alertEnemy(s, e);
-    else { patrol(s, e, x.patrol); return; }
+    else { patrol(s, e, x.patrol * e.spd); return; }
   }
   if (clear) e.lostT = 0; else e.lostT++;
   if (e.lostT > x.lose && d > def.aggro + 30) {
@@ -83,7 +84,7 @@ export function agentUpdate(s: S, e: Enemy, hero: Hero): void {
       return;
     default: {
       e.mode = 'chase';
-      const sp = def.speed * speedMul(e.stat);
+      const sp = def.speed * e.spd * speedMul(e.stat);
       if (!clear) {
         const moved = chaseHero(s, e, hero, sp, false);
         setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
@@ -91,7 +92,7 @@ export function agentUpdate(s: S, e: Enemy, hero: Hero): void {
         const moved = stepToward(s, e, hero.x, hero.y, sp);
         setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
       } else if (d < x.near && e.backT < x.stamina) {
-        const moved = backOff(s, e, hero, x.back * speedMul(e.stat));
+        const moved = backOff(s, e, hero, x.back * e.spd * speedMul(e.stat));
         e.backT += moved ? 1 : 6;
         setEnemyAnim(e, moved ? 'walk' : 'idle');
         if (!moved) faceHero(e, hero);
@@ -103,7 +104,7 @@ export function agentUpdate(s: S, e: Enemy, hero: Hero): void {
       if (clear && e.cd <= 0 && d <= x.range && d >= MIN_FIRE_RANGE) {
         e.mode = 'windup';
         e.modeT = def.windup;
-        e.cd = def.cooldown + Math.round(s.rng() * 20 - 10);
+        e.cd = Math.round(def.cooldown * e.cdMul) + Math.round(s.rng() * 20 - 10);
         sfx(s, 'alert');
         setEnemyAnim(e, 'attack');
       }

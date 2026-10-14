@@ -2,11 +2,12 @@
 import type { PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { createRng } from '../core/rng.ts';
-import { ENEMY_DEFS, DIFFICULTY_MULT } from '../enemies/defs.ts';
+import { ENEMY_DEFS, DIFFICULTY_MULT, ELITE } from '../enemies/defs.ts';
 import { xpToNext } from '../progression/xp.ts';
 import type { Enemy, S, Stats } from './state.ts';
 import { noStatus } from './state.ts';
 import { makeHero } from './party.ts';
+import { hazardAt } from './hazards.ts';
 
 const TRAIL = 256;
 
@@ -16,25 +17,29 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console']);
-/** Props a hit lights instead of opens: they stay solid and read 'lit' once solved. */
-const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator']);
+/** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
+const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera']);
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
 function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
   const def = ENEMY_DEFS[sp.type];
   const f = tileFeet(sp.tx, sp.ty);
   const uid = s.nextUid++;
-  const hp = Math.max(1, Math.round(def.hp * s.mult));
+  const elite = sp.tier === 'elite';
+  const hp = Math.max(1, Math.round(elite ? def.hp * ELITE.hp * s.mult * s.foeMult : def.hp * s.mult * s.foeMult));
   const patrol = (sp.patrol ?? []).map((p) => tileFeet(p.tx, p.ty));
   return {
     uid, id: sp.id, kind: sp.type, group: sp.group,
-    x: f.x, y: f.y, hx: f.x, hy: f.y, dir: 'down', vx: 0, vy: 0, z: 0,
-    hp, hpMax: hp, atk: def.atk, def: def.def,
+    x: f.x, y: f.y, hx: f.x, hy: f.y, dir: sp.dir ?? 'down', vx: 0, vy: 0, z: 0,
+    hp, hpMax: hp, atk: elite ? def.atk * ELITE.atk : def.atk, def: def.def,
     dormant: sp.dormant === true, dead: false, deadT: 0, aware: false,
     mode: patrol.length > 0 ? 'patrol' : 'idle', modeT: 0, cd: 0, stagger: 0, flash: 0, hurtSeen: false,
     anim: 'idle', animT: 0, patrol, pi: 0, wait: 0, ax: 0, ay: 0, hitDone: false, lostT: 0, backT: 0, stuckT: 0,
     lastX: f.x, lastY: f.y, wanderT: 30 + ((uid * 37) % 90), wanderA: Number.NaN, noLure: 0, by: null, stat: noStatus(),
+    xp: elite ? def.xp * ELITE.xp : def.xp, drop: elite ? def.drop * ELITE.drop : def.drop, elite,
+    spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
+    broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
   };
 }
 
@@ -58,9 +63,11 @@ export function createState(opts: SimOptions): S {
   trailX[TRAIL - 1] = opts.start.x; trailY[TRAIL - 1] = opts.start.y;
   const s: S = {
     grid: opts.grid, rng: createRng(seed), frng: createRng((seed ^ 0x9e3779b9) >>> 0),
-    mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], frame: 0,
-    heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1,
-    enemies: [], projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [], npcs: [], bodies: [],
+    mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], foeMult: opts.enemyMult ?? 1, frame: 0,
+    heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1, standT: 0, walkDir: 'right', bump: null,
+    enemies: [], projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [],
+    hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
+    npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
     burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, over: false, nextUid: 1, nextDrop: 1,
     stats: {
@@ -88,11 +95,11 @@ export function createState(opts: SimOptions): S {
         state = LIT_WHEN_SOLVED.has(sp.prop) ? 'lit' : 'open';
         if (!LIT_WHEN_SOLVED.has(sp.prop)) solid = false;
       }
-      const hitBy: Utility | undefined = sp.hitBy ?? (sp.prop === 'target' ? 'shoot' : undefined);
+      const hitBy: Utility | undefined = sp.hitBy ?? (sp.prop === 'target' || sp.prop === 'camera' ? 'shoot' : undefined);
       const pushBy: Utility | undefined = sp.pushBy ?? (sp.prop === 'log' ? 'push' : undefined);
       s.props.push({
         id: sp.id, kind: sp.prop, x: sp.tx * TILE, y: sp.ty * TILE, w: sp.w ?? size[0], h: sp.h ?? size[1],
-        solid, state, t: 0, hitBy, pushBy,
+        solid, state, t: 0, hitBy, pushBy, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0,
       });
     }
   }

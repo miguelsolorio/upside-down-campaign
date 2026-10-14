@@ -1,5 +1,5 @@
 // Deaths: kill events, XP, quarter drops, group-cleared, and removing bodies after their death animation.
-import { ENEMY_DEFS } from '../enemies/defs.ts';
+import { cancelAttack } from '../enemies/shield.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
 import { activeHero } from './state.ts';
@@ -15,7 +15,7 @@ function dropChance(s: S, base: number): number {
 }
 
 function kill(s: S, e: Enemy): void {
-  const def = ENEMY_DEFS[e.kind];
+  cancelAttack(s, e);
   e.dead = true;
   e.deadT = 0;
   e.aware = false;
@@ -27,15 +27,15 @@ function kill(s: S, e: Enemy): void {
   const by = e.by ?? activeHero(s).id;
   s.stats.kills++;
   s.stats.killsByKind[e.kind] = (s.stats.killsByKind[e.kind] ?? 0) + 1;
-  s.events.push({ t: 'kill', kind: e.kind, spawnId: e.id, group: e.group, by, xp: def.xp, x: e.x, y: e.y });
+  s.events.push({ t: 'kill', kind: e.kind, spawnId: e.id, group: e.group, by, xp: e.xp, x: e.x, y: e.y });
   sfx(s, 'kill');
   dust(s, e.x, e.y, 4);
   if (!s.seq) s.burst = Math.min(1, s.burst + 0.06);
   // The roll is always drawn so the random stream does not depend on the Compass talent.
-  if (s.rng() < dropChance(s, def.drop)) {
+  if (s.rng() < dropChance(s, e.drop)) {
     s.items.push({ id: `drop${s.nextDrop++}`, kind: 'quarter', x: e.x, y: e.y, t: 0 });
   }
-  awardXp(s, def.xp);
+  awardXp(s, e.xp);
   if (!s.cleared.has(e.group) && !s.enemies.some((o) => o.group === e.group && !o.dead)) {
     s.cleared.add(e.group);
     s.events.push({ t: 'groupCleared', group: e.group });

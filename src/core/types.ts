@@ -14,7 +14,10 @@ export interface Rect { x: number; y: number; w: number; h: number }
 export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven';
 /** Anything with a hero-style sprite and portrait, playable or not. */
 export type CharId = HeroId | 'will' | 'joyce';
-export type EnemyKind = 'agent' | 'rat';
+/** guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard. */
+export type EnemyKind = 'agent' | 'rat' | 'guard' | 'warden';
+/** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
+export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
 export type StatKey = 'hp' | 'mp' | 'atk' | 'def' | 'spd';
 export type StatusId = 'burn' | 'stun' | 'slow' | 'confuse' | 'curse';
@@ -46,6 +49,10 @@ export interface ActorView {
   z: number;
   /** Small HP bar over an enemy once it has been hit. */
   bar: { hp: number; hpMax: number } | null;
+  /** An elite enemy: gfx draws it with its own marks (red trim, a bigger bar). Absent means a normal one. */
+  elite?: boolean;
+  /** A guard or warden whose shield is up. It stops hits from the front, so gfx can show the shield raised or dropped. */
+  guarding?: boolean;
 }
 
 export type FxKind =
@@ -67,13 +74,58 @@ export interface FxView {
 export type ItemKind = 'eggo' | 'coke' | 'quarter';
 export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
 
-export type PropKind = 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console';
-export type PropState = 'closed' | 'open' | 'lit' | 'off';
+/**
+ * camera: a sweeping security camera (see CamDef). Shooting it lights it, which switches it off.
+ * tank, rack, generator: animated lab furniture the sim treats as plain solid blocks.
+ */
+export type PropKind =
+  | 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console'
+  | 'camera' | 'tank' | 'rack' | 'generator';
+/** alert: a camera that has just spotted the party. */
+export type PropState = 'closed' | 'open' | 'lit' | 'off' | 'alert';
 export interface PropView {
   id: string; kind: PropKind;
   /** Top-left and size in world px. */
   x: number; y: number; w: number; h: number;
   state: PropState; t: number;
+  /** A camera's current cone. angle is in radians, 0 = right, y down. live is false once it is shot. */
+  cam?: { angle: number; range: number; half: number; live: boolean };
+}
+
+/** A sweeping camera. It turns between two headings, spots a hero inside its cone with a clear line, and raises the alarm. */
+export interface CamDef {
+  /** The two headings it sweeps between, in degrees. 0 = right, 90 = down. */
+  from: number; to: number;
+  /** Frames for one full sweep there and back. */
+  period: number;
+  /** Reach of the cone in px. */
+  range: number;
+  /** Half the cone's width, in degrees. */
+  half: number;
+}
+
+/**
+ * A floor hazard: a rectangle of tiles that goes off on a cycle. It is on for `on` frames out of every `period`,
+ * after a warning, offset by `phase`. A hero standing in it while it is on takes `dmg` (before difficulty) and is
+ * thrown clear. electric: arcing panels. steam: a vent that vents.
+ */
+export interface HazardDef {
+  id: string;
+  kind: 'electric' | 'steam';
+  /** Top-left tile and size in tiles. */
+  tx: number; ty: number; w: number; h: number;
+  period: number; on: number;
+  phase?: number;
+  dmg: number;
+}
+export type HazardState = 'off' | 'warn' | 'on';
+export interface HazardView {
+  id: string; kind: HazardDef['kind'];
+  /** Top-left and size in world px. */
+  x: number; y: number; w: number; h: number;
+  state: HazardState;
+  /** Frames into the current state. */
+  t: number;
 }
 
 export interface Floater { text: string; x: number; y: number; t: number; life: number; color: ColorName; big: boolean }
@@ -103,6 +155,8 @@ export interface SimView {
   fx: FxView[];
   items: ItemView[];
   props: PropView[];
+  /** Floor hazards and what each is doing now. Empty on a stage without any. */
+  hazards: HazardView[];
   floaters: Floater[];
   hud: HudView;
   /** Camera focus: the active hero's feet. */
@@ -132,6 +186,9 @@ export type SfxId =
   | 'dash' | 'swap' | 'burst' | 'pickup' | 'heal' | 'noMp' | 'nosebleed'
   | 'select' | 'confirm' | 'cancel' | 'pause' | 'dialogOpen'
   | 'gateOpen' | 'targetHit' | 'logPush' | 'lights' | 'flicker' | 'growl' | 'klaxon'
+  /** zap: an electric panel firing. steam: a vent venting. spotted: a camera sees you. block: a shield stops a hit.
+   *  bash: a guard's swing. slam: the Warden's ground slam. */
+  | 'zap' | 'steam' | 'spotted' | 'block' | 'bash' | 'slam'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
@@ -156,13 +213,17 @@ export type SimEvent =
   | { t: 'targetHit'; propId: string }
   | { t: 'propCleared'; propId: string }
   | { t: 'groupCleared'; group: string }
+  /** A camera saw the party. */
+  | { t: 'spotted'; propId: string }
+  /** A hero tried a gate, door, log, crate, lantern or console that is still shut: swung or fired at it, or pushed against it. */
+  | { t: 'poked'; propId: string; hero: HeroId }
   | { t: 'burst' }
   | { t: 'natTwenty'; hero: HeroId; source: 'crit' | 'levelUp' };
 
 export type SimSpawn =
-  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[] }
+  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
-  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility }
+  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; cam?: CamDef }
   | { kind: 'npc'; id: CharId; tx: number; ty: number; dir: Dir };
 
 export interface PartySeed {
@@ -178,6 +239,10 @@ export interface SimOptions {
   /** Active hero feet position in world px. */
   start: Vec2;
   spawns: SimSpawn[];
+  /** Floor hazards the stage has. */
+  hazards?: HazardDef[];
+  /** Scales this stage's enemies on top of the difficulty setting: their HP and the damage they deal (not hazards). 1 if left out. */
+  enemyMult?: number;
   /** Spawn ids already cleared (retry from a checkpoint). */
   skipSpawns?: string[];
   /** Prop ids already opened or cleared. */

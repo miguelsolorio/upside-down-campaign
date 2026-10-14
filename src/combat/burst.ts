@@ -43,7 +43,7 @@ function sweep(s: S, hero: Hero): void {
   for (const e of s.enemies) {
     if (e.dead || e.dormant || e.hp <= 0 || dist(a.x, a.y, e.x, e.y) > BURST_RADIUS) continue;
     hitEnemy(s, hero, e, {
-      power: BURST_POWER, kb: 3, angle: Math.atan2(e.y - a.y, e.x - a.x), stagger: 24, hitstop: 0, shake: 0.6,
+      power: BURST_POWER, kb: 3, angle: Math.atan2(e.y - a.y, e.x - a.x), stagger: 24, hitstop: 0, shake: 0.6, pierce: true,
     });
   }
 }

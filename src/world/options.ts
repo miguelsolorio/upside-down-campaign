@@ -26,6 +26,8 @@ export function simOptions(data: StageData, grid: Grid, b: SimBuild): SimOptions
     party: b.party,
     start: b.start ?? data.start,
     spawns: data.spawns,
+    hazards: data.hazards,
+    enemyMult: data.enemyMult,
     skipSpawns: b.skipSpawns,
     openProps: b.openProps,
     difficulty: b.difficulty,

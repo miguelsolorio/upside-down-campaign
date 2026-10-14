@@ -1,13 +1,14 @@
 // The active hero each tick: timers, movement, attack and special, animation, regen, and the follower trail.
-import type { AnimId, SimInput } from '../core/types.ts';
+import type { AnimId, Dir, SimInput } from '../core/types.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import { speedFactor } from '../heroes/common.ts';
 import { useBasic, useSpecial } from '../heroes/kit.ts';
 import type { Hero, S } from './state.ts';
 import { activeHero, dirOfAngle, dirOfVec, snap8 } from './state.ts';
-import { moveBody } from './space.ts';
+import { footBlocked, los, moveBody } from './space.ts';
 import { floater, sfx } from './fx.ts';
 import { speedMul } from './status.ts';
+import { pokeAimed, trackBump } from './pokes.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -41,6 +42,8 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
     s.buf.special = 0;
     if (h.mp >= def.special.mp) {
       h.mp -= def.special.mp;
+      // A special that does no damage (the DM screen) is not a try at anything.
+      if (def.special.power > 0) pokeAimed(s, h, def.special.reach);
       useSpecial(s, h);
       checkNosebleed(s, h);
       return;
@@ -51,6 +54,7 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
   const wantsBasic = s.buf.attack > 0 || input.attackHeld;
   if (!casting && wantsBasic && h.cdBasic <= 0) {
     s.buf.attack = 0;
+    pokeAimed(s, h, def.basic.reach);
     useBasic(s, h);
   }
 }
@@ -74,16 +78,19 @@ export function updateActive(s: S, input: SimInput): void {
   const ux = live ? input.mx / mag : 0;
   const uy = live ? input.my / mag : 0;
   const x0 = h.x, y0 = h.y;
+  let meant = 0;
 
   if (h.hurtT <= 0) {
     if (live) {
       h.aim = snap8(Math.atan2(uy, ux));
       h.dir = dirOfAngle(h.aim);
+      // The way he is walking, from his input. Followers rest on the opposite side when he stops.
+      s.walkDir = dirOfVec(ux, uy, s.walkDir);
     }
     tryActions(s, h, input);
     const lock = h.actT > 0 ? h.lock : 1;
     const sp = def.speed * speedFactor(h) * speedMul(h.stat) * lock * Math.min(1, mag);
-    if (live) moveBody(s, h, ux * sp, uy * sp, true);
+    if (live) { moveBody(s, h, ux * sp, uy * sp, true); meant = sp; }
   }
   if (h.vx !== 0 || h.vy !== 0) {
     moveBody(s, h, h.vx, h.vy);
@@ -91,6 +98,7 @@ export function updateActive(s: S, input: SimInput): void {
     if (Math.hypot(h.vx, h.vy) < 0.1) { h.vx = 0; h.vy = 0; }
   }
   h.moving = Math.hypot(h.x - x0, h.y - y0) > 0.1;
+  trackBump(s, h, live ? ux : 0, live ? uy : 0, meant, Math.hypot(h.x - x0, h.y - y0));
 
   let anim: AnimId = 'idle';
   if (h.hurtT > 0) anim = 'hurt';
@@ -117,23 +125,88 @@ export function regen(s: S): void {
   }
 }
 
-/** Records the active hero's path and moves the bench heroes along it as cosmetic followers. */
+/** Frames the leader has to stand still before a follower that is on top of him steps out behind him. */
+const STAND_FRAMES = 6;
+/** How fast a follower steps out to a spot behind the leader, in px per frame. About a hero's own walking pace. */
+const SETTLE_SPEED = 1;
+/** The most a follower moves in a frame while trailing the leader's path. Enough to keep up with him, never a sprint. */
+const TRAIL_SPEED = 2;
+/**
+ * How close each follower comes to the leader, in px, in party order, both while he walks and once he stops. They stack
+ * up close against each other (each shows a few pixels more than the one in front of it) and never get closer than
+ * this, so the leader stays clear. Because the gap is the same walking or standing, a follower who stops with him does
+ * not shuffle: the ones further back finish closing their gap, and nobody ever steps away from him.
+ */
+const REST_GAPS = [14, 19, 24];
+/** The side of a leader that is "behind" him, by the way he last walked: a leader who walked right has them to his left. */
+const BEHIND: Record<Dir, readonly [number, number]> = { right: [-1, 0], left: [1, 0], down: [0, -1], up: [0, 1] };
+
+/**
+ * Where follower number `n` steps out to when it is on top of the leader (right after a swap, at the start of a level):
+ * behind him, at its gap. If that spot is in a wall or out of his sight the next tries are a little to either side,
+ * then closer in, then straight out to either side. Null when he is boxed in.
+ */
+function restSpot(s: S, lead: Hero, n: number): [number, number] | null {
+  const [bx, by] = BEHIND[s.walkDir];
+  const gap = REST_GAPS[Math.min(n, REST_GAPS.length - 1)] as number;
+  const px = -by, py = bx;
+  const tries: readonly (readonly [number, number])[] = [
+    [bx * gap, by * gap], [bx * gap + px * 10, by * gap + py * 10], [bx * gap - px * 10, by * gap - py * 10],
+    [bx * gap * 0.6, by * gap * 0.6], [px * 14, py * 14], [-px * 14, -py * 14],
+  ];
+  for (const [dx, dy] of tries) {
+    const x = lead.x + dx, y = lead.y + dy;
+    if (!footBlocked(s, x, y) && los(s, lead.x, lead.y, x, y)) return [x, y];
+  }
+  return null;
+}
+
+/**
+ * Records the active hero's path and moves the bench heroes along it as cosmetic followers. Each follower walks toward
+ * the point on his path a short while back, but never gets closer to him than its gap, so when he stops they stop with
+ * him (or finish closing up) instead of piling onto his feet or backing away. A follower that really is on top of him
+ * (after a swap, or at the start of a level) steps out to a spot behind him, at walking pace.
+ */
 export function updateFollowers(s: S): void {
   const a = activeHero(s);
+  const dx = a.x - (s.trailX[s.trailHead] as number), dy = a.y - (s.trailY[s.trailHead] as number);
+  s.standT = Math.hypot(dx, dy) < 0.05 ? s.standT + 1 : 0;
   s.trailHead = (s.trailHead + 1) % TRAIL;
   s.trailX[s.trailHead] = a.x;
   s.trailY[s.trailHead] = a.y;
+  const resting = s.standT >= STAND_FRAMES;
   let k = 0;
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
     if (i === s.active || h.ko) continue;
-    const delay = 12 + 13 * k++;
-    const idx = (s.trailHead - delay + TRAIL * 4) % TRAIL;
-    const tx = s.trailX[idx] as number, ty = s.trailY[idx] as number;
-    const nx = h.x + (tx - h.x) * 0.3, ny = h.y + (ty - h.y) * 0.3;
-    const moved = Math.hypot(nx - h.x, ny - h.y) > 0.12;
-    if (moved) h.dir = dirOfVec(nx - h.x, ny - h.y, h.dir);
-    h.x = nx; h.y = ny;
+    const n = k++;
+    const gap = REST_GAPS[Math.min(n, REST_GAPS.length - 1)] as number;
+    const near = Math.hypot(h.x - a.x, h.y - a.y);
+    // Well inside its gap while he stands: it is on top of him. Step out behind him.
+    const spot = resting && near < gap - 1.5 ? restSpot(s, a, n) : null;
+    let mx = 0, my = 0;
+    if (spot) {
+      const ex = spot[0] - h.x, ey = spot[1] - h.y, d = Math.hypot(ex, ey);
+      const step = Math.min(d, SETTLE_SPEED);
+      if (d > 1e-6) { mx = (ex / d) * step; my = (ey / d) * step; }
+    } else {
+      const idx = (s.trailHead - (12 + 13 * n) + TRAIL * 4) % TRAIL;
+      const ex = (s.trailX[idx] as number) - h.x, ey = (s.trailY[idx] as number) - h.y, d = Math.hypot(ex, ey);
+      // Ease toward the path point. If that would bring it inside its gap, stop at the gap instead.
+      const move = Math.min(d * 0.3, TRAIL_SPEED);
+      if (d > 1e-6) { mx = (ex / d) * move; my = (ey / d) * move; }
+      const after = Math.hypot(h.x + mx - a.x, h.y + my - a.y);
+      if (after < gap && after < near) {
+        const f = near > gap ? (near - gap) / (near - after) : 0;
+        mx *= f; my *= f;
+      }
+    }
+    const step = Math.hypot(mx, my);
+    const moved = step > 0.12;
+    if (step > 0) { h.x += mx; h.y += my; }
+    if (moved) h.dir = dirOfVec(mx, my, h.dir);
+    // Standing together after stepping out, they face the way the leader walked.
+    else if (spot) h.dir = s.walkDir;
     h.moving = moved;
     h.z = 0; h.flash = Math.max(0, h.flash - 0.12);
     h.animT++;

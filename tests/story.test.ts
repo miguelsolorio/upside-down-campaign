@@ -18,8 +18,8 @@ const REQUIRED = [
   'l1_scare', 'l1_eleven_meet', 'l1_eleven_join', 'l1_push_hint', 'l1_log_cleared', 'l1_ambush_start', 'l1_ambush_clear', 'l1_clear',
 ];
 const REQUIRED_L2 = [
-  'l2_start', 'l2_agents', 'l2_burn_hint', 'l2_burn_done', 'l2_cages', 'l2_scare', 'l2_shoot_hint', 'l2_relay_done',
-  'l2_push_hint', 'l2_crate_cleared', 'l2_lockdown_start', 'l2_lockdown_clear', 'l2_clear',
+  'l2_start', 'l2_agents', 'l2_spotted', 'l2_burn_hint', 'l2_burn_done', 'l2_cages', 'l2_scare', 'l2_shoot_hint', 'l2_relay_done',
+  'l2_guards', 'l2_push_hint', 'l2_crate_cleared', 'l2_lockdown_start', 'l2_warden', 'l2_lockdown_clear', 'l2_clear',
 ];
 const SPEAKERS: Speaker[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'dm', 'narrator'];
 const EXPRS: Expr[] = ['neutral', 'happy', 'worried', 'determined', 'hurt', 'shocked'];
@@ -54,10 +54,10 @@ test('every script id from the level docs exists', () => {
   assert.ok(one.fromTable.length >= 13, 'the beat table should name the l1 scripts');
   for (const id of [...REQUIRED, ...one.fromList, ...one.fromTable]) assert.ok(SCRIPTS[id], `missing script ${id}`);
   const two = docIds('level-2.md', 'l2_');
-  assert.equal(two.fromList.length, 13, 'the level 2 "Scripts Story writes" line lists thirteen ids');
-  assert.equal(two.fromTable.length, 13, 'the level 2 beat table names thirteen scripts');
+  assert.equal(two.fromList.length, 16, 'the level 2 "Scripts Story writes" line lists sixteen ids');
+  assert.equal(two.fromTable.length, 16, 'the level 2 beat table names sixteen scripts');
   for (const id of [...REQUIRED_L2, ...two.fromList, ...two.fromTable]) assert.ok(SCRIPTS[id], `missing script ${id}`);
-  assert.deepEqual([...two.fromList].sort(), [...REQUIRED_L2].sort(), 'the doc and the test agree on the thirteen');
+  assert.deepEqual([...two.fromList].sort(), [...REQUIRED_L2].sort(), 'the doc and the test agree on the sixteen');
   assert.deepEqual(Object.keys(SCRIPTS).filter((k) => k.startsWith('l2_')).sort(), [...REQUIRED_L2].sort(), 'no stray l2 scripts');
 });
 
@@ -175,12 +175,27 @@ test('each script is voiced by the people who should be in it', () => {
   assert.ok(who('l2_shoot_hint').has('lucas') && who('l2_relay_done').has('lucas'));
   assert.ok(who('l2_push_hint').has('dustin') && who('l2_push_hint').has('eleven') && who('l2_crate_cleared').has('eleven'));
   assert.ok(who('l2_scare').has('eleven') && who('l2_cages').has('eleven'));
+  assert.ok(who('l2_guards').has('dustin') && who('l2_guards').has('eleven'), 'the shield lesson is Dustin\'s, and Eleven answers it');
+  assert.ok(who('l2_warden').has('eleven') && who('l2_spotted').has('lucas'));
   for (const l of SCRIPT_LINES_L2) assert.ok(l.who !== 'will' && l.who !== 'joyce', `${l.id}[${l.i}]: Will and Joyce are not in the Lab`);
 });
 
 test('Eleven speaks one or two words in every script', () => {
   for (const l of allLines) if (l.who === 'eleven') assert.ok(words(l.text) <= 2, `${l.id}[${l.i}]: ${l.text}`);
   assert.ok(SCRIPT_LINES_L2.filter((l) => l.who === 'eleven').length >= 8, 'Eleven has lines in level 2');
+});
+
+test('level 2 teaches the hard Lab: the cameras, the shields, the slam and the live floor', () => {
+  const text = (id: string): string => (SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' ');
+  assert.match(text('l2_agents'), /camera/i, 'corridor A names the cameras');
+  assert.match(text('l2_agents'), /knock them out|shoot/i, 'and says Lucas can take them out');
+  assert.match(text('l2_spotted'), /saw us/i);
+  assert.match(text('l2_guards'), /shield/i);
+  assert.match(text('l2_guards'), /side or the back/i, 'the counter is to go round');
+  assert.match(text('l2_warden'), /ring/i, 'the slam telegraph is named');
+  assert.match(text('l2_burn_hint'), /plates/i, 'the power room warns about the panels');
+  assert.match(text('l2_shoot_hint'), /steam/i, 'the corridor warns about the grates');
+  assert.match(text('l2_lockdown_start'), /floor/i, 'the lockdown warns about the live floor');
 });
 
 test('level 2 ends on a hook for the school and starts at the dock', () => {

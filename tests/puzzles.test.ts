@@ -158,7 +158,7 @@ test('Level 2 has the burn, relay and crate puzzles, each wired to a real beat, 
 });
 
 test('Level 2 hints wake in route order through the real beat chain, and a solved prop clears its hint', () => {
-  const { env } = fakeEnv({ rats1: 6, lock1: 2, lock2: 4, lock3: 3 }, ['mike', 'dustin', 'lucas', 'eleven']);
+  const { env } = fakeEnv({ rats1: 2, reinf1: 1, reinf2: 1, reinf3: 1, lock1: 1, lock2: 2, lock3: 2 }, ['mike', 'dustin', 'lucas', 'eleven']);
   const dir = createDirector(S2.beats, S2.waves, env);
   const tr = createPuzzleTracker(S2.puzzles);
   const state: Record<string, PropState> = {};
@@ -174,7 +174,8 @@ test('Level 2 hints wake in route order through the real beat chain, and a solve
   soak(beside('sensor1'), HINT_AFTER + 10);
   assert.equal(tr.highlight(), null);
   // Power room: the burn hint arms, and thirty seconds beside the sensor highlights it.
-  dir.tick(33, 33);
+  const burnAt = (S2.beats.find((b) => b.id === 'burn_hint')?.when as { rect: { tx: number; ty: number } }).rect;
+  dir.tick(burnAt.tx, burnAt.ty);
   assert.ok(dir.hasFired('burn_hint'));
   soak(beside('sensor1'), HINT_AFTER);
   assert.equal(tr.highlight()?.id, 'burn');
@@ -202,4 +203,113 @@ test('Level 2 hints wake in route order through the real beat chain, and a solve
   state.crate1 = 'open';
   soak(beside('crate1'), 1);
   assert.equal(tr.highlight(), null);
+});
+
+test('Level 2 cameras are a choice, not a puzzle: no hint points at one, and a sighting does not arm or solve a hint', () => {
+  const cams = props2.filter((p) => p.prop === 'camera').map((p) => p.id);
+  assert.ok(cams.length >= 2);
+  assert.ok(!S2.puzzles.some((p) => cams.includes(p.prop)), 'no puzzle watches a camera');
+  const { env } = fakeEnv({ reinf1: 1, reinf2: 1, reinf3: 1 }, ['mike', 'dustin', 'lucas', 'eleven']);
+  const dir = createDirector(S2.beats, S2.waves, env);
+  const tr = createPuzzleTracker(S2.puzzles);
+  for (const id of cams) dir.events([{ t: 'spotted', propId: id }]);
+  for (let i = 0; i < HINT_AFTER + 10; i++) {
+    tr.tick({ hasFired: (b) => dir.hasFired(b), busy: dir.busy(), props: [], hero: { x: 0, y: 0 } });
+  }
+  assert.equal(tr.highlight(), null);
+  assert.ok(cams.every((id) => dir.hasFired(`${id}_spotted`)), 'every camera beat fired');
+  assert.ok(!S2.puzzles.some((p) => dir.hasFired(p.beat)), 'and none of them is a puzzle arrival');
+});
+
+// ---------------------------------------------------------------- hints from trying it
+const GATED: PuzzleDef = { ...DEF, id: 'g', blocks: ['door'] };
+
+test('trying the puzzle with the wrong hero shows the hint at once, with no clock', () => {
+  const tr = createPuzzleTracker([DEF]);
+  run(tr, 1);
+  assert.equal(tr.highlight(), null, 'nothing before anyone tries it');
+  tr.poke('rock', 'mike');
+  run(tr, 1);
+  assert.equal(tr.highlight(), DEF);
+  assert.equal(tr.triedProp(DEF), 'rock');
+  run(tr, 600);
+  assert.equal(tr.highlight(), DEF, 'and it stays up');
+});
+
+test('trying the gate or door the puzzle opens counts too, and the hint remembers which prop it was', () => {
+  const tr = createPuzzleTracker([GATED]);
+  tr.poke('door', 'eleven');
+  run(tr, 1);
+  assert.equal(tr.highlight(), GATED);
+  assert.equal(tr.triedProp(GATED), 'door');
+});
+
+test('not a hint: the right hero trying it, or anyone trying something that is not this puzzle', () => {
+  const tr = createPuzzleTracker([GATED]);
+  tr.poke('rock', 'lucas');
+  tr.poke('door', 'lucas');
+  run(tr, 1);
+  assert.equal(tr.highlight(), null, 'Lucas is the one who solves it');
+  tr.poke('crate', 'mike');
+  tr.poke('some-other-door', 'mike');
+  run(tr, 1);
+  assert.equal(tr.highlight(), null, 'a prop that is not part of this puzzle');
+  assert.equal(tr.triedProp(GATED), null);
+  // A door is not the puzzle's own prop unless the data says so.
+  const bare = createPuzzleTracker([DEF]);
+  bare.poke('door', 'mike');
+  run(bare, 1);
+  assert.equal(bare.highlight(), null);
+});
+
+test('a try waits for the arrival beat and for the dialogue, then the hint shows', () => {
+  const tr = createPuzzleTracker([DEF]);
+  tr.poke('rock', 'mike');
+  run(tr, 5, { fired: false });
+  assert.equal(tr.highlight(), null, 'the beat has not fired');
+  run(tr, 5, { busy: true });
+  assert.equal(tr.highlight(), null, 'a beat is talking');
+  run(tr, 1);
+  assert.equal(tr.highlight(), DEF);
+});
+
+test('a solved puzzle drops its hint, and a retry forgets the try', () => {
+  const tr = createPuzzleTracker([DEF]);
+  tr.poke('rock', 'mike');
+  run(tr, 1);
+  assert.equal(tr.highlight(), DEF);
+  run(tr, 1, { state: 'lit' });
+  assert.equal(tr.highlight(), null, 'solved');
+  tr.reset();
+  run(tr, 1);
+  assert.equal(tr.highlight(), null, 'nothing left after a reset');
+  assert.equal(tr.triedProp(DEF), null);
+});
+
+test('each puzzle is hinted on its own, and the first one in the list shows first', () => {
+  const other: PuzzleDef = { id: 'q', beat: 'b', prop: 'log', hero: 'eleven' };
+  const tr = createPuzzleTracker([DEF, other]);
+  const props = [prop('closed'), { ...prop('closed'), id: 'log' }];
+  const tick = (): void => tr.tick({ hasFired: (b) => b === 'b', busy: false, props, hero: NEAR });
+  tr.poke('log', 'mike');
+  tick();
+  assert.equal(tr.highlight(), other, 'only the log was tried');
+  tr.poke('rock', 'mike');
+  tick();
+  assert.equal(tr.highlight(), DEF, 'both are up and the earlier one in the list shows');
+  assert.equal(tr.triedProp(other), 'log');
+});
+
+test('every gate or door a puzzle lists is a real gate or door in that stage', () => {
+  for (const [name, stage, list] of [['Level 1', S, props], ['Level 2', S2, props2]] as const) {
+    for (const p of stage.puzzles) {
+      for (const id of p.blocks ?? []) {
+        const found = list.find((x) => x.id === id);
+        assert.ok(found, `${name} ${p.id}: ${id} exists`);
+        assert.ok(found && (found.prop === 'gate' || found.prop === 'door'), `${name} ${p.id}: ${id} is a gate or door`);
+      }
+    }
+  }
+  assert.deepEqual(S.puzzles.map((p) => p.blocks ?? []), [['gate1'], []], 'the fence gate belongs to the lantern puzzle');
+  assert.deepEqual(S2.puzzles.map((p) => p.blocks ?? []), [['door1'], ['door2'], []], 'each Lab door belongs to the puzzle that opens it');
 });

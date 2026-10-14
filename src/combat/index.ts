@@ -22,6 +22,19 @@
 // - view().floaters start at x, y and the renderer rises them as t grows. Enemies show 'ko' for about 22 frames
 //   after death. A KO'd hero lies where it fell ('ko' anim) for about 100 frames.
 // - Shake and flash settings come in through setShakeScale() and setReduceFlashing().
+// - Enemy spawns take tier: 'elite' (HP x1.9, ATK x1.6, speed x1.1, cooldown x0.75, XP and quarter drops x2; view().actors[].elite).
+//   'guard' and 'warden' carry a shield (view().actors[].guarding): see enemies/guard.ts and enemies/shield.ts. A guard faces
+//   one of four ways (the actor's dir), starting 'down', and turns to the hero only after 12 frames with the hero behind its
+//   shield. view().hud.boss is the first awake, living Warden.
+// - SimOptions.hazards cycle on their own clock (hazards.ts): the first burst is at `phase`, then every `period`, and the 24
+//   frames before each show 'warn'. The clock stops whenever play does. A hazard's sound plays only when it is within about
+//   a screen of the active hero. view().hazards reports each one every tick.
+// - { t: 'poked', propId, hero } reports a try at a shut gate, door, log, crate, lantern or console: an attack aimed at it
+//   in reach, or pushing against it for 20 ticks (pokes.ts). It says nothing about whether the hero was the right one.
+// - A 'camera' prop with a `cam` sweeps (cameras.ts), spots the active hero in its cone with a clear line, and emits
+//   { t: 'spotted', propId } once per spotting. PropView.cam is the live cone: angle and half in radians, range in px.
+//   A shot lights it (hitBy defaults to 'shoot') and a lit camera is off for good, which openProps restores. Cameras are
+//   not solid. tank, rack and generator are solid by default and do nothing else.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

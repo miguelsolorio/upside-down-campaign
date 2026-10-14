@@ -7,6 +7,7 @@ import { dist, moveBody } from '../combat/space.ts';
 import { speedMul } from '../combat/status.ts';
 import { ratUpdate } from './rat.ts';
 import { agentUpdate } from './agent.ts';
+import { guardUpdate } from './guard.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
 
 const FRICTION = 0.78;
@@ -16,6 +17,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   e.animT++;
   if (e.flash > 0) e.flash = Math.max(0, e.flash - 0.1);
   if (e.cd > 0) e.cd--;
+  if (e.broken > 0) e.broken--;
+  if (e.grace > 0) e.grace--;
   if (e.noLure > 0) e.noLure--;
   if (e.vx !== 0 || e.vy !== 0) {
     moveBody(s, e, e.vx, e.vy);
@@ -34,11 +37,12 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
     e.mode = 'lured';
   }
   if (e.mode === 'lured' && lure) {
-    const moved = dist(e.x, e.y, lure.x, lure.y) > 6 ? stepToward(s, e, lure.x, lure.y, def.speed * 0.9 * speedMul(e.stat)) : 0;
+    const moved = dist(e.x, e.y, lure.x, lure.y) > 6 ? stepToward(s, e, lure.x, lure.y, def.speed * 0.9 * e.spd * speedMul(e.stat)) : 0;
     setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
     return;
   }
   if (e.kind === 'rat') ratUpdate(s, e, hero);
+  else if (e.kind === 'guard' || e.kind === 'warden') guardUpdate(s, e, hero);
   else agentUpdate(s, e, hero);
 }
 

@@ -14,7 +14,7 @@ function script(id: string, lines: DialogueLine[]): DialogueScript {
 
 /** The loading dock. The first string of lights. */
 const L2_START = script('l2_start', [
-  line('lucas', 'Loading dock. One camera, and it points at the road.', 'worried'),
+  line('lucas', 'Loading dock. No guards out here. The cameras start inside.', 'worried'),
   line('dustin', "Hear me out. Nobody guards a delivery door. They plan for trucks, not kids."),
   line('mike', 'Eleven, is this it?'),
   line('eleven', "Papa's place.", 'worried'),
@@ -23,13 +23,21 @@ const L2_START = script('l2_start', [
   line('dustin', 'Go down in there and you start again from the last string you lit.'),
 ]);
 
-/** Corridor A. Two agents pace it. Darts stop at pillars. */
+/** Corridor A. One agent paces it and two cameras sweep it. Lockers give cover. */
 const L2_AGENTS = script('l2_agents', [
-  line('lucas', 'Two suits, pacing the corridor. They turn at the lockers.', 'worried'),
-  line('mike', 'Can we sneak past?'),
-  line('lucas', 'No. Use the pillars and the lockers. A dart stops at the first thing it hits.'),
-  line('dustin', 'Their darts come slow. Dart, pause, dart. Step in during the pause.'),
+  line('lucas', 'One suit in the corridor. Two cameras on the wall above him.', 'worried'),
+  line('dustin', 'If a camera sees us it calls for help. Out of the vents, probably.', 'worried'),
+  line('mike', 'So we stay out of the cones?'),
+  line('lucas', 'Or I knock them out. Far enough back, a camera never sees me aim.', 'determined'),
+  line('dustin', 'Darts stop at lockers. Step in during the pause between shots.'),
   line('eleven', 'Careful.', 'worried'),
+]);
+
+/** The first camera that sees the party, wherever it is. Plays once. */
+const L2_SPOTTED = script('l2_spotted', [
+  line('lucas', 'That camera saw us. Hear the vents?', 'shocked'),
+  line('dustin', 'Something is climbing out to meet us. Great. Love that.', 'worried'),
+  line('mike', 'Backs to the wall. Deal with it, then move.', 'determined'),
 ]);
 
 /** The power room. The BURN puzzle. */
@@ -38,15 +46,16 @@ const L2_BURN_HINT = script('l2_burn_hint', [
   line('lucas', 'So we burn it.'),
   line('dustin', 'Hairspray and a lighter. Swap me in with {swapTo2}. Face the sensor and press {special}.', 'happy'),
   line('mike', 'Stand close. Not too close.', 'worried'),
+  line('lucas', 'And watch the floor plates. They spark first, then they bite.'),
 ]);
 
 const L2_BURN_DONE = script('l2_burn_done', [
   line('dustin', 'Told you. Hairspray beats a heat sensor.', 'happy'),
   line('lucas', "The door's moving."),
-  line('mike', "Quiet. Something's patrolling the hall past it.", 'worried'),
+  line('mike', "Quiet. Something's scratching behind it.", 'worried'),
 ]);
 
-/** The animal lab doorway. The rats wake when it ends. */
+/** Just inside door1, in the animal lab hall. The rats wake when it ends. */
 const L2_CAGES = script('l2_cages', [
   line('lucas', "Cages on every wall. Those aren't lab mice.", 'worried'),
   line('dustin', "Hear me out: a rat that size ate something it shouldn't have.", 'worried'),
@@ -72,6 +81,7 @@ const L2_SHOOT_HINT = script('l2_shoot_hint', [
   line('lucas', 'My wrist rocket flies over glass. Swap me in with {swapTo3}.', 'determined'),
   line('lucas', 'Face the glass and press {attack}.'),
   line('dustin', 'Line up straight on or on a clean diagonal. Rockets fly in eight directions.'),
+  line('mike', 'Mind the grates. Wait for the steam to stop, then cross.', 'worried'),
 ]);
 
 const L2_RELAY_DONE = script('l2_relay_done', [
@@ -79,6 +89,15 @@ const L2_RELAY_DONE = script('l2_relay_done', [
   line('dustin', 'A rock through glass. Physics, you beautiful thing.', 'happy'),
   line('mike', 'Nice shot, Lucas.', 'happy'),
   line('lucas', "I know. The door's open."),
+]);
+
+/** The storage hall, just past door2. Two riot guards. */
+const L2_GUARDS = script('l2_guards', [
+  line('lucas', 'Riot shields. Anything that hits the front just bounces off.', 'worried'),
+  line('dustin', 'Hear me out: a shield only faces one way. Get round to the side or the back.'),
+  line('mike', 'They turn slow. Circle, then hit. Hit them when the shield drops.', 'determined'),
+  line('dustin', 'Fire goes round a shield. A hard shove knocks it aside.'),
+  line('eleven', 'Push.', 'determined'),
 ]);
 
 /** The storage hall. The PUSH puzzle. */
@@ -104,7 +123,16 @@ const L2_LOCKDOWN_START = script('l2_lockdown_start', [
   line('mike', 'Back to back. Check on each other.', 'determined'),
   line('lucas', 'Watch your MP. Rotate hurt kids to the bench.'),
   line('dustin', 'When the d20 meter fills, press {burst}.'),
+  line('lucas', 'And the floor in here is live. Step off a plate when it sparks.', 'worried'),
   line('eleven', 'Coming.', 'determined'),
+]);
+
+/** The last wave: the Warden walks in. */
+const L2_WARDEN = script('l2_warden', [
+  line('lucas', 'That one is bigger. Bigger shield, too.', 'shocked'),
+  line('dustin', 'When a ring grows on the floor round him, get out of it. That is a slam.', 'worried'),
+  line('mike', 'Circle him. Hit him while he gets up.', 'determined'),
+  line('eleven', "Papa's man.", 'determined'),
 ]);
 
 const L2_LOCKDOWN_CLEAR = script('l2_lockdown_clear', [
@@ -125,6 +153,6 @@ const L2_CLEAR = script('l2_clear', [
 ]);
 
 export const L2_SCRIPTS: DialogueScript[] = [
-  L2_START, L2_AGENTS, L2_BURN_HINT, L2_BURN_DONE, L2_CAGES, L2_SCARE, L2_SHOOT_HINT, L2_RELAY_DONE,
-  L2_PUSH_HINT, L2_CRATE_CLEARED, L2_LOCKDOWN_START, L2_LOCKDOWN_CLEAR, L2_CLEAR,
+  L2_START, L2_AGENTS, L2_SPOTTED, L2_BURN_HINT, L2_BURN_DONE, L2_CAGES, L2_SCARE, L2_SHOOT_HINT, L2_RELAY_DONE,
+  L2_GUARDS, L2_PUSH_HINT, L2_CRATE_CLEARED, L2_LOCKDOWN_START, L2_WARDEN, L2_LOCKDOWN_CLEAR, L2_CLEAR,
 ];

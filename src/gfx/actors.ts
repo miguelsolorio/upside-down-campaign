@@ -1,12 +1,15 @@
 // Actor sprites: one atlas canvas per character (13 frames by 4 directions), plus flash and tint variants.
-// Overlays (shadow, nosebleed, "!" and HP bar) are drawn with plain rects around the sprite.
+// Overlays (shadow, nosebleed, "!" and HP bar) are drawn with plain rects around the sprite. A cell is 16 by 16, or
+// 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own.
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
 import { ANIM_ORDER, CELL, POSES, bodyShift, composeFrame, composeRat } from './actor_pose.ts';
+import { composeGuard, composeWarden, FOE_CELL } from './actor_foes.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
 import { AGENT, RAT_PAL } from './data/foes.ts';
+import { PALS, TRIM } from './data/guard.ts';
 import { canvasFromPixels, mirrorRoles, px32, rect } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 
@@ -29,6 +32,8 @@ function frameIndex(anim: AnimId, t: number): number {
 
 interface Sheet {
   id: string;
+  /** Side of one square frame: 16, or 24 for the warden. */
+  cell: number;
   roles: Uint8Array[];
   /** First opaque row of each direction's standing and walking frames, for placing the bar and the "!". */
   tops: number[];
@@ -42,39 +47,63 @@ const specs = new Map<string, CharSpec>();
 for (const s of [...KIDS, ...ADULTS, AGENT]) specs.set(s.id, s);
 const sheets = new Map<string, Sheet>();
 
-function buildSheet(id: string): Sheet {
-  const spec = specs.get(id) ?? (id === 'rat' ? undefined : specs.get('mike'));
+/** The red band of an elite: the second row of the sprite, across the head. */
+function eliteBand(buf: Uint8Array, C: number): void {
+  let top = -1;
+  for (let y = 0; y < C && top < 0; y++) for (let x = 0; x < C; x++) { const v = buf[y * C + x] as number; if (v && v !== 107) { top = y; break; } }
+  if (top < 0 || top + 1 >= C) return;
+  for (let x = 0; x < C; x++) { const v = buf[(top + 1) * C + x] as number; if (v && v !== 107) buf[(top + 1) * C + x] = 82; }
+}
+
+/** key is the actor id, then ":low" for a guard with its shield down, then ":elite". */
+function buildSheet(key: string): Sheet {
+  const [id, ...flags] = key.split(':') as [string, ...string[]];
+  const elite = flags.includes('elite'), low = flags.includes('low');
+  const foe = id === 'guard' || id === 'warden';
+  const C = foe ? (FOE_CELL[id] as number) : CELL;
+  const spec = specs.get(id) ?? (id === 'rat' || foe ? undefined : specs.get('mike'));
   const roles: Uint8Array[] = [];
   for (const dir of DIRS) {
     const view = dir === 'down' ? 'down' : dir === 'up' ? 'up' : 'side';
     for (const anim of ANIM_ORDER) {
       for (let f = 0; f < POSES[anim].length; f++) {
-        const buf = spec ? composeFrame(spec, view, anim, f) : composeRat(view, anim, f);
-        roles.push(dir === 'left' ? mirrorRoles(buf, CELL, CELL) : buf);
+        const buf = id === 'guard' ? composeGuard(view, anim, f, low) : id === 'warden' ? composeWarden(view, anim, f, low)
+          : spec ? composeFrame(spec, view, anim, f) : composeRat(view, anim, f);
+        if (elite && !foe && anim !== 'ko') eliteBand(buf, C);
+        roles.push(dir === 'left' ? mirrorRoles(buf, C, C) : buf);
       }
     }
   }
   const tops = DIRS.map((_, d) => {
-    let top = CELL;
+    let top = C;
     for (let f = 0; f < FRAME_BASE.attack; f++) {
       const buf = roles[d * FRAME_COUNT + f] as Uint8Array;
-      for (let i = 0; i < buf.length; i++) if (buf[i]) { top = Math.min(top, (i / CELL) | 0); break; }
+      for (let i = 0; i < buf.length; i++) if (buf[i]) { top = Math.min(top, (i / C) | 0); break; }
     }
     return top;
   });
-  return { id, roles, tops, pal: spec ? spec.pal : { ...RAT_PAL }, tints: new Map() };
+  const pal: Record<string, ColorName> = id === 'guard' || id === 'warden' ? { ...PALS[id], ...TRIM[id][elite ? 'elite' : 'normal'] }
+    : spec ? { ...spec.pal, ...(elite ? { b: 'red', R: 'hot' } : {}) } : { ...RAT_PAL, ...(elite ? { R: 'red' } : {}) };
+  return { id: key, cell: C, roles, tops, pal, tints: new Map() };
 }
 
-function sheetOf(id: string): Sheet {
-  let s = sheets.get(id);
-  if (!s) { s = buildSheet(id); sheets.set(id, s); }
+function sheetOf(key: string): Sheet {
+  let s = sheets.get(key);
+  if (!s) { s = buildSheet(key); sheets.set(key, s); }
   return s;
+}
+
+/** The atlas an actor is drawn from: its id, plus whether a guard has its shield down and whether it is an elite. */
+function keyOf(id: string, guarding: boolean | undefined, elite: boolean | undefined, kind: string): string {
+  const foe = id === 'guard' || id === 'warden';
+  return id + (foe && guarding === false ? ':low' : '') + (elite && kind === 'enemy' ? ':elite' : '');
 }
 
 type Mode = 'main' | 'white' | ColorName;
 
 function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
-  const W = FRAME_COUNT * CELL, H = DIRS.length * CELL;
+  const C = sh.cell;
+  const W = FRAME_COUNT * C, H = DIRS.length * C;
   const px = new Uint32Array(W * H);
   const own = new Uint32Array(128);
   for (const k of Object.keys(sh.pal)) own[k.charCodeAt(0)] = px32(sh.pal[k] as ColorName);
@@ -82,10 +111,10 @@ function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
   const white = px32('white');
   const tint = mode === 'main' || mode === 'white' ? 0 : px32(mode);
   sh.roles.forEach((buf, idx) => {
-    const ox = (idx % FRAME_COUNT) * CELL, oy = ((idx / FRAME_COUNT) | 0) * CELL;
-    for (let y = 0; y < CELL; y++) {
-      for (let x = 0; x < CELL; x++) {
-        const v = buf[y * CELL + x] as number;
+    const ox = (idx % FRAME_COUNT) * C, oy = ((idx / FRAME_COUNT) | 0) * C;
+    for (let y = 0; y < C; y++) {
+      for (let x = 0; x < C; x++) {
+        const v = buf[y * C + x] as number;
         if (!v) continue;
         let c = own[v] || white;
         if (mode === 'white') c = white;
@@ -110,13 +139,15 @@ function atlasFor(sh: Sheet, v: ActorView): HTMLCanvasElement {
 
 // ---------------------------------------------------------------- shadow, "!" and bar
 const SHADOW_SIZES: [number, number][] = [[12, 4], [10, 4], [8, 3], [6, 2]];
+/** The warden's shadow is wider. */
+const SHADOW_BIG: [number, number][] = [[20, 6], [18, 5], [14, 4], [10, 3]];
 const shadowCache = new Map<number, HTMLCanvasElement>();
 
-function shadowSprite(size: number, phase: number): HTMLCanvasElement {
-  const key = size * 2 + phase;
+function shadowSprite(size: number, phase: number, big = false): HTMLCanvasElement {
+  const key = (big ? 8 : 0) + size * 2 + phase;
   let c = shadowCache.get(key);
   if (c) return c;
-  const [w, h] = SHADOW_SIZES[size] as [number, number];
+  const [w, h] = (big ? SHADOW_BIG : SHADOW_SIZES)[size] as [number, number];
   const px = new Uint32Array(w * h);
   const ink = px32('black');
   for (let j = 0; j < h; j++) {
@@ -132,11 +163,11 @@ function shadowSprite(size: number, phase: number): HTMLCanvasElement {
 }
 
 /** Dithered oval on the ground. The checker is anchored to world pixels so it never shimmers. */
-function drawShadow(ctx: Ctx, cx: number, cy: number, z: number): void {
+function drawShadow(ctx: Ctx, cx: number, cy: number, z: number, big = false): void {
   const size = z >= 14 ? 3 : z >= 8 ? 2 : z >= 4 ? 1 : 0;
-  const [w, h] = SHADOW_SIZES[size] as [number, number];
+  const [w, h] = (big ? SHADOW_BIG : SHADOW_SIZES)[size] as [number, number];
   const x = cx - (w >> 1), y = cy + 1 - h;
-  ctx.drawImage(shadowSprite(size, (x + y) & 1), x, y);
+  ctx.drawImage(shadowSprite(size, (x + y) & 1, big), x, y);
 }
 
 const ALERT_ROWS = [
@@ -152,14 +183,16 @@ function alertSprite(): HTMLCanvasElement {
   return alertCanvas;
 }
 
-function drawHpBar(ctx: Ctx, cx: number, top: number, hp: number, hpMax: number): void {
+/** The HP bar over an enemy. An elite's is 2 px wider. */
+function drawHpBar(ctx: Ctx, cx: number, top: number, hp: number, hpMax: number, elite = false): void {
   const frac = hpMax > 0 ? Math.max(0, Math.min(1, hp / hpMax)) : 0;
-  const w = Math.round(12 * frac);
-  rect(ctx, cx - 7, top, 14, 4, 'ink');
-  rect(ctx, cx - 6, top + 1, 12, 2, 'blood0');
+  const inner = elite ? 14 : 12, half = inner >> 1;
+  const w = Math.round(inner * frac);
+  rect(ctx, cx - half - 1, top, inner + 2, 4, 'ink');
+  rect(ctx, cx - half, top + 1, inner, 2, 'blood0');
   if (w > 0) {
-    rect(ctx, cx - 6, top + 1, w, 1, 'hot');
-    rect(ctx, cx - 6, top + 2, w, 1, 'red');
+    rect(ctx, cx - half, top + 1, w, 1, 'hot');
+    rect(ctx, cx - half, top + 2, w, 1, 'red');
   }
 }
 
@@ -182,34 +215,35 @@ function drawNosebleed(ctx: Ctx, v: ActorView, ox: number, oy: number, frame: nu
 
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
 export function drawActor(ctx: Ctx, v: ActorView): void {
-  const sh = sheetOf(v.id);
+  const sh = sheetOf(keyOf(v.id, v.guarding, v.elite, v.kind));
+  const C = sh.cell;
   const cx = Math.round(v.x), cy = Math.round(v.y);
   const z = Math.max(0, Math.round(v.z));
-  const ox = cx - 8, oy = cy - 16 - z;
+  const ox = cx - (C >> 1), oy = cy - C - z;
   const row = DIR_ROW[v.dir];
   const head = oy + (sh.tops[row] as number);
   if (!v.blink) {
-    drawShadow(ctx, cx, cy, z);
+    drawShadow(ctx, cx, cy, z, C > CELL);
     const frame = frameIndex(v.anim, v.t);
-    ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[v.anim] + frame) * CELL, row * CELL, CELL, CELL, ox, oy, CELL, CELL);
+    ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[v.anim] + frame) * C, row * C, C, C, ox, oy, C, C);
     if (v.strained) drawNosebleed(ctx, v, ox, oy, frame);
-    if (v.bar) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax);
+    if (v.bar) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
   }
   if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar ? 15 : 10) + ((v.t >> 2) & 1));
 }
 
 /** Builds every sheet and the main atlases up front. */
 export function warmActors(): void {
-  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'agent', 'rat']) {
+  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'agent', 'rat', 'guard', 'warden']) {
     const sh = sheetOf(id);
     sh.main = render(sh, 'main');
   }
-  shadowSprite(0, 0); shadowSprite(0, 1); alertSprite();
+  shadowSprite(0, 0); shadowSprite(0, 1); shadowSprite(0, 0, true); shadowSprite(0, 1, true); alertSprite();
 }
 
-/** For the sheet scene: draws one raw frame at x, y (top-left). */
-export function drawActorFrame(ctx: Ctx, id: string, dir: Dir, anim: AnimId, frame: number, x: number, y: number): void {
-  const sh = sheetOf(id);
-  ctx.drawImage(sh.main ?? (sh.main = render(sh, 'main')), (FRAME_BASE[anim] + frame) * CELL, DIR_ROW[dir] * CELL, CELL, CELL, x, y, CELL, CELL);
+/** For the sheet scene: draws one raw frame at x, y (top-left). A guard or warden can have its shield down, and any enemy can be an elite. */
+export function drawActorFrame(ctx: Ctx, id: string, dir: Dir, anim: AnimId, frame: number, x: number, y: number, opts: { guarding?: boolean; elite?: boolean } = {}): void {
+  const sh = sheetOf(keyOf(id, opts.guarding, opts.elite, id === 'agent' || id === 'rat' || id === 'guard' || id === 'warden' ? 'enemy' : 'hero'));
+  const C = sh.cell;
+  ctx.drawImage(sh.main ?? (sh.main = render(sh, 'main')), (FRAME_BASE[anim] + frame) * C, DIR_ROW[dir] * C, C, C, x, y, C, C);
 }
-

@@ -144,6 +144,52 @@ export const SFX: Record<SfxId, Recipe> = {
   // carries the pitch and a triangle an octave down gives it body, so it reads without biting. The last
   // tone is not held, so the siren dies away instead of cutting off.
   klaxon: R(KLAXON, 0),
+  // The Lab's hazards and guards. Each is short and sits in its own part of the spectrum, so a busy fight keeps them apart.
+  // zap: a floor panel firing. A hard crack, a raspy noise buzz that falls from about 170 Hz to 45 Hz, a thin
+  // zip sliding down, and four spark pops after it.
+  zap: R([
+    N(15, 30000, 0.05, 0.9, { f: bp(2400, 1200, 0.7) }),
+    N(7, 22000, 0.24, 0.8, { c2: 6000, f: lp(2200), rise: 0.015 }),
+    T('p25', 2200, 0.2, 0.2, { f2: 160 }),
+    N(7, 14000, 0.02, 0.5, { at: 0.05, f: bp(2800, undefined, 1.2) }), N(7, 17000, 0.02, 0.45, { at: 0.1, f: bp(2800, undefined, 1.2) }),
+    N(7, 12000, 0.02, 0.4, { at: 0.14, f: bp(2800, undefined, 1.2) }), N(7, 15000, 0.02, 0.35, { at: 0.19, f: bp(2800, undefined, 1.2) }),
+  ], 0.05),
+  // steam: a vent venting. Two layers of soft noise swell and fade together, one airy, one a little hollow.
+  // Almost nothing above 6 kHz, so it hisses without biting.
+  steam: R([
+    N(15, 30000, 0.5, 0.8, { f: bp(2600, 1500, 0.5), rise: 0.2 }),
+    N(15, 12000, 0.5, 0.45, { f: lp(1500, 800), rise: 0.16 }),
+  ], 0.03),
+  // spotted: a camera sees the party. Two thin, cold pings a tritone apart, rising, with a faint echo of the
+  // second. Thin pulse and no low end, so it cannot be mistaken for alert (a held square fifth, warm and short).
+  spotted: R([
+    T('p12', 1175, 0.2, 0.3), T('tri', 2349, 0.14, 0.12), N(7, 20000, 0.01, 0.2, { f: hp(5000) }),
+    T('p12', 1661, 0.3, 0.3, { at: 0.1 }), T('tri', 3322, 0.18, 0.12, { at: 0.1 }),
+    N(7, 20000, 0.01, 0.2, { at: 0.1, f: hp(5000) }), T('p12', 1661, 0.12, 0.08, { at: 0.2 }),
+  ], 0.01),
+  // block: a riot shield stops a hit. A dull clang from two unrelated metal partials and a narrow ring of noise,
+  // on top of a low thud.
+  block: R([
+    T('tri', 160, 0.1, 0.6, { f2: 60 }),
+    N(15, 20000, 0.04, 0.6, { f: bp(1500, undefined, 0.8) }),
+    N(7, 11000, 0.15, 0.7, { f: bp(1100, 700, 5), rise: 0.004 }),
+    T('p25', 470, 0.18, 0.2, { f2: 450 }), T('p25', 760, 0.14, 0.16),
+  ], 0.04),
+  // bash: a guard swings. A low whoosh swells for 0.15 s, then a thump lands at the end of it. Lower and
+  // heavier than swing, which is a quick high swish.
+  bash: R([
+    N(15, 30000, 0.18, 0.9, { f: bp(220, 1100, 0.8), rise: 0.12 }),
+    T('tri', 200, 0.16, 0.22, { f2: 120 }),
+    N(15, 10000, 0.1, 0.9, { at: 0.16, f: lp(900, 200) }), T('tri', 110, 0.1, 0.5, { at: 0.16, f2: 45 }),
+  ], 0.04),
+  // slam: the Warden hits the floor. A crack, then a boom that drops from 120 Hz to 32 Hz, a rumble of noise
+  // that dies away over 0.6 s and a slow grumble underneath. The loudest of the six.
+  slam: R([
+    N(15, 30000, 0.1, 0.9, { f: bp(1200, 400, 0.7) }),
+    T('tri', 120, 0.5, 0.6, { f2: 32 }), T('p25', 70, 0.35, 0.3, { f2: 35 }),
+    N(15, 7000, 0.6, 0.9, { f: lp(450, 80), rise: 0.04 }),
+    N(7, 2600, 0.55, 0.5, { at: 0.05, f: lp(260, 100) }),
+  ], 0.03),
   // the d20
   roll: R(RATTLE),
   rollLand: R([T('tri', 880, 0.12, 0.32, { f2: 1175 }), N(7, 14000, 0.02, 0.5, { f: hp(2000) })]),
@@ -172,6 +218,7 @@ const LEVEL: Record<SfxId, number> = {
   dash: 0.45, swap: 0.94, burst: 0.67, pickup: 0.96, heal: 0.81, noMp: 0.65, nosebleed: 1,
   select: 1.1, confirm: 0.8, cancel: 0.7, pause: 1.17, dialogOpen: 1,
   gateOpen: 1, targetHit: 1, logPush: 0.41, lights: 1.22, flicker: 0.3, growl: 0.44, klaxon: 0.7,
+  zap: 0.43, steam: 0.31, spotted: 0.64, block: 0.55, bash: 0.56, slam: 0.535,
   roll: 0.89, rollLand: 0.47, natTwenty: 0.95, levelUp: 0.9, alert: 0.47, step: 0.8,
 };
 

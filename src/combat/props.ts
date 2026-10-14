@@ -1,4 +1,5 @@
 // Props the sim reacts to: logs (cleared by a push), gates (opened by the world) and targets (lit by a shot).
+// Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again.
 import type { Utility } from '../core/types.ts';
 import type { Prop, S } from './state.ts';
 import { dust, sfx } from './fx.ts';
@@ -7,11 +8,11 @@ export function isPushable(p: Prop): boolean {
   return p.state !== 'open' && (p.pushBy === 'push' || (p.kind === 'log' && p.pushBy === undefined));
 }
 
-/** True when a hit carrying `util` lights this prop. Targets default to being hit by `shoot`. */
+/** True when a hit carrying `util` lights this prop. Targets and cameras default to being hit by `shoot`. */
 export function isTargetFor(p: Prop, util: Utility | null): boolean {
   if (util === null || p.state === 'lit') return false;
   if (p.hitBy !== undefined) return p.hitBy === util;
-  return p.kind === 'target' && util === 'shoot';
+  return (p.kind === 'target' || p.kind === 'camera') && util === 'shoot';
 }
 
 export function lightTarget(s: S, p: Prop): void {
@@ -38,7 +39,7 @@ export function openPropById(s: S, id: string): void {
   const p = s.props.find((q) => q.id === id);
   if (!p || p.state === 'open') return;
   if (p.kind === 'log' || isPushable(p)) { clearProp(s, p); return; }
-  if (p.kind === 'target' || p.kind === 'console') { lightTarget(s, p); return; }
+  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
   p.t = 0;
@@ -46,5 +47,5 @@ export function openPropById(s: S, id: string): void {
 }
 
 export function updateProps(s: S): void {
-  for (const p of s.props) p.t++;
+  for (const p of s.props) { p.t++; if (p.pokeCd > 0) p.pokeCd--; }
 }

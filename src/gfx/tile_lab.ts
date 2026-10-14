@@ -10,11 +10,12 @@ import type { TileCtx } from './tile_ground.ts';
 
 type Rnd = () => number;
 
-const LAB_SOLID = new Set<TileName>(['labwall', 'labcap', 'pipe', 'glass', 'cage']);
-const WALLY = new Set<TileName>(['labwall', 'labcap', 'pipe', 'glass']);
+const LAB_SOLID = new Set<TileName>(['labwall', 'labcap', 'pipe', 'glass', 'cage', 'wallsign', 'mass', 'locker', 'bench', 'cabinet', 'shelf']);
+const WALLY = new Set<TileName>(['labwall', 'labcap', 'pipe', 'glass', 'wallsign', 'mass']);
 /** True for anything a wall can end against: floors, hazard, outdoor ground. */
 const isOpen = (n: TileName): boolean => !LAB_SOLID.has(n);
-const isWally = (n: TileName): boolean => WALLY.has(n);
+/** True for the wall family, which throws a shadow on the floor beside it. */
+export const isWally = (n: TileName): boolean => WALLY.has(n);
 const pick = (r: Rnd, lo: number, hi: number): number => lo + Math.floor(r() * (hi - lo + 1));
 
 export function transposed(px: Px): Px {
@@ -45,14 +46,14 @@ function crack(px: Px, r: Rnd): void {
 }
 
 /** The shadow a wall throws on the floor beside it: a dithered band along the north and west edges. */
-function wallShadow(px: Px, c: TileCtx): void {
+export function wallShadow(px: Px, c: TileCtx, col: ColorName = 'grey3'): void {
   if (isWally(c.near.n)) {
-    px.rect(0, 0, 16, 1, 'grey3');
-    for (let x = 0; x < 16; x++) { if (!(x & 1)) px.set(x, 1, 'grey3'); if ((x & 3) === 1) px.set(x, 2, 'grey3'); }
+    px.rect(0, 0, 16, 1, col);
+    for (let x = 0; x < 16; x++) { if (!(x & 1)) px.set(x, 1, col); if ((x & 3) === 1) px.set(x, 2, col); }
   }
   if (isWally(c.near.w)) {
-    px.rect(0, 0, 1, 16, 'grey3');
-    for (let y = 0; y < 16; y++) if (!(y & 1)) px.set(1, y, 'grey3');
+    px.rect(0, 0, 1, 16, col);
+    for (let y = 0; y < 16; y++) if (!(y & 1)) px.set(1, y, col);
   }
 }
 
@@ -60,7 +61,7 @@ function wallShadow(px: Px, c: TileCtx): void {
  * The pale floor. split draws the 8 px sub-grid of labfloor2. bare leaves off the scuffs and stains, so the
  * same floor can sit under a vent, a window or a cage.
  */
-function floor(c: TileCtx, r: Rnd, split: boolean, bare = false): Px {
+export function labFloor(c: TileCtx, r: Rnd, split: boolean, bare = false): Px {
   const px = new Px(16).fill('bone');
   px.scatter(r, 'white', 6).scatter(r, 'grey3', 3);
   if (!bare) {
@@ -98,7 +99,7 @@ function hazard(c: TileCtx, r: Rnd): Px {
 }
 
 function vent(c: TileCtx, r: Rnd): Px {
-  const px = floor(c, r, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
+  const px = labFloor(c, r, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
   const cold = hash2(c.tx, c.ty, 17) % 3 === 0;
   px.rect(1, 1, 14, 14, 'grey1').rect(1, 1, 13, 13, 'grey3').rect(2, 2, 12, 12, 'grey2');
   px.rect(3, 3, 10, 10, cold ? 'teal0' : 'ink');
@@ -114,7 +115,7 @@ function vent(c: TileCtx, r: Rnd): Px {
 
 // ---------------------------------------------------------------- walls
 /** The painted wall face: pale panel on top, a teal band, a darker kick plate, and a baseboard. */
-function face(c: TileCtx, r: Rnd, detail: boolean): Px {
+export function labFace(c: TileCtx, r: Rnd, detail: boolean): Px {
   const px = new Px(16).fill('grey3');
   px.scatter(r, 'bone', 7, 0, 2, 16, 7).scatter(r, 'mist', 3, 0, 2, 16, 7).scatter(r, 'grey2', 2, 0, 2, 16, 7);
   px.rect(0, 9, 16, 1, 'bone').rect(0, 10, 16, 1, 'teal1').rect(0, 11, 16, 1, 'teal0');
@@ -173,7 +174,7 @@ function pipeBody(valve: boolean, r: Rnd): Px {
 function pipe(c: TileCtx, r: Rnd): Px {
   const same = (n: TileName): boolean => n === 'pipe';
   const horiz = same(c.near.w) || same(c.near.e) || !(same(c.near.n) || same(c.near.s));
-  const px = face(c, r, false);
+  const px = labFace(c, r, false);
   const body = pipeBody(hash2(c.tx, c.ty, 337) % 6 === 0, r);
   px.blit(horiz ? body : transposed(body), 0, 0);
   return px;
@@ -182,7 +183,7 @@ function pipe(c: TileCtx, r: Rnd): Px {
 // ---------------------------------------------------------------- window and cage
 /** An observation window: the pale floor of the room behind, tinted blue, in a steel frame, with a few streaks of glare. */
 function glass(c: TileCtx, r: Rnd): Px {
-  const px = floor(c, r, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
+  const px = labFloor(c, r, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
   const pairs: [ColorName, ColorName][] = [['bone', 'mist'], ['white', 'bone'], ['grey3', 'slate']];
   const tint = new Map<number, number>(pairs.map(([a, b]) => [px32(a), px32(b)] as [number, number]));
   for (let i = 0; i < 256; i++) { const m = tint.get(px.d[i] as number); if (m !== undefined) px.d[i] = m; }
@@ -204,7 +205,7 @@ function glass(c: TileCtx, r: Rnd): Px {
 
 /** A rat cage on the lab floor: steel frame, dark inside, bars, a tray with bedding, and sometimes eyes. */
 function cage(c: TileCtx, r: Rnd): Px {
-  const px = floor(c, r, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
+  const px = labFloor(c, r, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
   px.rect(1, 14, 14, 1, 'grey3');
   for (let x = 2; x < 14; x += 2) px.set(x, 15, 'grey3');
   px.rect(1, 2, 14, 12, 'grey2').rect(1, 2, 14, 1, 'white').rect(1, 3, 14, 1, 'grey3').rect(1, 2, 1, 12, 'grey3');
@@ -226,8 +227,8 @@ function cage(c: TileCtx, r: Rnd): Px {
 /** Lab floors, hazard stripes and the vent. Null for any other tile. */
 export function labGround(name: TileName, c: TileCtx, r: Rnd): Px | null {
   switch (name) {
-    case 'labfloor': return floor(c, r, false);
-    case 'labfloor2': return floor(c, r, true);
+    case 'labfloor': return labFloor(c, r, false);
+    case 'labfloor2': return labFloor(c, r, true);
     case 'hazard': return hazard(c, r);
     case 'vent': return vent(c, r);
     default: return null;
@@ -237,7 +238,7 @@ export function labGround(name: TileName, c: TileCtx, r: Rnd): Px | null {
 /** Lab walls, pipes, windows and cages. Null for any other tile. */
 export function labObject(name: TileName, c: TileCtx, r: Rnd): Px | null {
   switch (name) {
-    case 'labwall': return face(c, r, true);
+    case 'labwall': return labFace(c, r, true);
     case 'labcap': return cap(c, r);
     case 'pipe': return pipe(c, r);
     case 'glass': return glass(c, r);

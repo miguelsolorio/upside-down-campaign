@@ -146,7 +146,7 @@ const BEATS: Beat[] = [
 
 // ---------------------------------------------------------------- puzzles
 const PUZZLES: PuzzleDef[] = [
-  { id: 'gate', beat: 'gate_lucas', prop: 'target1', hero: 'lucas' },
+  { id: 'gate', beat: 'gate_lucas', prop: 'target1', hero: 'lucas', blocks: ['gate1'] },
   { id: 'log', beat: 'push_gate', prop: 'log1', hero: 'eleven' },
 ];
 

@@ -40,7 +40,7 @@ const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
 /** Props that stay open across a retry or a load. */
-const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate']);
+const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera']);
 
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
@@ -240,6 +240,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         case 'pickup': if (e.item === 'eggo') speak(e.hero, 'eggo'); break;
         case 'swap': speak(e.to, 'swapIn'); swapAge = 0; break;
         case 'allDown': if (wipeT < 0) wipeT = 0; break;
+        case 'poked': puzzles.poke(e.propId, e.hero); break;
         default: break;
       }
     }
@@ -359,7 +360,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const stuckProp = stuck && view.props.find((p) => p.id === stuck.prop);
       // Say where to look. Only nudge toward another hero if the one who can solve it is not already out front.
       const leading = view.hud.party.find((m) => m.active)?.id;
-      if (stuck && stuckProp) drawPuzzleHighlight(ctx, stuckProp, cam, g.frame, stuck.hero === leading ? undefined : HINT_NUDGE);
+      const nudge = stuck && stuck.hero !== leading ? HINT_NUDGE : undefined;
+      // When the hint comes from trying a gate or door, the words go over that gate or door, where the party is looking,
+      // and the puzzle's own prop (the sensor, the lantern) gets the brackets alone.
+      const triedId = stuck ? puzzles.triedProp(stuck) : null;
+      const triedProp = triedId && triedId !== stuck?.prop ? view.props.find((p) => p.id === triedId) : undefined;
+      if (stuck && stuckProp) {
+        if (triedProp) { drawPuzzleHighlight(ctx, triedProp, cam, g.frame, nudge); drawPuzzleHighlight(ctx, stuckProp, cam, g.frame); }
+        else drawPuzzleHighlight(ctx, stuckProp, cam, g.frame, nudge);
+      }
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
       const ptr = g.input.pointer();

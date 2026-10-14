@@ -1,4 +1,4 @@
-// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts.
+// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts.
 // Trees read their neighbours so a forest is one canopy with trunks only along its south edge.
 import type { TileName } from '../core/tiles.ts';
 import { hash2 } from './canvas.ts';
@@ -7,16 +7,27 @@ import { groundTile, isTree, rngFor } from './tile_ground.ts';
 import type { TileCtx } from './tile_ground.ts';
 import type { ColorName } from './palette.ts';
 import { labObject } from './tile_lab.ts';
+import { lab2Object } from './tile_lab3.ts';
 
-const GROUNDS = new Set<TileName>(['grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent']);
+const GROUNDS = new Set<TileName>([
+  'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
+  'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines',
+]);
+/** Floors that are a mark on another floor: an object beside one stands on the plain floor named here, unless a plain floor is also beside it. */
+const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet' };
 
-/** The ground an object stands on: whatever its neighbours are, else the given default. Hazard and vent give a plain lab floor. */
+/** The ground an object stands on: whatever its neighbours are, else the given default. */
 function under(c: TileCtx, prefer: TileName): Px {
-  let pick = prefer;
+  let pick = prefer, marked: TileName | null = null;
   for (const n of [c.near.s, c.near.n, c.near.e, c.near.w]) {
-    if (GROUNDS.has(n)) { pick = n === 'flowers' ? 'grass' : n === 'hazard' || n === 'vent' ? 'labfloor' : n; break; }
+    if (!GROUNDS.has(n)) continue;
+    const plain = MARKED[n];
+    if (plain) { marked ??= plain; continue; }
+    pick = n === 'flowers' ? 'grass' : n;
+    marked = null;
+    break;
   }
-  return groundTile(pick, c) as Px;
+  return groundTile(marked ?? pick, c) as Px;
 }
 
 /** A soft ground shadow: every other pixel in a flat oval. */
@@ -284,6 +295,13 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
     case 'glass':
     case 'cage':
       return labObject(name, c, rngFor(c, name));
+    case 'locker':
+    case 'bench':
+    case 'cabinet':
+    case 'shelf':
+    case 'mass':
+    case 'wallsign':
+      return lab2Object(name, c, rngFor(c, name), under);
     default: return null;
   }
 }

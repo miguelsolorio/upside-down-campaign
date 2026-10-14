@@ -13,6 +13,7 @@ import { drawFx } from './fx.ts';
 import { drawPanel } from './ui.ts';
 import { PAL } from './palette.ts';
 import { drawLabContext, drawLabStage } from './sheet_lab.ts';
+import { drawLab2Context, drawLab2Stage } from './sheet_lab2.ts';
 
 export interface Page { title: string; subs: number; draw(ctx: Ctx, t: number, sub: number): void }
 
@@ -24,8 +25,8 @@ const FRAMES: [AnimId, number][] = [
   ['cast', 0], ['cast', 1], ['dash', 0], ['hurt', 0], ['ko', 0],
 ];
 
-function view(id: string, x: number, y: number, over: Partial<ActorView> = {}): ActorView {
-  const kind = id === 'agent' || id === 'rat' ? 'enemy' : 'hero';
+export function view(id: string, x: number, y: number, over: Partial<ActorView> = {}): ActorView {
+  const kind = id === 'agent' || id === 'rat' || id === 'guard' || id === 'warden' ? 'enemy' : 'hero';
   return {
     kind, id: id as ActorView['id'], x, y, dir: 'down', anim: 'idle', t: 0, flash: 0, blink: false, strained: false,
     tint: null, alert: false, z: 0, bar: null, ...over,
@@ -87,16 +88,18 @@ const flags: Page = {
 };
 
 const LAB_TILES = ['labfloor', 'labfloor2', 'hazard', 'vent', 'labwall', 'labcap', 'pipe', 'glass', 'cage'];
-const OUTDOOR_TILES = TILE_NAMES.filter((n) => !LAB_TILES.includes(n));
+const LAB2_TILES = ['locker', 'bench', 'cabinet', 'shelf', 'cable', 'drain', 'stain', 'vines', 'mass', 'tilegreen', 'carpet', 'wallsign', 'plate'];
+const OUTDOOR_TILES = TILE_NAMES.filter((n) => !LAB_TILES.includes(n) && !LAB2_TILES.includes(n));
 
-// Two pages: the outdoor tiles (sub 0), then the lab tiles with a strip showing them beside their neighbours (sub 1).
+// Three pages: the outdoor tiles (sub 0), the lab tiles with a strip showing them beside their neighbours (sub 1),
+// then the second pass of lab tiles, three variants each, with their own strip (sub 2).
 const tiles: Page = {
   title: 'TILES',
-  subs: 2,
+  subs: 3,
   draw(ctx, t, sub) {
     ctx.fillStyle = PAL.night;
     ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
-    const names = sub === 0 ? OUTDOOR_TILES : TILE_NAMES.filter((n) => LAB_TILES.includes(n));
+    const names = sub === 0 ? OUTDOOR_TILES : TILE_NAMES.filter((n) => (sub === 1 ? LAB_TILES : LAB2_TILES).includes(n));
     names.forEach((n, i) => {
       const cx = (i % 4) * 64, cy = 2 + ((i / 4) | 0) * 31;
       for (let v = 0; v < 3; v++) ctx.drawImage(tileSample(n, v, t), cx + v * 16, cy);
@@ -106,6 +109,11 @@ const tiles: Page = {
       drawText(ctx, 'LAB TILES AND THEIR NEIGHBOURS', 4, 92, 'mist');
       drawLabContext(ctx, 104, t);
       drawText(ctx, 'UP DOWN', 4, 204, 'slate');
+    }
+    if (sub === 2) {
+      drawText(ctx, 'HARD LAB TILES BESIDE NEIGHBOURS', 4, 124, 'mist');
+      drawLab2Context(ctx, 136, t);
+      drawText(ctx, 'UP DOWN', 200, 124, 'slate');
     }
   },
 };
@@ -130,12 +138,19 @@ let bakedNight: BakedStage | null = null;
 
 const stage: Page = {
   title: 'STAGE',
-  subs: 3,
+  subs: 4,
   draw(ctx, t, sub) {
     if (sub === 2) {
       drawLabStage(ctx, t, view);
       drawPanel(ctx, 0, 0, SCREEN_W, VIEW_TOP, 'hud');
       drawText(ctx, 'LAB IN DAYLIGHT', 6, 6, 'white');
+      drawText(ctx, 'UP DOWN', 200, 6, 'slate');
+      return;
+    }
+    if (sub === 3) {
+      drawLab2Stage(ctx, t, view);
+      drawPanel(ctx, 0, 0, SCREEN_W, VIEW_TOP, 'hud');
+      drawText(ctx, 'HARD LAB: ANIMAL, POWER, RECORDS', 6, 6, 'white');
       drawText(ctx, 'UP DOWN', 200, 6, 'slate');
       return;
     }

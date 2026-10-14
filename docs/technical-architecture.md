@@ -38,7 +38,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 - 60 Hz fixed step. Durations are frames. Speeds are px per frame.
 - Facing is `'down' | 'up' | 'left' | 'right'`. Art draws left by flipping right.
 - The sim draws nothing and plays nothing. It returns events and a `view()`. World forwards `sfx` events to `audio.sfx`.
-- Only the active hero is on the field with collision. The other party members trail behind it as cosmetic followers (no collision, no AI).
+- Only the active hero is on the field with collision. The other party members trail behind it as cosmetic followers (no collision, no AI). Each follower walks toward the point on the leader's path a short while back (at no more than 2 px a frame), but never gets closer to him than its gap: 14, 19 and 24 px for the first, second and third. The gap is the same walking or standing, so when he stops the nearest follower just stops, the ones further back finish closing up, and nobody ever steps away from him. They end up stacked close behind him on the path he came along, never on top of him. A follower that really is on top of him once he has stood still for six frames (after a swap, or at the start of a level) steps out at walking pace (1 px a frame) to a spot behind him, opposite to the way he last walked (his input, not his aim, and not a knockback), or beside it if that spot is in a wall (`updateFollowers` in `combat/hero.ts`).
 - Input: `core/input.ts` merges the keys (`core/bindings.ts`) with an Xbox pad (`core/gamepad.ts`, pure). The sim scales speed by stick magnitude, and its own deadzone is 0.15, so the pad deadzone (0.2) sits above it and passes the raw vector. The main loop copies `input.device()` into `bindings.setPromptDevice` each tick, and every hint, label and `{token}` in story lines then names keys or buttons for that device. Add new prompts through `labelOf` or `keyText`, not literals.
 
 ## Time of day
@@ -52,12 +52,12 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 
 Source of truth: the stubs. Quick map.
 
-- `gfx/index.ts`: `initGfx`, `drawText`, `textWidth`, `bakeStage`, `drawStage`, `drawActor`, `drawFx`, `drawItem`, `drawProp`, `paintGlow`, `drawPortrait`, `drawIcon`, `drawPanel`, `drawBar`, `drawLogo`, `drawAlphabetWall`. `gfx/sheet.ts`: `createSheetScene`.
+- `gfx/index.ts`: `initGfx`, `drawText`, `textWidth`, `bakeStage`, `drawStage`, `drawActor`, `drawFx`, `drawItem`, `drawProp`, `drawHazard` (a floor hazard from `view.hazards`: sparks, arcs, steam), `drawCamCone` (a camera's cone from a prop's `cam`, cast against solid tiles), `paintGlow`, `drawPortrait`, `drawIcon`, `drawPanel`, `drawBar`, `drawLogo`, `drawAlphabetWall`. `gfx/sheet.ts`: `createSheetScene`.
 - `audio/index.ts`: `audio` (shape is `AudioApi` in `types.ts`). `audio/lab.ts`: `createAudioLabScene`.
-- `combat/index.ts`: `createSim`. `combat/bot.ts`: `createBot`.
+- `combat/index.ts`: `createSim` (its header comment lists the behaviors: elites, shielded guards and the Warden, floor hazards, sweeping cameras). `combat/bot.ts`: `createBot`.
 - `ui/index.ts`: `drawHud` (the optional fourth argument is a `HudOpts`: the benched hero whose slot pulses for a puzzle hint, the heroes whose level-up effect is lit, the frames since the last swap, the hovered portrait and the input device), `createDialogueBox`, `createTitleScene`, `createChapterCard`, `createResultsScene`, `createPauseScene`, `createGameOverScene`, `mountDevPanel`.
 - `story/index.ts`: `SCRIPTS`, `bark`, `createPrologueScene`.
-- `world/index.ts`: `createPlayScene`. `world/puzzles.ts`: `createPuzzleTracker`, the pure clock behind the puzzle hints, and `HINT_NUDGE`. `world/levelfx.ts`: `createLevelFx`, the pure timing behind the in-world level-up effect. `ui/hudlayout.ts`: `slotRects` and `slotAt`, the portrait rectangles shared by the HUD and click-to-swap. `world/triggers.ts`: `createDirector`, whose `hasFired(beat)` it reads.
+- `world/index.ts`: `createPlayScene`. `world/puzzles.ts`: `createPuzzleTracker`, the pure tracker behind the puzzle hints (a try with the wrong hero shows the hint at once, a 30 second clock is the backstop), and `HINT_NUDGE`. `combat/pokes.ts` detects the tries and the sim reports them as `poked` events. `world/levelfx.ts`: `createLevelFx`, the pure timing behind the in-world level-up effect. `ui/hudlayout.ts`: `slotRects` and `slotAt`, the portrait rectangles shared by the HUD and click-to-swap. `world/triggers.ts`: `createDirector`, whose `hasFired(beat)` it reads.
 - `flow.ts` glues them: title, prologue, chapter card, play, results.
 
 ## Reports

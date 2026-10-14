@@ -1,7 +1,9 @@
-// The puzzle hint clock. A puzzle starts counting once its arrival beat has finished; time spent near the prop
-// without solving it adds up, and at 30 seconds the play scene highlights the prop. Pure logic with no DOM,
-// so Node can run it. The play scene feeds it the director, the props and the hero every tick.
-import type { PropView, Vec2 } from '../core/types.ts';
+// Puzzle hints. The hint shows the moment someone tries a puzzle with the wrong hero: swings or fires at its prop, or
+// at the gate or door it opens, or pushes against it. That is the main rule. As a backstop for a party that is stuck
+// and tries nothing, a puzzle also starts counting once its arrival beat has finished, time spent near the prop without
+// solving it adds up, and at 30 seconds the hint shows anyway. Pure logic with no DOM, so Node can run it. The play
+// scene feeds it the director, the props and the hero every tick, and the sim's `poked` events as they come.
+import type { HeroId, PropView, Vec2 } from '../core/types.ts';
 import type { PuzzleDef } from './types.ts';
 
 /** 30 seconds at the sim's fixed 60 Hz. */
@@ -23,10 +25,17 @@ export interface PuzzleTick {
 
 export interface PuzzleTracker {
   tick(s: PuzzleTick): void;
+  /**
+   * A hero tried a prop (the sim's `poked` event). If it is a puzzle's own prop or the gate or door that puzzle opens,
+   * and the hero is not the one who solves it, the hint shows from now on, until the puzzle is solved.
+   */
+  poke(propId: string, hero: HeroId): void;
   /** Forget all progress, for a retry or a load. */
   reset(): void;
-  /** The puzzle to highlight now: unsolved with 30 seconds spent near it. */
+  /** The puzzle to give a hint for now: unsolved, and either tried with the wrong hero or 30 seconds spent near it. */
   highlight(): PuzzleDef | null;
+  /** The prop the party tried for this puzzle, when the hint came from an attempt: the door or gate, say. Else null. */
+  triedProp(def: PuzzleDef): string | null;
 }
 
 /** Same test the play scene uses to carry a prop across a retry. */
@@ -36,11 +45,8 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
   /** Frames each puzzle has been armed, unsolved and near. Keyed by puzzle id. */
   const spent = new Map<string, number>();
   const live = new Map<string, PuzzleDef>();
-
-  const first = (pick: (t: number) => boolean): PuzzleDef | null => {
-    for (const d of defs) if (live.has(d.id) && pick(spent.get(d.id) ?? 0)) return d;
-    return null;
-  };
+  /** Puzzle id to the prop someone tried it on with the wrong hero. */
+  const tried = new Map<string, string>();
 
   return {
     tick(s) {
@@ -53,7 +59,16 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
         if (near) spent.set(d.id, (spent.get(d.id) ?? 0) + 1);
       }
     },
-    reset() { spent.clear(); live.clear(); },
-    highlight: () => first((t) => t >= HINT_AFTER),
+    poke(propId, hero) {
+      for (const d of defs) {
+        if (hero !== d.hero && (propId === d.prop || d.blocks?.includes(propId))) tried.set(d.id, propId);
+      }
+    },
+    reset() { spent.clear(); live.clear(); tried.clear(); },
+    highlight() {
+      for (const d of defs) if (live.has(d.id) && (tried.has(d.id) || (spent.get(d.id) ?? 0) >= HINT_AFTER)) return d;
+      return null;
+    },
+    triedProp: (d) => tried.get(d.id) ?? null,
   };
 }

@@ -111,12 +111,30 @@ function labNear(name: TileName, v: number, near: Near): Near {
   }
 }
 
-/** One tile on its own: v picks the position hash (so different variants), t drives water. */
-export function tileSample(name: TileName, v: number, t = 0): HTMLCanvasElement {
-  const frame = ((t / WATER_TICKS) | 0) & 3;
-  const key = `${name}:${v}:${name === 'creek' || name === 'shallows' ? frame : 0}`;
-  let c = sampleCache.get(key);
-  if (c) return c;
+/** The second pass of lab tiles, at their best: v 0 in a run, v 1 at one end of it, v 2 at the other or against a wall. */
+function lab2Near(name: TileName, v: number, near: Near): Near {
+  const all = (n: TileName): Near => ({ n, e: n, s: n, w: n });
+  const run = (self: TileName, floor: TileName): Near => v === 0 ? { n: 'labwall', e: self, s: floor, w: self }
+    : v === 1 ? { n: 'labwall', e: self, s: floor, w: floor } : { n: 'labwall', e: floor, s: floor, w: self };
+  switch (name) {
+    case 'tilegreen': case 'carpet': case 'plate':
+      return v === 0 ? all(name) : v === 1 ? { n: 'labwall', e: name, s: name, w: name } : { n: 'labwall', e: name, s: name, w: 'labcap' };
+    case 'cable': return v === 0 ? { n: 'plate', e: name, s: 'plate', w: name } : v === 1 ? { n: name, e: name, s: 'labfloor2', w: 'labfloor2' } : { n: 'plate', e: name, s: 'plate', w: 'plate' };
+    case 'drain': return all('tilegreen');
+    case 'stain': return v === 0 ? all('labfloor') : v === 1 ? { n: 'labwall', e: 'labfloor', s: 'labfloor', w: 'labfloor' } : all('gravel');
+    case 'vines': return v === 0 ? { n: 'mass', e: name, s: 'carpet', w: 'carpet' } : v === 1 ? { n: 'labwall', e: name, s: 'labfloor', w: name } : all('carpet');
+    case 'locker': return run(name, 'labfloor');
+    case 'bench': return run(name, 'tilegreen');
+    case 'cabinet': return run(name, 'carpet');
+    case 'shelf': return run(name, 'labfloor');
+    case 'mass': return v === 0 ? { n: 'labcap', e: name, s: 'vines', w: 'labwall' } : v === 1 ? { n: 'labcap', e: 'labwall', s: 'vines', w: name } : { n: 'labcap', e: 'labwall', s: 'carpet', w: 'labwall' };
+    case 'wallsign': return { n: 'labcap', e: 'labwall', s: 'labfloor', w: 'labwall' };
+    default: return near;
+  }
+}
+
+/** The pixels of one tile on its own, beside the neighbours that show it at its best. Water is not here: see tileSample. */
+export function samplePx(name: TileName, v: number): Px {
   const tx = 5 + v * 3, ty = 4 + v * 7;
   let near: Near = { n: name, e: name, s: name, w: name };
   if (name === 'pine' || name === 'deadtree' || name === 'bush' || name === 'rock' || name === 'stump' || name === 'lamp' || name === 'mailbox') near = { n: 'grass2', e: 'grass2', s: 'grass2', w: 'grass2' };
@@ -124,12 +142,21 @@ export function tileSample(name: TileName, v: number, t = 0): HTMLCanvasElement 
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = labNear(name, v, near);
+  near = lab2Near(name, v, labNear(name, v, near));
+  return staticTile(name, { tx, ty, near });
+}
+
+/** One tile on its own: v picks the position hash (so different variants), t drives water. */
+export function tileSample(name: TileName, v: number, t = 0): HTMLCanvasElement {
+  const frame = ((t / WATER_TICKS) | 0) & 3;
+  const key = `${name}:${v}:${name === 'creek' || name === 'shallows' ? frame : 0}`;
+  let c = sampleCache.get(key);
+  if (c) return c;
   if (name === 'creek' || name === 'shallows') {
     const banks = v === 0 ? 0 : v === 1 ? 1 : 10;
     c = waterTile(name === 'creek', v, frame, banks).toCanvas();
   } else {
-    c = staticTile(name, { tx, ty, near }).toCanvas();
+    c = samplePx(name, v).toCanvas();
   }
   sampleCache.set(key, c);
   return c;

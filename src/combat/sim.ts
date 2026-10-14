@@ -12,6 +12,8 @@ import { tickEnemyStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
 import { updateItems } from './pickups.ts';
 import { openPropById, updateProps } from './props.ts';
+import { updateCameras } from './cameras.ts';
+import { updateHazards } from './hazards.ts';
 import { stepBurst, tryBurst } from './burst.ts';
 import { dust } from './fx.ts';
 import { buildView } from './view.ts';
@@ -91,6 +93,8 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   updateAreas(s);
   updateItems(s);
   updateProps(s);
+  updateCameras(s);
+  updateHazards(s);
   regen(s);
   reapEnemies(s);
   reapHeroes(s);

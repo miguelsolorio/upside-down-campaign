@@ -1,11 +1,14 @@
 // Builds the SimView the renderer draws. Pure read of the state: no randomness, no mutation.
-import type { ActorView, FxView, PartyHud, SimView } from '../core/types.ts';
+import type { ActorView, FxView, PartyHud, PropView, SimView } from '../core/types.ts';
 import { xpToNext, MAX_LEVEL } from '../progression/xp.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
-import type { Enemy, Hero, Proj, S } from './state.ts';
+import type { Enemy, Hero, Prop, Proj, S } from './state.ts';
 import { activeHero, dirOfVec } from './state.ts';
 import { SWAP_COOLDOWN } from './party.ts';
 import { BODY_Y } from './space.ts';
+import { camView } from './cameras.ts';
+import { hazardViews } from './hazards.ts';
+import { guarding, isShielded } from '../enemies/shield.ts';
 
 let shakeScale = 1;
 let reduceFlash = false;
@@ -25,7 +28,7 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
 }
 
 function enemyView(e: Enemy): ActorView {
-  return {
+  const v: ActorView = {
     kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir,
     anim: e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
     blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1, strained: false,
@@ -34,6 +37,23 @@ function enemyView(e: Enemy): ActorView {
     z: e.dead ? 0 : Math.min(5, Math.hypot(e.vx, e.vy) * 1.2),
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
+  if (e.elite) v.elite = true;
+  if (isShielded(e)) v.guarding = guarding(e);
+  return v;
+}
+
+function propView(p: Prop): PropView {
+  const v: PropView = { id: p.id, kind: p.kind, x: p.x, y: p.y, w: p.w, h: p.h, state: p.state, t: p.t };
+  if (p.cam) v.cam = camView(p);
+  return v;
+}
+
+/** The first Warden that is awake and standing fills the boss bar. */
+function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
+  for (const e of s.enemies) {
+    if (e.kind === 'warden' && !e.dormant && !e.dead && e.hp > 0) return { name: 'WARDEN', hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
+  }
+  return null;
 }
 
 function projFx(p: Proj): FxView {
@@ -88,12 +108,13 @@ export function buildView(s: S): SimView {
     actors,
     fx: fxList(s),
     items: s.items.map((it) => ({ kind: it.kind, x: it.x, y: it.y, t: it.t })),
-    props: s.props.map((p) => ({ id: p.id, kind: p.kind, x: p.x, y: p.y, w: p.w, h: p.h, state: p.state, t: p.t })),
+    props: s.props.map(propView),
+    hazards: hazardViews(s),
     floaters: s.floaters.slice(),
     hud: {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,
       quarters: s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
-      swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: null,
+      swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

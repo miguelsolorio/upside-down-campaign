@@ -17,6 +17,7 @@ export { bakeStage, drawStage } from './tiles.ts';
 export { drawActor } from './actors.ts';
 export { drawFx } from './fx.ts';
 export { drawItem, drawProp } from './props.ts';
+export { drawCamCone, drawHazard } from './overlays.ts';
 export { paintGlow } from './glow.ts';
 export type { Glow } from './glow.ts';
 export { drawPortrait, drawIcon, drawPanel, drawBar } from './ui.ts';

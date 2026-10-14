@@ -52,12 +52,12 @@ const SAVE_12: SaveData = {
     x: STAGE_12.checkpoints[1]?.x ?? 0,
     y: STAGE_12.checkpoints[1]?.y ?? 0,
     state: {
-      fired: ['start', 'agents1', 'burn_hint', 'door1_open', 'agents2', 'cages', 'scare', 'relay_hint', 'door2_open'],
-      cleared: ['agents1', 'agents2', 'rats1'],
+      fired: ['start', 'agents1', 'cam1_spotted', 'burn_hint', 'door1_open', 'cages', 'scare', 'relay_hint', 'cam3_spotted', 'door2_open'],
+      cleared: ['agents1', 'reinf1', 'rats1', 'reinf3'],
     },
   },
-  killed: ['agents1_a', 'agents1_b', 'agents2_a', 'agents2_b', 'rats1_a', 'rats1_b', 'rats1_c', 'rats1_d', 'rats1_e', 'rats1_f'],
-  openProps: ['lights_dock', 'sensor1', 'door1', 'relay1', 'door2', 'lights_hall'],
+  killed: ['agents1_a', 'reinf1_a', 'reinf2_a', 'rats1_a', 'rats1_b', 'reinf3_a'],
+  openProps: ['lights_dock', 'cam2', 'sensor1', 'door1', 'relay1', 'door2', 'lights_hall'],
 };
 
 test('a stage 1.2 save comes back the way it went in, and every id in it is real', () => {
@@ -65,10 +65,29 @@ test('a stage 1.2 save comes back the way it went in, and every id in it is real
   for (const id of [...SAVE_12.killed, ...SAVE_12.openProps]) assert.ok(SPAWN_IDS.has(id), `${id} is a spawn in stage 1.2`);
   for (const id of SAVE_12.checkpoint.state.fired) assert.ok(STAGE_12.beats.some((b) => b.id === id), `${id} is a beat of stage 1.2`);
   for (const id of SAVE_12.checkpoint.state.cleared) assert.ok(groups.has(id), `${id} is an enemy group of stage 1.2`);
-  assert.ok(STAGE_12.checkpoints.some((c) => c.x === SAVE_12.checkpoint.x && c.y === SAVE_12.checkpoint.y), 'the checkpoint is one of the two lights');
+  assert.ok(STAGE_12.checkpoints.some((c) => c.x === SAVE_12.checkpoint.x && c.y === SAVE_12.checkpoint.y), 'the checkpoint is one of the lights');
   writeSave(SAVE_12);
   assert.deepEqual(loadSave(), SAVE_12);
   assert.equal(loadSave()?.stage, '1.2');
+});
+
+test('a stage 1.2 save at the third light, before the lockdown, keeps the crate cleared and the guards dead', () => {
+  const third = STAGE_12.checkpoints[2];
+  assert.equal(third?.prop, 'lights_records');
+  const save: SaveData = {
+    ...SAVE_12,
+    checkpoint: {
+      x: third?.x ?? 0, y: third?.y ?? 0,
+      state: { fired: [...SAVE_12.checkpoint.state.fired, 'guards', 'crate_hint', 'crate_cleared'], cleared: [...SAVE_12.checkpoint.state.cleared, 'guards1'] },
+    },
+    killed: [...SAVE_12.killed, 'guard1', 'guard2'],
+    openProps: [...SAVE_12.openProps, 'crate1', 'lights_records'],
+  };
+  for (const id of [...save.killed, ...save.openProps]) assert.ok(SPAWN_IDS.has(id), `${id} is a spawn in stage 1.2`);
+  for (const id of save.checkpoint.state.fired) assert.ok(STAGE_12.beats.some((b) => b.id === id), `${id} is a beat of stage 1.2`);
+  assert.ok(!save.checkpoint.state.fired.includes('lockdown'), 'the lockdown has not started at the third light');
+  writeSave(save);
+  assert.deepEqual(loadSave(), save);
 });
 
 test('the entry save for stage 1.2 carries the party out of stage 1.1 and begins at the start', () => {

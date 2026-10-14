@@ -36,7 +36,7 @@ interface Foe {
 }
 
 /** Furniture that never moves. The bot's map treats it as wall, so it does not walk into it and learn the hard way. */
-const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator']);
+const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator', 'arcade']);
 const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
 const defOf = (kind: string): EnemyDef => ENEMY_DEFS[kind as EnemyKind];
 /** How far past the shield's edge the bot circles to, so the guard's slow turn has not caught up. */
@@ -136,7 +136,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   function foesOf(v: SimView, hx: number, hy: number): Foe[] {
     const out: Foe[] = [];
     for (const a of v.actors) {
-      if (a.kind !== 'enemy' || a.anim === 'ko') continue;
+      // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true) continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -231,7 +232,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return null;
   }
 
-  /** A Warden winding up a slam close enough to reach the hero: the growing ring is on it. */
+  /** A wind-up whose reach the hero is in: the vine's lash or the pod's swell. */
+function reachThreatOf(f: Foe): boolean {
+  if (f.kind === 'vine') return f.d <= ENEMY_DEFS.vine.x.reach + 10;
+  if (f.kind === 'pod') return f.d <= ENEMY_DEFS.pod.x.cloud + 10;
+  return false;
+}
+
+/** A Warden winding up a slam close enough to reach the hero: the growing ring is on it. */
   function slamThreat(v: SimView, foes: Foe[]): Foe | null {
     const w = ENEMY_DEFS.warden.x;
     for (const f of foes) {
@@ -346,11 +354,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (!dodged && slam) { [mx, my] = awayFrom(slam, hx, hy); dodged = true; }
       const bash = dodged || careless ? null : foes.find((f) => isGuard(f.kind) && f.windup && f.up && f.d <= defOf(f.kind).x.reach + 8 && inArc(f, hx, hy));
       if (!dodged && bash) { [mx, my] = awayFrom(bash, hx, hy); dodged = true; }
+      // A vine's lash reaches 34 px and a swelling pod's cloud 28: back out of it.
+      const near2 = dodged || careless ? null : foes.find((f) => f.windup && reachThreatOf(f));
+      if (!dodged && near2) { [mx, my] = awayFrom(near2, hx, hy); dodged = true; }
       if (!dodged) {
         const a8 = snap8(near.ang);
         const miss = near.d * Math.sin(angDiff(near.ang, a8));
         // Rockets need a line within a body width; Push, bat and spray cover wide cones.
-        const aligned = desperate || me.id !== 'lucas' || miss < 9;
+        const aligned = desperate || (me.id !== 'lucas' && me.id !== 'will') || miss < 9;
         const hold = desperate ? 16 : style.hold;
         // A guard with its shield up and the hero in front of it: Dustin burns it, Eleven's Push breaks it, the rest circle
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
@@ -380,6 +391,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
             let use = false;
             if (me.id === 'lucas') use = near.d > 28 && me.mp >= cost;
             else if (me.id === 'dustin') use = (near.d < 50 || group >= 2) && me.mp >= cost && !(isGuard(near.kind) && near.burning);
+            else if (me.id === 'will') use = near.d > 26 && me.mp >= cost && (foes.filter((f) => dist(f.x, f.y, near.x, near.y) < 36).length >= 2 || me.mp >= me.mpMax * 0.6);
             else if (me.id === 'eleven') use = near.d < 120 && me.mp >= cost && miss < 12 && (group >= 2 || near.kind === 'agent' || shielded);
             if (use) { out.specialPressed = true; lastSpecial = frame; }
           }

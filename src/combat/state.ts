@@ -137,10 +137,16 @@ export interface Enemy {
   ring: FxView | null;
   /** The Demogorgon only. */
   demo: DemoState | null;
+  /** Spawned `hidden`: drawn faint, until Cold spot shows it or it attacks (which clears this for good). */
+  hidden: boolean;
+  /** Spawned `hidden`, for good. Will's Cold spot still shows it and hurts it more when it is near him after it has struck. */
+  cloaked: boolean;
+  /** A demodog in the air or in the wind-up before it: the pack lets one do that at a time. */
+  lunging: boolean;
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;
@@ -157,6 +163,8 @@ export interface Proj {
   hit: number[];
   /** Candy lobs: start and end, and what happens on landing. */
   lob: { sx: number; sy: number; ex: number; ey: number; onLand: () => void } | null;
+  /** A fireball: called with where it ended (an enemy, a solid prop or the end of its flight). It does the damage; the shot itself does none. */
+  end: ((x: number, y: number) => void) | null;
 }
 
 export interface Zone {
@@ -227,6 +235,8 @@ export interface S {
   enemies: Enemy[];
   /** Acid globs the Demogorgon has spat, still in the air. */
   globs: Glob[];
+  /** The frame the last demodog lunge ended, so the next one waits at least 20 frames. */
+  lungeEnd: number;
   projs: Proj[];
   zones: Zone[];
   lure: Lure | null;

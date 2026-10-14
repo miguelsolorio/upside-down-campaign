@@ -8,7 +8,7 @@ import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
 import { ageBodies, awardXp, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
 import { reapEnemies } from './kills.ts';
-import { tickEnemyStatus } from './status.ts';
+import { tickEnemyStatus, tickHeroStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
 import { updateItems } from './pickups.ts';
 import { openPropById, updateProps } from './props.ts';
@@ -88,6 +88,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   updateActive(s, input);
   updateFollowers(s);
   tickEnemyStatus(s);
+  tickHeroStatus(s);
   updateEnemies(s);
   updateProjectiles(s);
   updateAreas(s);

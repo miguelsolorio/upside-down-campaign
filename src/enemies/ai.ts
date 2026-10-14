@@ -9,6 +9,9 @@ import { ratUpdate } from './rat.ts';
 import { agentUpdate } from './agent.ts';
 import { guardUpdate } from './guard.ts';
 import { demogorgonUpdate, updateGlobs } from './demogorgon.ts';
+import { demodogUpdate } from './demodog.ts';
+import { vineUpdate } from './vine.ts';
+import { podUpdate } from './pod.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
 
 const FRICTION = 0.78;
@@ -32,6 +35,9 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
 
   // The boss ignores the candy bar, and nothing staggers it. It runs its own moves.
   if (e.demo) { demogorgonUpdate(s, e, hero); return; }
+  // The vine and the pod are rooted: no lure moves them.
+  if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
+  if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }
 
   const def = ENEMY_DEFS[e.kind];
   const lure = s.lure;
@@ -47,8 +53,16 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   }
   if (e.kind === 'rat') ratUpdate(s, e, hero);
   else if (e.kind === 'guard' || e.kind === 'warden') guardUpdate(s, e, hero);
+  else if (e.kind === 'demodog') { demodogUpdate(s, e, hero); unhide(e); }
   else agentUpdate(s, e, hero);
 }
+
+/** A hidden enemy that has started an attack shows itself for good. */
+function unhide(e: Enemy): void {
+  if (e.hidden && (e.mode === 'windup' || e.mode === 'lunge')) e.hidden = false;
+}
+
+const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod';
 
 function separate(s: S): void {
   const list = s.enemies.filter((e) => !e.dead && !e.dormant);
@@ -62,8 +76,11 @@ function separate(s: S): void {
       const nx = d > 0.01 ? dx / d : ((a.uid & 1) === 0 ? 1 : -1);
       const ny = d > 0.01 ? dy / d : 0;
       const push = (SEPARATION - d) * 0.25;
-      moveBody(s, a, -nx * push, -ny * push);
-      moveBody(s, b, nx * push, ny * push);
+      // Rooted things stay put and the other one is shoved the whole way.
+      const ra = rooted(a), rb = rooted(b);
+      if (ra && rb) continue;
+      if (!ra) moveBody(s, a, -nx * push * (rb ? 2 : 1), -ny * push * (rb ? 2 : 1));
+      if (!rb) moveBody(s, b, nx * push * (ra ? 2 : 1), ny * push * (ra ? 2 : 1));
     }
   }
 }

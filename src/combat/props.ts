@@ -1,12 +1,17 @@
 // Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
-// boxes (lit by a shot or a flame) and vines (burned away by a flame). Cameras (cameras.ts) are targets too: a shot lights
-// one, and it never spots again.
+// boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
+// Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again.
 import type { Utility } from '../core/types.ts';
 import type { Prop, S } from './state.ts';
+import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
+import { nearestOnRect } from './space.ts';
+import { HERO_DEFS } from '../heroes/defs.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
+/** How close a hero who can sense it must stand to show a hidden path, in px from the nearest point of the prop. */
+export const SENSE_RANGE = 40;
 
 export function isPushable(p: Prop): boolean {
   return p.state !== 'open' && (p.pushBy === 'push' || (p.kind === 'log' && p.pushBy === undefined));
@@ -53,6 +58,25 @@ function clearVines(s: S, p: Prop): void {
   dust(s, p.x + p.w / 2, p.y + p.h, 5);
 }
 
+/** The hidden path shows itself: a reveal, and it is open and walkable. */
+function revealHidden(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.solid = false;
+  p.t = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+  sfx(s, 'reveal');
+  addFx(s, 'reveal', p.x + p.w / 2, p.y + p.h / 2, 'down', 0, 40, p.w, p.h);
+}
+
+/** A hero who has the utility the path asks for (Will's `sense`), alive and active, and within 40 px of it. */
+function sensed(s: S, p: Prop): boolean {
+  const h = activeHero(s);
+  if (h.ko || !HERO_DEFS[h.id].utilities.includes(p.hitBy ?? 'sense')) return false;
+  const q = nearestOnRect(p, h.x, h.y - 2);
+  return Math.hypot(q.x - h.x, q.y - (h.y - 2)) <= SENSE_RANGE;
+}
+
 /** A log (or anything pushable) is shoved out of the way. */
 export function clearProp(s: S, p: Prop): void {
   if (p.state === 'open') return;
@@ -70,6 +94,7 @@ export function openPropById(s: S, id: string): void {
   if (!p || p.state === 'open') return;
   if (p.kind === 'log' || isPushable(p)) { clearProp(s, p); return; }
   if (p.kind === 'vines') { clearVines(s, p); return; }
+  if (p.kind === 'hidden') { revealHidden(s, p); return; }
   if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
@@ -82,5 +107,6 @@ export function updateProps(s: S): void {
     p.t++;
     if (p.pokeCd > 0) p.pokeCd--;
     if (p.kind === 'vines' && p.state === 'lit' && --p.burnT <= 0) clearVines(s, p);
+    if (p.kind === 'hidden' && p.state === 'closed' && sensed(s, p)) revealHidden(s, p);
   }
 }

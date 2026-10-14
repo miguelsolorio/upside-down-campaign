@@ -18,11 +18,11 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade']);
 /** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
 const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox']);
 /** What lights or clears a prop when its spawn does not say: a target, camera or fire-door box takes a shot, vines take fire. */
-const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = { target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn' };
+const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = { target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense' };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
 function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
@@ -44,6 +44,7 @@ function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
     demo: sp.type === 'demogorgon' ? newDemo() : null,
+    hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false,
   };
 }
 
@@ -69,7 +70,7 @@ export function createState(opts: SimOptions): S {
     grid: opts.grid, rng: createRng(seed), frng: createRng((seed ^ 0x9e3779b9) >>> 0),
     mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], foeMult: opts.enemyMult ?? 1, frame: 0,
     heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1, standT: 0, walkDir: 'right', bump: null,
-    enemies: [], globs: [], projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [],
+    enemies: [], globs: [], lungeEnd: -999, projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [],
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,

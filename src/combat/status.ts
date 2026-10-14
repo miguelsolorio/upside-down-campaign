@@ -1,7 +1,8 @@
 // Status effects. Burn and stun are live. Slow is a cheap speed cut. Confuse and curse exist as types only.
-import type { Statuses, S } from './state.ts';
+import type { Hero, Statuses, S } from './state.ts';
 import { floater } from './fx.ts';
 import { demoSettle, isPinned } from '../enemies/demo_hit.ts';
+import { ENEMY_DEFS } from '../enemies/defs.ts';
 
 export const BURN_PERIOD = 30;
 
@@ -23,17 +24,30 @@ export function tickEnemyStatus(s: S): void {
       if (st.burnTick <= 0) {
         st.burnTick = BURN_PERIOD;
         // A pinned Demogorgon takes nothing from fire. Any other keeps its floor of 1 until it is pinned.
-        const dmg = isPinned(e) ? 0 : Math.min(st.burnDmg, Math.max(0, e.hp));
+        // Fire is double for a vine.
+        const tick = e.kind === 'vine' ? st.burnDmg * ENEMY_DEFS.vine.x.burnMul : st.burnDmg;
+        const dmg = isPinned(e) ? 0 : Math.min(tick, Math.max(0, e.hp));
         if (dmg > 0) {
-          e.hp -= st.burnDmg;
+          e.hp -= tick;
           if (e.demo) demoSettle(s, e, false, null);
           e.flash = Math.max(e.flash, 0.5);
           e.hurtSeen = true;
           s.stats.damageDealt += dmg;
-          floater(s, String(st.burnDmg), e.x, e.y - 15, 'orange', false, 30);
+          floater(s, String(tick), e.x, e.y - 15, 'orange', false, 30);
         }
       }
       if (st.burn <= 0) st.burnDmg = 0;
     }
   }
+}
+
+/** Slows the active hero or any other: the speed cut lasts at least `frames` more. A fresh slow says so. */
+export function slowHero(s: S, h: Hero, frames: number): void {
+  if (h.stat.slow <= 0 && !h.ko) floater(s, 'SLOW', h.x, h.y - 20, 'purple', false, 30);
+  h.stat.slow = Math.max(h.stat.slow, frames);
+}
+
+/** Ticks every hero's statuses: only slow is live on a hero. */
+export function tickHeroStatus(s: S): void {
+  for (const h of s.heroes) if (h.stat.slow > 0) h.stat.slow--;
 }

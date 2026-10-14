@@ -6,6 +6,7 @@ import { HERO_DEFS, critChance } from '../heroes/defs.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
 import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
+import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
@@ -92,6 +93,9 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
   // Dazed against a wall, the Demogorgon takes half again as much.
   if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS.demogorgon.x.stunMul);
+  // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
+  if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
+  if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
   const dealt = Math.min(dmg, e.hp);
   e.hp -= dmg;
   e.flash = 1;
@@ -99,7 +103,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   e.by = by.id;
   e.noLure = 240;
 
-  const kb = boss && demoImmovable(e) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const rooted = e.kind === 'vine' || e.kind === 'pod';
+  const kb = (boss && demoImmovable(e)) || rooted ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;

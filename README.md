@@ -64,7 +64,7 @@ Hints switch to button names once you touch the controller, and back to keys whe
 
 | Control | Action |
 | --- | --- |
-| Stick (left thumb, anywhere in the lower left) | Move and step through menus. It centers where your thumb lands, and a short push is full speed |
+| Stick (left thumb, anywhere in the lower left) | Move and step through menus. The ring stays put and the knob follows your thumb. A short push is full speed |
 | `A` | Attack, talk, light Joyce's lights, confirm |
 | `B` | Special. Back in menus |
 | Arrows | Back one hero and next hero |

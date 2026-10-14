@@ -63,7 +63,7 @@ import { settings } from '/src/core/settings.ts';
 import { SCREEN_W, SCREEN_H, VIEW_TOP } from '/src/core/config.ts';
 import { HERO_DEFS } from '/src/heroes/defs.ts';
 import { getStage } from '/src/world/stage.ts';
-import { drawWorld } from '/src/world/render.ts';
+import { drawControlsCorner, drawWorld } from '/src/world/render.ts';
 import { createSim } from '/src/combat/index.ts';
 import { drawHud } from '/src/ui/hud.ts';
 import { MIDDLE_END } from '/src/ui/hudlayout.ts';
@@ -220,7 +220,7 @@ function partyCard(ctx, w, h) {
 
 // ---------------------------------------------------------------- the fight on the Lab road
 const stage = getStage('1.1');
-const IDLE = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false };
+const IDLE = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, swapDelta: 0, swapTo: -1, burstPressed: false };
 const tx = (t) => t * 16 + 8, ty = (t) => t * 16 + 12;
 
 function freshSim(party, x, y) {
@@ -259,7 +259,7 @@ function agent(x, y, o = {}) {
 
 const hit = (text, x, y, color = 'white', big = false) => ({ text, x, y, t: 8, life: 40, color, big });
 
-/** The night stage across any width: the world pass in 256-wide windows, stitched, then the HUD split to both edges. */
+/** The night stage across any width: the world pass in 256-wide windows, stitched, the HUD split to both edges, then the corner controls. */
 function fightCard(ctx, w, h) {
   const party = [{ id: 'mike', level: 3 }, { id: 'dustin', level: 3 }, { id: 'lucas', level: 3 }, { id: 'eleven', level: 3 }];
   const base = freshSim(party, tx(30), ty(4)).view();
@@ -310,6 +310,13 @@ function fightCard(ctx, w, h) {
   const split = MIDDLE_END + 1;
   ctx.drawImage(glowPad, 0, 0, split, VIEW_TOP, 0, 0, split, VIEW_TOP);
   ctx.drawImage(glowPad, split, 0, SCREEN_W - split, VIEW_TOP, w - (SCREEN_W - split), 0, SCREEN_W - split, VIEW_TOP);
+
+  // The controls in the level's bottom left corner, with the default keys. The Lab road is far past the yard, so they
+  // show fully faded, as in the game. The card is shorter than the screen, so they move up to keep the same margin.
+  ctx.save();
+  ctx.translate(0, h - SCREEN_H);
+  drawControlsCorner(ctx, 1);
+  ctx.restore();
 }
 
 const CARDS = [

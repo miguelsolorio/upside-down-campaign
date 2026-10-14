@@ -109,7 +109,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |
 
-Gamepad uses the standard mapping. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains the dash.
+Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B dashes, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains the dash.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.

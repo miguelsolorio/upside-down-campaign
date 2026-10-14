@@ -271,8 +271,10 @@ export interface AudioMetrics {
   wav: ArrayBuffer | null;
 }
 export interface AudioApi {
-  /** Call on the first key or pointer event. Safe to call repeatedly. */
+  /** Call on the first key or pointer event. Safe to call repeatedly. A controller press can call it too, but a browser may ignore that. */
   unlock(): void;
+  /** True once the browser lets sound play. The title asks a controller player for one click while this is false. */
+  ready(): boolean;
   music(id: TrackId | null): void;
   /** 0..1 target for the combat layer. Smoothed inside. */
   intensity(v: number): void;

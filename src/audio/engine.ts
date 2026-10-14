@@ -79,6 +79,11 @@ export function liveGraph(): Graph | null {
   return live ? live.g : null;
 }
 
+/** True once the context exists and the browser has let it run. The title asks a controller player for a click until then. */
+export function isRunning(): boolean {
+  return live !== null && live.ctx.state === 'running';
+}
+
 /** Creates the context on the first call (it has to happen inside a key or pointer event) and resumes it. */
 export function unlock(): Graph | null {
   if (!live) {

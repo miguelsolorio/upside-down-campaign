@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { BarkEvent, Expr, HeroId, Speaker } from '../src/core/types.ts';
-import { keyText } from '../src/core/bindings.ts';
+import { keyText, setPromptDevice } from '../src/core/bindings.ts';
 import { settings } from '../src/core/settings.ts';
 import { fitsBox, hasEmDash, wrapText } from '../src/core/text.ts';
 import { SCRIPTS } from '../src/story/scripts.ts';
@@ -52,11 +52,40 @@ test('script keys match ids and sizes are sane', () => {
   }
 });
 
-test('every line fits three rows of 32 characters, with its key tokens filled in', () => {
-  for (const l of allLines) {
-    const shown = keyText(l.text);
-    assert.ok(shown.length > 0 && shown.length <= 96, `${l.id}[${l.i}] is ${shown.length} characters`);
-    assert.ok(fitsBox(shown), `${l.id}[${l.i}] needs ${wrapText(shown).length} rows: ${shown}`);
+test('every line fits three rows of 32 characters, with its key tokens filled in for a keyboard and a controller', () => {
+  try {
+    for (const device of ['keyboard', 'gamepad'] as const) {
+      setPromptDevice(device);
+      for (const l of allLines) {
+        const shown = keyText(l.text);
+        assert.ok(shown.length > 0 && shown.length <= 96, `${device} ${l.id}[${l.i}] is ${shown.length} characters`);
+        assert.ok(fitsBox(shown), `${device} ${l.id}[${l.i}] needs ${wrapText(shown).length} rows: ${shown}`);
+      }
+    }
+  } finally {
+    setPromptDevice('keyboard');
+  }
+});
+
+test('a controller player is never told to press a key', () => {
+  try {
+    setPromptDevice('gamepad');
+    for (const l of allLines) {
+      const shown = keyText(l.text);
+      assert.ok(!/\{|\}/.test(shown), `${l.id}[${l.i}] has an unfilled token: ${shown}`);
+      assert.ok(!/\b(WASD|SPACE|TAB|ESC|[JKLQEUV])\b/.test(shown), `${l.id}[${l.i}] names a key: ${shown}`);
+    }
+    const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
+    assert.match(text('l1_tut_attack'), /\bA attacks\b/);
+    assert.match(text('l1_tut_special'), /\bX is your special\b/);
+    assert.match(text('l1_tut_swap'), /LB and RB/);
+    assert.doesNotMatch(text('l1_tut_swap'), /1 to 4/, 'a controller has no hero numbers');
+    assert.match(text('l1_agents'), /\bB gives you\b/);
+    assert.match(text('l1_start'), /stick or D-pad/);
+    assert.match(text('l1_gate_hint'), /with LB or RB/);
+    assert.match(text('l1_push_hint'), /with LB or RB/);
+  } finally {
+    setPromptDevice('keyboard');
   }
 });
 

@@ -14,7 +14,7 @@ Scope for this pass: Level 1 only (stage 1.1, the title, the basement prologue).
 
 - The music has only been checked by metrics. Nobody has heard it yet.
 - The bot opens gates and clears the log by flag. The Lucas shot and the Eleven push are covered by unit tests, not by a full run.
-- Gamepad input is in but untested, and its buttons are listed on the Controls screen but can't be rebound.
+- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Its buttons can't be rebound, there's no rumble, and a lost controller doesn't pause the game. Only the standard mapping is read.
 - The autosave at Joyce's lights keeps levels, kills and story beats but not health, and the results screen only times the stretch since the last Continue.
 - Keyboard rebinding is saved per browser. Arrow keys, Enter, Escape and Backspace are fixed so menus can't get stuck.
 - Losing focus silences the game but doesn't pause it, so enemies keep moving while you're away.

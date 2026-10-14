@@ -2,7 +2,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
-import { labelOf, titleHintLines } from '../core/bindings.ts';
+import { getPromptDevice, labelOf, titleHintLines } from '../core/bindings.ts';
 import { hasSave } from '../core/save.ts';
 import { drawAlphabetWall, drawLogo, drawPanel, drawText } from '../gfx/index.ts';
 import { wallLit } from './format.ts';
@@ -79,7 +79,9 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
         updateMenu(startMenu, g);
         if (startMenu.sel !== before) armed = false;
         if (i.pressed('confirm')) return;
-      } else if (i.pressed('confirm')) { audio.sfx('confirm'); opts.onStart('new'); return; }
+        // A controller's Start button picks the highlighted row, the same as A.
+        if (i.pressed('start')) { audio.sfx('confirm'); startMenu.items[startMenu.sel]?.activate?.(); return; }
+      } else if (i.pressed('confirm') || i.pressed('start')) { audio.sfx('confirm'); opts.onStart('new'); return; }
       if (i.pressed('pause') || i.pressed('special')) { open = true; m.sel = 0; audio.sfx('select'); }
     },
     draw(ctx, g) {
@@ -102,12 +104,18 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
         const hints = titleHintLines();
         hints.forEach((line, k) => drawText(ctx, line, 128, 158 + k * 9, 'mist', { align: 'center' }));
         const y = 158 + hints.length * 9 + 5;
-        drawText(ctx, `${labelOf('pause')} OPTIONS`, 128, y, 'yellow', { align: 'center' });
+        // Start begins the game on a controller, so the options sit on the special button there.
+        const optionsKey = getPromptDevice() === 'gamepad' ? labelOf('special') : labelOf('pause');
+        drawText(ctx, `${optionsKey} OPTIONS`, 128, y, 'yellow', { align: 'center' });
         const skip = g.settings.skipDialogue;
         const key = labelOf('skip');
         drawText(ctx, `${key === '--' ? '' : `${key} `}SKIP STORY: ${skip ? 'ON' : 'OFF'}`, 128, y + 11, skip ? 'yellow' : 'mist', { align: 'center' });
       }
       drawText(ctx, CREDIT, 128, 206, 'mist', { align: 'center' });
+      // A controller press can't always wake the browser's audio. Say so rather than leave the game silent.
+      if (!open && g.input.device() === 'gamepad' && !audio.ready()) {
+        drawText(ctx, 'CLICK THE GAME ONCE FOR SOUND', 128, 215, 'amber', { align: 'center' });
+      }
     },
   };
 }

@@ -10,6 +10,7 @@ import { initGfx } from './gfx/index.ts';
 import { createSheetScene } from './gfx/sheet.ts';
 import { audio } from './audio/index.ts';
 import { createAudioLabScene } from './audio/lab.ts';
+import { createToast } from './ui/toast.ts';
 import { startGame } from './flow.ts';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -24,8 +25,11 @@ initGfx();
 if (flags.mute) audio.mute(true);
 audio.setVolumes(settings.musicVol, settings.sfxVol);
 
+const toast = createToast();
+
 const g: Game = {
-  input: createInput(),
+  // A controller press only counts as a user gesture in some browsers, so ask for sound only when this one did.
+  input: createInput({ onPadPress: () => { if (navigator.userActivation?.isActive) audio.unlock(); } }),
   settings,
   flags,
   scenes: createSceneManager(() => g),
@@ -62,6 +66,11 @@ Object.assign(window, { __ud: { g, audio, bindings } });
 startLoop(
   () => {
     g.input.poll();
+    // Every hint on screen names keys or buttons for whichever device was touched last.
+    bindings.setPromptDevice(g.input.device());
+    const note = g.input.notice();
+    if (note) toast.show(note);
+    toast.tick();
     if (g.input.pressed('mute')) audio.mute(!audio.isMuted());
     g.scenes.update();
     g.frame++;
@@ -70,5 +79,6 @@ startLoop(
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     g.scenes.draw(ctx);
+    toast.draw(ctx);
   },
 );

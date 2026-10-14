@@ -1,8 +1,12 @@
 # Stranger Things 8-bit: The Upside Down Campaign
 
+![Dustin, Mike, Eleven and Lucas on a path into the woods, under the red Stranger Things logo](public/social/og.png)
+
 An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement, and you play it: a party of four, real-time fights, a d20 behind every level-up. This build is Level 1 only (the basement prologue and the Mirkwood stage). It's here for feedback before the rest gets built.
 
-Not affiliated with Netflix. The code, art, music and lines are original. Every sprite and every note is generated in code, so there are no asset files.
+Not affiliated with Netflix. The code, art, music and lines are original. Every sprite and every note is generated in code, so the game loads no asset files. The images here are drawn by that code too.
+
+![The party fighting Hawkins Lab agents on the Lab road at night: Dustin's Farrah spray, Lucas's triple shot, Eleven's Mind Blast and a crit from Mike's bat](public/social/fight.png)
 
 ## Running it
 
@@ -62,6 +66,8 @@ Hints switch to button names once you touch the controller, and back to keys whe
 
 ## The party
 
+![Mike the Paladin, Dustin the Bard, Lucas the Ranger and Eleven the Sorcerer, each with a portrait, a sprite and their two moves](public/social/party.png)
+
 | Hero | Basic | Special | Level 3 talent |
 | --- | --- | --- | --- |
 | Mike | Bat, three-hit arc | DM screen: blocks shots, halves damage behind it | DM fiat: the first hit of a fight crits |
@@ -86,6 +92,19 @@ Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full 
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
 | `?mute=1`, `?god=1`, `?level=3`, `?stage=1.1`, `?seed=N` | Self-explanatory |
 
+## Social cards
+
+The link preview and the images in this README come from the game's own sprites, portraits, logo, tiles, effects and HUD. To redraw them, run the dev server, open http://127.0.0.1:5173/social.html and press Save all. The PNGs land in `public/social`, and the build copies them as they are.
+
+| File | Size | Used for |
+| --- | --- | --- |
+| `og.png` | 1200 × 630 | `og:image` and `twitter:image` in `index.html` |
+| `fight.png` | 1200 × 630 | This README |
+| `party.png` | 1200 × 630 | This README |
+| `github.png` | 1280 × 640 | The repo's social preview. GitHub doesn't read it from the repo, so upload it in the repo settings |
+
+`index.html` points at `/social/og.png` and the build adds the base path. Some sites only read a full URL there, so add the host once the game is hosted.
+
 ## Layout
 
 ```
@@ -102,6 +121,7 @@ src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy
 docs            game design, architecture, Level 1 spec, screenshots
 music           rendered WAVs of the tracks
+public/social   the link preview and README images, drawn by social.html
 ```
 
 The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the Level 1 spec in `docs/level-1.md`.

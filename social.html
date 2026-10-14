@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social Cards</title>
+<meta name="description" content="The link preview images for the game, drawn with the game's own sprites, logo and tiles. Save writes them to public/social.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --hot: #ff4a4a; --leaf: #6cc35a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px 48px; }
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 6px; max-width: 78ch; color: var(--mist); }
+  .hero code, .meta code { font: 13px var(--mono); color: var(--bone); }
+  .bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+  .btn { background: var(--shadow); border: 1px solid var(--slate); border-radius: 6px; padding: 8px 14px; }
+  .btn:hover { background: var(--dusk); }
+  .btn.primary { background: #7a1020; border-color: var(--hot); }
+  .btn.primary:hover { background: #c8202e; }
+  .status { font: 13px var(--mono); color: var(--mist); }
+  .card { margin: 28px 0 0; }
+  .meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 10px; }
+  .meta h2 { margin: 0; font-size: 18px; }
+  .meta p { margin: 0; color: var(--mist); font-size: 14px; }
+  .frame { border: 1px solid var(--shadow); border-radius: 8px; overflow: hidden; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <p class="kicker">Link previews</p>
+    <h1>Social cards</h1>
+    <p>Each card is drawn at the game's own pixel size with its sprites, logo and Mirkwood tiles, then scaled up by a whole number so every pixel stays square.</p>
+    <p>Save all writes the PNGs to <code>public/social</code>, and <code>index.html</code> points at <code>og.png</code>.</p>
+    <div class="bar">
+      <button class="btn primary" id="save-all" type="button">Save all</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </header>
+  <main id="cards"></main>
+</div>
+
+<script type="module">
+import { initGfx, drawActor, drawLogo, drawPortrait, drawIcon, drawPanel, drawText, paintGlow } from '/src/gfx/index.ts';
+import { BAYER4, hash2 } from '/src/gfx/canvas.ts';
+import { Px } from '/src/gfx/px.ts';
+import { PAL } from '/src/gfx/palette.ts';
+import { box, dither, bigText } from '/src/ui/kit.ts';
+import { bigActor } from '/src/ui/title_art.ts';
+import { settings } from '/src/core/settings.ts';
+import { SCREEN_W, SCREEN_H, VIEW_TOP } from '/src/core/config.ts';
+import { HERO_DEFS } from '/src/heroes/defs.ts';
+import { getStage } from '/src/world/stage.ts';
+import { drawWorld } from '/src/world/render.ts';
+import { createSim } from '/src/combat/index.ts';
+import { drawHud } from '/src/ui/hud.ts';
+import { MIDDLE_END } from '/src/ui/hudlayout.ts';
+
+// Steady logo, steady lights: the same pixels every time the page loads.
+settings.reduceFlashing = true;
+initGfx();
+
+const T = 40;
+
+// ---------------------------------------------------------------- helpers
+function makeCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = false;
+  return c;
+}
+
+/** paintGlow works on the game's 256 by 204 world window. Copy a window of the card in, paint it, copy it back. */
+const glowPad = makeCanvas(SCREEN_W, SCREEN_H);
+function glowOn(ctx, lights, ox, oy) {
+  const g = glowPad.getContext('2d');
+  const h = SCREEN_H - VIEW_TOP;
+  g.clearRect(0, 0, SCREEN_W, SCREEN_H);
+  g.drawImage(ctx.canvas, ox, oy, SCREEN_W, h, 0, VIEW_TOP, SCREEN_W, h);
+  paintGlow(g, lights.map((l) => ({ ...l, x: l.x - ox, y: l.y - oy + VIEW_TOP })), T, 1);
+  ctx.drawImage(glowPad, 0, VIEW_TOP, SCREEN_W, h, ox, oy, SCREEN_W, h);
+}
+
+/** The title's red rift as a baked ordered dither, centered on cx, cy. */
+function rift(ctx, w, h, cx, cy, rx, ry, k) {
+  const ramp = ['ink', 'blood0', 'blood1', 'red'];
+  const px = new Px(w, h).fill('ink');
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+      const f = Math.max(0, 1 - d);
+      const q = f * f * (3 - 2 * f) * k;
+      const lo = Math.floor(q);
+      const up = q - lo > (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16 ? 1 : 0;
+      const c = ramp[Math.min(3, lo + up)];
+      if (c !== 'ink') px.set(x, y, c);
+    }
+  }
+  ctx.drawImage(px.toCanvas(), 0, 0);
+}
+
+function stars(ctx, w, h, n) {
+  for (let i = 0; i < n; i++) {
+    const x = hash2(i, 1, 11) % w, y = hash2(i, 2, 11) % h;
+    box(ctx, x, y, 1, 1, hash2(i, 3, 11) % 5 === 0 ? 'mist' : 'slate');
+  }
+}
+
+/** The title's pine: tiers of widening boughs on a trunk. */
+function pine(ctx, cx, base, h, body) {
+  const tiers = Math.max(3, Math.round(h / 9));
+  const tierH = (h - 4) / tiers;
+  const maxHalf = h * 0.28;
+  for (let y = 0; y < h - 3; y++) {
+    const tier = Math.min(tiers - 1, Math.floor(y / tierH));
+    const local = (y - tier * tierH) / tierH;
+    const reach = (tier + 0.45 + local * 0.55) / tiers;
+    const half = Math.max(1, Math.round(1 + reach * maxHalf));
+    box(ctx, cx - half, base - h + y, half * 2 + 1, 1, body);
+  }
+  box(ctx, cx - 1, base - 3, 3, 3, body);
+}
+
+/** The far tree line, the ground and a worn path up the middle, as on the title, at any width. */
+function woods(ctx, w, h, horizon, near) {
+  for (let i = 0, x = -6; x < w + 12; i++, x += 12 + (hash2(i, 4, 9) % 5)) pine(ctx, x, horizon + 2, 34 + (hash2(i, 5, 9) % 18), 'pine0');
+  box(ctx, 0, horizon, w, h - horizon, 'pine0');
+  dither(ctx, 0, horizon + 14, w, h - horizon - 14, 'ink', 4);
+  dither(ctx, 0, horizon + 40, w, h - horizon - 40, 'ink', 2);
+  const mid = w / 2;
+  for (let y = horizon; y < h; y++) {
+    const half = 8 + (y - horizon) * 0.5;
+    box(ctx, mid - half, y, half * 2, 1, 'soil0');
+    if ((y & 1) === 0) { box(ctx, mid - half - 1, y, 1, 1, 'ink'); box(ctx, mid + half, y, 1, 1, 'ink'); }
+  }
+  for (const [x, base, ph] of near) { pine(ctx, x, base, ph, 'ink'); pine(ctx, w - x, base, ph, 'ink'); }
+}
+
+/** Specks drifting up, the Upside Down's snow, frozen at frame T. */
+function spores(ctx, w, h, n, seed = 7) {
+  const colors = ['pink', 'magenta', 'blood1', 'hot'];
+  for (let i = 0; i < n; i++) {
+    const s = Math.imul(i + 1 + seed * 97, 2654435761) >>> 0;
+    const speed = 0.12 + ((s >> 8) % 10) / 60;
+    const y = h - ((T * speed + ((s >> 12) % h)) % h);
+    const x = (s % w) + Math.round(Math.sin(T / 60 + i) * 3);
+    const big = i % 3 === 0;
+    box(ctx, x, y, big ? 2 : 1, big ? 2 : 1, colors[i % colors.length]);
+  }
+}
+
+// ---------------------------------------------------------------- cards
+const PARTY = ['dustin', 'mike', 'eleven', 'lucas'];
+
+/** The title screen, opened up to a wide frame: the logo over the rift, the party on the path into the woods. */
+function titleCard(ctx, w, h, o) {
+  const horizon = h - o.ground;
+  rift(ctx, w, horizon + 4, w / 2, horizon - 54, w * 0.44, 86, 3.1);
+  box(ctx, 0, horizon + 4, w, h - horizon - 4, 'ink');
+  stars(ctx, w, 40, Math.round(w / 12));
+  const near = [[10, horizon + 26, 92], [34, horizon + 20, 78], [58, horizon + 14, 66]];
+  woods(ctx, w, h, horizon, near);
+  spores(ctx, w, h, Math.round(w / 9));
+
+  const feet = h - o.feet;
+  const spots = PARTY.map((id, i) => ({ id, x: Math.round(w / 2 + (i - 1.5) * o.gap), y: feet - (i === 1 || i === 3 ? 2 : 0) }));
+  // Mike and Lucas carry the flashlights, as on the title.
+  const lights = spots.filter((p) => p.id !== 'eleven').map((p) => ({ x: p.x, y: p.y - 3 * o.scale, r: 13 * o.scale, k: 0.9 }));
+  glowOn(ctx, lights, Math.round(w / 2 - SCREEN_W / 2), h - (SCREEN_H - VIEW_TOP));
+  for (const p of [...spots].sort((a, b) => a.y - b.y)) bigActor(ctx, p.id, p.x, p.y, o.scale, T);
+
+  drawLogo(ctx, T, w / 2, o.logo);
+  drawText(ctx, 'AN 8-BIT FAN TRIBUTE', w / 2, o.tagline, 'mist', { align: 'center', shadow: true });
+}
+
+// ---------------------------------------------------------------- the party
+const ROSTER = ['mike', 'dustin', 'lucas', 'eleven'];
+const FACE = { mike: 'determined', dustin: 'happy', lucas: 'determined', eleven: 'neutral' };
+
+/** A character select: each hero's portrait, name, D&D class, basic and special, read from the hero defs. */
+function partyCard(ctx, w, h) {
+  rift(ctx, w, h, w / 2, -10, w * 0.6, 120, 2.2);
+  stars(ctx, w, h, 40);
+  spores(ctx, w, h, 30, 3);
+  bigText(ctx, 'THE PARTY', w / 2, 10, 'white', 2);
+
+  const pw = 88, gap = 8, top = 34, ph = h - top - 10;
+  const x0 = Math.round((w - (pw * 4 + gap * 3)) / 2);
+  ROSTER.forEach((id, i) => {
+    const d = HERO_DEFS[id];
+    const x = x0 + i * (pw + gap), cx = x + pw / 2;
+    drawPanel(ctx, x, top, pw, ph, 'menu');
+    ctx.save();
+    ctx.translate(cx - 24, top + 9);
+    ctx.scale(2, 2);
+    drawPortrait(ctx, id, FACE[id], 0, 0);
+    ctx.restore();
+    bigText(ctx, d.name.toUpperCase(), cx, top + 64, 'white', 2);
+    drawText(ctx, d.role.toUpperCase(), cx, top + 82, 'yellow', { align: 'center', shadow: true });
+    dither(ctx, x + 8, top + 95, pw - 16, 1, 'slate', 2);
+    drawText(ctx, d.basic.name.toUpperCase(), cx, top + 103, 'bone', { align: 'center' });
+    drawText(ctx, d.special.name.toUpperCase(), cx, top + 114, 'cyan', { align: 'center' });
+    bigActor(ctx, id, cx, top + ph - 6, 2, T);
+  });
+}
+
+// ---------------------------------------------------------------- the fight on the Lab road
+const stage = getStage('1.1');
+const IDLE = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false };
+const tx = (t) => t * 16 + 8, ty = (t) => t * 16 + 12;
+
+function freshSim(party, x, y) {
+  return createSim(stage.sim({ party, start: { x, y }, difficulty: 'chief', seed: 1983, god: true, skipSpawns: [], openProps: [] }));
+}
+
+/**
+ * A hero's real move: a one-hero sim turns to face right, presses the button, and runs to `frame`.
+ * Returns the hero's pose and every effect on screen, relative to the hero's feet, so the card can place it anywhere.
+ */
+function move(id, which, frame) {
+  const sim = freshSim([{ id, level: 3 }], tx(36), ty(4));
+  for (let i = 0; i < 4; i++) sim.step({ ...IDLE, mx: 0.2 });
+  for (let i = 0; i < 2; i++) sim.step(IDLE);
+  for (let f = 0; f <= frame; f++) {
+    const basic = which === 'basic', press = f === 0;
+    sim.step({ ...IDLE, attackPressed: basic && press, attackHeld: basic && f < 3, specialPressed: !basic && press, specialHeld: !basic && f < 20 });
+  }
+  const v = sim.view();
+  const hero = v.actors.find((a) => a.kind === 'hero');
+  return { anim: hero.anim, t: hero.t, fx: v.fx.map((f) => ({ ...f, x: f.x - hero.x, y: f.y - hero.y })) };
+}
+
+/** A hero mid-move at x, y. Facing left mirrors the move. */
+function heroDoing(id, x, y, which, frame, dir = 'right') {
+  const m = move(id, which, frame);
+  const flip = dir === 'left' ? -1 : 1;
+  const actor = { kind: 'hero', id, x, y, dir, anim: m.anim, t: m.t, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null };
+  const fx = m.fx.map((f) => ({ ...f, x: x + f.x * flip, y: y + f.y, dir, angle: flip < 0 ? Math.PI - f.angle : f.angle }));
+  return { actor, fx };
+}
+
+function agent(x, y, o = {}) {
+  return { kind: 'enemy', id: 'agent', x, y, dir: 'left', anim: 'walk', t: 0, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null, ...o };
+}
+
+const hit = (text, x, y, color = 'white', big = false) => ({ text, x, y, t: 8, life: 40, color, big });
+
+/** The night stage across any width: the world pass in 256-wide windows, stitched, then the HUD split to both edges. */
+function fightCard(ctx, w, h) {
+  const party = [{ id: 'mike', level: 3 }, { id: 'dustin', level: 3 }, { id: 'lucas', level: 3 }, { id: 'eleven', level: 3 }];
+  const base = freshSim(party, tx(30), ty(4)).view();
+  // The road is tile row 4. Dustin holds the trail behind them while the other three push toward the van.
+  const top = ty(3) + 1, mid = ty(4) + 1, low = ty(5) - 2;
+  const dustin = heroDoing('dustin', 438, mid, 'special', 22, 'left');
+  const lucas = heroDoing('lucas', 474, top, 'special', 14);
+  const eleven = heroDoing('eleven', 452, low, 'special', 20);
+  const mike = heroDoing('mike', 588, mid, 'basic', 9);
+  const view = {
+    ...base,
+    shake: { x: 0, y: 0 }, flash: 0,
+    actors: [
+      dustin.actor, lucas.actor, eleven.actor, mike.actor,
+      agent(382, mid, { dir: 'right', anim: 'hurt', tint: 'orange', bar: { hp: 7, hpMax: 12 } }),
+      agent(624, mid, { anim: 'hurt', bar: { hp: 2, hpMax: 12 } }),
+      agent(560, low, { anim: 'hurt', bar: { hp: 6, hpMax: 12 } }),
+      agent(654, top, { alert: true }),
+      agent(668, mid + 6, { t: 9 }),
+      agent(706, top + 3, { t: 4 }),
+    ],
+    fx: [...dustin.fx, ...lucas.fx, ...eleven.fx, ...mike.fx],
+    // A crit is a big yellow number, a burn tick an orange one: what the sim floats.
+    floaters: [hit('14', 626, mid - 24, 'yellow', true), hit('9', 560, low - 17), hit('3', 382, mid - 17, 'orange')],
+    items: [{ kind: 'quarter', x: 650, y: low + 2, t: 0 }, { kind: 'eggo', x: 536, y: ty(6) - 2, t: 0 }],
+  };
+  view.hud = { ...base.hud, quarters: 7, burst: 0.8, burstReady: false, swapReady: 1 };
+  view.hud.party = view.hud.party.map((p) => ({ ...p, hp: Math.round(p.hpMax * (p.active ? 0.75 : 0.9)), mp: Math.round(p.mpMax * 0.6), xp: Math.round(p.xpNext * 0.4) }));
+
+  // The world: the camera puts the road a third of the way down, under the HUD.
+  const camX = stage.wPx - w, camY = 0;
+  const worldH = h - VIEW_TOP;
+  const pad = glowPad.getContext('2d');
+  for (let oy = 0; oy < worldH; oy += 200) {
+    for (let ox = 0; ox < w; ox += SCREEN_W) {
+      pad.fillStyle = PAL.black;
+      pad.fillRect(0, 0, SCREEN_W, SCREEN_H);
+      drawWorld(pad, stage, view, { x: camX + ox, y: camY + oy }, T, { hitboxes: false, figure: null, light: { level: 1, flicker: 0 } });
+      ctx.drawImage(glowPad, 0, VIEW_TOP, SCREEN_W, SCREEN_H - VIEW_TOP, ox, VIEW_TOP + oy, SCREEN_W, SCREEN_H - VIEW_TOP);
+    }
+  }
+
+  // The HUD: the active hero and the MP stay left, the bench and the d20 meter go right, the strip runs between.
+  pad.fillStyle = PAL.black;
+  pad.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  drawHud(pad, view.hud, T, {});
+  drawPanel(ctx, 0, 0, w, VIEW_TOP, 'hud');
+  const split = MIDDLE_END + 1;
+  ctx.drawImage(glowPad, 0, 0, split, VIEW_TOP, 0, 0, split, VIEW_TOP);
+  ctx.drawImage(glowPad, split, 0, SCREEN_W - split, VIEW_TOP, w - (SCREEN_W - split), 0, SCREEN_W - split, VIEW_TOP);
+}
+
+const CARDS = [
+  {
+    id: 'og', name: 'Open Graph', note: 'The page\'s og:image and twitter:image', w: 400, h: 210, scale: 3,
+    draw: titleCard, opts: { ground: 66, feet: 12, scale: 3, gap: 46, logo: 18, tagline: 66 },
+  },
+  { id: 'fight', name: 'The ambush', note: 'Real tiles, props, sprites, effects and HUD from the Lab road', w: 400, h: 210, scale: 3, draw: fightCard },
+  { id: 'party', name: 'The party', note: 'Names, classes and moves come from the hero defs', w: 400, h: 210, scale: 3, draw: partyCard },
+  {
+    id: 'github', name: 'GitHub', note: 'The repo\'s social preview, set in the repo settings', w: 320, h: 160, scale: 4,
+    draw: titleCard, opts: { ground: 46, feet: 9, scale: 2, gap: 36, logo: 12, tagline: 56 },
+  },
+];
+
+// ---------------------------------------------------------------- page
+const root = document.getElementById('cards');
+const status = document.getElementById('status');
+const rendered = new Map();
+
+function render(card) {
+  const small = makeCanvas(card.w, card.h);
+  const ctx = small.getContext('2d');
+  ctx.fillStyle = PAL.ink;
+  ctx.fillRect(0, 0, card.w, card.h);
+  card.draw(ctx, card.w, card.h, card.opts);
+  const big = makeCanvas(card.w * card.scale, card.h * card.scale);
+  big.getContext('2d').drawImage(small, 0, 0, big.width, big.height);
+  return big;
+}
+
+async function save(card) {
+  const c = rendered.get(card.id);
+  const res = await fetch(`/__snap?dir=social&name=${card.id}`, { method: 'POST', body: c.toDataURL('image/png') });
+  if (!res.ok) throw new Error(`${card.id}: ${res.status}`);
+  return (await res.json()).file;
+}
+
+for (const card of CARDS) {
+  const big = render(card);
+  rendered.set(card.id, big);
+  const sec = document.createElement('section');
+  sec.className = 'card';
+  sec.innerHTML = `<div class="meta"><div><h2>${card.name}</h2><p>${card.note}</p></div><p><code>public/social/${card.id}.png</code> ${big.width} × ${big.height}</p></div><div class="frame"></div>`;
+  big.setAttribute('role', 'img');
+  big.setAttribute('aria-label', `${card.name} card`);
+  sec.querySelector('.frame').append(big);
+  root.append(sec);
+}
+
+document.getElementById('save-all').addEventListener('click', async () => {
+  status.textContent = 'Saving…';
+  try {
+    for (const card of CARDS) await save(card);
+    status.textContent = `Saved ${CARDS.length} cards to public/social`;
+  } catch (e) {
+    status.textContent = `Couldn't save: ${e.message}. Save needs the dev server.`;
+  }
+});
+
+Object.assign(window, { __social: { CARDS, render, save, rendered, move, heroDoing } });
+</script>
+</body>
+</html>

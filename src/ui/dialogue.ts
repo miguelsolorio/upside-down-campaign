@@ -76,6 +76,7 @@ export function createDialogueBox(): DialogueBox {
     },
     update(g) {
       if (!live || !script) return;
+      g.input.offer('skip');
       // The skip key drops the rest of this script, not just the current line.
       if (g.input.pressed('skip')) { audio.sfx('cancel'); finish(); return; }
       t++; age++;

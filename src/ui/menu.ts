@@ -76,6 +76,9 @@ export function settingItems(g: Game): MenuItem[] {
     { label: 'SHAKE', value: () => shakeLabel(s.shake), adjust: shake, activate: () => shake(1) },
     { label: 'REDUCE FLASH', value: () => onOff(s.reduceFlashing), adjust: flip('reduceFlashing'), activate: flip('reduceFlashing') },
     { label: 'SKIP STORY', value: () => onOff(s.skipDialogue), adjust: () => toggleSkipStory(g), activate: () => toggleSkipStory(g) },
-    { label: 'CONTROLS', value: () => 'EDIT', activate: () => g.scenes.push(createControlsScene({ onBack: () => g.scenes.pop() })) },
+    // Key rebinding means nothing on a touch screen.
+    ...(g.input.device() === 'touch' ? [] : [
+      { label: 'CONTROLS', value: () => 'EDIT', activate: () => g.scenes.push(createControlsScene({ onBack: () => g.scenes.pop() })) },
+    ]),
   ];
 }

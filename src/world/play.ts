@@ -333,6 +333,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
       forward(sim.step(input));
       view = sim.view();
+      // Lights the burst button on a touch screen.
+      if (view.hud.burstReady && !frozen) g.input.offer('burst');
 
       if (!frozen) {
         const p = sim.heroPos();

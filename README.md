@@ -60,6 +60,21 @@ Every push to `main` builds the game and publishes it to GitHub Pages through `.
 
 Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
 
+**Touch.** On a phone or tablet the controls are on screen. In portrait the game sits at the top with the controls under it. In landscape the game sits in the middle with the stick on the left and the buttons on the right. The controls never cover the game.
+
+| Control | Action |
+| --- | --- |
+| Stick (left thumb, anywhere in the lower left) | Move and step through menus. It centers where your thumb lands, and a short push is full speed |
+| `A` | Attack, talk, light Joyce's lights, confirm |
+| `B` | Special. Back in menus |
+| Arrows | Back one hero and next hero |
+| A bench face in the HUD | Pick that hero |
+| d20 | Party burst. It lights up gold when the meter is full |
+| Pause | Pause. Begins the game on the title |
+| Skip | Skip dialogue. It lights up only while there's something to skip |
+
+Hints name the on-screen buttons while you play by touch. A key or controller press hides the touch controls and puts the keyboard or controller hints back, and the next touch brings them back. Sound starts on your first tap. CONTROLS isn't in the options on a touch screen, since there are no keys to change. Add `?touch=1` to the URL to try the touch controls with a mouse.
+
 **Changing keys.** The table above is the defaults. Open CONTROLS from the options (the OPTIONS row on the title, or `P`) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK and SPECIAL always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the HUD's hero numbers, the controls in the corner of the level, the skip prompt and the tutorial lines. The title shows no key hints at all. The gamepad layout is listed there too but can't be changed yet.
 
 **Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special and swap controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Burst isn't listed there: once the d20 is full, PRESS SPACE FOR PARTY BURST shows just under the HUD, with no box behind it, until it's used, except next to the lights, where Space lights them instead. Every script still does what it does, so Eleven still joins and the gate still opens.

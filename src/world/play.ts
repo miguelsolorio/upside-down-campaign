@@ -72,7 +72,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let overlay: Scene | null = null;
   let checkpoint: Checkpoint = { x: stage.start.x, y: stage.start.y, state: { fired: [], cleared: [] } };
   let prompt: PropView | null = null;
-  /** The party burst is ready and the party is free to use it, so its key shows over the active hero. Not next to
+  /** The crit is ready and the party is free to use it, so its key shows over the active hero. Not next to
    * lights, where Space lights them instead. */
   let burstCall = false;
   let speech: { who: HeroId; text: string; t: number } | null = null;

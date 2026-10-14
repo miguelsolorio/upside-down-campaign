@@ -142,7 +142,7 @@ export interface PartyHud {
 }
 export interface HudView {
   party: PartyHud[];
-  /** Party burst meter, 0..1. */
+  /** Crit meter (the code calls it burst), 0..1. */
   burst: number; burstReady: boolean;
   quarters: number;
   /** Seconds of Nat 20 Inspiration left. */

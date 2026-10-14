@@ -37,7 +37,7 @@ const DOWN_BOX: Rect = { x: ROWS_END + 1, y: LIST_Y + (VISIBLE - 1) * ROW_H - 1,
 
 const PAD_LINES: [string, string][] = [
   ['A', 'ATTACK, CONFIRM, TALK'], ['X', 'SPECIAL'], ['B', 'BACK'], ['LB RB', 'SWAP HERO'],
-  ['Y', 'PARTY BURST'], ['START', 'PAUSE, OR BEGIN'], ['VIEW', 'SKIP DIALOGUE'], ['STICK', 'MOVE, D-PAD TOO'],
+  ['Y', 'CRIT'], ['START', 'PAUSE, OR BEGIN'], ['VIEW', 'SKIP DIALOGUE'], ['STICK', 'MOVE, D-PAD TOO'],
   ['RT', 'ATTACK TOO'],
 ];
 

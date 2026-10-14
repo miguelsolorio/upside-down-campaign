@@ -11,8 +11,8 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | `X` or `K` | Special. Costs MP |
 | `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
 | `1` to `4`, or click a portrait | Pick a hero |
-| `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise party burst when the d20 at the top right is full. Also advances dialogue |
-| `U` or `B` | Party burst, even next to the lights |
+| `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise Crit when the d20 at the top right is full. Also advances dialogue |
+| `U` or `B` | Crit, even next to the lights |
 | `Esc` or `P` | Pause and settings |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
 | `M` | Mute |
@@ -31,7 +31,7 @@ An Xbox controller plays the whole game, menus included. Plug it in or pair it, 
 | `A` | Attack, talk, light Joyce's lights, confirm |
 | `X` | Special. Opens the options on the title |
 | `B` | Back |
-| `Y` | Party burst |
+| `Y` | Crit |
 | `LB` `RB` | Swap hero |
 | `RT` | Attack, same as `A` |
 | `Start` | Pause. Begins the game on the title |
@@ -50,7 +50,7 @@ On a phone or tablet the controls are on screen. In portrait the game sits at th
 | `B` | Special. Back in menus |
 | Arrows | Back one hero and next hero |
 | A bench face in the HUD | Pick that hero |
-| d20 | Party burst. It lights up gold when the meter is full |
+| d20 | Crit. It lights up gold when the meter is full |
 | Pause | Pause. Begins the game on the title |
 | Skip | Skip dialogue. It lights up only while there's something to skip |
 
@@ -62,7 +62,7 @@ Every menu works with a mouse. The row under the pointer takes the selection, an
 
 ## Story
 
-Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special and swap controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Burst isn't listed there: once the d20 is full, PRESS SPACE FOR PARTY BURST shows just under the HUD, with no box behind it, until it's used, except next to the lights, where Space lights them instead. Every script still does what it does, so Eleven still joins and the gate still opens.
+Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special and swap controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Crit isn't listed there: once the d20 is full, PRESS SPACE FOR CRIT shows just under the HUD, with no box behind it, until it's used, except next to the lights, where Space lights them instead. Every script still does what it does, so Eleven still joins and the gate still opens.
 
 ## Saving
 

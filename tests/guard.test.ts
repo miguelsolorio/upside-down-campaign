@@ -339,7 +339,7 @@ test('swapping in lands the shockwave, which stuns and breaks a guard beside the
   assert.ok(r.g.hp < r.g.hpMax);
 });
 
-test('the party burst ignores the shield', () => {
+test('the crit ignores the shield', () => {
   const r = rig({ start: { x: tc(12), y: tf(8) + 24 } });
   r.g.cd = 9999;
   const before = r.g.hp;

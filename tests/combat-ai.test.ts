@@ -200,7 +200,7 @@ test('burst meter: +1.5 percent per hit dealt, +4 per hit taken, +6 per kill', (
   assert.equal(c.sim.view().hud.burstReady, false);
 });
 
-test('party burst: a 90-frame freeze, then every hero sweeps everything within 200 px for about 3x ATK', () => {
+test('crit: a 90-frame freeze, then every hero sweeps everything within 200 px for about 3x ATK', () => {
   const spawns = [agent('n1', 1, 1), agent('n2', 1, 1), agent('n3', 1, 1), agent('far', 1, 1)];
   const { sim, s } = makeWhite({
     party: [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }, { id: 'eleven' }], spawns, start: { x: 150, y: 150 }, seed: 5,

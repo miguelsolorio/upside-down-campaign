@@ -2,8 +2,16 @@ import type { SimInput, Vec2 } from './types.ts';
 import { actionsForCode } from './bindings.ts';
 import type { Action } from './bindings.ts';
 import { clientToGame } from './pointer.ts';
+import { pickPads, readPads } from './gamepad.ts';
 
 export type { Action };
+
+export interface InputOptions {
+  /** Fires when a controller button or stick direction goes down. The page uses it to try to start the sound. */
+  onPadPress?(): void;
+  /** The game canvas. With it, the mouse or a finger can point at and click the HUD. */
+  canvas?: HTMLCanvasElement;
+}
 
 export interface InputState {
   /** Call once at the start of every update tick, before scenes update. */
@@ -14,24 +22,32 @@ export interface InputState {
   released(a: Action): boolean;
   /** Movement vector, length <= 1. */
   axis(): Vec2;
+  /** Whichever the player touched last. A connected controller counts as touched. */
   device(): 'keyboard' | 'gamepad';
   /** Where the mouse or finger is over the game, in game px (256 by 224), or null when it is elsewhere. */
   pointer(): Vec2 | null;
   /** Where the primary button went down this tick, in game px, or null. A short click is never lost. */
   clicked(): Vec2 | null;
+  /** Takes and clears a one-line message about the controller (connected, lost), for a toast. */
+  notice(): string | null;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
   capture(cb: (code: string) => void): () => void;
 }
 
-export function createInput(canvas?: HTMLCanvasElement): InputState {
+export function createInput(opts: InputOptions = {}): InputState {
   const down = new Set<string>();
   const latch = new Set<Action>();
   let prev = new Set<Action>();
   let now = new Set<Action>();
+  /** The keyboard's share of `now`, so a drifting stick can't override held keys. */
+  let keyNow = new Set<Action>();
+  let padPrev = new Set<Action>();
+  let stickWas = false;
   let pressedNow = new Set<Action>();
   let releasedNow = new Set<Action>();
   let analog: Vec2 = { x: 0, y: 0 };
   let device: 'keyboard' | 'gamepad' = 'keyboard';
+  let message: string | null = null;
   let captureCb: ((code: string) => void) | null = null;
   let at: Vec2 | null = null;
   let clickLatch: Vec2 | null = null;
@@ -58,6 +74,7 @@ export function createInput(canvas?: HTMLCanvasElement): InputState {
   addEventListener('keyup', (e) => { down.delete(e.code); });
   addEventListener('blur', () => { down.clear(); });
 
+  const canvas = opts.canvas;
   if (canvas) {
     const place = (e: PointerEvent): Vec2 | null => clientToGame(e.clientX, e.clientY, canvas.getBoundingClientRect());
     canvas.addEventListener('pointermove', (e) => { at = place(e); });
@@ -68,43 +85,39 @@ export function createInput(canvas?: HTMLCanvasElement): InputState {
     });
   }
 
+  const livePads = () => pickPads(typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : []);
+
+  // Browsers hide a controller until a button is pressed on it, then announce it here.
+  addEventListener('gamepadconnected', (e) => {
+    if (pickPads([e.gamepad]).length === 0) return;
+    device = 'gamepad';
+    message = 'CONTROLLER CONNECTED';
+  });
+  addEventListener('gamepaddisconnected', () => {
+    if (livePads().length > 0) return;
+    if (device === 'gamepad') device = 'keyboard';
+    message = 'CONTROLLER LOST';
+  });
+
+  /** All controller actions this tick. The device flips to gamepad on a fresh press, not on a stick that merely drifts. */
   function padActions(): Set<Action> {
-    const out = new Set<Action>();
-    analog = { x: 0, y: 0 };
-    const pads = typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : [];
-    const p = Array.from(pads).find((x): x is Gamepad => !!x);
-    if (!p) return out;
-    const b = (i: number): boolean => !!p.buttons[i]?.pressed;
-    if (b(0)) { out.add('attack'); out.add('confirm'); out.add('interact'); }
-    if (b(2)) out.add('special');
-    if (b(1)) { out.add('dash'); out.add('cancel'); }
-    if (b(4)) out.add('swapPrev');
-    if (b(5)) out.add('swapNext');
-    if (b(3)) out.add('burst');
-    if (b(9)) out.add('pause');
-    if (b(8)) out.add('skip');
-    if (b(12)) out.add('up');
-    if (b(13)) out.add('down');
-    if (b(14)) out.add('left');
-    if (b(15)) out.add('right');
-    const ax = p.axes[0] ?? 0;
-    const ay = p.axes[1] ?? 0;
-    if (Math.hypot(ax, ay) > 0.3) {
-      analog = { x: ax, y: ay };
-      if (ay < -0.4) out.add('up');
-      if (ay > 0.4) out.add('down');
-      if (ax < -0.4) out.add('left');
-      if (ax > 0.4) out.add('right');
-    }
-    if (out.size) device = 'gamepad';
-    return out;
+    const r = readPads(livePads(), padPrev);
+    analog = r.stick;
+    const stickOn = r.stick.x !== 0 || r.stick.y !== 0;
+    let fresh = stickOn && !stickWas;
+    for (const a of r.actions) if (!padPrev.has(a)) fresh = true;
+    if (fresh) { device = 'gamepad'; opts.onPadPress?.(); }
+    stickWas = stickOn;
+    padPrev = r.actions;
+    return r.actions;
   }
 
   const self: InputState = {
     poll() {
       prev = now;
-      now = new Set<Action>();
-      for (const code of down) for (const a of actionsForCode(code)) now.add(a);
+      keyNow = new Set<Action>();
+      for (const code of down) for (const a of actionsForCode(code)) keyNow.add(a);
+      now = new Set<Action>(keyNow);
       for (const a of padActions()) now.add(a);
       pressedNow = new Set<Action>();
       releasedNow = new Set<Action>();
@@ -119,10 +132,9 @@ export function createInput(canvas?: HTMLCanvasElement): InputState {
     pressed: (a) => pressedNow.has(a),
     released: (a) => releasedNow.has(a),
     axis() {
-      if (Math.hypot(analog.x, analog.y) > 0.3) {
-        const m = Math.hypot(analog.x, analog.y);
-        return m > 1 ? { x: analog.x / m, y: analog.y / m } : { ...analog };
-      }
+      // Held movement keys win over the stick. The stick is already past its deadzone and clamped to length one.
+      const keyDir = keyNow.has('up') || keyNow.has('down') || keyNow.has('left') || keyNow.has('right');
+      if (!keyDir && (analog.x !== 0 || analog.y !== 0)) return { ...analog };
       let x = (now.has('right') ? 1 : 0) - (now.has('left') ? 1 : 0);
       let y = (now.has('down') ? 1 : 0) - (now.has('up') ? 1 : 0);
       if (x && y) { x *= Math.SQRT1_2; y *= Math.SQRT1_2; }
@@ -131,6 +143,11 @@ export function createInput(canvas?: HTMLCanvasElement): InputState {
     device: () => device,
     pointer: () => at,
     clicked: () => clickNow,
+    notice() {
+      const m = message;
+      message = null;
+      return m;
+    },
     capture(cb) {
       captureCb = cb;
       return () => { if (captureCb === cb) captureCb = null; };

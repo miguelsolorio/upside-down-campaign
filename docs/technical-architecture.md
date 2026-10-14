@@ -39,11 +39,12 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 - Facing is `'down' | 'up' | 'left' | 'right'`. Art draws left by flipping right.
 - The sim draws nothing and plays nothing. It returns events and a `view()`. World forwards `sfx` events to `audio.sfx`.
 - Only the active hero is on the field with collision. The other party members trail behind it as cosmetic followers (no collision, no AI).
+- Input: `core/input.ts` merges the keys (`core/bindings.ts`) with an Xbox pad (`core/gamepad.ts`, pure). The sim scales speed by stick magnitude, and its own deadzone is 0.15, so the pad deadzone (0.2) sits above it and passes the raw vector. The main loop copies `input.device()` into `bindings.setPromptDevice` each tick, and every hint, label and `{token}` in story lines then names keys or buttons for that device. Add new prompts through `labelOf` or `keyText`, not literals.
 
 ## Time of day
 
 - A stage is `day` or `night` (`StageData.time`, overridable with `?time=` in the URL). There is no darkness layer in either.
-- Day draws the normal art. Night draws the night art: `bakeStage(rows, true)` repaints each tile through `gfx/night.ts` (a night palette, a darker tree palette, rim light on the treeline, spores, vines, moon glints on the water) and `drawProp(..., true)` repaints props the same way. Lights (lamp glass, lit windows, bulbs) are not in the night palette, so they stay bright.
+- Day draws the normal art. Night draws the night art: `bakeStage(rows, true)` repaints each tile through `gfx/night.ts` (a night palette, a darker tree palette, rim light on the treeline, dew, fireflies, glowing mushrooms and flowers, moon glints on the water) and `drawProp(..., true)` repaints props the same way. Lights (lamp glass, lit windows, bulbs) are not in the night palette, so they stay bright.
 - Light at night is a pool painted around each lamp, lit window, string of bulbs, floodlight and the lantern (`gfx/glow.ts`, `paintGlow`). `drawWorld` paints the pools after the tiles and before the sprites, so heroes and enemies are never tinted. The scare stutters them by scaling their level.
 - `HERO_POOL_R` in `world/render.ts` gives the active hero a pool of their own. It is 0 now.
 

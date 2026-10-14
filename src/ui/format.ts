@@ -101,6 +101,15 @@ export function wallLit(t: number): string {
   return '';
 }
 
+// ---------------------------------------------------------------- title launch
+/** Frames the title plays out after START is chosen, before the game takes over. */
+export const LAUNCH_FRAMES = 40;
+
+/** 0..1 across the launch, 0 before it starts. */
+export function launchLevel(launch: number): number {
+  return clamp01(launch / LAUNCH_FRAMES);
+}
+
 // ---------------------------------------------------------------- settings
 /** Volume steps of one tenth, clamped to 0..1. */
 export function stepVolume(v: number, dir: -1 | 1): number {

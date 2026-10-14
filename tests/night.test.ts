@@ -13,8 +13,12 @@ import { litWindow, nightSprite, nightTile, nightWater } from '../src/gfx/night.
 import { STAGE_11 } from '../src/world/stages/stage11.ts';
 
 const pack = (c: readonly [number, number, number]): number => ((255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
-const RIM = pack([160, 70, 140]);
-const SPORE = pack([255, 150, 210]);
+const RIM = pack([60, 170, 140]);
+const FIREFLY = pack([255, 235, 110]);
+const MUSHROOM = pack([90, 240, 210]);
+const PETAL = pack([120, 255, 230]);
+const PETAL_HALO = pack([20, 90, 80]);
+const GLINT = pack([200, 255, 240]);
 const lum = (v: number): number => 0.299 * (v & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * ((v >> 16) & 255);
 const count = (px: Px, v: number): number => px.d.reduce((n, d) => n + (d === v ? 1 : 0), 0);
 
@@ -95,16 +99,37 @@ test('trees are darker than the grass beside them', () => {
   assert.ok(avg(nightTile(day('pine', tree), 'pine', tree)) < avg(nightTile(day('grass', grass), 'grass', grass)));
 });
 
-test('spores drift over the ground in about one tile in five', () => {
-  let tiles = 0, spored = 0;
+/** The share of a 20 by 20 patch of grass whose night tile has this color in it. */
+function share(color: number, name: TileName = 'grass'): number {
+  let tiles = 0, hit = 0;
   for (let ty = 0; ty < 20; ty++) {
     for (let tx = 0; tx < 20; tx++) {
-      const c = ctxAt(tx, ty, around('grass'));
+      const c = ctxAt(tx, ty, around(name));
       tiles++;
-      if (count(nightTile(day('grass', c), 'grass', c), SPORE) > 0) spored++;
+      if (count(nightTile(day(name, c), name, c), color) > 0) hit++;
     }
   }
-  assert.ok(spored / tiles > 0.1 && spored / tiles < 0.35, `${spored} of ${tiles}`);
+  return hit / tiles;
+}
+
+test('fireflies show over about one grass tile in nine, and mushrooms over about one in eleven', () => {
+  assert.ok(share(FIREFLY) > 0.05 && share(FIREFLY) < 0.2, `fireflies ${share(FIREFLY)}`);
+  assert.ok(share(MUSHROOM) > 0.04 && share(MUSHROOM) < 0.16, `mushrooms ${share(MUSHROOM)}`);
+});
+
+test('the ground only has fireflies and mushrooms on grass, not on the trail or the road', () => {
+  for (const name of ['trail', 'dirt', 'road'] as TileName[]) {
+    assert.equal(share(FIREFLY, name), 0, `${name} has no fireflies`);
+    assert.equal(share(MUSHROOM, name), 0, `${name} has no mushrooms`);
+  }
+});
+
+test('flowers glow: bright petals with a dim halo on the grass around them', () => {
+  const c = ctxAt(3, 3, around('flowers'));
+  const d = day('flowers', c), n = nightTile(d, 'flowers', c);
+  assert.ok(count(n, PETAL) > 0, 'the white petals glow');
+  assert.ok(count(n, PETAL_HALO) > 0, 'the grass around them is lit');
+  assert.equal(count(d, PETAL_HALO), 0, 'and the day tile had no halo');
 });
 
 test('night water has moon glints, none of the day blues, and a glint that moves', () => {
@@ -114,8 +139,7 @@ test('night water has moon glints, none of the day blues, and a glint that moves
     assert.ok(w.d.every((v) => v >>> 24 === 255));
   }
   assert.notDeepEqual(frames[0]?.d, frames[1]?.d, 'the water moves');
-  const glint = pack([255, 180, 225]);
-  assert.ok(frames.some((w) => count(w, glint) > 0), 'a glint shows on some frame');
+  assert.ok(frames.some((w) => count(w, GLINT) > 0), 'a glint shows on some frame');
 });
 
 test('props are repainted too, with the same size', () => {

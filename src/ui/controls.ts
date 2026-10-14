@@ -3,7 +3,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
-import { BIND_ROWS, SLOTS, clearBinding, getBinding, keyLabel, resetBindings, setBinding } from '../core/bindings.ts';
+import { BIND_ROWS, SLOTS, clearBinding, getBinding, getPromptDevice, keyLabel, resetBindings, setBinding } from '../core/bindings.ts';
 import type { BindAction } from '../core/bindings.ts';
 import { drawIcon, drawText } from '../gfx/index.ts';
 import { bigText, blinkOn, box, outline } from './kit.ts';
@@ -26,18 +26,19 @@ const CELL_X = [146, 198];
 const NOTICE_FRAMES = 220;
 
 const PAD_LINES: [string, string][] = [
-  ['A', 'ATTACK AND CONFIRM'], ['X', 'SPECIAL'], ['B', 'DASH AND BACK'], ['LB RB', 'SWAP HERO'],
-  ['Y', 'PARTY BURST'], ['START', 'PAUSE'], ['SELECT', 'SKIP DIALOGUE'], ['STICK', 'MOVE, D-PAD TOO'],
+  ['A', 'ATTACK, CONFIRM, TALK'], ['X', 'SPECIAL'], ['B', 'DASH AND BACK'], ['LB RB', 'SWAP HERO'],
+  ['Y', 'PARTY BURST'], ['START', 'PAUSE, OR BEGIN'], ['VIEW', 'SKIP DIALOGUE'], ['STICK', 'MOVE, D-PAD TOO'],
+  ['RT LT', 'ATTACK, DASH TOO'],
 ];
 
 function drawPad(ctx: Ctx): void {
   PAD_LINES.forEach(([button, what], i) => {
-    const y = 36 + i * 13;
+    const y = 34 + i * 12;
     drawText(ctx, button, 24, y, 'amber');
     drawText(ctx, what, 100, y, 'white');
   });
   drawText(ctx, "GAMEPAD BUTTONS CAN'T BE CHANGED YET.", 128, 152, 'mist', { align: 'center' });
-  drawText(ctx, 'PRESS ENTER TO GO BACK.', 128, 172, 'slate', { align: 'center' });
+  drawText(ctx, 'PRESS ENTER OR A TO GO BACK.', 128, 172, 'slate', { align: 'center' });
 }
 
 export function createControlsScene(opts: { onBack(): void }): Scene {
@@ -89,8 +90,19 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
     update(g) {
       t++;
       if (notice && --notice.ttl <= 0) notice = null;
-      if (mode === 'listen') return;
       const i = g.input;
+      if (mode === 'listen') {
+        // Waiting on a key, which a controller can't give. B or Start backs out. A keyboard Escape never gets here:
+        // the capture takes it first.
+        if (i.pressed('cancel') || i.pressed('pause')) {
+          stopListening?.();
+          stopListening = null;
+          mode = 'browse';
+          say('CANCELLED');
+          audio.sfx('cancel');
+        }
+        return;
+      }
       if (mode === 'pad') {
         if (i.pressed('confirm') || i.pressed('cancel') || i.pressed('pause')) { mode = 'browse'; audio.sfx('cancel'); }
         return;
@@ -151,7 +163,7 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
 
       box(ctx, 8, 170, 240, 1, 'shadow');
       if (mode === 'listen') {
-        drawText(ctx, 'PRESS THE NEW KEY. ESC CANCELS.', 128, 175, 'amber', { align: 'center' });
+        drawText(ctx, `PRESS THE NEW KEY. ${getPromptDevice() === 'gamepad' ? 'B' : 'ESC'} CANCELS.`, 128, 175, 'amber', { align: 'center' });
         drawText(ctx, 'BKSP CLEARS THIS SLOT.', 128, 184, 'mist', { align: 'center' });
       } else {
         const hint = entry().kind === 'key' ? 'ENTER REBINDS. LEFT RIGHT PICKS A SLOT.' : 'ENTER TO CHOOSE. ESC GOES BACK.';

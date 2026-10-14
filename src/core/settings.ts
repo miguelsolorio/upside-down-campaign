@@ -9,7 +9,7 @@ export interface Settings {
   /** 0 = no shake, 1 = full. */
   shake: number;
   reduceFlashing: boolean;
-  /** Skips every dialogue box, the prologue and the chapter card. Tab on the title screen flips it. */
+  /** Skips every dialogue box, the prologue and the chapter card. On by default. Tab on the title screen flips it. */
   skipDialogue: boolean;
   difficulty: Difficulty;
 }
@@ -22,7 +22,7 @@ export const settings: Settings = {
   scanlines: true,
   shake: 1,
   reduceFlashing: false,
-  skipDialogue: false,
+  skipDialogue: true,
   difficulty: 'chief',
 };
 

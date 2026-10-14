@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01 } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -230,10 +230,13 @@ export function drawSubtitle(ctx: Ctx, text: string): void {
   drawText(ctx, text, x, SUBTITLE_Y, 'white');
 }
 
-/** One line centered just under the HUD strip, with only the text's shadow and no strip behind it, so it reads without
- * covering the world. It stays put while the camera moves, and drops under the boss bar while one shows. */
+/** One line in the 3x5 font centered just under the HUD strip, with a 1 px ink outline and no strip behind it, so it
+ * reads on the dark yard and the white Lab walls alike without covering the world. It stays put while the camera moves,
+ * and drops under the boss bar while one shows. */
 export function drawTopLine(ctx: Ctx, text: string, color: ColorName, underBoss = false): void {
-  drawText(ctx, text, SCREEN_W / 2, underBoss ? TOP_LINE_BOSS_Y : TOP_LINE_Y, color, { align: 'center', shadow: true });
+  const x = Math.round((SCREEN_W - tinyWidth(text)) / 2), y = underBoss ? TOP_LINE_BOSS_Y : TOP_LINE_Y;
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]] as const) drawTinyText(ctx, text, x + dx, y + dy, 'ink');
+  drawTinyText(ctx, text, x, y, color);
 }
 
 /** The level-up effect around each hero who just gained a level: a ring at the feet, sparkles circling up and, for a

@@ -47,7 +47,7 @@ export interface ActorView {
   alert: boolean;
   /** Pixels above the ground (knockback arcs, leaps). */
   z: number;
-  /** Small HP bar over an enemy once it has been hit. */
+  /** Small HP bar over an enemy once it has been hit, and over a hero who is standing. */
   bar: { hp: number; hpMax: number } | null;
   /** An elite enemy: gfx draws it with its own marks (red trim, a bigger bar). Absent means a normal one. */
   elite?: boolean;

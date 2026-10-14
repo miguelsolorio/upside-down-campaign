@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { drawBar, drawBarV, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { INSPIRATION_SECONDS } from '../progression/index.ts';
-import { XP_NOTCHES, bulbCount, bulbDark, bulbFill, clamp01, hpTone, isLowHp, mpBar, notchFill, notchSpans, quarterFill } from './format.ts';
+import { XP_NOTCHES, bulbCount, bulbFill, clamp01, hpBarColor, isLowHp, mpBar, notchFill, notchSpans, quarterFill } from './format.ts';
 import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
@@ -50,8 +50,7 @@ const SWAP_FLASH = 20;
 
 /** One color for the whole bar, so the active hero and the bench read the same. Low HP makes it blink, in step on both sides. */
 function barColor(p: PartyHud, t: number): ColorName {
-  if (isLowHp(p.hp, p.hpMax) && bulbDark(t, 0, true, settings.reduceFlashing)) return 'blood1';
-  return hpTone(p.hp, p.hpMax);
+  return hpBarColor(p.hp, p.hpMax, t, settings.reduceFlashing);
 }
 
 function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): void {

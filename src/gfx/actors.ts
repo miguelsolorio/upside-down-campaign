@@ -196,6 +196,35 @@ function drawHpBar(ctx: Ctx, cx: number, top: number, hp: number, hpMax: number,
   }
 }
 
+/** Light and dark rows of a hero's bar fill, by the color the HUD would give that much HP. */
+const HERO_BAR_FILL: Partial<Record<ColorName, [ColorName, ColorName]>> = {
+  leaf: ['leaf', 'pine3'], yellow: ['yellow', 'amber'], hot: ['hot', 'red'], blood1: ['blood1', 'blood0'],
+};
+
+/**
+ * The HP bar over a hero, in the HUD's green, yellow and red where an enemy's is red. It is 6 px of fill in an 8 px frame,
+ * half an enemy's, because a party standing still bunches up to 7 px apart and anything wider fuses with its neighbor's.
+ * Any HP at all shows at least a pixel. It draws apart from the sprite, after everything else in the world, so an enemy
+ * standing in front never covers it and an invulnerability flicker never hides it.
+ */
+export function drawHeroBar(ctx: Ctx, v: ActorView, color: ColorName): void {
+  const bar = v.bar;
+  if (!bar) return;
+  const sh = sheetOf(keyOf(v.id, v.guarding, v.elite, v.kind));
+  const cx = Math.round(v.x), z = Math.max(0, Math.round(v.z));
+  const top = Math.round(v.y) - sh.cell - z + (sh.tops[DIR_ROW[v.dir]] as number) - 5;
+  const frac = bar.hpMax > 0 ? Math.max(0, Math.min(1, bar.hp / bar.hpMax)) : 0;
+  const inner = 6, left = cx - (inner >> 1);
+  const w = bar.hp > 0 ? Math.max(1, Math.round(inner * frac)) : 0;
+  const [hi, lo] = HERO_BAR_FILL[color] ?? HERO_BAR_FILL.hot as [ColorName, ColorName];
+  rect(ctx, left - 1, top, inner + 2, 4, 'ink');
+  rect(ctx, left, top + 1, inner, 2, 'shadow');
+  if (w > 0) {
+    rect(ctx, left, top + 1, w, 1, hi);
+    rect(ctx, left, top + 2, w, 1, lo);
+  }
+}
+
 /** Eleven's nosebleed: a stain under the nose and a drop that runs down the chin, on a 48 tick loop. */
 function drawNosebleed(ctx: Ctx, v: ActorView, ox: number, oy: number, frame: number): void {
   if (v.dir === 'up' || v.anim === 'ko') return;
@@ -227,9 +256,10 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
     const frame = frameIndex(v.anim, v.t);
     ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[v.anim] + frame) * C, row * C, C, C, ox, oy, C, C);
     if (v.strained) drawNosebleed(ctx, v, ox, oy, frame);
-    if (v.bar) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
+    // A hero's bar is drawn later, on top of the whole scene, by drawHeroBar.
+    if (v.bar && v.kind === 'enemy') drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
   }
-  if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar ? 15 : 10) + ((v.t >> 2) & 1));
+  if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar && v.kind === 'enemy' ? 15 : 10) + ((v.t >> 2) & 1));
 }
 
 /** Builds every sheet and the main atlases up front. */

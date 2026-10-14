@@ -12,7 +12,7 @@ import { warmLogo } from './logo.ts';
 import { warmUi } from './ui.ts';
 
 export type { BakedStage, Spot } from './tiles.ts';
-export { drawText, textWidth } from './font.ts';
+export { drawText, textWidth, drawTinyText, tinyWidth, TINY_H } from './font.ts';
 export { bakeStage, drawStage } from './tiles.ts';
 export { drawActor } from './actors.ts';
 export { drawFx } from './fx.ts';
@@ -20,7 +20,7 @@ export { drawItem, drawProp } from './props.ts';
 export { drawCamCone, drawHazard } from './overlays.ts';
 export { paintGlow } from './glow.ts';
 export type { Glow } from './glow.ts';
-export { drawPortrait, drawIcon, drawPanel, drawBar } from './ui.ts';
+export { drawPortrait, drawIcon, drawPanel, drawBar, drawBarV } from './ui.ts';
 export { drawLogo, drawAlphabetWall, LOGO_SIZE, WALL_SIZE } from './logo.ts';
 
 /** Build atlases and fonts once at boot. Synchronous, under 200 ms. */

@@ -139,6 +139,6 @@ public/icons    the app icon, with public/favicon.ico, drawn by social.html
 .github         the GitHub Pages deploy
 ```
 
-Besides `index.html`, the HTML pages at the root are dev-only review pages that the build leaves out: `social.html` draws the cards and the icon, `character-variations.html` holds the face options for each hero, and `darkness-variations.html` holds the night tileset options.
+Besides `index.html`, the HTML pages at the root are dev-only review pages that the build leaves out: `social.html` draws the cards and the icon, `character-variations.html` holds the face options for each hero, and `darkness-variations.html` holds the night tileset options, and `hp-bars.html` draws the HUD's HP bars at every level and HP state.
 
 The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.

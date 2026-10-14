@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame } from '../src/core/pointer.ts';
-import { BENCH_PITCH, CELL_H, METER_LEFT, MIDDLE_END, benchEnd, benchPitch, cycleHintX, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, METER_LEFT, MIDDLE_END, benchPitch, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
 
 const IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
@@ -35,17 +36,31 @@ test('bench slots sit left to right in party order, clear of the middle readout 
     for (const r of bench) {
       assert.equal(r.y, 0);
       assert.equal(r.h, CELL_H);
-      assert.equal(r.w, BENCH_PITCH, 'every slot is as wide as a tag needs, whoever else is benched');
+      assert.equal(r.w, BENCH_PITCH, 'every slot is the same width, whoever else is benched');
+      assert.equal(r.px, r.x + BENCH_FACE_DX, 'the face sits after the key');
       assert.ok(r.x >= MIDDLE_END, `slot ${r.n} starts at ${r.x}, inside the quarters and Inspiration readout`);
       assert.ok(r.x + r.w <= METER_LEFT, `slot ${r.n} ends at ${r.x + r.w}, over the d20 meter`);
     }
-    const last = bench[bench.length - 1] as { px: number };
-    assert.equal(last.px + benchPitch(bench.length), benchEnd(bench.length), 'the last slot ends at the bench edge');
+    const last = bench[bench.length - 1] as { x: number };
+    assert.equal(last.x + benchPitch(bench.length), BENCH_END, 'the last slot ends against the d20 meter, however many are benched');
   }
 });
 
-test('a tag fits its slot: key, a 2 px gap and three letters at 6 px a glyph, with a gap before the next slot', () => {
-  assert.ok(7 + 3 * 6 - 1 < BENCH_PITCH, 'key plus a three-letter name');
+test('a bench slot holds its key, face and HP bar with room before the next slot\'s key', () => {
+  // 2 px of padding, a 3 px key, a 2 px gap, the 11 px face, a 2 px gap and the 3 px bar.
+  const pad = 2;
+  assert.equal(BENCH_FACE_DX, pad + 3 + 2);
+  const end = BENCH_FACE_DX + 11 + 2 + 3;
+  const air = BENCH_PITCH + pad - end;
+  assert.ok(end <= BENCH_PITCH && air >= 4, `the bar ends at ${end}, leaving ${air} px before the next key`);
+});
+
+test('the tiny font has every letter and digit, in 3 columns by 5 rows', () => {
+  for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789?') {
+    const rows = (TINY_GLYPHS[ch] ?? '').split('/');
+    assert.equal(rows.length, 5, `${ch} has five rows`);
+    for (const r of rows) assert.match(r, /^[.#]{3}$/, `${ch} rows are three columns`);
+  }
 });
 
 test('bench cells do not overlap, so one click picks one hero', () => {
@@ -77,20 +92,6 @@ test('clicks on the active hero, a KO\'d hero or empty space swap nothing', () =
   assert.equal(slotAt(p, 130, 100), -1, 'the world below the strip');
   assert.equal(slotAt(p, -1, 5), -1);
   assert.equal(slotAt(party(1), 200, 10), -1, 'a lone hero has nobody to swap to');
-});
-
-test('the swap hints flank a short bench, and are left out when three are benched', () => {
-  assert.equal(cycleHintX(0), null);
-  assert.equal(cycleHintX(3), null, 'no room beside three slots');
-  for (const count of [1, 2]) {
-    const h = cycleHintX(count);
-    const first = slotRects(party(count + 1, 0)).filter((r) => !r.active)[0] as { px: number };
-    assert.ok(h);
-    assert.ok((h?.prev ?? 0) < first.px, 'the back hint ends before the first avatar');
-    assert.ok((h?.prev ?? 0) - 11 >= MIDDLE_END, 'and starts clear of the readout, even for a two-letter pad label');
-    assert.ok((h?.next ?? 0) >= benchEnd(count), 'the next hint starts after the last slot');
-    assert.ok((h?.next ?? 0) + 11 <= METER_LEFT, 'and ends before the d20 meter, even for a two-letter pad label');
-  }
 });
 
 test('pointer positions scale from the page to the 256 by 224 game, at any canvas size', () => {

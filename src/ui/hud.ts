@@ -1,20 +1,21 @@
 // The top strip. 256 by 20 px, opaque. Left: the active hero. Middle: quarters and Inspiration. Right: the bench and the d20.
-import type { HeroId, HudView, IconId, PartyHud } from '../core/types.ts';
+// HP is a segmented bar on both sides: flat for the active hero, upright beside each bench face. Same colors, same blink.
+import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
-import { labelOf, slotKeyLabel } from '../core/bindings.ts';
+import { slotKeyLabel } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
-import { drawBar, drawIcon, drawPanel, drawPortrait, drawText } from '../gfx/index.ts';
+import { drawBar, drawBarV, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
+import type { ColorName } from '../gfx/palette.ts';
 import { INSPIRATION_SECONDS } from '../progression/index.ts';
-import { bulbCount, bulbDark, bulbFill, clamp01, isLowHp, pipCount } from './format.ts';
-import { blinkOn, box, clipped, dither, outline } from './kit.ts';
+import { bulbCount, bulbDark, bulbFill, clamp01, hpTone, isLowHp, quarterFill } from './format.ts';
+import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
-import { cycleHintX, slotRects } from './hudlayout.ts';
+import { slotRects } from './hudlayout.ts';
 import type { SlotRect } from './hudlayout.ts';
 
-const BULBS: IconId[] = ['bulbRed', 'bulbYellow', 'bulbGreen', 'bulbBlue'];
-/** Text, bulbs and the XP line start here, right of the face and its shortcut key. */
+/** Text, the HP bar and the XP line start here, right of the face and its shortcut key. */
 const LEFT_X = 25;
 const LEFT_W = 100;
 const MID_X = 130;
@@ -22,10 +23,13 @@ const MID_X = 130;
 const INSPIRE_W = 28;
 /** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
 const KEY_COLOR = 'slate';
-/** The row for a hero's key and name under a bench avatar. */
-const TAG_Y = 11;
-/** Where the name starts, past the 5 px key and a 2 px gap. */
-const TAG_X = 7;
+/** The active hero's shortcut key sits this far left of the name. */
+const ACTIVE_KEY_X = LEFT_X - 7;
+/** On a bench slot the face sits a little below the top, so the slot is centered in the strip like the active portrait.
+ * The key is 2 px in from the slot's left edge, and the HP bar is 2 px right of the face. */
+const FACE_Y = 2;
+const KEY_DX = 2;
+const BAR_DX = 13;
 const METER_X = 246;
 /** The strip is near black, so the lit die gets an orange outline instead of the usual ink one. */
 const METER_LIT: DieScheme = { ...DIE_GOLD, edge: 'orange' };
@@ -46,6 +50,12 @@ export interface HudOpts {
 /** How long the new active hero's portrait flashes after a swap, in frames. */
 const SWAP_FLASH = 20;
 
+/** One color for the whole bar, so the active hero and the bench read the same. Low HP makes it blink, in step on both sides. */
+function barColor(p: PartyHud, t: number): ColorName {
+  if (isLowHp(p.hp, p.hpMax) && bulbDark(t, 0, true, settings.reduceFlashing)) return 'blood1';
+  return hpTone(p.hp, p.hpMax);
+}
+
 function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): void {
   const low = isLowHp(p.hp, p.hpMax);
   const up = o.levelUp?.has(p.id) ?? false;
@@ -53,7 +63,7 @@ function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): 
   outline(ctx, 1, 0, 16, 16, up || swapped ? 'yellow' : 'amber');
   clipped(ctx, 2, 1, 14, 14, () => drawPortrait(ctx, p.id, p.ko ? 'hurt' : low ? 'worried' : 'neutral', -3, -2));
   // The key that picks this hero sits just left of the name, quietly, like the ones on the bench.
-  if (o.device !== 'gamepad') drawText(ctx, slotKeyLabel(r.n), LEFT_X - TAG_X, 1, KEY_COLOR);
+  if (o.device !== 'gamepad') drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
   drawText(ctx, p.name, LEFT_X, 1, 'white');
   drawText(ctx, `LV${p.level}`, LEFT_X + p.name.length * 6 + 6, 1, up ? 'white' : 'yellow');
 
@@ -62,21 +72,13 @@ function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): 
   outline(ctx, 103, 1, 22, 7, 'slate');
   drawBar(ctx, 104, 2, 20, 5, p.mpMax > 0 ? p.mp / p.mpMax : 0, 'blue', 'night');
 
-  // One bulb per 10 HP. A damaged bulb is lit from the bottom up. Low HP makes the lit ones flicker.
+  // One segment per 10 HP, 7 px of bar and a 1 px tick. The color is health: green above half, then yellow, then a red that blinks.
   const n = bulbCount(p.hpMax);
   const pitch = Math.max(6, Math.min(8, Math.floor(LEFT_W / n)));
-  for (let i = 0; i < n; i++) {
-    const x = LEFT_X + i * pitch;
-    const fill = bulbFill(p.hp, p.hpMax, i, n);
-    const lit = BULBS[i % BULBS.length] as IconId;
-    const dark = bulbDark(t, i, low, settings.reduceFlashing);
-    if (fill >= 1 && !dark) { drawIcon(ctx, lit, x, 9, t); continue; }
-    drawIcon(ctx, 'bulbOff', x, 9, t);
-    if (fill > 0 && fill < 1 && !dark) {
-      const rows = Math.max(1, Math.ceil(fill * 6));
-      clipped(ctx, x, 17 - rows, 8, rows, () => drawIcon(ctx, lit, x, 9, t));
-    }
-  }
+  const color = barColor(p, t);
+  // No frame, so the empty part of each segment is a shade lighter than the strip to keep the bar's length readable.
+  box(ctx, LEFT_X, 10, n * pitch - 1, 5, 'ink');
+  for (let i = 0; i < n; i++) drawBar(ctx, LEFT_X + i * pitch, 10, pitch - 1, 5, bulbFill(p.hp, p.hpMax, i, n), color, p.ko ? 'night' : 'shadow');
 
   const xp = p.xpNext > 0 ? clamp01(p.xp / p.xpNext) : 0;
   box(ctx, LEFT_X, 17, LEFT_W, 1, 'dusk');
@@ -93,47 +95,34 @@ function drawMiddle(ctx: Ctx, hud: HudView, t: number): void {
   box(ctx, MID_X, 17, Math.max(1, Math.round(INSPIRE_W * clamp01(hud.inspiration / INSPIRATION_SECONDS))), 1, 'yellow');
 }
 
-/** A hero's three-letter tag. Three letters is what fits under an avatar, and it reads the same whoever is benched. */
-const tagOf = (name: string): string => name.slice(0, 3).toUpperCase();
-
-/** One benched hero: a small avatar, HP pips beside it, and under it the shortcut key (quiet) and the name tag.
- * The tag fills from dim to bright as the swap recharges, so it reads as ready when it is fully lit. */
+/** One benched hero: the shortcut key, a small face and an upright HP bar, left to right.
+ * The key fills from the bottom as the swap recharges, so it reads as ready once it is fully lit. */
 function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, o: HudOpts): void {
-  const x = r.px;
+  const x = r.px, y = FACE_Y;
   const dead = p.ko;
   const hot = o.hover === r.index && !dead;
   const pulse = p.id === o.focus && blinkOn(t, 40, 28); // a puzzle hint names this hero
   const mark = pulse || (o.levelUp?.has(p.id) ?? false) ? 'yellow' : hot ? (ready >= 1 ? 'yellow' : 'cream') : null;
-  if (mark) outline(ctx, x - 1, 0, r.w + 1, 19, mark);
-  outline(ctx, x, 0, 11, 11, dead ? 'dusk' : 'slate');
-  clipped(ctx, x + 1, 1, 9, 9, () => drawPortrait(ctx, p.id, dead ? 'hurt' : 'neutral', x - 7, -5));
-  if (dead) dither(ctx, x + 1, 1, 9, 9, 'ink', 2);
+  if (mark) outline(ctx, r.x, 0, r.w - 1, 15, mark);
+  outline(ctx, x, y, 11, 11, dead ? 'dusk' : 'slate');
+  // A hero who is down keeps the neutral face, in greys.
+  clipped(ctx, x + 1, y + 1, 9, 9, () => drawPortrait(ctx, p.id, 'neutral', x - 7, y - 5, dead));
 
-  const ratio = p.hpMax > 0 ? p.hp / p.hpMax : 0;
-  const lit = pipCount(p.hp, p.hpMax);
-  const color = ratio > 0.5 ? 'leaf' : ratio > 0.25 ? 'yellow' : 'hot';
-  for (let i = 0; i < 4; i++) box(ctx, x + 13, 9 - i * 3, 2, 2, i < lit ? color : dead ? 'blood0' : 'grey1');
+  // The face's height, in four quarters from the bottom: 2 px of bar and a 1 px tick. No frame, so the empty part is a
+  // shade lighter than the strip to stay visible.
+  const bx = x + BAR_DX;
+  box(ctx, bx, y, 3, 11, 'ink');
+  const color = barColor(p, t);
+  for (let i = 0; i < 4; i++) drawBarV(ctx, bx, y + 9 - i * 3, 3, 2, quarterFill(p.hp, p.hpMax, i), color, dead ? 'night' : 'shadow');
 
-  const keyed = o.device !== 'gamepad';
-  if (keyed) drawText(ctx, slotKeyLabel(r.n), x, TAG_Y, dead ? 'dusk' : KEY_COLOR);
-  const tag = tagOf(p.name);
-  const tx = x + (keyed ? TAG_X : 0);
-  if (dead) { drawText(ctx, tag, tx, TAG_Y, 'dusk'); return; }
-  if (ready >= 1) { drawText(ctx, tag, tx, TAG_Y, hot ? 'yellow' : 'bone'); return; }
-  drawText(ctx, tag, tx, TAG_Y, 'slate');
-  clipped(ctx, tx, TAG_Y, Math.round(tag.length * 6 * ready), 7, () => drawText(ctx, tag, tx, TAG_Y, 'bone'));
-}
-
-/** The swap-back and swap-next keys, one on each side of the bench, so cycling reads at a glance. Only when the bench is short enough to leave room. */
-function drawCycleHints(ctx: Ctx, benchCount: number, ready: number, o: HudOpts): void {
-  const at = cycleHintX(benchCount);
-  if (!at) return;
-  const pad = o.device === 'gamepad';
-  const prev = pad ? 'LB' : labelOf('swapPrev');
-  const next = pad ? 'RB' : labelOf('swapNext');
-  const color = ready >= 1 ? 'mist' : KEY_COLOR;
-  if (prev.length <= 2) drawText(ctx, prev, at.prev, 5, color, { align: 'right' });
-  if (next.length <= 2) drawText(ctx, next, at.next, 5, color);
+  if (o.device === 'gamepad') return;
+  const key = slotKeyLabel(r.n);
+  const kx = r.x + KEY_DX, ky = y + 3;
+  if (dead) { drawTinyText(ctx, key, kx, ky, 'dusk'); return; }
+  if (ready >= 1) { drawTinyText(ctx, key, kx, ky, hot ? 'yellow' : 'mist'); return; }
+  drawTinyText(ctx, key, kx, ky, KEY_COLOR);
+  const rows = Math.round(TINY_H * ready);
+  if (rows > 0) clipped(ctx, kx, ky + TINY_H - rows, tinyWidth(key), rows, () => drawTinyText(ctx, key, kx, ky, 'mist'));
 }
 
 /** The party meter: a d20 that fills with light from the bottom and glows gold, with sparks, once the burst is ready. */
@@ -158,7 +147,7 @@ function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>): void {
   drawText(ctx, boss.name, SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
 }
 
-/** Top strip (VIEW_TOP px tall): active hero bulbs, MP, XP, bench faces, d20 burst meter, quarters, boss bar.
+/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, bench faces, d20 burst meter, quarters, boss bar.
  * Every portrait shows the key that picks it, and the bench shows how far the swap has recharged. The same
  * rectangles (`slotRects`) answer clicks, so a portrait is a button. */
 export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, o: HudOpts = {}): void {
@@ -170,7 +159,6 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
     if (r.active) drawActive(ctx, p, r, t, o);
     else drawSlot(ctx, p, r, t, hud.swapReady, o);
   }
-  drawCycleHints(ctx, rects.filter((r) => !r.active).length, hud.swapReady, o);
   drawMiddle(ctx, hud, t);
   drawMeter(ctx, hud, t);
   if (hud.boss) drawBoss(ctx, hud.boss);

@@ -1,7 +1,7 @@
-// Text drawing with the 5x7 caps font. One glyph atlas per color, built on first use.
+// Text drawing with the 5x7 caps font, and a 3x5 one for tight spots. One glyph atlas per color, built on first use.
 import type { ColorName } from './palette.ts';
 import type { TextOpts } from '../core/types.ts';
-import { GLYPHS, GLYPH_ALIAS } from './data/font.ts';
+import { GLYPHS, GLYPH_ALIAS, TINY_GLYPHS } from './data/font.ts';
 import { canvasFromPixels, px32 } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 
@@ -74,6 +74,51 @@ export function drawText(ctx: Ctx, text: string, x: number, y: number, color: Co
 
 /** Advance width in px of the whole string (6 px per glyph). */
 export function textWidth(text: string): number { return text.length * ADVANCE; }
+
+// ---------------------------------------------------------------- tiny caps
+export const TINY_W = 3;
+export const TINY_H = 5;
+export const TINY_ADVANCE = 4;
+
+const TINY_ORDER = Object.keys(TINY_GLYPHS);
+const TINY_INDEX = new Map<string, number>();
+TINY_ORDER.forEach((k, i) => TINY_INDEX.set(k, i));
+const TINY_QUESTION = TINY_INDEX.get('?') as number;
+const tinyAtlases = new Map<ColorName, HTMLCanvasElement>();
+
+function tinyAtlasFor(color: ColorName): HTMLCanvasElement {
+  let a = tinyAtlases.get(color);
+  if (a) return a;
+  const w = TINY_ORDER.length * TINY_ADVANCE;
+  const px = new Uint32Array(w * TINY_H);
+  const c = px32(color);
+  TINY_ORDER.forEach((key, gi) => {
+    const rows = (TINY_GLYPHS[key] as string).split('/');
+    for (let y = 0; y < TINY_H; y++) {
+      const row = rows[y] as string;
+      for (let x = 0; x < TINY_W; x++) if (row[x] === '#') px[y * w + gi * TINY_ADVANCE + x] = c;
+    }
+  });
+  a = canvasFromPixels(px, w, TINY_H);
+  tinyAtlases.set(color, a);
+  return a;
+}
+
+/** Width in px of the ink of a string in the 3x5 font: 4 px a glyph, with no gap after the last one. */
+export function tinyWidth(text: string): number { return text.length === 0 ? 0 : text.length * TINY_ADVANCE - 1; }
+
+/** One line in the 3x5 font. Caps only, so lowercase draws as caps. Returns the ink width. */
+export function drawTinyText(ctx: Ctx, text: string, x: number, y: number, color: ColorName = 'white'): number {
+  const atlas = tinyAtlasFor(color);
+  const x0 = Math.round(x), y0 = Math.round(y);
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i] as string;
+    if (ch === ' ') continue;
+    const gi = TINY_INDEX.get(ch.toUpperCase()) ?? TINY_QUESTION;
+    ctx.drawImage(atlas, gi * TINY_ADVANCE, 0, TINY_W, TINY_H, x0 + i * TINY_ADVANCE, y0, TINY_W, TINY_H);
+  }
+  return tinyWidth(text);
+}
 
 /** Builds the atlases for the colors the game uses most, so the first frame has no hitch. */
 export function warmFont(): void {

@@ -18,7 +18,7 @@ const CARD_FRAMES = FADE_IN + HOLD + FADE_OUT;
 /** The subtitle comes in this many frames after the title and leaves with it. */
 const SUB_DELAY = 20;
 
-/** Black card with the chapter name that fades in and out, then calls onDone. Confirm skips it. */
+/** Black card with the chapter name that fades in and out, then calls onDone. Confirm or a click skips it. */
 export function createChapterCard(opts: { title: string; subtitle: string; onDone(): void }): Scene {
   let t = 0;
   let finished = false;
@@ -31,7 +31,8 @@ export function createChapterCard(opts: { title: string; subtitle: string; onDon
     opaque: true,
     update(g) {
       t++;
-      if (g.input.pressed('confirm') || g.input.pressed('skip') || skipsDialogue() || t >= CARD_FRAMES) finish();
+      const i = g.input;
+      if (i.pressed('confirm') || i.pressed('skip') || i.clicked() || skipsDialogue() || t >= CARD_FRAMES) finish();
     },
     draw(ctx) {
       box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'black');
@@ -50,7 +51,7 @@ export function createChapterCard(opts: { title: string; subtitle: string; onDon
 const STRING: IconId[] = ['bulbRed', 'bulbYellow', 'bulbGreen', 'bulbBlue'];
 /** Bulbs across a 256 px screen. A wider one adds bulbs at both ends at the same spacing. */
 const BULBS = 15;
-/** Frame where the menu appears. Confirm before that just gets there faster. */
+/** Frame where the menu appears. Confirm or a click before that just gets there faster. */
 const MENU_AT = 150;
 
 /** "The lights went out." A string of bulbs dies one by one, then retry or quit. */
@@ -75,7 +76,7 @@ export function createGameOverScene(opts: { onRetry(): void; onQuit(): void }): 
     update(g) {
       t++;
       if (t < MENU_AT) {
-        if (g.input.pressed('confirm')) t = MENU_AT;
+        if (g.input.pressed('confirm') || g.input.clicked()) t = MENU_AT;
         return;
       }
       updateMenu(menu, g);

@@ -5,6 +5,7 @@
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
+import type { PromptDevice } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { drawBar, drawBarV, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -41,8 +42,8 @@ export interface HudOpts {
   swapAge?: number | null;
   /** Party index under the pointer, or -1, so that portrait can light up as a button. */
   hover?: number;
-  /** Which swap keys to print. Keyboard is the default. */
-  device?: 'keyboard' | 'gamepad';
+  /** Which swap keys to print. Keyboard is the default, and only a keyboard has them. */
+  device?: PromptDevice;
 }
 /** How long the new active hero's portrait flashes after a swap, in frames. */
 const SWAP_FLASH = 20;
@@ -60,7 +61,7 @@ function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): 
   outline(ctx, 1, 0, 16, 16, up || swapped ? 'yellow' : 'amber');
   clipped(ctx, 2, 1, 14, 14, () => drawPortrait(ctx, p.id, p.ko ? 'hurt' : low ? 'worried' : 'neutral', -3, -2));
   // The key that picks this hero sits just left of the name, quietly, like the ones on the bench.
-  if (o.device !== 'gamepad') drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
+  if ((o.device ?? 'keyboard') === 'keyboard') drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
   drawText(ctx, p.name, LEFT_X, 1, 'white');
   drawText(ctx, `LV${p.level}`, LEFT_X + p.name.length * 6 + 6, 1, up ? 'white' : 'yellow');
 
@@ -116,7 +117,7 @@ function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, 
   const color = barColor(p, t);
   for (let i = 0; i < 4; i++) drawBarV(ctx, bx, y + 9 - i * 3, 3, 2, quarterFill(p.hp, p.hpMax, i), color, dead ? 'night' : 'shadow');
 
-  if (o.device === 'gamepad') return;
+  if ((o.device ?? 'keyboard') !== 'keyboard') return;
   const key = slotKeyLabel(r.n);
   const kx = r.x + KEY_DX, ky = y + 3;
   if (dead) { drawTinyText(ctx, key, kx, ky, 'dusk'); return; }

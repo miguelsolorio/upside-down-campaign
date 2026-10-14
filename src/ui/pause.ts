@@ -28,6 +28,7 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
     menu = {
       sel: 0,
       items: [resume, ...settingItems(g), twice('START OVER', opts.onStartOver), twice('QUIT', opts.onQuit)],
+      onMove: () => { armed = null; },
     };
     return menu;
   };
@@ -44,9 +45,7 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
         opts.onResume();
         return;
       }
-      const before = m.sel;
       updateMenu(m, g);
-      if (m.sel !== before) armed = null;
     },
     draw(ctx, g) {
       dither(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink', 2);
@@ -54,10 +53,12 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
         bigText(ctx, 'PAUSED', 128, 30, 'yellow', 2, 'center', true);
         drawPanel(ctx, 36, 48, 184, 132, 'menu');
         drawMenu(ctx, menu ?? build(g), 48, 56, 160, t);
-        // Escape always works on a keyboard. On a controller the back button does.
+        // Escape always works on a keyboard. On a controller the back button does. On a touch screen, PAUSE again.
         const key = labelOf('pause');
-        const back = getPromptDevice() === 'gamepad' ? 'B' : 'ESC';
-        drawText(ctx, key === back ? `${back} TO RESUME` : `${key} OR ${back} TO RESUME`, 128, 189, 'mist', { align: 'center' });
+        const device = getPromptDevice();
+        const back = device === 'gamepad' ? 'B' : 'ESC';
+        const hint = device === 'touch' ? 'TAP PAUSE TO RESUME' : key === back ? `${back} TO RESUME` : `${key} OR ${back} TO RESUME`;
+        drawText(ctx, hint, 128, 189, 'mist', { align: 'center' });
       });
     },
   };

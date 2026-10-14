@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpTone, isLowHp,
-  MAX_BULBS, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  MAX_BULBS, clickSegments, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
   XP_NOTCHES,
 } from '../src/ui/format.ts';
 import { wrapText } from '../src/core/text.ts';
@@ -220,4 +220,15 @@ test('settings steps stay in range', () => {
   assert.equal(cycleShake(0.5, 1), 1);
   assert.equal(cycleShake(0.4, 1), 1);
   assert.deepEqual([0, 0.5, 1].map(shakeLabel), ['OFF', 'HALF', 'FULL']);
+});
+
+test('a click on a volume bar lights up to that segment, and a click on the top lit one turns it down one', () => {
+  assert.equal(clickSegments(3, 6), 7, 'up to a higher segment');
+  assert.equal(clickSegments(7, 2), 3, 'down to a lower one');
+  assert.equal(clickSegments(7, 6), 6, 'the top lit segment');
+  assert.equal(clickSegments(1, 0), 0, 'so the first segment reaches zero');
+  assert.equal(clickSegments(0, 0), 1);
+  assert.equal(clickSegments(10, 9), 9);
+  assert.equal(clickSegments(4, 12), 10, 'past the end is the last segment');
+  assert.equal(clickSegments(4, -1), 1);
 });

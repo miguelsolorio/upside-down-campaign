@@ -297,7 +297,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - Browser pane: screenshots of the title, map, every stage, dialogue, level-up and every boss; zero console errors; frame time under 4 ms.
 - Bot (`?bot=1&stage=2.2`): walks an A* path, fights, collects, and logs kills, XP and level-ups. Run on every stage.
 - Audio: every track rendered offline and checked for peak, limiter reduction and RMS. WAVs written to `music/`.
-- Manual checklist at the end: keyboard and gamepad, swap, every special, party burst, KO and retry, save and load, pause, settings.
+- Manual checklist at the end: keyboard, gamepad and touch (portrait and landscape), swap, every special, party burst, KO and retry, save and load, pause, settings.
 
 ## Risks and cut line
 
@@ -306,7 +306,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - **I can't hear the music.** See the audio note above.
 - **Flashing lights.** The show leans on them, so there's a reduce-flashing setting and the flicker is rate-limited.
 - **Dustin's hairspray flamethrower isn't a scene I could confirm.** It's a gag built on Steve's Farrah spray from season 2, not a claim about an episode.
-- **Out of scope:** touch controls, alternate costumes, a Dig Dug-style arcade minigame, relics, a GitHub Pages workflow. I won't publish or deploy anything without your say.
+- **Out of scope:** alternate costumes, a Dig Dug-style arcade minigame, relics, a GitHub Pages workflow. I won't publish or deploy anything without your say.
 
 ## Sources
 

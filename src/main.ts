@@ -12,6 +12,8 @@ import { createSheetScene } from './gfx/sheet.ts';
 import { audio } from './audio/index.ts';
 import { createAudioLabScene } from './audio/lab.ts';
 import { createToast } from './ui/toast.ts';
+import { mountTouchUi } from './ui/touchui.ts';
+import type { TouchLayout } from './core/touchlayout.ts';
 import { startGame } from './flow.ts';
 
 // The page shows #game, but the game draws at 1x into `frame`, which is copied up onto #game each frame.
@@ -29,19 +31,41 @@ if (flags.mute) audio.mute(true);
 audio.setVolumes(settings.musicVol, settings.sfxVol);
 
 const toast = createToast();
+const touch = mountTouchUi();
+// A phone or tablet starts with its controls on screen. A key or a controller press hides them until the next touch.
+const touchFirst = flags.touch || matchMedia('(pointer: coarse)').matches;
 
 const g: Game = {
-  // A controller press only counts as a user gesture in some browsers, so ask for sound only when this one did.
-  input: createInput({ canvas, onPadPress: () => { if (navigator.userActivation?.isActive) audio.unlock(); } }),
+  input: createInput({
+    canvas,
+    touch,
+    startDevice: touchFirst ? 'touch' : 'keyboard',
+    // A controller press only counts as a user gesture in some browsers, so ask for sound only when this one did.
+    onPadPress: () => { if (navigator.userActivation?.isActive) audio.unlock(); },
+  }),
   settings,
   flags,
   scenes: createSceneManager(() => g),
   frame: 0,
 };
 
-/** Sizes the screen to the window. The dev scenes are drawn for 256 wide, so they keep it. */
-function fit(): void {
-  const f = fitScreen(innerWidth, innerHeight, devicePixelRatio || 1, flags.sheet || flags.audio ? BASE_W : undefined);
+const stage = document.getElementById('stage') as HTMLElement;
+const wrap = document.getElementById('wrap') as HTMLElement;
+let placed = '';
+/**
+ * Sizes the screen and places the canvas, when the window or the touch layout changed. Desktop: as wide as the
+ * window's shape and filling it. Touch: 256 wide, wherever the touch layout puts the game. The dev scenes are drawn
+ * for 256 wide, so they keep it too. Moving to a screen with a different pixel density counts as a change.
+ */
+function fit(l: TouchLayout | null): void {
+  const dpr = devicePixelRatio || 1;
+  const key = l ? `${l.game.x},${l.game.y},${l.game.w},${l.game.h}@${dpr}` : `${innerWidth}x${innerHeight}@${dpr}`;
+  if (key === placed) return;
+  placed = key;
+  stage.classList.toggle('touch', l !== null);
+  const f = l
+    ? fitScreen(l.game.w, l.game.h, dpr, BASE_W)
+    : fitScreen(innerWidth, innerHeight, dpr, flags.sheet || flags.audio ? BASE_W : undefined);
   setScreenWidth(f.w);
   // Resizing a canvas resets its context, smoothing included.
   if (frame.width !== SCREEN_W || frame.height !== SCREEN_H) {
@@ -53,23 +77,20 @@ function fit(): void {
     canvas.width = SCREEN_W * f.k;
     canvas.height = SCREEN_H * f.k;
   }
-  canvas.style.width = `${f.cssW}px`;
-  canvas.style.height = `${f.cssH}px`;
+  wrap.style.left = l ? `${l.game.x}px` : '';
+  wrap.style.top = l ? `${l.game.y}px` : '';
+  canvas.style.width = `${l ? l.game.w : f.cssW}px`;
+  canvas.style.height = `${l ? l.game.h : f.cssH}px`;
 }
-fit();
+fit(touch.frame(g.input));
 
-// Resizing waits for the next tick, so a tick's update and draw always see the same width.
-let refit = false;
-addEventListener('resize', () => { refit = true; });
-// Moving the window to a screen with a different pixel density doesn't fire resize.
-const watchDensity = (): void => {
-  matchMedia(`(resolution: ${devicePixelRatio}dppx)`).addEventListener('change', () => { refit = true; watchDensity(); }, { once: true });
-};
-watchDensity();
-
+// A touch only counts as a user gesture when the finger lifts, so sound starts on pointerup there.
+// iOS can suspend the sound after a call or an app switch, so every tap asks again.
 const unlock = (): void => audio.unlock();
 addEventListener('keydown', unlock);
 addEventListener('pointerdown', unlock);
+addEventListener('pointerup', unlock);
+addEventListener('touchend', unlock);
 
 // Silence the game whenever the page isn't what you're looking at: another window, another tab, or the chat beside it.
 const syncFocus = (): void => audio.focus(document.hasFocus() && document.visibilityState === 'visible');
@@ -87,7 +108,6 @@ Object.assign(window, { __ud: { g, audio, bindings, frame } });
 
 startLoop(
   () => {
-    if (refit) { refit = false; fit(); }
     g.input.poll();
     // Every hint on screen names keys or buttons for whichever device was touched last.
     bindings.setPromptDevice(g.input.device());
@@ -99,6 +119,8 @@ startLoop(
     g.frame++;
   },
   () => {
+    // Before drawing, so a resize never shows a frame drawn for the old size.
+    fit(touch.frame(g.input));
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     g.scenes.draw(ctx);

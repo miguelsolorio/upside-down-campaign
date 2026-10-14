@@ -3,6 +3,7 @@ import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { drawText } from '../gfx/index.ts';
 import { FRAME_X } from '../core/config.ts';
+import type { Vec2 } from '../core/types.ts';
 import { settings } from '../core/settings.ts';
 import { rampIndex } from './format.ts';
 
@@ -28,6 +29,11 @@ export function inFrame(ctx: Ctx, fn: () => void): void {
   ctx.translate(FRAME_X, 0);
   fn();
   ctx.restore();
+}
+
+/** A pointer position in screen px, moved into the centered frame's px, for hit-testing what was drawn in inFrame. */
+export function toFrame(p: Vec2 | null): Vec2 | null {
+  return p && { x: p.x - FRAME_X, y: p.y };
 }
 
 export function clipped(ctx: Ctx, x: number, y: number, w: number, h: number, fn: () => void): void {

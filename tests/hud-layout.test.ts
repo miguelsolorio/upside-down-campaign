@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
-import { clientToGame } from '../src/core/pointer.ts';
+import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
 import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, LEFT_W, LEFT_X, METER_LEFT, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
@@ -135,6 +135,24 @@ test('a pointer outside the canvas, or on a canvas with no size, is not over the
   assert.equal(clientToGame(10, 448, box), null);
   assert.equal(clientToGame(5, 5, { left: 0, top: 0, width: 0, height: 0 }), null);
   assert.deepEqual(clientToGame(511.9, 447.9, box) !== null, true);
+});
+
+test('a box holds its top left edge but not its bottom right one, and the first box holding a point wins', () => {
+  const r = { x: 10, y: 20, w: 30, h: 11 };
+  assert.ok(inRect({ x: 10, y: 20 }, r));
+  assert.ok(inRect({ x: 39.9, y: 30.9 }, r));
+  assert.ok(!inRect({ x: 40, y: 25 }, r));
+  assert.ok(!inRect({ x: 20, y: 31 }, r));
+  assert.ok(!inRect({ x: 9.9, y: 25 }, r));
+  // Menu rows meet with no gap, so a point on the line between two belongs to the lower one.
+  const rows = [{ x: 0, y: 0, w: 50, h: 11 }, { x: 0, y: 11, w: 50, h: 11 }, null, { x: 0, y: 33, w: 50, h: 11 }];
+  assert.equal(hitIndex(rows, { x: 5, y: 10.9 }), 0);
+  assert.equal(hitIndex(rows, { x: 5, y: 11 }), 1);
+  assert.equal(hitIndex(rows, { x: 5, y: 25 }), -1, 'a missing box never matches');
+  assert.equal(hitIndex(rows, { x: 5, y: 40 }), 3);
+  assert.equal(hitIndex(rows, { x: 60, y: 5 }), -1);
+  assert.equal(hitIndex(rows, null), -1);
+  assert.equal(hitIndex([], { x: 0, y: 0 }), -1);
 });
 
 test('a click on a portrait, mapped from page pixels, lands on the right hero', () => {

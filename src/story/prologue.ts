@@ -193,8 +193,10 @@ export function createPrologueScene(opts: { onDone(): void }): Scene {
     enter() { audio.music(null); },
     update(g) {
       frame++;
-      // The skip key skips the whole prologue, roll and flicker included. So does the skip-story setting.
-      if (!finished && (skipsDialogue() || g.input.pressed('skip'))) { finish(); return; }
+      // The skip key skips the whole prologue, roll and flicker included. So do the skip-story setting and a click on the
+      // dialogue box's skip label.
+      if (!finished) g.input.offer('skip');
+      if (!finished && (skipsDialogue() || g.input.pressed('skip') || box.skipClicked(g))) { finish(); return; }
       const s: Step | undefined = STEPS[idx];
       if (!s || finished) return;
       if (s.id === 'talk') {

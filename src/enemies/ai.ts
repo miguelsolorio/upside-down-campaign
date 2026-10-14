@@ -1,5 +1,5 @@
 // Enemy AI driver: shared per-tick upkeep (cooldowns, knockback, stagger, stun, the candy lure), then the
-// kind-specific brain, then a soft push so enemies do not stack on one pixel.
+// kind-specific brain (the Demogorgon's skips the stagger, the stun and the lure), then a soft push so enemies do not stack on one pixel.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
@@ -8,6 +8,7 @@ import { speedMul } from '../combat/status.ts';
 import { ratUpdate } from './rat.ts';
 import { agentUpdate } from './agent.ts';
 import { guardUpdate } from './guard.ts';
+import { demogorgonUpdate, updateGlobs } from './demogorgon.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
 
 const FRICTION = 0.78;
@@ -28,6 +29,9 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.stagger > 0) { e.stagger--; setEnemyAnim(e, 'hurt'); return; }
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   if (s.over || hero.ko) { setEnemyAnim(e, 'idle'); return; }
+
+  // The boss ignores the candy bar, and nothing staggers it. It runs its own moves.
+  if (e.demo) { demogorgonUpdate(s, e, hero); return; }
 
   const def = ENEMY_DEFS[e.kind];
   const lure = s.lure;
@@ -66,6 +70,7 @@ function separate(s: S): void {
 
 export function updateEnemies(s: S): void {
   const hero = activeHero(s);
+  updateGlobs(s);
   for (const e of s.enemies) {
     if (e.dead || e.dormant) continue;
     updateOne(s, e, hero);

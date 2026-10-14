@@ -53,6 +53,35 @@ export interface Hero {
 
 export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'recover' | 'lured';
 
+/**
+ * What the Demogorgon is doing (enemies/demogorgon.ts). walk: stalking. swipe: the close-range wind-up. wind: planted before
+ * the charge. run: the charge. stun: dazed against a wall. roar: the petals opening. spit: the acid wind-up. crouch: before
+ * the leap. air: the leap. recover: after a swipe, a spit or a landing. pinned: at 0 HP after three stuns, waiting for the beam.
+ */
+export type DemoMove = 'walk' | 'swipe' | 'wind' | 'run' | 'stun' | 'roar' | 'spit' | 'crouch' | 'air' | 'recover' | 'pinned';
+
+/** The Demogorgon's own state. Every other enemy has `demo: null`. */
+export interface DemoState {
+  move: DemoMove;
+  /** Frames left in the current move. */
+  t: number;
+  /** Wall stuns so far. */
+  stuns: number;
+  /** The petals have opened (once, at 60 percent HP). */
+  petals: boolean;
+  /** Frames until each attack can start. */
+  chargeCd: number; spitCd: number; leapCd: number;
+  /** Frames before another try at the pinned boss is reported. */
+  pokeCd: number;
+  /** Leap flight: where it jumped from and where it comes down. */
+  sx: number; sy: number; tx: number; ty: number;
+  /** The growing mark under a leap, so a pin can take it away. */
+  mark: FxView | null;
+}
+
+/** An acid glob: flies from (sx, sy) to (x, y), splashes when its age reaches life, and its splash is drawn for a few frames more. */
+export interface Glob { sx: number; sy: number; x: number; y: number; ang: number; age: number; life: number; atk: number; mark: FxView }
+
 export interface Enemy {
   uid: number;
   id: string;
@@ -106,6 +135,8 @@ export interface Enemy {
   slam: boolean;
   /** The growing ring that telegraphs a slam, so a break can remove it. */
   ring: FxView | null;
+  /** The Demogorgon only. */
+  demo: DemoState | null;
 }
 
 export interface Proj {
@@ -151,6 +182,8 @@ export interface Prop {
   cam?: CamDef; camT: number;
   /** Frames before this prop can report another attempt (see pokes.ts). */
   pokeCd: number;
+  /** Vines only: frames of burning left before they are gone. */
+  burnT: number;
 }
 export interface Npc { id: CharId; x: number; y: number; dir: Dir; t: number }
 export interface Body { id: HeroId; x: number; y: number; dir: Dir; t: number }
@@ -192,6 +225,8 @@ export interface S {
   /** The shut prop the active hero has been pushing against, and for how many frames. */
   bump: { id: string; t: number } | null;
   enemies: Enemy[];
+  /** Acid globs the Demogorgon has spat, still in the air. */
+  globs: Glob[];
   projs: Proj[];
   zones: Zone[];
   lure: Lure | null;

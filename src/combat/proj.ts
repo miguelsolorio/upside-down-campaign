@@ -6,7 +6,7 @@ import { activeHero } from './state.ts';
 import { angleDiff, BODY_Y, pointSolid, propBlocks } from './space.ts';
 import { sparks, sfx } from './fx.ts';
 import { hitEnemy, hurtHero, heroAtk } from './damage.ts';
-import { isTargetFor, lightTarget } from './props.ts';
+import { hitProp, isTargetFor, lightTarget } from './props.ts';
 import { BURN_PERIOD } from './status.ts';
 
 export function newProj(p: Partial<Proj> & Pick<Proj, 'kind' | 'mine' | 'x' | 'y' | 'vx' | 'vy' | 'life' | 'r'>): Proj {
@@ -113,7 +113,7 @@ function updateZone(s: S, z: Zone): void {
     if (!isTargetFor(pr, 'burn')) continue;
     const cx = Math.max(pr.x, Math.min(z.x, pr.x + pr.w)), cy = Math.max(pr.y, Math.min(z.y + BODY_Y, pr.y + pr.h));
     const dx = cx - z.x, dy = cy - BODY_Y - z.y;
-    if (Math.hypot(dx, dy) <= z.r && angleDiff(Math.atan2(dy, dx), z.angle) <= z.half + 0.3) lightTarget(s, pr);
+    if (Math.hypot(dx, dy) <= z.r && angleDiff(Math.atan2(dy, dx), z.angle) <= z.half + 0.3) hitProp(s, pr);
   }
 }
 

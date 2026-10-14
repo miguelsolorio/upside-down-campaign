@@ -1,4 +1,4 @@
-// Enemy data: the rat and the Lab agent, then the Lab's riot guard and Warden.
+// Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, and the Demogorgon.
 import type { Difficulty, EnemyKind } from '../core/types.ts';
 
 export interface EnemyDef {
@@ -62,11 +62,26 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       slamWindup: 45, slamRadius: 46, slamPower: 1.3, slamKb: 5, slamRecover: 60, slamCd: 140, slamEvery: 3, slamLow: 2,
     },
   },
-  // Stand-ins for Levels 3 and 4 until Sim writes them (docs/level-3.md, docs/level-4.md).
+  // The chapter 1 boss (docs/level-3.md, enemies/demogorgon.ts). HP and ATK are tuned up from the spec's 520 and 22 so the
+  // fight lasts about 40 seconds and costs a careful party real HP. Walk, windup, power and cooldown are the swipe's.
+  // reach, arc (half angle in degrees), kb: the swipe. range: px at which it commits to one. recover: frames after it.
+  // chargeEvery: frames between charges, counted from the end of the last one. chargeWindup, chargeSpeed, chargePower and
+  // chargeKb: the charge. stunT: frames dazed against a wall, stunMul: damage taken meanwhile, stunsToPin: wall stuns before
+  // 0 HP pins it. petalsAt and leapAt: the HP shares that open the petals and start the leap.
+  // spitWindup, spitEvery, spitRecover, fan (radians between globs), flight (frames in the air), splash (px), splashT (frames the splash is drawn), globPower: the acid.
+  // crouch, air, height (px of the arc), shock (px), leapPower, leapKb, leapRecover, leapEvery: the leap. roarT: frames of roar.
   demogorgon: {
-    kind: 'demogorgon', name: 'Demogorgon', hp: 520, atk: 22, def: 6, speed: 0.8, xp: 70, aggro: 160,
-    windup: 40, power: 1.2, cooldown: 120, drop: 1, weight: 4, x: {},
+    kind: 'demogorgon', name: 'Demogorgon', hp: 800, atk: 24, def: 6, speed: 0.8, xp: 60, aggro: 160,
+    windup: 30, power: 1, cooldown: 100, drop: 1, weight: 4,
+    x: {
+      reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1.2, chargeKb: 5, stunT: 150, stunMul: 1.5, stunsToPin: 3,
+      petalsAt: 0.6, leapAt: 0.3, roarT: 40,
+      spitWindup: 26, spitEvery: 120, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.8,
+      crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1.3, leapKb: 5, leapRecover: 50, leapEvery: 200,
+    },
   },
+  // Stand-ins for Level 4 until Sim writes them (docs/level-4.md).
   demodog: {
     kind: 'demodog', name: 'Demodog', hp: 34, atk: 12, def: 2, speed: 1.2, xp: 9, aggro: 110,
     windup: 28, power: 0.9, cooldown: 90, drop: 0.2, weight: 1.1, x: { range: 48, lungeT: 14, lungeSpeed: 4, recover: 30 },

@@ -1,6 +1,7 @@
 // Status effects. Burn and stun are live. Slow is a cheap speed cut. Confuse and curse exist as types only.
 import type { Statuses, S } from './state.ts';
 import { floater } from './fx.ts';
+import { demoSettle, isPinned } from '../enemies/demo_hit.ts';
 
 export const BURN_PERIOD = 30;
 
@@ -21,9 +22,11 @@ export function tickEnemyStatus(s: S): void {
       st.burnTick--;
       if (st.burnTick <= 0) {
         st.burnTick = BURN_PERIOD;
-        const dmg = Math.min(st.burnDmg, Math.max(0, e.hp));
+        // A pinned Demogorgon takes nothing from fire. Any other keeps its floor of 1 until it is pinned.
+        const dmg = isPinned(e) ? 0 : Math.min(st.burnDmg, Math.max(0, e.hp));
         if (dmg > 0) {
           e.hp -= st.burnDmg;
+          if (e.demo) demoSettle(s, e, false, null);
           e.flash = Math.max(e.flash, 0.5);
           e.hurtSeen = true;
           s.stats.damageDealt += dmg;

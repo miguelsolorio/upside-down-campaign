@@ -3,7 +3,8 @@
 // inbound darts, swap when the active hero is low. Gates are skipped: the bot calls sim.openProp itself when it
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
 // Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's
-// Push break them, hits them while they recover, and steps out of the Warden's slam. It ignores hazards and cameras.
+// Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
+// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -12,6 +13,7 @@ import { DIR_ANGLE } from '../enemies/shield.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
+import { createBossSense } from './bot_boss.ts';
 
 export interface BotWaypoint extends Vec2 { /** Prop id to open when reached. */ open?: string; /** Group to wake when reached. */ wake?: string }
 
@@ -29,6 +31,8 @@ interface Foe {
   /** In a wind-up, under the red "!". */
   windup: boolean;
   burning: boolean;
+  /** The Demogorgon's pose. */
+  pose: string | undefined;
 }
 
 /** Furniture that never moves. The bot's map treats it as wall, so it does not walk into it and learn the hard way. */
@@ -135,7 +139,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (a.kind !== 'enemy' || a.anim === 'ko') continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
-        dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange',
+        dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
       });
     }
     return out.sort((p, q) => p.d - q.d);
@@ -247,6 +251,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return [Math.cos(a), Math.sin(a)];
   }
 
+  const boss = createBossSense({ walkable, clearLine, walkTo });
+
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
     const t = tileOf(w.x, w.y);
@@ -291,6 +297,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       wp = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
     }
 
+    // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
+    const leave = boss.dodge(v, hx, hy);
+    const fin = boss.finish(v, hx, hy);
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     const near = foes[0];
     // An idle enemy the bot cannot see (behind a wall, say) does not pull it into a fight: at the engage radius that
@@ -306,7 +315,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     const hpFrac = me.hp / me.hpMax;
 
     // Swap out a hurt hero for the healthiest bench hero.
-    if (hpFrac < 0.35 && frame - lastSwap > 100) {
+    if (hpFrac < 0.35 && frame - lastSwap > 100 && !fin) {
       let best = -1, bestFrac = hpFrac + 0.3;
       v.hud.party.forEach((p, i) => {
         if (!p.ko && !p.active && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
@@ -322,7 +331,12 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     if (!fighting) dealtAt = frame;
     const desperate = frame - dealtAt > 300;
 
-    if (fighting && near) {
+    if (fin) {
+      // Pinned: Eleven's Mind Blast is the only thing that hurts it. Swap to her, walk up and fire.
+      [mx, my] = fin.mv;
+      out.swapTo = fin.swapTo;
+      out.specialPressed = fin.cast;
+    } else if (fighting && near) {
       // Inbound dart: step aside.
       const threat = desperate || careless ? null : dartThreat(v, hx, hy);
       let dodged = false;
@@ -371,11 +385,19 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
           }
         }
       }
-      if (v.hud.burstReady && foes.filter((f) => f.d < 190).length >= 2) out.burstPressed = true;
+      if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => f.pose === 'stun' && f.d < 190))) out.burstPressed = true;
     } else if (wp) {
       const item = pickupGoal(v, hx, hy, hpFrac, me.mp / me.mpMax);
       const goal = item ?? wp;
       [mx, my] = walkTo(hx, hy, goal.x, goal.y);
+    }
+
+    // Off a mark, out of the charge line, out of the swipe: that comes before whatever else the bot was doing.
+    if (leave && !careless && !fin) {
+      [mx, my] = leave;
+      // A hero swinging at the bat moves at a third of his pace. Dodging means moving.
+      out.attackHeld = false;
+      out.specialPressed = false;
     }
 
     // Anything still pinned against a wall for half a second: mark the tile ahead as blocked and replan.

@@ -1,8 +1,12 @@
-// Props the sim reacts to: logs (cleared by a push), gates (opened by the world) and targets (lit by a shot).
-// Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again.
+// Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
+// boxes (lit by a shot or a flame) and vines (burned away by a flame). Cameras (cameras.ts) are targets too: a shot lights
+// one, and it never spots again.
 import type { Utility } from '../core/types.ts';
 import type { Prop, S } from './state.ts';
-import { dust, sfx } from './fx.ts';
+import { addFx, dust, sfx } from './fx.ts';
+
+/** Frames the vines burn (state 'lit', still solid) before they are gone. */
+export const VINE_BURN = 30;
 
 export function isPushable(p: Prop): boolean {
   return p.state !== 'open' && (p.pushBy === 'push' || (p.kind === 'log' && p.pushBy === undefined));
@@ -23,6 +27,32 @@ export function lightTarget(s: S, p: Prop): void {
   sfx(s, 'targetHit');
 }
 
+/** Fire reaches a prop that asked to be burned: vines catch, anything else lights like a target. */
+export function hitProp(s: S, p: Prop): void {
+  if (p.kind === 'vines') igniteVines(s, p); else lightTarget(s, p);
+}
+
+/** The vines catch: a sizzle and flames along them now, and they are gone VINE_BURN frames later. */
+function igniteVines(s: S, p: Prop): void {
+  if (p.state !== 'closed') return;
+  p.state = 'lit';
+  p.t = 0;
+  p.burnT = VINE_BURN + 1;
+  sfx(s, 'sizzle');
+  for (let x = p.x + 8; x < p.x + p.w; x += 16) addFx(s, 'flame', x, p.y + p.h - 2, 'up', -Math.PI / 2, VINE_BURN, 16, 14);
+}
+
+/** The vines are gone: open, not solid, and the stage hears it. */
+function clearVines(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.solid = false;
+  p.t = 0;
+  p.burnT = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+  dust(s, p.x + p.w / 2, p.y + p.h, 5);
+}
+
 /** A log (or anything pushable) is shoved out of the way. */
 export function clearProp(s: S, p: Prop): void {
   if (p.state === 'open') return;
@@ -39,7 +69,8 @@ export function openPropById(s: S, id: string): void {
   const p = s.props.find((q) => q.id === id);
   if (!p || p.state === 'open') return;
   if (p.kind === 'log' || isPushable(p)) { clearProp(s, p); return; }
-  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera') { lightTarget(s, p); return; }
+  if (p.kind === 'vines') { clearVines(s, p); return; }
+  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
   p.t = 0;
@@ -47,5 +78,9 @@ export function openPropById(s: S, id: string): void {
 }
 
 export function updateProps(s: S): void {
-  for (const p of s.props) { p.t++; if (p.pokeCd > 0) p.pokeCd--; }
+  for (const p of s.props) {
+    p.t++;
+    if (p.pokeCd > 0) p.pokeCd--;
+    if (p.kind === 'vines' && p.state === 'lit' && --p.burnT <= 0) clearVines(s, p);
+  }
 }

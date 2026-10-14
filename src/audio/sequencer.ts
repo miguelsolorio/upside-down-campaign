@@ -50,6 +50,7 @@ export function scheduleBar(
         env: inst.env,
         release,
         vib: inst.vib,
+        detune: inst.detune,
         send: inst.send ? send : undefined,
         sendAmt: inst.send,
       }));

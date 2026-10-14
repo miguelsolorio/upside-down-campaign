@@ -169,6 +169,10 @@ export const STINGERS: Record<StingerId, Cue> = {
     [{ at: 0.15, dur: 0.6, vol: 0.12, mode: 15, clock: 30000, filter: 'bandpass', freq: 2000, freqEnd: 5000, q: 2, rise: 0.4 }],
     3,
   ),
-  // Will: a stand-in until Audio writes his. Two soft triangle notes.
-  will: cue(line(100, 'tri', 0.28, [[0, 0.3, 'A4'], [0.3, 0.9, 'E5']], { vib: true }), [], 3),
+  // Will: three soft triangle notes, a question and no answer. G up to D, then B flat held and sagging a
+  // semitone to A, the way the motif's flat second hangs. Triangle only, no noise, and under a second.
+  will: cue([
+    ...line(140, 'tri', 0.28, [[0, 0.5, 'G4'], [0.5, 0.5, 'D5']]),
+    ...line(140, 'tri', 0.28, [[1, 1, 'Bb4']], { to: note('A4'), vib: true }),
+  ], [], 3, 0.9),
 };

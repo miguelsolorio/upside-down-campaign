@@ -2,7 +2,7 @@
 // a quiet noise bed, and a lead that walks in at bar nine playing the Hawkins motif. Original.
 import type { DrumEv, Inst, NoteEv, Track } from './types.ts';
 import { arpBars, bassBars, cat, ev, grid, hit, lineBars, ramp, rest } from './theory.ts';
-import { motifBars } from './motif.ts';
+import { ANSWER, CADENCE, LONGS, motifBars } from './motif.ts';
 
 // One chord per bar. Sections: intro (1 to 8), lead (9 to 16), bridge (17 to 24), return (25 to 32).
 // The loop ends on A7, which pulls straight back to Dm7 at bar one.
@@ -47,15 +47,7 @@ const arp = cat(
 
 // ---- lead: silent for eight bars, then the motif, an answer, the motif again and a falling cadence.
 // C sharp in the answer is the leading tone over A7, the one chromatic note in the track.
-const ANSWER: NoteEv[][] = [
-  [ev(0, 6, 'Bb4'), ev(6, 2, 'C5'), ev(8, 7, 'D5')],
-  [ev(0, 6, 'E5'), ev(6, 2, 'D5'), ev(8, 7, 'C#5')],
-];
-const CADENCE: NoteEv[][] = [
-  [ev(0, 6, 'Bb5'), ev(6, 2, 'A5'), ev(8, 7, 'G5')],
-  [ev(0, 6, 'A5'), ev(6, 2, 'G5'), ev(8, 7, 'E5')],
-];
-const LONGS: NoteEv[][] = [[ev(0, 15, 'C5')], [ev(0, 15, 'Bb4')]];
+// The phrases live in motif.ts, so the Upside Down can flip the same ones.
 const phrase = cat(motifBars(), ANSWER, motifBars(), CADENCE);
 const lead = cat(rest<NoteEv>(8), phrase, rest<NoteEv>(2), motifBars(-12), LONGS, ANSWER, phrase);
 

@@ -29,10 +29,10 @@ jobs:
       - run: npm test
       - id: pages
         uses: actions/configure-pages@v6
-      # base_path is "/upside-down-campaign" for a project site, "" on a custom domain.
       - run: npm run build
         env:
-          BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          BASE_PATH: ./
+          VITE_SITE_URL: https://miguelsolorio.com/projects/upside-down-campaign
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
@@ -46,3 +46,11 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  deploy-site:
+    needs: build
+    uses: miguelsolorio/miguelsolorio.com/.github/workflows/deploy-project.yml@master
+    secrets:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}

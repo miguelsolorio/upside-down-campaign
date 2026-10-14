@@ -4,6 +4,7 @@
 //   node scripts/measure-stage.ts [stage] [difficulty] [seeds] [--careless] [--no-hazards]
 //   node scripts/measure-stage.ts 1.2 chief 20
 //   node scripts/measure-stage.ts 1.3 chief 20
+//   node scripts/measure-stage.ts 2.1 chief 20
 //   node scripts/measure-stage.ts 1.2 chief 20 --careless
 //
 // The default bot sidesteps darts, slams and bashes almost perfectly, so it shows the best case. --careless never
@@ -18,6 +19,7 @@ import { createDirector } from '../src/world/triggers.ts';
 import { STAGE_11 } from '../src/world/stages/stage11.ts';
 import { STAGE_12 } from '../src/world/stages/stage12.ts';
 import { STAGE_13 } from '../src/world/stages/stage13.ts';
+import { STAGE_21 } from '../src/world/stages/stage21.ts';
 import { defaultParty } from '../src/core/campaign.ts';
 import type { Difficulty } from '../src/core/types.ts';
 import type { StageData } from '../src/world/types.ts';
@@ -25,7 +27,7 @@ import type { StageData } from '../src/world/types.ts';
 const args = process.argv.slice(2);
 const flag = (f: string): boolean => args.includes(f);
 const [stageId = '1.2', difficulty = 'chief', seedsArg = '20'] = args.filter((a) => !a.startsWith('--'));
-const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13 };
+const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21 };
 const base = STAGES[stageId];
 if (!base) throw new Error(`unknown stage ${stageId}; try ${Object.keys(STAGES).join(' or ')}`);
 if (!['kid', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, chief or upside, not ${difficulty}`);
@@ -37,7 +39,7 @@ const tile = (x: number, y: number): [number, number] => [Math.floor(x / 16), Ma
 
 const rows: string[] = [];
 let cleared = 0, wiped = 0, stuck = 0, dmg = 0, kos = 0, frames = 0, low = 0, bossFrames = 0, bossRuns = 0;
-const BOSS_BEAT = 'demogorgon';
+const BOSS_BEAT = stageId === '2.1' ? 'ambush' : 'demogorgon';
 for (let seed = 1; seed <= N; seed++) {
   const grid = stageGrid(S);
   const sim = createSim(simOptions(S, grid, { party: defaultParty(stageId), seed, difficulty: difficulty as Difficulty }));

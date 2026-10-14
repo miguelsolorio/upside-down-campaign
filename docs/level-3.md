@@ -9,7 +9,7 @@ One stage, five to eight minutes, and the end of chapter 1. Sim builds the Demog
 - Light: `time: 'night'`. The lot's lamps and the school's lit windows get pools. Inside, the halls are dark tiles with pools at the lights props and a few `lights` entries (a vending glow, an exit sign).
 - Music: `upside` until the boss wakes, then the `music` step switches to `clock`.
 - Party: Mike (active), Dustin, Lucas, Eleven, carried from 1.2. `?stage=1.3` starts them at Lv 5, 4, 4, 4 (`defaultParty` in `core/campaign.ts`).
-- `enemyMult: 1.2`. Dialogue is off by default; gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
+- `enemyMult: 1.7` (see "Result"). Dialogue is off by default; gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
 
 ## Rooms
 
@@ -69,7 +69,9 @@ Listed in `puzzles` in `stage13.ts`, in this order.
 
 | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|
-| 520 | 22 | 6 | 0.8 | 60 |
+| 760 | 24 | 6 | 0.8 | 60 |
+
+The spec started at 520 HP and 22 ATK with heavy spike hits. As built, the hits are lighter and the fight is longer: swipe power 0.5, charge 1.0, leap 1.0, acid 0.3 (see "Result").
 
 - **Stalk.** It walks at the hero and swipes at close range: a 30 frame wind-up under the red "!", an arc in front of it (reach 30, power 1.0, knockback 4), `chomp`.
 - **Charge.** Every 150 frames or so it plants and winds up for 36 frames (pose `charge`, `lunge` at the end), aiming at where the hero stands when the wind-up ends. Then it runs straight at 4.2 px a frame until it hits a solid tile. A hero in the way takes power 1.2 and knockback 5, but the charge doesn't stop. Hitting the wall plays `thud`, shakes the screen, and stuns it for 150 frames (pose `stun`), during which it takes 50 percent more damage. The arena is small enough that every charge ends in a wall.
@@ -137,3 +139,21 @@ These are measured with `node scripts/measure-stage.ts 1.3 chief 20`.
 - `upside`: D Phrygian, 66 bpm, the title motif inverted (`invert(motif, axis, scale)`), two detuned pulses, noise wind. Base and combat layers. 2.2 reuses it later.
 - `clock`: G minor, 150 bpm, a low bell on the first beat of every fourth bar, sixteenths, the motif inverted. Base and combat layers. It's the boss track for every boss.
 - Effects: `roar`, `acid`, `lunge`, `petals`, `chomp`, `thud`, `sizzle` (the stand-ins in `audio/sfx.ts` go).
+
+## Result
+
+Measured with `node scripts/measure-stage.ts 1.3` at `enemyMult` 1.7:
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 19 | 94, none stuck | 12 of 20 (56 of 100) | 20 | 9 |
+| Damage taken | 238 | 246 | | | |
+| KOs | 0.8 | | | | |
+| Lowest party HP | 39% | | | | |
+| Boss fight | 43 s | | | | |
+
+Stage XP is 140. In the browser the bot clears 1.3 in 1:40.
+
+- **The first draft's spike hits were too hard.** At the spec's numbers, an undodged charge or leap nearly killed a Lv 5 hero. A bot that never dodges wiped every time, even at a factor of 1.5. The boss now hits softer and lasts longer, so a player who dodges badly still wins about half the time.
+- **The bot dodges the boss well.** It sidesteps the charge one frame late and steps off marks three frames late. That is the careful bot's best case; the careless one is the better guide for a new player.
+- **Fixes along the way.** The bot had two stalls at the pinned boss: a false "stuck" learned during a party burst, and a boss one corner away with no line of sight. Both are fixed. If Eleven is down when the boss pins, she stands back up with enough MP for one blast, so the finisher can't soft-lock.

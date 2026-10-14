@@ -21,7 +21,7 @@ const REQUIRED_L2 = [
   'l2_start', 'l2_agents', 'l2_spotted', 'l2_burn_hint', 'l2_burn_done', 'l2_cages', 'l2_scare', 'l2_shoot_hint', 'l2_relay_done',
   'l2_guards', 'l2_push_hint', 'l2_crate_cleared', 'l2_lockdown_start', 'l2_warden', 'l2_lockdown_clear', 'l2_clear',
 ];
-const SPEAKERS: Speaker[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'dm', 'narrator'];
+const SPEAKERS: Speaker[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'dm', 'narrator'];
 const EXPRS: Expr[] = ['neutral', 'happy', 'worried', 'determined', 'hurt', 'shocked'];
 const HEROES: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
 const EVENTS: BarkEvent[] = ['swapIn', 'levelUp', 'ko', 'lowHp', 'special', 'kill', 'eggo', 'crit', 'idle'];

@@ -64,7 +64,7 @@ export function createState(opts: SimOptions): S {
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
     },
-    buf: { attack: 0, special: 0, dash: 0, burst: 0, swapT: 0, swapDelta: 0, swapTo: -1 },
+    buf: { attack: 0, special: 0, burst: 0, swapT: 0, swapDelta: 0, swapTo: -1 },
     flow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     cleared: new Set(), god: opts.god === true, boxes: false,
   };

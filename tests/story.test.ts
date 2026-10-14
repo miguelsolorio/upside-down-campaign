@@ -80,7 +80,6 @@ test('a controller player is never told to press a key', () => {
     assert.match(text('l1_tut_special'), /\bX is your special\b/);
     assert.match(text('l1_tut_swap'), /LB and RB/);
     assert.doesNotMatch(text('l1_tut_swap'), /1 to 4/, 'a controller has no hero numbers');
-    assert.match(text('l1_agents'), /\bB gives you\b/);
     assert.match(text('l1_start'), /stick or D-pad/);
     assert.match(text('l1_gate_hint'), /with LB or RB/);
     assert.match(text('l1_push_hint'), /with LB or RB/);
@@ -113,16 +112,16 @@ test('tutorial scripts teach the real keys', () => {
   assert.match(text('l1_tut_attack'), /\bZ\b/);
   assert.match(text('l1_tut_special'), /\bX\b/);
   assert.match(text('l1_tut_special'), /\bMP\b/);
-  assert.match(text('l1_tut_swap'), /\bQ\b.*\bSHIFT\b/);
+  assert.match(text('l1_tut_swap'), /\bC and V\b/);
   assert.match(text('l1_tut_swap'), /1 to 4/);
-  assert.match(text('l1_agents'), /\bC\b/);
+  assert.doesNotMatch(text('l1_agents'), /\bdash/i, 'there is no dash to teach');
   assert.match(text('l1_start'), /\bSPACE\b/);
   assert.match(text('l1_start'), /WASD/);
   assert.match(text('l1_push_hint'), /\bZ\b/);
   // The puzzle hints name the hero's slot as well as the attack key.
-  assert.match(text('l1_gate_hint'), /with 3, Q or SHIFT/);
+  assert.match(text('l1_gate_hint'), /with 3, C or V/);
   assert.match(text('l1_gate_hint'), /\bZ\b/);
-  assert.match(text('l1_push_hint'), /with 4, Q or SHIFT/);
+  assert.match(text('l1_push_hint'), /with 4, C or V/);
 });
 
 test('each script is voiced by the people who should be in it', () => {

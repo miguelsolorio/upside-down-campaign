@@ -1,5 +1,5 @@
 // ?bot=1 and headless tests. Owner: Sim agent.
-// Plays the stage by itself: A* on the grid toward the next waypoint, fight whatever is close, dash at alerts and
+// Plays the stage by itself: A* on the grid toward the next waypoint, fight whatever is close, step aside from
 // inbound darts, swap when the active hero is low. Gates are skipped: the bot calls sim.openProp itself when it
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
 import type { Grid, HeroId, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
@@ -17,7 +17,7 @@ export interface Bot {
   done(): boolean;
 }
 
-interface Foe { x: number; y: number; kind: string; alert: boolean; d: number; ang: number }
+interface Foe { x: number; y: number; kind: string; d: number; ang: number }
 
 /** How each hero likes to fight: stand `hold` px from the target and act within `reach`. */
 const STYLE: Record<HeroId, { hold: number; reach: number }> = {
@@ -50,17 +50,16 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[] }): Bot {
   let path: Pos[] = [];
   let pathGoal = -1;
   let pathAge = 0;
-  let lastDash = -999, lastSwap = -999, lastSpecial = -999;
+  let lastSwap = -999, lastSpecial = -999;
   let dealt = 0, dealtAt = 0;
   let stillT = 0;
   let lastX = Number.NaN, lastY = Number.NaN;
   let lastMag = 0;
-  let alerts = new Map<string, number>();
 
   const tileOf = (x: number, y: number): Pos => ({ x: Math.floor(x / TILE), y: Math.floor((y - 4) / TILE) });
   const idle = (): SimInput => ({
     mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false,
-    dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false,
+    swapDelta: 0, swapTo: -1, burstPressed: false,
   });
 
   function clearLine(ax: number, ay: number, bx: number, by: number): boolean {
@@ -105,7 +104,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[] }): Bot {
     const out: Foe[] = [];
     for (const a of v.actors) {
       if (a.kind !== 'enemy' || a.anim === 'ko') continue;
-      out.push({ x: a.x, y: a.y, kind: a.id, alert: a.alert, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx) });
+      out.push({ x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx) });
     }
     return out.sort((p, q) => p.d - q.d);
   }
@@ -144,18 +143,6 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[] }): Bot {
       best = { tti, sx: -vy * side, sy: vx * side };
     }
     return best;
-  }
-
-  /** Winding-up rats and agents next to the hero: returns the frames their alert has been showing. */
-  function trackAlerts(foes: Foe[]): Map<string, number> {
-    const next = new Map<string, number>();
-    for (const f of foes) {
-      if (!f.alert) continue;
-      const key = `${Math.round(f.x)},${Math.round(f.y)}`;
-      next.set(key, (alerts.get(key) ?? 0) + 1);
-    }
-    alerts = next;
-    return next;
   }
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
@@ -199,7 +186,6 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[] }): Bot {
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     const near = foes[0];
     const fighting = near !== undefined && (near.d < ENGAGE || (sim.aggro() && near.d < CHASE));
-    const alertAges = trackAlerts(foes);
 
     // Stuck detection: learn the tile ahead is blocked and route around it.
     if (lastMag > 0.3 && dist(hx, hy, lastX, lastY) < 0.05) stillT++; else stillT = 0;
@@ -226,23 +212,10 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[] }): Bot {
     const desperate = frame - dealtAt > 300;
 
     if (fighting && near) {
-      // Inbound dart: step aside, and dash if it is about to land.
+      // Inbound dart: step aside.
       const threat = desperate ? null : dartThreat(v, hx, hy);
       let dodged = false;
-      if (threat && threat.tti < 34) {
-        mx = threat.sx; my = threat.sy; dodged = true;
-        if (threat.tti <= 11 && frame - lastDash > 44) { out.dashPressed = true; lastDash = frame; }
-      }
-      // A rat or agent winding up right next to us: dash just before it lands.
-      for (const f of foes) {
-        if (f.alert && f.d < 40 && !dodged && !desperate && frame - lastDash > 44) {
-          const age = alertAges.get(`${Math.round(f.x)},${Math.round(f.y)}`) ?? 0;
-          if (age >= 19 && f.kind === 'rat') {
-            out.dashPressed = true; lastDash = frame;
-            mx = -Math.sin(f.ang); my = Math.cos(f.ang); dodged = true;
-          }
-        }
-      }
+      if (threat && threat.tti < 34) { mx = threat.sx; my = threat.sy; dodged = true; }
       if (!dodged) {
         const a8 = snap8(near.ang);
         const miss = near.d * Math.sin(angDiff(near.ang, a8));

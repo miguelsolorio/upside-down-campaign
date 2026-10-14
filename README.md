@@ -32,10 +32,9 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | `W` `A` `S` `D` or arrows | Move |
 | `Z` or `J` | Attack. Melee heroes chain three hits |
 | `X` or `K` | Special. Costs MP |
-| `C` or `L` | Dash, with a few frames of invulnerability |
-| `Shift` or `Tab` | Cycle to the next hero |
-| `Q`, `1` to `4`, or click a portrait | Back one hero, or pick one. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
-| `U` or `V` | Party burst, when the d20 at the top right is full |
+| `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
+| `1` to `4`, or click a portrait | Pick a hero |
+| `U` or `B` | Party burst, when the d20 at the top right is full |
 | `Space` or `Enter` | Talk, light Joyce's Christmas lights, advance dialogue |
 | `Esc` or `P` | Pause and settings |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
@@ -48,18 +47,18 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | Left stick or D-pad | Move. A light tilt walks slower |
 | `A` | Attack, talk, light Joyce's lights, confirm |
 | `X` | Special. Opens the options on the title |
-| `B` | Dash, back |
+| `B` | Back |
 | `Y` | Party burst |
 | `LB` `RB` | Swap hero |
-| `RT` `LT` | Attack and dash, same as `A` and `B` |
+| `RT` | Attack, same as `A` |
 | `Start` | Pause. Begins the game on the title |
 | `View` | Skip dialogue |
 
 Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
 
-**Changing keys.** The table above is the defaults. Open CONTROLS from the options (the OPTIONS row on the title, or `P`) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK, SPECIAL and DASH always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the HUD's hero numbers, the controls in the corner of the level, the skip prompt and the tutorial lines. The title shows no key hints at all. The gamepad layout is listed there too but can't be changed yet.
+**Changing keys.** The table above is the defaults. Open CONTROLS from the options (the OPTIONS row on the title, or `P`) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK and SPECIAL always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the HUD's hero numbers, the controls in the corner of the level, the skip prompt and the tutorial lines. The title shows no key hints at all. The gamepad layout is listed there too but can't be changed yet.
 
-**Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special, dash, swap and burst controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Every script still does what it does, so Eleven still joins and the gate still opens.
+**Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special, swap and burst controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Every script still does what it does, so Eleven still joins and the gate still opens.
 
 **Saving.** The game saves by itself each time you light Joyce's Christmas lights, and `SAVED` shows over them. Reload or quit and the title offers CONTINUE, which puts the party back at the last lit lights with its levels, XP, d20 bonuses, kills, opened gates and story beats. Health comes back full, the same as a retry. NEW GAME on the title and START OVER in the pause menu both wipe the save (press twice to confirm). START OVER restarts the level straight away, and NEW GAME plays the prologue unless skip story is on. Clearing the level also clears the save. It's one save per browser, and `?bot`, `?god`, `?level` and `?party` runs never touch it.
 

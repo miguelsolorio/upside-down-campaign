@@ -1,6 +1,6 @@
 // Every dialogue script for Level 1, by id (ids and triggers are in docs/level-1.md). Pure data: no DOM, so Node can test it.
 // Each line fits the dialogue box: three rows of 32 characters. Eleven speaks one or two words.
-// The tutorial lines teach the real keys in character: J attack, K special (costs MP), L dash, Q and E or 1 to 4 swap, Space for lights.
+// The tutorial lines teach the real keys in character: Z attack, X special (costs MP), C and V or 1 to 4 swap, Space for lights.
 // They name keys as {tokens} (see keyText in core/bindings.ts), so they follow a rebind and read as button names on a controller.
 import type { DialogueLine, DialogueScript, Expr, Speaker } from '../core/types.ts';
 import { PROLOGUE } from './prologue_script.ts';
@@ -24,7 +24,7 @@ const L1_START = script('l1_start', [
   line('mike', "Lucas, Dustin, on me. We're finding Will.", 'determined'),
 ]);
 
-/** Dustin on attack (J). The rats wake when it ends. */
+/** Dustin on attack (Z). The rats wake when it ends. */
 const L1_TUT_ATTACK = script('l1_tut_attack', [
   line('dustin', 'Hold up. Hear that squeaking? Rats. Big ones, nesting in the roots.', 'worried'),
   line('dustin', 'Rats bite when startled, so hit first. {attack} attacks. Tap it three times to chain a combo.'),
@@ -32,7 +32,7 @@ const L1_TUT_ATTACK = script('l1_tut_attack', [
   line('dustin', 'Too late. They heard us.', 'shocked'),
 ]);
 
-/** Mike on special (K) and MP. */
+/** Mike on special (X) and MP. */
 const L1_TUT_SPECIAL = script('l1_tut_special', [
   line('mike', "Everyone okay? Good. Listen up, I'm only saying this once."),
   line('mike', "{special} is your special. It costs MP, and MP only comes back slowly. Don't waste it."),
@@ -40,7 +40,7 @@ const L1_TUT_SPECIAL = script('l1_tut_special', [
   line('dustin', "Mine is hairspray and a lighter. Technically that's a flamethrower.", 'happy'),
 ]);
 
-/** Lucas on swapping (Q and E, or 1 to 4). */
+/** Lucas on swapping (C and V, or 1 to 4). */
 const L1_TUT_SWAP = script('l1_tut_swap', [
   line('lucas', 'Nobody does this alone. {swap} cycle through us.{pickHint}'),
   line('lucas', "Swapping has a cooldown, so don't flick back and forth."),
@@ -49,12 +49,12 @@ const L1_TUT_SWAP = script('l1_tut_swap', [
   line('mike', "Lucas is right. Check who's hurt before you rotate."),
 ]);
 
-/** Lucas on dash (L) as the first agents patrol the creek bank. */
+/** Lucas on dodging darts as the first agents patrol the creek bank. */
 const L1_AGENTS = script('l1_agents', [
   line('lucas', "Two men in suits past the creek. They walk a loop. I don't like it.", 'worried'),
   line('mike', 'Can we avoid them?'),
-  line('lucas', 'Not really. So learn to dash. {dash} gives you a split second where nothing can touch you.'),
-  line('lucas', "It takes a moment to recharge, so don't waste it."),
+  line('lucas', 'Not really. They throw darts, so keep moving and step out of the way.'),
+  line('lucas', 'In a pinch, swap. Whoever swaps in gets a split second where nothing can touch them.'),
   line('dustin', 'Their loop has a pattern. Count it out, then go.', 'happy'),
 ]);
 

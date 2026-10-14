@@ -165,7 +165,6 @@ export function toSimInput(i: InputState): SimInput {
     mx: a.x, my: a.y,
     attackHeld: i.held('attack'), attackPressed: i.pressed('attack'),
     specialPressed: i.pressed('special'), specialHeld: i.held('special'),
-    dashPressed: i.pressed('dash'),
     swapDelta: i.pressed('swapPrev') ? -1 : i.pressed('swapNext') ? 1 : 0,
     swapTo,
     burstPressed: i.pressed('burst'),

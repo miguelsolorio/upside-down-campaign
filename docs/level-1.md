@@ -17,10 +17,10 @@ World triggers them, Story writes the scripts. Trigger ids and script ids are fi
 | Trigger | Where | Script id | What happens |
 |---|---|---|---|
 | `start` | yard | `l1_start` | Joyce, Mike, Dustin. Will is missing. Move hint. `lights_yard` is the first save point |
-| `tut_attack` | first trail bend | `l1_tut_attack` | Dustin explains attack (J). Then group `rats1` wakes |
-| `tut_special` | `rats1` cleared | `l1_tut_special` | Mike explains special (K) and MP |
-| `tut_swap` | after `tut_special` | `l1_tut_swap` | Lucas explains swap (Q, E, 1 to 4) |
-| `agents1` | before the creek | `l1_agents` | Lucas explains dash (L). Group `agents1` patrols |
+| `tut_attack` | first trail bend | `l1_tut_attack` | Dustin explains attack (Z). Then group `rats1` wakes |
+| `tut_special` | `rats1` cleared | `l1_tut_special` | Mike explains special (X) and MP |
+| `tut_swap` | after `tut_special` | `l1_tut_swap` | Lucas explains swap (C, V, 1 to 4) |
+| `agents1` | before the creek | `l1_agents` | Lucas explains sidestepping darts and the swap's invulnerability. Group `agents1` patrols |
 | `gate_lucas` | at the fence gate | `l1_gate_hint` | Lucas spots the lantern `target1` across the creek. When it's hit, `openProp('gate1')`, then `l1_gate_open` |
 | `scare` | bend after the creek | `l1_scare` | Lights flicker, `growl`, stinger `scare`, a dark shape crosses the trail. No fight |
 | `rats2` | dump clearing | none | Group `rats2` is awake from the start |

@@ -276,7 +276,7 @@ test('director: a retry that skipped the dead still reaches the next wave and th
 });
 
 // ---------------------------------------------------------------- the puzzles, in the real sim
-const idle: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false };
+const idle: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, swapDelta: 0, swapTo: -1, burstPressed: false };
 const propsOnly = S.spawns.filter((s) => s.kind === 'prop');
 
 function runUntil(sim: Sim, frames: number, input: (f: number) => SimInput, stop: (e: SimEvent) => boolean): SimEvent | null {

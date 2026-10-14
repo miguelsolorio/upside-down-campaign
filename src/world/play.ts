@@ -4,6 +4,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, DevHooks, HeroId, LevelUpInfo, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
+import { labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
@@ -351,7 +352,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const stuckProp = stuck && view.props.find((p) => p.id === stuck.prop);
       if (stuck && stuckProp) drawPuzzleHighlight(ctx, stuckProp, cam, g.frame, stuck.label);
       drawHud(ctx, view.hud, g.frame, stuck?.hero);
-      if (prompt) drawCallout(ctx, 'SPACE', prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
+      if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
       if (speech) {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };

@@ -36,11 +36,25 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | `Tab` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
 | `M` | Mute |
 
-A gamepad works too (A attack, X special, B dash, bumpers swap, Y burst, Start pause, Select skip). It's in but untested.
+**Controller.** An Xbox controller plays the whole game, menus included. Plug it in or pair it, then press any button once. Browsers hide a controller until it's touched, and `CONTROLLER CONNECTED` shows across the top when the game sees it.
+
+| Button | Action |
+| --- | --- |
+| Left stick or D-pad | Move. A light tilt walks slower |
+| `A` | Attack, talk, light Joyce's lights, confirm |
+| `X` | Special. Opens the options on the title |
+| `B` | Dash, back |
+| `Y` | Party burst |
+| `LB` `RB` | Swap hero |
+| `RT` `LT` | Attack and dash, same as `A` and `B` |
+| `Start` | Pause. Begins the game on the title |
+| `View` | Skip dialogue |
+
+Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
 
 **Changing keys.** The table above is the defaults. Open CONTROLS from the options (`P` on the title) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK, SPECIAL and DASH always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the title, the HUD's hero numbers, the skip prompt and the tutorial lines. The gamepad layout is listed there too but can't be changed yet.
 
-**Rushing in.** Press `Tab` on the title screen and it reads `SKIP STORY: ON`. Start then goes straight into the level, and no dialogue box, prologue or chapter card ever shows. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. A short controls reminder shows for the first few seconds so you aren't guessing. Every script still does what it does, so Eleven still joins and the gate still opens.
+**Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `Tab` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. While it's on, a short controls reminder shows for the first few seconds so you aren't guessing. Every script still does what it does, so Eleven still joins and the gate still opens.
 
 **Saving.** The game saves by itself each time you light Joyce's Christmas lights, and `SAVED` shows over them. Reload or quit and the title offers CONTINUE, which puts the party back at the last lit lights with its levels, XP, d20 bonuses, kills, opened gates and story beats. Health comes back full, the same as a retry. NEW GAME on the title and START OVER in the pause menu both wipe the save (press twice to confirm). START OVER restarts the level straight away, and NEW GAME plays the prologue unless skip story is on. Clearing the level also clears the save. It's one save per browser, and `?bot`, `?god`, `?level` and `?party` runs never touch it.
 

@@ -25,7 +25,8 @@ const N = W * H;
 const step = new Uint8Array(N);
 /** How much brighter each step is: 0 is untouched, 4 is the heart of the pool. */
 const LIFT = [0, 0.3, 0.6, 0.95, 1.35];
-const WARM = [255, 150, 90];
+/** The color a light adds: amber, so the pools read as warm against the green woods. */
+const WARM = [255, 190, 90];
 
 /** Paints the pools onto what is already on the canvas. level scales every pool, for a stutter or a fade. */
 export function paintGlow(ctx: Ctx, lights: readonly Glow[], t: number, level = 1): void {

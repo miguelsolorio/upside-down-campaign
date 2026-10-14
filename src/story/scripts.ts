@@ -1,6 +1,7 @@
 // Every dialogue script for Level 1, by id (ids and triggers are in docs/level-1.md). Pure data: no DOM, so Node can test it.
 // Each line fits the dialogue box: three rows of 32 characters. Eleven speaks one or two words.
 // The tutorial lines teach the real keys in character: J attack, K special (costs MP), L dash, Q and E or 1 to 4 swap, Space for lights.
+// They name keys as {tokens} (see keyText in core/bindings.ts), so they follow a rebind and read as button names on a controller.
 import type { DialogueLine, DialogueScript, Expr, Speaker } from '../core/types.ts';
 import { PROLOGUE } from './prologue_script.ts';
 
@@ -41,7 +42,7 @@ const L1_TUT_SPECIAL = script('l1_tut_special', [
 
 /** Lucas on swapping (Q and E, or 1 to 4). */
 const L1_TUT_SWAP = script('l1_tut_swap', [
-  line('lucas', 'Nobody does this alone. {swap} cycle through us. Or press {pick} to pick.'),
+  line('lucas', 'Nobody does this alone. {swap} cycle through us.{pickHint}'),
   line('lucas', "Swapping has a cooldown, so don't flick back and forth."),
   line('lucas', 'Whoever swaps in lands a small shockwave. Use it to clear space.'),
   line('lucas', 'Benched kids get their MP back faster, but only half the XP. Rotate smart.'),
@@ -61,7 +62,7 @@ const L1_AGENTS = script('l1_agents', [
 const L1_GATE_HINT = script('l1_gate_hint', [
   line('lucas', "The gate's chained. See that lantern across the creek? That's the release."),
   line('mike', 'Can anyone reach it from here?'),
-  line('lucas', 'My wrist rocket can. Swap me in with {pick3}, {swapOr}. Face the lantern and press {attack}.', 'determined'),
+  line('lucas', 'My wrist rocket can. Swap me in with {swapTo3}. Face the lantern and press {attack}.', 'determined'),
 ]);
 
 const L1_GATE_OPEN = script('l1_gate_open', [
@@ -97,7 +98,7 @@ const L1_ELEVEN_JOIN = script('l1_eleven_join', [
   line('lucas', 'Can we trust that? We met her five minutes ago.', 'worried'),
   line('mike', 'She stays with us. We stay together. I promise.', 'determined'),
   line('eleven', 'Friends.', 'happy'),
-  line('dustin', 'Her shove moves heavy things. Swap her in with {pick4}, {swapOr}.', 'happy'),
+  line('dustin', 'Her shove moves heavy things. Swap her in with {swapTo4}.', 'happy'),
   line('mike', "Watch her nose. If it bleeds, she's low on MP. Tell me right away.", 'worried'),
 ]);
 
@@ -105,7 +106,7 @@ const L1_ELEVEN_JOIN = script('l1_eleven_join', [
 const L1_PUSH_HINT = script('l1_push_hint', [
   line('mike', "A log across the trail. It's wedged in tight.", 'worried'),
   line('lucas', "Too heavy for us. Can't go around it, either."),
-  line('dustin', "Eleven's basic attack is a shove. Swap her in with {pick4}, {swapOr}. Face the log and press {attack}.", 'happy'),
+  line('dustin', "Eleven's basic attack is a shove. Swap her in with {swapTo4}. Face the log and press {attack}.", 'happy'),
   line('eleven', 'Move.', 'determined'),
 ]);
 

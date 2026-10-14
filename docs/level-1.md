@@ -37,7 +37,7 @@ Scripts Story writes: `prologue`, `l1_start`, `l1_tut_attack`, `l1_tut_special`,
 Both puzzles (the lantern behind `gate_lucas`, the log behind `push_gate`) are listed in `puzzles` in `stage11.ts`. Each names its arrival beat, the prop to watch, the hero who solves it, a one-word label and a short tip.
 
 - **Arrival.** The beat's script says which hero to swap to, with the slot key, and which key to press. Lucas is slot 3 (`{pick3}`) and Eleven is slot 4 (`{pick4}`).
-- **Skip story.** Dialogue is off, so the tip shows on a strip at the bottom of the screen for about eight seconds instead.
+- **Skip story.** Dialogue is off by default, so the tip shows on a strip at the bottom of the screen for about eight seconds instead.
 - **After 30 seconds.** Once the arrival beat has finished, time spent near the prop without solving it counts up. At 30 seconds (1800 ticks) the prop gets pulsing yellow corner brackets and a label (SHOOT or PUSH), and if the right hero is on the bench, their slot in the HUD pulses too. It clears when the prop is `open` or `lit`. Pause, dialogue and walking away stop the clock, and a retry starts it over. Reduce flashing makes the brackets hold still.
 - **Code.** `world/puzzles.ts` holds the clock (pure, tested in `tests/puzzles.test.ts`). `play.ts` ticks it and `render.ts` draws it.
 

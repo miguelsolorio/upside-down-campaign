@@ -2,10 +2,14 @@ import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BIND_ROWS, DEFAULT_BINDINGS, SLOTS, actionsForCode, clearBinding, exportBindings, isReserved, keyLabel, keyText,
-  keysOf, labelOf, levelHintLines, packLines, parseBindings, resetBindings, setBinding, slotKeyLabel, titleHintLines,
+  getPromptDevice, keysOf, labelOf, levelHintLines, packLines, parseBindings, resetBindings, setBinding, setPromptDevice,
+  slotKeyLabel, titleHintLines,
 } from '../src/core/bindings.ts';
 
-beforeEach(() => resetBindings());
+beforeEach(() => {
+  resetBindings();
+  setPromptDevice('keyboard');
+});
 
 const set = (codes: string[]): Set<string> => new Set(codes);
 
@@ -158,4 +162,64 @@ test('hero slot labels prefer a one-character key, else the slot number', () => 
   assert.equal(slotKeyLabel(1), 'N');
   setBinding('swap2', 0, 'ShiftLeft');
   assert.equal(slotKeyLabel(2), '2');
+});
+
+// ---------------------------------------------------------------- the controller's side of the prompts
+test('the prompts speak keyboard until told otherwise', () => {
+  assert.equal(getPromptDevice(), 'keyboard');
+  setPromptDevice('gamepad');
+  assert.equal(getPromptDevice(), 'gamepad');
+});
+
+test('no key ever sends start, so the controller is the only way to it', () => {
+  for (const row of BIND_ROWS) for (const code of keysOf(row.action)) assert.ok(!actionsForCode(code).includes('start'), code);
+  for (const code of ['Enter', 'Escape', 'Backspace', 'ArrowUp']) assert.ok(!actionsForCode(code).includes('start'), code);
+});
+
+test('a controller player sees button names, and a key rebind does not touch them', () => {
+  setPromptDevice('gamepad');
+  const names = { attack: 'A', special: 'X', dash: 'B', burst: 'Y', interact: 'A', swapPrev: 'LB', swapNext: 'RB', skip: 'VIEW', pause: 'START' } as const;
+  for (const [action, name] of Object.entries(names)) assert.equal(labelOf(action as keyof typeof names), name, action);
+  setBinding('attack', 0, 'KeyH');
+  clearBinding('skip', 0);
+  assert.equal(labelOf('attack'), 'A');
+  assert.equal(labelOf('skip'), 'VIEW', 'a cleared key slot has no bearing on the button');
+  setPromptDevice('keyboard');
+  assert.equal(labelOf('attack'), 'H');
+});
+
+test('an action the controller cannot do keeps its key label', () => {
+  setPromptDevice('gamepad');
+  assert.equal(labelOf('mute'), 'M');
+});
+
+test('the hint strips name the buttons and drop the hero numbers', () => {
+  setPromptDevice('gamepad');
+  assert.deepEqual(titleHintLines(), ['STICK MOVE  A ATTACK  X SPECIAL  B DASH', 'LB RB SWAP  Y BURST  START PAUSE']);
+  assert.deepEqual(levelHintLines(), ['STICK MOVE  A ATTACK  X SPECIAL  B DASH', 'LB RB SWAP  A LIGHTS  START PAUSE']);
+  for (const line of [...titleHintLines(), ...levelHintLines()]) assert.ok(line.length <= 42, line);
+});
+
+test('the HUD shows slot numbers on a controller, whatever the keys are', () => {
+  setBinding('swap1', 0, 'KeyN');
+  setPromptDevice('gamepad');
+  assert.deepEqual([1, 2, 3, 4].map((n) => slotKeyLabel(n as 1 | 2 | 3 | 4)), ['1', '2', '3', '4']);
+});
+
+test('story tokens read as buttons on a controller, and the pick-a-hero sentence drops out', () => {
+  setPromptDevice('gamepad');
+  assert.equal(keyText('Press {attack}.'), 'Press A.');
+  assert.equal(keyText('{move} to move'), 'the stick or D-pad to move');
+  assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'LB and RB cycle through us.');
+  assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with LB or RB.');
+  assert.equal(keyText('Swap her in with {swapTo4}.'), 'Swap her in with LB or RB.');
+  assert.equal(keyText('press {burst}'), 'press Y');
+});
+
+test('the same story tokens still read as keys on a keyboard', () => {
+  assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'Q and E cycle through us. Or press 1 to 4 to pick.');
+  assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with 3, Q or E.');
+  assert.equal(keyText('Swap her in with {swapTo4}.'), 'Swap her in with 4, Q or E.');
+  setBinding('swap1', 0, 'KeyN');
+  assert.equal(keyText('{pickHint}'), ' Or press N, 2, 3, 4 to pick.');
 });

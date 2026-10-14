@@ -222,3 +222,31 @@ test('the same story tokens still read as keys on a keyboard', () => {
   setBinding('swap1', 0, 'KeyN');
   assert.equal(keyText('{pickHint}'), ' Or press N, 2, 3, 4 to pick.');
 });
+
+// ---------------------------------------------------------------- the touch screen's side of the prompts
+test('a touch player sees what the on-screen buttons print, and a key rebind does not touch them', () => {
+  setPromptDevice('touch');
+  const names = { attack: 'A', special: 'B', interact: 'A', pause: 'PAUSE' } as const;
+  for (const [action, name] of Object.entries(names)) assert.equal(labelOf(action as keyof typeof names), name, action);
+  setBinding('attack', 0, 'KeyH');
+  assert.equal(labelOf('attack'), 'A');
+  assert.equal(labelOf('skip'), '--', 'skip has no hint: its button lights up instead');
+  assert.equal(labelOf('mute'), '--', 'no key names on a touch screen');
+});
+
+test('the corner controls are left out on a touch screen, and the HUD shows slot numbers', () => {
+  setPromptDevice('touch');
+  assert.deepEqual(controlRows(), []);
+  setBinding('swap1', 0, 'KeyN');
+  assert.deepEqual([1, 2, 3, 4].map((n) => slotKeyLabel(n as 1 | 2 | 3 | 4)), ['1', '2', '3', '4']);
+});
+
+test('story tokens name the on-screen controls on a touch screen', () => {
+  setPromptDevice('touch');
+  assert.equal(keyText('Press {attack}.'), 'Press A.');
+  assert.equal(keyText('{special} is your special.'), 'B is your special.');
+  assert.equal(keyText('{move} to move'), 'the stick to move');
+  assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'The arrows cycle through us. Or tap a face up top to pick.');
+  assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with an arrow.');
+  assert.equal(keyText('press {burst}'), 'press the d20');
+});

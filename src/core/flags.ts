@@ -18,6 +18,8 @@ export interface Flags {
   time: TimeOfDay | null;
   /** Comma list of hero ids from ?party=mike,dustin. */
   party: string[] | null;
+  /** ?touch=1: start with the touch controls on, even with a mouse. */
+  touch: boolean;
   /** From ?level=3. 0 means "use the default". */
   level: number;
   seed: number;
@@ -38,6 +40,7 @@ function parse(): Flags {
     stage: q.get('stage') ?? '1.1',
     time: q.get('time') === 'day' || q.get('time') === 'night' ? (q.get('time') as TimeOfDay) : null,
     party: q.get('party')?.split(',').filter(Boolean) ?? null,
+    touch: on('touch'),
     level: Number(q.get('level')) || 0,
     seed: Number(q.get('seed')) || 1983,
   };

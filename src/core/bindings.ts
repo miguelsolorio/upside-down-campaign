@@ -233,7 +233,7 @@ export function keyLabel(code: string | null): string {
 }
 
 // ---------------------------------------------------------------- which device the prompts speak for
-export type PromptDevice = 'keyboard' | 'gamepad';
+export type PromptDevice = 'keyboard' | 'gamepad' | 'touch';
 let promptDevice: PromptDevice = 'keyboard';
 
 /** Every hint, token and label below follows this. The main loop sets it from whichever device was touched last. */
@@ -244,6 +244,8 @@ export function getPromptDevice(): PromptDevice {
   return promptDevice;
 }
 const onPad = (): boolean => promptDevice === 'gamepad';
+const onTouch = (): boolean => promptDevice === 'touch';
+const onKeys = (): boolean => promptDevice === 'keyboard';
 
 /** The Xbox face for each action a controller can do. These are fixed, so a key rebind never touches them. */
 const PAD_LABEL: Partial<Record<BindAction, string>> = {
@@ -251,11 +253,20 @@ const PAD_LABEL: Partial<Record<BindAction, string>> = {
   interact: 'A', skip: 'VIEW', pause: 'START',
 };
 
+/**
+ * What the on-screen buttons print, for a touch player. Skip is left out: its button only shows while there is
+ * something to skip, so no hint needs to name it. Picking a hero is a tap on its face, so the numbers are left out too.
+ */
+const TOUCH_LABEL: Partial<Record<BindAction, string>> = {
+  attack: 'A', special: 'B', swapPrev: 'BACK', swapNext: 'NEXT', burst: 'D20', interact: 'A', pause: 'PAUSE',
+};
+
 /** What to show for an action: its first key, or the fixed key that always works for it. A controller shows its button. */
 const FALLBACK: Partial<Record<BindAction, string>> = {
   up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT', interact: 'ENTER', pause: 'ESC',
 };
 export function labelOf(action: BindAction): string {
+  if (onTouch()) return TOUCH_LABEL[action] ?? '--';
   const button = onPad() ? PAD_LABEL[action] : undefined;
   if (button) return button;
   const first = keysOf(action)[0];
@@ -264,7 +275,7 @@ export function labelOf(action: BindAction): string {
 
 /** The key printed next to a bench hero in the HUD: the key if it's one character, else the slot number. */
 export function slotKeyLabel(n: 1 | 2 | 3 | 4): string {
-  if (onPad()) return String(n);
+  if (!onKeys()) return String(n);
   const l = labelOf(`swap${n}` as BindAction);
   return l.length === 1 ? l : String(n);
 }
@@ -287,8 +298,10 @@ export interface HintRow { keys: string; what: string }
  * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
  * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
  * Swap shows both keys, back then next: C and V on a keyboard, the bumpers on a controller.
+ * A touch screen has none: its buttons say what they do.
  */
 export function controlRows(): HintRow[] {
+  if (onTouch()) return [];
   return [
     { keys: labelOf('attack'), what: 'ATTACK' },
     { keys: labelOf('special'), what: 'SPECIAL' },
@@ -299,20 +312,23 @@ export function controlRows(): HintRow[] {
 
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.
 // A controller player gets button names instead, and the lines that mention picking a hero by number drop that part.
-const swapOr = (): string => `${labelOf('swapPrev')} or ${labelOf('swapNext')}`;
-const swapTo = (n: 2 | 3 | 4): string => (onPad() ? swapOr() : `${labelOf(`swap${n}`)}, ${swapOr()}`);
+// A touch player gets the on-screen buttons, and taps a face to pick a hero.
+const swapOr = (): string => (onTouch() ? 'an arrow' : `${labelOf('swapPrev')} or ${labelOf('swapNext')}`);
+const swapTo = (n: 2 | 3 | 4): string => (onKeys() ? `${labelOf(`swap${n}`)}, ${swapOr()}` : swapOr());
 const TOKENS: Record<string, () => string> = {
   move: () => {
     if (onPad()) return 'the stick or D-pad';
+    if (onTouch()) return 'the stick';
     const m = moveLabel();
     return m === 'ARROWS' ? 'the arrow keys' : `${m} or the arrow keys`;
   },
   attack: () => labelOf('attack'),
   special: () => labelOf('special'),
-  burst: () => labelOf('burst'),
+  burst: () => (onTouch() ? 'the d20' : labelOf('burst')),
   interact: () => labelOf('interact'),
   skip: () => labelOf('skip'),
-  swap: () => `${labelOf('swapPrev')} and ${labelOf('swapNext')}`,
+  /** On touch this starts a sentence, the only place the lines use it. */
+  swap: () => (onTouch() ? 'The arrows' : `${labelOf('swapPrev')} and ${labelOf('swapNext')}`),
   swapOr,
   pick: () => { const p = pickLabels(); return p.join('') === '1234' ? '1 to 4' : p.join(', '); },
   pick2: () => labelOf('swap2'),
@@ -324,6 +340,7 @@ const TOKENS: Record<string, () => string> = {
   swapTo4: () => swapTo(4),
   /** A whole closing sentence, so a controller line can leave it out. Starts with a space. */
   pickHint: () => {
+    if (onTouch()) return ' Or tap a face up top to pick.';
     if (onPad()) return '';
     const p = pickLabels();
     return ` Or press ${p.join('') === '1234' ? '1 to 4' : p.join(', ')} to pick.`;

@@ -178,3 +178,69 @@ test('onPadPress stays quiet for the keyboard', () => {
   i.poll();
   assert.equal(n, 0);
 });
+
+// ---------------------------------------------------------------- the touch controls
+test('the touch controls act like a controller, switch the prompts to touch and stay off onPadPress', () => {
+  let n = 0;
+  let touch: PadLike | null = null;
+  const i = make({ onPadPress: () => { n++; }, touch: { pad: () => touch } });
+  touch = pad([BTN.A]);
+  i.poll();
+  assert.ok(i.pressed('attack') && i.pressed('confirm'));
+  assert.equal(i.device(), 'touch');
+  assert.equal(n, 0, 'a touch never asks for sound the controller way');
+  keyDown('KeyJ');
+  assert.equal(i.device(), 'keyboard');
+  i.poll();
+  assert.equal(i.device(), 'keyboard', 'a button still held is not a fresh touch');
+});
+
+test('a finger anywhere on the page hands the prompts to touch', () => {
+  const i = make();
+  fire('pointerdown', { pointerType: 'mouse' });
+  assert.equal(i.device(), 'keyboard');
+  fire('pointerdown', { pointerType: 'touch' });
+  assert.equal(i.device(), 'touch');
+});
+
+test('a phone starts on touch, and losing a controller hands it back to touch', () => {
+  const i = make({ startDevice: 'touch' });
+  assert.equal(i.device(), 'touch');
+  fire('gamepadconnected', { gamepad: pad() });
+  assert.equal(i.device(), 'gamepad');
+  fire('gamepaddisconnected', {});
+  assert.equal(i.device(), 'touch');
+});
+
+test('the stronger of the touch stick and the controller stick wins', () => {
+  let touch: PadLike | null = pad([], [0.3, 0]);
+  const i = make({ touch: { pad: () => touch } });
+  pads = [pad([], [0, -0.9])];
+  i.poll();
+  assert.deepEqual(i.axis(), { x: 0, y: -0.9 });
+  touch = pad([], [1, 0]);
+  i.poll();
+  assert.deepEqual(i.axis(), { x: 1, y: 0 });
+});
+
+test('the touch stick steps through menus with the same hysteresis as a controller', () => {
+  let touch: PadLike | null = pad([], [0, 0.6]);
+  const i = make({ touch: { pad: () => touch } });
+  i.poll();
+  assert.ok(i.pressed('down'));
+  touch = pad([], [0, 0.4]);
+  i.poll();
+  assert.ok(i.held('down') && !i.pressed('down'), 'easing off a little holds the step');
+  touch = null;
+  i.poll();
+  assert.ok(!i.held('down'), 'hidden controls let go');
+});
+
+test('an offer lasts until the next poll', () => {
+  const i = make();
+  i.poll();
+  i.offer('skip');
+  assert.ok(i.offered('skip') && !i.offered('burst'));
+  i.poll();
+  assert.ok(!i.offered('skip'));
+});

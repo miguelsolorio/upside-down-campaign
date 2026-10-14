@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touch Controls</title>
+<meta name="description" content="The shipped touch controls, drawn by the game's own code on phone frames at real size, in portrait and landscape.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas, img { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .rules { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; font: 12px/1.4 var(--mono); color: var(--mist); }
+  .rules b { color: var(--bone); font-weight: 600; }
+
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .lbl { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .seg { display: inline-flex; border: 2px solid var(--dusk); }
+  .seg button { border: 0; background: var(--ink); padding: 6px 12px; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .seg button + button { border-left: 2px solid var(--dusk); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--cream); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+
+  #cards { display: grid; gap: 26px; padding: 24px 0 64px; }
+  .card { border: 2px solid var(--shadow); background: var(--night); padding: 18px 20px 22px; }
+  .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
+  .badge { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 18px/1 var(--mono); }
+  .head h2 { margin: 0; font-size: 20px; }
+  .note { margin: 0 0 14px; color: var(--mist); }
+  .phones { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; overflow-x: auto; padding-bottom: 4px; }
+  figure { margin: 0; }
+  figcaption { margin-bottom: 8px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .phone { position: relative; overflow: hidden; background: #000; border-radius: 46px; box-shadow: 0 0 0 10px #1a1a22, 0 0 0 11px #2c2c38; margin: 11px; }
+  .phone.flat { border-radius: 18px; }
+  .phone > * { position: absolute; }
+  .island { background: #000; border-radius: 20px; z-index: 3; box-shadow: 0 0 0 1px #111; }
+  .home { height: 5px; border-radius: 3px; background: #d8dce8; opacity: .55; z-index: 3; }
+  .safe { border: 1px dashed rgba(255, 74, 74, .55); z-index: 4; pointer-events: none; display: none; }
+  body.show-safe .safe { display: block; }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Touch review</p>
+  <h1>Touch controls check</h1>
+  <p>The on-screen controls the game ships, drawn by the game's own code at the game's pixel size. Every button is a keycap: a dark top over a darker lip, and pressing slides the top down. Phones are shown at real CSS size, and the game and every button sit exactly where the shipped layout puts them.</p>
+  <ul class="rules">
+    <li><b>Stick:</b> floats; it centers where your left thumb lands</li>
+    <li><b>A:</b> attack, confirm, light</li>
+    <li><b>B:</b> special, back</li>
+    <li><b>Arrows:</b> swap hero</li>
+    <li><b>d20:</b> party burst, gold when ready</li>
+    <li><b>Top keys:</b> skip (lit only during dialogue) and pause</li>
+  </ul>
+</div></header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="group"><span class="lbl" id="prLbl">Pressed</span><div class="seg" id="pressed" role="group" aria-labelledby="prLbl"></div></div>
+    <div class="group"><span class="lbl" id="stLbl">Stick</span><div class="seg" id="stick" role="group" aria-labelledby="stLbl"></div></div>
+    <label class="chk"><input id="ready" type="checkbox"> Burst ready</label>
+    <label class="chk"><input id="skip" type="checkbox" checked> Skip shown</label>
+    <label class="chk"><input id="safe" type="checkbox"> Safe area</label>
+  </div>
+</div>
+
+<main class="wrap"><div id="cards"></div></main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { layoutTouch } from '/src/core/touchlayout.ts';
+import { drawTouch, overlaySize } from '/src/ui/touchdraw.ts';
+
+initGfx();
+
+const DEVICES = {
+  iphone: { label: 'iPhone 15', p: { w: 393, h: 852, dpr: 3, safe: { t: 59, r: 0, b: 34, l: 0 } }, l: { w: 852, h: 393, dpr: 3, safe: { t: 0, r: 59, b: 21, l: 59 } }, island: true },
+  se: { label: 'iPhone SE', p: { w: 375, h: 548, dpr: 2 }, l: { w: 667, h: 375, dpr: 2 }, island: false },
+  pixel: { label: 'Pixel 8', p: { w: 412, h: 915, dpr: 2.625, safe: { t: 24, r: 0, b: 16, l: 0 } }, l: { w: 915, h: 412, dpr: 2.625, safe: { t: 0, r: 24, b: 16, l: 24 } }, island: false },
+};
+const PRESSES = { none: [], a: ['a'], b: ['b'], swap: ['swapNext'], all: ['a', 'b', 'burst', 'swapPrev', 'swapNext', 'skip', 'pause'] };
+const STICKS = { rest: 'Resting', pushed: 'Pushed' };
+const st = { pressed: 'none', stick: 'rest', ready: false, skip: true };
+
+const bg = new Image();
+bg.src = '/docs/screenshots/touch-bg.png';
+
+function seg(id, options, key) {
+  const el = document.getElementById(id);
+  el.innerHTML = Object.entries(options).map(([k, v]) => `<button type="button" data-k="${k}" aria-pressed="${st[key] === k}">${typeof v === 'string' ? v : v.label ?? k}</button>`).join('');
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    st[key] = b.dataset.k;
+    for (const x of el.querySelectorAll('button')) x.setAttribute('aria-pressed', String(x === b));
+    render();
+  });
+}
+seg('pressed', Object.fromEntries(Object.keys(PRESSES).map((k) => [k, k])), 'pressed');
+seg('stick', STICKS, 'stick');
+for (const id of ['ready', 'skip']) document.getElementById(id).addEventListener('change', (e) => { st[id] = e.target.checked; render(); });
+document.getElementById('safe').addEventListener('change', (e) => document.body.classList.toggle('show-safe', e.target.checked));
+
+const cards = document.getElementById('cards');
+Object.entries(DEVICES).forEach(([id, d], i) => {
+  const sec = document.createElement('section');
+  sec.className = 'card';
+  sec.innerHTML = `<div class="head"><span class="badge">${i + 1}</span><h2>${d.label}</h2></div>
+    <p class="note">${d.p.w} by ${d.p.h} CSS px at ${d.p.dpr}x${d.p.safe ? ', with its safe area' : ''}.</p>
+    <div class="phones"><figure><figcaption>Portrait</figcaption><div class="phone" data-o="p"></div></figure>
+    <figure><figcaption>Landscape</figcaption><div class="phone" data-o="l"></div></figure></div>`;
+  sec.dataset.device = id;
+  cards.append(sec);
+});
+
+function phone(el, vp, island) {
+  const l = layoutTouch(vp);
+  el.classList.toggle('flat', !island);
+  el.style.width = `${vp.w}px`;
+  el.style.height = `${vp.h}px`;
+  el.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = bg.src;
+  img.alt = '';
+  Object.assign(img.style, { left: `${l.game.x}px`, top: `${l.game.y}px`, width: `${l.game.w}px`, height: `${l.game.h}px` });
+  el.append(img);
+
+  const size = overlaySize(l);
+  const c = document.createElement('canvas');
+  c.width = size.w;
+  c.height = size.h;
+  Object.assign(c.style, { left: '0', top: '0', width: `${size.w * l.scale}px`, height: `${size.h * l.scale}px` });
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const pushed = st.stick === 'pushed';
+  const base = l.stickRest;
+  drawTouch(ctx, {
+    layout: l,
+    held: new Set(PRESSES[st.pressed]),
+    stick: pushed ? { base, knob: { x: base.x + l.stickR * 0.7, y: base.y - l.stickR * 0.35 } } : null,
+    skip: st.skip,
+    burstReady: st.ready,
+  });
+  el.append(c);
+
+  const safe = document.createElement('div');
+  safe.className = 'safe';
+  Object.assign(safe.style, { left: `${l.safe.x}px`, top: `${l.safe.y}px`, width: `${l.safe.w}px`, height: `${l.safe.h}px` });
+  el.append(safe);
+  if (island) {
+    const isl = document.createElement('div');
+    isl.className = 'island';
+    const portrait = vp.h > vp.w;
+    Object.assign(isl.style, portrait
+      ? { width: '124px', height: '36px', left: `${(vp.w - 124) / 2}px`, top: '11px' }
+      : { width: '36px', height: '124px', top: `${(vp.h - 124) / 2}px`, left: '11px' });
+    el.append(isl);
+  }
+  const home = document.createElement('div');
+  home.className = 'home';
+  const hw = Math.min(140, vp.w * 0.36);
+  Object.assign(home.style, { width: `${hw}px`, left: `${(vp.w - hw) / 2}px`, top: `${vp.h - 13}px` });
+  el.append(home);
+}
+
+function render() {
+  for (const sec of cards.children) {
+    const d = DEVICES[sec.dataset.device];
+    for (const el of sec.querySelectorAll('.phone')) phone(el, d[el.dataset.o], d.island);
+  }
+}
+bg.onload = render;
+render();
+</script>
+</body>
+</html>

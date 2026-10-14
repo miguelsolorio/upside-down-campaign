@@ -69,9 +69,9 @@ test('script keys match ids and sizes are sane', () => {
   }
 });
 
-test('every line fits three rows of 32 characters, with its key tokens filled in for a keyboard and a controller', () => {
+test('every line fits three rows of 32 characters, with its key tokens filled in for a keyboard, a controller and a touch screen', () => {
   try {
-    for (const device of ['keyboard', 'gamepad'] as const) {
+    for (const device of ['keyboard', 'gamepad', 'touch'] as const) {
       setPromptDevice(device);
       for (const l of allLines) {
         const shown = keyText(l.text);
@@ -246,7 +246,7 @@ test('the prologue scene runs its timeline in order and calls onDone once', asyn
     const scene = story.createPrologueScene({ onDone() { done++; } });
     assert.equal(scene.opaque, true);
     let press = false;
-    const g = { input: { pressed: (a: string) => press && a === 'confirm' }, settings: { reduceFlashing: false } };
+    const g = { input: { pressed: (a: string) => press && a === 'confirm', offer() { /* no touch screen here */ } }, settings: { reduceFlashing: false } };
     scene.enter?.(g as never);
     let frames = 0;
     while (done === 0 && frames < 20000) {
@@ -364,4 +364,24 @@ test("Eleven's vocabulary grows with her level", () => {
   const low = words(bark('eleven', 'levelUp', 4) ?? '');
   const high = words(bark('eleven', 'levelUp', 6) ?? '');
   assert.ok(high > low, 'her level-up line is fuller from level 6');
+});
+
+test('a touch player is never told to press a key or a controller button', () => {
+  try {
+    setPromptDevice('touch');
+    for (const l of allLines) {
+      const shown = keyText(l.text);
+      assert.ok(!/\{|\}/.test(shown), `${l.id}[${l.i}] has an unfilled token: ${shown}`);
+      assert.ok(!/\b(WASD|SPACE|TAB|SHIFT|ESC|LB|RB|VIEW|START|D-pad|[JKLQEUVXYZC])\b/.test(shown), `${l.id}[${l.i}] names a key or pad button: ${shown}`);
+    }
+    const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
+    assert.match(text('l1_tut_attack'), /\bA attacks\b/);
+    assert.match(text('l1_tut_special'), /\bB is your special\b/);
+    assert.match(text('l1_tut_swap'), /The arrows cycle through us\. Or tap a face up top to pick\./);
+    assert.match(text('l1_start'), /the stick to move/);
+    assert.match(text('l1_gate_hint'), /with an arrow/);
+    assert.match(text('l2_lockdown_start'), /press the d20/);
+  } finally {
+    setPromptDevice('keyboard');
+  }
 });

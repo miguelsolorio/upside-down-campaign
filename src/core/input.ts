@@ -2,15 +2,22 @@ import type { SimInput, Vec2 } from './types.ts';
 import { actionsForCode } from './bindings.ts';
 import type { Action } from './bindings.ts';
 import { clientToGame } from './pointer.ts';
-import { pickPads, readPads } from './gamepad.ts';
+import { pickPads, readPad, readPads } from './gamepad.ts';
+import type { PadLike } from './gamepad.ts';
 
 export type { Action };
+/** Whichever the player touched last. The prompts name its keys or buttons. */
+export type Device = 'keyboard' | 'gamepad' | 'touch';
 
 export interface InputOptions {
   /** Fires when a controller button or stick direction goes down. The page uses it to try to start the sound. */
   onPadPress?(): void;
   /** The game canvas. With it, the mouse or a finger can point at and click the HUD. */
   canvas?: HTMLCanvasElement;
+  /** The on-screen controls, read once a tick like a controller. Null while they are hidden. */
+  touch?: { pad(): PadLike | null };
+  /** The device the prompts speak for before anything is pressed. A phone starts on touch. */
+  startDevice?: Device;
 }
 
 export interface InputState {
@@ -23,7 +30,7 @@ export interface InputState {
   /** Movement vector, length <= 1. */
   axis(): Vec2;
   /** Whichever the player touched last. A connected controller counts as touched. */
-  device(): 'keyboard' | 'gamepad';
+  device(): Device;
   /** Where the mouse or finger is over the game, in game px (256 by 224), or null when it is elsewhere. */
   pointer(): Vec2 | null;
   /** Where the primary button went down this tick, in game px, or null. A short click is never lost. */
@@ -32,6 +39,9 @@ export interface InputState {
   notice(): string | null;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
   capture(cb: (code: string) => void): () => void;
+  /** A scene says an action would do something this tick, so the touch screen can show its button. Cleared by poll. */
+  offer(a: Action): void;
+  offered(a: Action): boolean;
 }
 
 export function createInput(opts: InputOptions = {}): InputState {
@@ -46,7 +56,10 @@ export function createInput(opts: InputOptions = {}): InputState {
   let pressedNow = new Set<Action>();
   let releasedNow = new Set<Action>();
   let analog: Vec2 = { x: 0, y: 0 };
-  let device: 'keyboard' | 'gamepad' = 'keyboard';
+  let device: Device = opts.startDevice ?? 'keyboard';
+  let touchPrev = new Set<Action>();
+  let touchStickWas = false;
+  let offers = new Set<Action>();
   let message: string | null = null;
   let captureCb: ((code: string) => void) | null = null;
   let at: Vec2 | null = null;
@@ -73,6 +86,8 @@ export function createInput(opts: InputOptions = {}): InputState {
   });
   addEventListener('keyup', (e) => { down.delete(e.code); });
   addEventListener('blur', () => { down.clear(); });
+  // A finger anywhere on the page, the margins included, hands the prompts to the touch controls.
+  addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') device = 'touch'; });
 
   const canvas = opts.canvas;
   if (canvas) {
@@ -95,7 +110,7 @@ export function createInput(opts: InputOptions = {}): InputState {
   });
   addEventListener('gamepaddisconnected', () => {
     if (livePads().length > 0) return;
-    if (device === 'gamepad') device = 'keyboard';
+    if (device === 'gamepad') device = opts.startDevice ?? 'keyboard';
     message = 'CONTROLLER LOST';
   });
 
@@ -112,6 +127,26 @@ export function createInput(opts: InputOptions = {}): InputState {
     return r.actions;
   }
 
+  /** The on-screen controls this tick. They keep their own stick memory, and never count as a controller. */
+  function touchActions(): Set<Action> {
+    const p = opts.touch?.pad() ?? null;
+    if (!p) {
+      touchPrev = new Set<Action>();
+      touchStickWas = false;
+      return touchPrev;
+    }
+    const r = readPad(p, touchPrev);
+    const stickOn = r.stick.x !== 0 || r.stick.y !== 0;
+    let fresh = stickOn && !touchStickWas;
+    for (const a of r.actions) if (!touchPrev.has(a)) fresh = true;
+    if (fresh) device = 'touch';
+    // The stronger stick wins, the same rule as two controllers.
+    if (Math.hypot(r.stick.x, r.stick.y) > Math.hypot(analog.x, analog.y)) analog = r.stick;
+    touchStickWas = stickOn;
+    touchPrev = r.actions;
+    return r.actions;
+  }
+
   const self: InputState = {
     poll() {
       prev = now;
@@ -119,6 +154,8 @@ export function createInput(opts: InputOptions = {}): InputState {
       for (const code of down) for (const a of actionsForCode(code)) keyNow.add(a);
       now = new Set<Action>(keyNow);
       for (const a of padActions()) now.add(a);
+      for (const a of touchActions()) now.add(a);
+      offers = new Set<Action>();
       pressedNow = new Set<Action>();
       releasedNow = new Set<Action>();
       for (const a of now) if (!prev.has(a)) pressedNow.add(a);
@@ -152,6 +189,8 @@ export function createInput(opts: InputOptions = {}): InputState {
       captureCb = cb;
       return () => { if (captureCb === cb) captureCb = null; };
     },
+    offer(a) { offers.add(a); },
+    offered: (a) => offers.has(a),
   };
   return self;
 }

@@ -207,7 +207,8 @@ function stalk(s: S, e: Enemy, d: DemoState, hero: Hero, dd: number, clear: bool
     if (d.petals && d.spitCd <= 0) { startSpit(s, e, d, hero); return; }
     if (e.cd <= 0 && dd <= X.range) { startSwipe(s, e, d, hero); return; }
   }
-  if (dd > X.hold) {
+  // Close but round a corner: no attack lands without a line, so it keeps coming until it has one.
+  if (dd > X.hold || !clear) {
     const moved = chaseHero(s, e, hero, DEF.speed * e.spd * speedMul(e.stat), clear);
     setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
   } else {

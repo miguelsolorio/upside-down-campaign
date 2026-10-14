@@ -130,11 +130,10 @@ export const STAGE_13: StageData = {
   ],
   // A dark shape walks along the strip behind the serving counter, east to west, across the wall the firebox hangs on.
   scare: { from: { x: px(35), y: fy(18) + 1 }, to: { x: px(25), y: fy(18) + 1 }, frames: 96 },
-  // Nearly all the damage here is the Demogorgon's, and a bot that steps out of its charge line takes less than half of what one that
-  // does not takes, so this one number cannot hold both ends of the targets. At 2.1 the careful bot lands every row of the
-  // table (17 of 20 clear, 216 damage, 1.5 KOs, party low of 39 percent, 108 s with the boss half of it, upside 5 of 20, kid 20
-  // of 20). A bot that never dodges clears none of them. At 1.2 it clears 9 of 20, but then the careful one clears all 20 for 126
-  // damage. Measured with node scripts/measure-stage.ts 1.3 chief 20 [--careless].
-  enemyMult: 2.1,
+  // Nearly all the damage here is the Demogorgon's. Its spike hits (charge, leap, acid) were lowered so a player who
+  // does not dodge still wins some runs, and this factor sets the rest. At 1.7, measured with
+  // node scripts/measure-stage.ts 1.3 chief 20 [--careless]: the careful bot clears 19 of 20 for 238 damage, 0.8 KOs and
+  // a party low of 39 percent, the boss about 43 s of it. The careless bot clears 12, kid 20 and upside 9.
+  enemyMult: 1.7,
   waypoints: WAYPOINTS,
 };

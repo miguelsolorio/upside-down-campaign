@@ -15,6 +15,12 @@ const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hy
 const LANE = 16;
 /** How close Eleven stands to a pinned boss: the beam's aim is snapped to eight ways, so close keeps it on target. */
 const BEAM_RANGE = 26;
+/**
+ * A player needs a moment to see a thing coming. The bot waits this many frames after the boss starts to run before it
+ * leaves the lane, and after a mark appears before it leaves the mark. Zero would make it a perfect dodger.
+ */
+const REACT_CHARGE = 1;
+const REACT_MARK = 3;
 
 export interface BossEnv {
   walkable(x: number, y: number): boolean;
@@ -41,10 +47,11 @@ export interface BossSense {
 export function createBossSense(env: BossEnv): BossSense {
   let prev: Vec2 | null = null;
   let side = 1;
+  let runAge = 0;
 
   /** The direction out of every live mark that ends furthest from all of them within the time left, along open floor. */
   function leaveMarks(v: SimView, hx: number, hy: number): [number, number] | null {
-    const marks = v.fx.filter((f) => f.kind === 'mark' && dist(hx, hy, f.x, f.y) < f.h + 6);
+    const marks = v.fx.filter((f) => f.kind === 'mark' && dist(hx, hy, f.x, f.y) < f.h + 6 && f.t >= REACT_MARK);
     if (marks.length === 0) return null;
     const left = Math.min(...marks.map((m) => m.life - m.t));
     const room = (x: number, y: number): number => Math.min(...v.fx.filter((f) => f.kind === 'mark').map((m) => dist(x, y, m.x, m.y) - m.h));
@@ -101,7 +108,8 @@ export function createBossSense(env: BossEnv): BossSense {
     if (boss.pose === 'charge') {
       // Planted and winding up: it will run at wherever the hero stands when this ends, so use the time to back off.
       if (boss.alert) return d < 110 ? away(hx, hy, boss.x, boss.y) : null;
-      return was ? leaveLane(hx, hy, boss.x, boss.y, was) : null;
+      runAge = was && dist(was.x, was.y, boss.x, boss.y) >= 2 ? runAge + 1 : 0;
+      return was && runAge > REACT_CHARGE ? leaveLane(hx, hy, boss.x, boss.y, was) : null;
     }
     // The swipe's wind-up: step out of its reach.
     if (boss.alert && boss.pose === undefined && d <= X.reach + 10) return away(hx, hy, boss.x, boss.y);

@@ -7,11 +7,12 @@ import { arena, ofType, run, sfxIds, tc, tf } from './sim-helpers.ts';
 import { DEMO, X, bossRig, bossView, demoAt, only, placeHero, runUntil, sfxOf, takes, track } from './demo-helpers.ts';
 
 test('demogorgon: the contract numbers', () => {
-  assert.deepEqual([DEMO.def, DEMO.speed, DEMO.xp, DEMO.windup, DEMO.power, DEMO.drop], [6, 0.8, 60, 30, 1, 1]);
+  assert.deepEqual([DEMO.def, DEMO.speed, DEMO.xp, DEMO.windup, DEMO.power, DEMO.drop], [6, 0.8, 60, 30, 0.5, 1]);
+  // The powers are tuned down from the spec's 1.0, 1.2, 1.3 and 0.8 (see defs.ts); the timings and sizes are the spec's.
   assert.deepEqual([X.reach, X.kb, X.chargeWindup, X.chargeSpeed, X.chargePower, X.chargeKb, X.stunT, X.stunMul, X.stunsToPin],
-    [30, 4, 36, 4.2, 1.2, 5, 150, 1.5, 3]);
+    [30, 4, 36, 4.2, 1, 5, 150, 1.5, 3]);
   assert.deepEqual([X.petalsAt, X.leapAt, X.flight, X.splash, X.globPower, X.crouch, X.air, X.shock, X.leapPower, X.leapKb, X.leapRecover],
-    [0.6, 0.3, 40, 14, 0.8, 30, 45, 40, 1.3, 5, 50]);
+    [0.6, 0.3, 40, 14, 0.3, 30, 45, 40, 1, 5, 50]);
   const r = bossRig();
   assert.equal(r.boss.hpMax, Math.round(DEMO.hp * 1.2), 'the stage factor scales its HP like anyone\'s');
 });
@@ -40,7 +41,7 @@ test('stalk: it walks at the hero at 0.8 px a frame', () => {
   assert.equal(bossView(r)?.pose, undefined);
 });
 
-test('swipe: 30 frames under the red "!", then an arc 30 px in front for power 1.0 and knockback 4, with a chomp', () => {
+test('swipe: 30 frames under the red "!", then an arc 30 px in front for the swipe\'s power and knockback 4, with a chomp', () => {
   const r = bossRig({ start: { x: tc(13) - 22, y: tf(6) } });
   only(r, 'swipe');
   r.boss.cd = 0;
@@ -53,7 +54,7 @@ test('swipe: 30 frames under the red "!", then an arc 30 px in front for power 1
   const strike = frames[first + 30] as (typeof frames)[number];
   assert.ok(sfxOf(strike.ev).includes('chomp'));
   const hurt = ofType(strike.ev, 'hit').find((h) => !h.onEnemy);
-  const range = takes(1, DEMO.atk, r.hero.st.def);
+  const range = takes(DEMO.power, DEMO.atk, r.hero.st.def);
   assert.ok(hurt && hurt.dmg >= range.lo && hurt.dmg <= range.hi, `swipe ${hurt?.dmg}, expected ${range.lo} to ${range.hi}`);
   assert.ok(frames.every((t) => t.v?.pose === undefined), 'no pose: it is a plain swipe');
   assert.ok(frames.slice(first, first + 30).every((t) => t.v?.anim === 'attack' && t.v.alert), 'the wind-up');
@@ -136,14 +137,14 @@ test('charge: it aims at where the hero stands when the wind-up ends, not where 
   assert.ok(Math.abs(Math.atan2(vy, vx) - want) < 0.05, 'it runs at him, up and to the left');
 });
 
-test('charge: a hero in the way takes power 1.2 and knockback 5 once, and the charge does not stop for him', () => {
+test('charge: a hero in the way takes the charge\'s power and knockback 5 once, and the charge does not stop for him', () => {
   const r = bossRig({ start: { x: tc(8), y: tf(6) } });
   only(r, 'charge');
   r.d.chargeCd = 0;
   const frames = track(r, 200);
   const hits = frames.flatMap((t) => ofType(t.ev, 'hit').filter((h) => !h.onEnemy));
   assert.equal(hits.length, 1, 'hurt once');
-  const range = takes(1.2, DEMO.atk, r.hero.st.def);
+  const range = takes(X.chargePower, DEMO.atk, r.hero.st.def);
   assert.ok(hits[0] && hits[0].dmg >= range.lo && hits[0].dmg <= range.hi, `charge ${hits[0]?.dmg}, expected ${range.lo} to ${range.hi}`);
   assert.equal(r.d.stuns, 1, 'it ran on to the wall and stunned itself');
   assert.ok(r.boss.x < tc(8), 'past where he stood');

@@ -62,8 +62,10 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       slamWindup: 45, slamRadius: 46, slamPower: 1.3, slamKb: 5, slamRecover: 60, slamCd: 140, slamEvery: 3, slamLow: 2,
     },
   },
-  // The chapter 1 boss (docs/level-3.md, enemies/demogorgon.ts). HP and ATK are tuned up from the spec's 520 and 22 so the
-  // fight lasts about 40 seconds and costs a careful party real HP. Walk, windup, power and cooldown are the swipe's.
+  // The chapter 1 boss (docs/level-3.md, enemies/demogorgon.ts). Tuned at enemyMult 1.7 against the stage's targets: HP and ATK
+  // are up from the spec's 520 and 22 so the fight lasts about 45 seconds, and the hits that an undodged player eats (the swipe,
+  // the charge, the leap, the acid) are down from 1.0, 1.2, 1.3 and 0.8 so that a player who dodges badly still wins sometimes.
+  // Walk, windup, power and cooldown are the swipe's.
   // reach, arc (half angle in degrees), kb: the swipe. range: px at which it commits to one. recover: frames after it.
   // chargeEvery: frames between charges, counted from the end of the last one. chargeWindup, chargeSpeed, chargePower and
   // chargeKb: the charge. stunT: frames dazed against a wall, stunMul: damage taken meanwhile, stunsToPin: wall stuns before
@@ -71,14 +73,14 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // spitWindup, spitEvery, spitRecover, fan (radians between globs), flight (frames in the air), splash (px), splashT (frames the splash is drawn), globPower: the acid.
   // crouch, air, height (px of the arc), shock (px), leapPower, leapKb, leapRecover, leapEvery: the leap. roarT: frames of roar.
   demogorgon: {
-    kind: 'demogorgon', name: 'Demogorgon', hp: 800, atk: 24, def: 6, speed: 0.8, xp: 60, aggro: 160,
-    windup: 30, power: 1, cooldown: 100, drop: 1, weight: 4,
+    kind: 'demogorgon', name: 'Demogorgon', hp: 760, atk: 24, def: 6, speed: 0.8, xp: 60, aggro: 160,
+    windup: 30, power: 0.5, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
-      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1.2, chargeKb: 5, stunT: 150, stunMul: 1.5, stunsToPin: 3,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1, chargeKb: 5, stunT: 150, stunMul: 1.5, stunsToPin: 3,
       petalsAt: 0.6, leapAt: 0.3, roarT: 40,
-      spitWindup: 26, spitEvery: 120, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.8,
-      crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1.3, leapKb: 5, leapRecover: 50, leapEvery: 200,
+      spitWindup: 26, spitEvery: 120, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.3,
+      crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
     },
   },
   // The Level 4 enemies (docs/level-4.md, "New enemies"). The demodog circles `orbit` px out (between near and far), and a

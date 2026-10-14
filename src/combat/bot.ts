@@ -86,6 +86,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   let lastSwap = -999, lastSpecial = -999;
   let dealt = 0, dealtAt = 0;
   let stillT = 0;
+  /** The party burst freezes the whole field for about 150 frames: a hero who does not move then is not stuck. */
+  let frozenUntil = -1;
   let lastX = Number.NaN, lastY = Number.NaN;
   let lastMag = 0;
 
@@ -316,8 +318,8 @@ function reachThreatOf(f: Foe): boolean {
     const fighting = near !== undefined && ((near.d < ENGAGE && seen) || (sim.aggro() && near.d < CHASE));
 
     // Stuck detection: learn the tile ahead is blocked and route around it.
-    if (lastMag > 0.3 && dist(hx, hy, lastX, lastY) < 0.05) stillT++; else stillT = 0;
-    lastX = hx; lastY = hy;
+    // Stuck means going nowhere: within 3 px of where it was for the whole spell, even if corner assist rocks it back and forth.
+    if (frame < frozenUntil || lastMag <= 0.3 || dist(hx, hy, lastX, lastY) > 3) { stillT = 0; lastX = hx; lastY = hy; } else stillT++;
 
     let mx = 0, my = 0;
     const hpFrac = me.hp / me.hpMax;
@@ -397,7 +399,10 @@ function reachThreatOf(f: Foe): boolean {
           }
         }
       }
-      if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => f.pose === 'stun' && f.d < 190))) out.burstPressed = true;
+      if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => f.pose === 'stun' && f.d < 190))) {
+        out.burstPressed = true;
+        frozenUntil = frame + 170;
+      }
     } else if (wp) {
       const item = pickupGoal(v, hx, hy, hpFrac, me.mp / me.mpMax);
       const goal = item ?? wp;

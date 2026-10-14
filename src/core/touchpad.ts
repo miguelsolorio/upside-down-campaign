@@ -41,8 +41,16 @@ export function createTouchPad(layout: TouchLayout): TouchPad {
   let skip = false;
   const fingers = new Map<number, TouchButton>();
   let stickId: number | null = null;
-  let base: Vec2 = { x: 0, y: 0 };
-  let knob: Vec2 = { x: 0, y: 0 };
+  let thumb: Vec2 = { x: 0, y: 0 };
+
+  /** The ring never moves. The knob follows the thumb and stops at the rim. */
+  function knob(): Vec2 {
+    const base = l.stickRest;
+    const dx = thumb.x - base.x, dy = thumb.y - base.y;
+    const d = Math.hypot(dx, dy);
+    const k = d > l.stickR ? l.stickR / d : 1;
+    return { x: base.x + dx * k, y: base.y + dy * k };
+  }
 
   const self: TouchPad = {
     setLayout(next) { l = next; },
@@ -53,24 +61,16 @@ export function createTouchPad(layout: TouchLayout): TouchPad {
         fingers.set(id, b);
         return b;
       }
+      // Anywhere in the zone grabs the stick, so a thumb that misses the ring still steers, toward where it landed.
       if (stickId === null && inside(l.stickZone, x, y)) {
         stickId = id;
-        base = { x, y };
-        knob = { x, y };
+        thumb = { x, y };
         return 'stick';
       }
       return null;
     },
     move(id, x, y) {
-      if (id !== stickId) return;
-      const dx = x - base.x, dy = y - base.y;
-      const d = Math.hypot(dx, dy);
-      // Past the rim, the base follows the thumb, so pulling back the other way responds at once.
-      if (d > l.stickR) {
-        const k = (d - l.stickR) / d;
-        base = { x: base.x + dx * k, y: base.y + dy * k };
-      }
-      knob = { x, y };
+      if (id === stickId) thumb = { x, y };
     },
     up(id) {
       fingers.delete(id);
@@ -81,11 +81,12 @@ export function createTouchPad(layout: TouchLayout): TouchPad {
       stickId = null;
     },
     held: () => new Set(fingers.values()),
-    stick: () => (stickId === null ? null : { base: { ...base }, knob: { ...knob } }),
+    stick: () => (stickId === null ? null : { base: { ...l.stickRest }, knob: knob() }),
     vector() {
       if (stickId === null) return { x: 0, y: 0 };
       const full = l.stickR * FULL_TILT;
-      let x = (knob.x - base.x) / full, y = (knob.y - base.y) / full;
+      const k = knob();
+      let x = (k.x - l.stickRest.x) / full, y = (k.y - l.stickRest.y) / full;
       const m = Math.hypot(x, y);
       if (m > 1) { x /= m; y /= m; }
       return { x, y };

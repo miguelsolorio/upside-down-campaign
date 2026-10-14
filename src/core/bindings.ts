@@ -38,8 +38,8 @@ export const BIND_ROWS: readonly BindRow[] = [
   { action: 'swap2', label: 'HERO 2', required: false },
   { action: 'swap3', label: 'HERO 3', required: false },
   { action: 'swap4', label: 'HERO 4', required: false },
-  { action: 'burst', label: 'PARTY BURST', required: false },
-  { action: 'interact', label: 'LIGHT OR BURST', required: false },
+  { action: 'burst', label: 'CRIT', required: false },
+  { action: 'interact', label: 'LIGHT OR CRIT', required: false },
   { action: 'skip', label: 'SKIP DIALOGUE', required: false },
   { action: 'pause', label: 'PAUSE', required: false },
   { action: 'mute', label: 'MUTE', required: false },
@@ -298,7 +298,7 @@ export interface HintRow { keys: string; what: string }
  * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
  * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
  * Swap shows one key on a keyboard, C, so every row has a single key. A controller shows both bumpers.
- * Burst is left out too: a word with no meter means nothing, so `burstHint` names it under the HUD once it's ready.
+ * Crit is left out too: a word with no meter means nothing, so `burstHint` names it under the HUD once it's ready.
  * A touch screen has no rows at all: its buttons say what they do.
  */
 export function controlRows(): HintRow[] {
@@ -315,9 +315,9 @@ export function controlRows(): HintRow[] {
  * since its A also attacks and so never bursts, the same as a controller's. */
 const burstKey = (): string => (onTouch() ? 'the d20' : labelOf(onPad() ? 'burst' : 'interact'));
 
-/** The line under the HUD while the d20 is full and the party burst is ready. */
+/** The line under the HUD while the d20 is full and the crit is ready. */
 export function burstHint(): string {
-  return onTouch() ? 'TAP THE D20 FOR PARTY BURST' : `PRESS ${burstKey()} FOR PARTY BURST`;
+  return onTouch() ? 'TAP THE D20 FOR CRIT' : `PRESS ${burstKey()} FOR CRIT`;
 }
 
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.

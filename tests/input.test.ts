@@ -125,7 +125,7 @@ test('Space bursts only when the play scene says nothing is in reach to light', 
   assert.equal(toSimInput(i).burstPressed, true, 'U bursts anywhere');
 });
 
-test('a Space press with a full d20 and nothing in reach sets off the party burst', () => {
+test('a Space press with a full d20 and nothing in reach sets off the crit', () => {
   const i = make();
   const { sim, s } = makeWhite();
   s.burst = 1;

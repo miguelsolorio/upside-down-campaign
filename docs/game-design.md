@@ -29,7 +29,7 @@ Level 1 is stage 1.1, Mirkwood, plus the title screen and the basement prologue.
 **In**
 - Title screen, then the basement prologue (Mike, Dustin, Lucas, Will's roll goes wrong), then a chapter card.
 - Stage 1.1, about 48×40 tiles, five to eight minutes. It runs from the Byers yard (Joyce's lights are the first save point) through the woods to the Lab road. Beats: a rat skirmish that teaches attack, a Lab agent patrol that teaches sidestepping darts, a shot gate only Lucas can open, a scripted scare (lights flicker, a growl, a shape crosses the trail, no fight), Eleven's recruit scene with an Eggo, a push gate only she can open, and a three-wave ambush that ends the level.
-- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, swap, the Lv 3 talent, KO and retry, and a simple party burst (all four specials at once).
+- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, swap, the Lv 3 talent, KO and retry, and a simple Crit (all four specials at once).
 - Leveling: XP, bench XP, the d20 level-up shown as an effect in the world. A normal run ends at Lv 3, so everyone shows their first talent.
 - Enemies: Lab agent, rat. Pickups: Eggo, Coke, quarters.
 - Music: Static (title) and Mirkwood with its combat layer, jingles for level-up, recruit, clear and game over, about 20 effects, and speech blips for the four heroes plus Joyce. The scare plays the motif inverted.
@@ -104,11 +104,11 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Attack | Z / J | Hero's basic. Melee chains three hits |
 | Special | X / K | Costs MP. Hold for the Lv 6 variant where a hero has one |
 | Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
-| Party burst | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
+| Crit | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |
 
-Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and burst.
+Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.
@@ -116,7 +116,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - Feel: 2 to 5 frames of hit-stop, screen shake, a white flash, knockback, floating numbers, pixel dust.
 - Every real enemy attack has a red "!" and a 0.4 s wind-up, and each attack has its own telegraph shape, so color is never the only cue.
 - Specials spend MP. MP regenerates 4% per second. Benched heroes regenerate 6% MP and 2% HP per second.
-- Party burst: the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR PARTY BURST shows just under the HUD with no box behind it (the corner controls leave burst out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
+- Crit (the party move, not the per-hit crit above; the code calls it burst): the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR CRIT shows just under the HUD with no box behind it (the corner controls leave Crit out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
 - Status: burn, stun, slow, confuse, curse (Vecna's clock).
 - A KO'd hero drops out and the next swaps in. All four down returns you to the last light with XP kept.
 - Difficulty: Kid, Chief, Upside Down (enemy HP and damage ×0.7, ×1, ×1.4).
@@ -216,7 +216,7 @@ src/
   world/             stage format, collision, interactables, gates, checkpoints, stages/*.ts
   heroes/            roster, abilities, growth, bonds, barks
   enemies/           bestiary, ai, bosses/*.ts
-  combat/            hitboxes, damage, projectiles, status, party burst
+  combat/            hitboxes, damage, projectiles, status, Crit
   progression/       xp, level-up roll, talents
   audio/             engine, synth, sequencer, tracks/*.ts, sfx, voices, render
   story/             chapters, dialogue, cutscenes
@@ -247,7 +247,7 @@ Sub-agents start with small contexts, which is cheaper than one long thread doin
 |---|---|---|
 | Art | `src/gfx/`, the `?sheet=1` page | Font, palette helpers, sprite generator, the four heroes plus Joyce, agent, rat, portraits, woods tiles by day and night, FX, light pools, bulb and d20 HUD art |
 | Audio | `src/audio/` | Engine, synth, sequencer, Static and Mirkwood, jingles, effects, blips, offline render and metrics |
-| Rules | `src/combat/`, `src/progression/`, `src/heroes/`, `src/enemies/`, their tests | Damage, XP, the d20 level-up, talents, abilities for the four heroes, agent and rat AI, party burst, status effects. Pure TypeScript, no DOM |
+| Rules | `src/combat/`, `src/progression/`, `src/heroes/`, `src/enemies/`, their tests | Damage, XP, the d20 level-up, talents, abilities for the four heroes, agent and rat AI, Crit, status effects. Pure TypeScript, no DOM |
 
 3. **Phase 2, two agents in parallel**, briefed with the real APIs from phase 1.
 
@@ -282,7 +282,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 | 2 | Art: sprite generator, portraits, tiles, enemy and boss sprites, `?sheet=1` review page | Every hero, enemy and portrait reads correctly in a screenshot of the sheet |
 | 3 | World and dialogue: stage format, collision, interactables, darkness, lights, dialogue box | 1.1 is walkable, doors and lights work, text types out with blips |
 | 4 | Combat: hitboxes, attacks, enemy AI, damage, juice, items, KO and retry | Three heroes fight agents and rats with no console errors |
-| 5 | Progression: XP, d20 level-up, talents, bench XP, catch-up, bonds, swap, all 11 specials, party burst | The bot takes a hero from Lv 1 to 4 in 1.1 and the tests pass |
+| 5 | Progression: XP, d20 level-up, talents, bench XP, catch-up, bonds, swap, all 11 specials, Crit | The bot takes a hero from Lv 1 to 4 in 1.1 and the tests pass |
 | 6 | Audio: engine, sequencer, SFX, blips, first four tracks, offline render and metrics | Title, Hawkins, Mirkwood and Lab render clean WAVs |
 | 7 | Chapter 1 end to end: prologue, three stages, Demogorgon, map screen, saves | Playable from title to the chapter 1 results screen. This is the vertical slice |
 | 8 | Chapters 2 to 5: stages, enemies, bosses, cutscenes, remaining tracks, ending | The bot clears every stage and every boss is beatable |
@@ -298,7 +298,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - Browser pane: screenshots of the title, map, every stage, dialogue, level-up and every boss; zero console errors; frame time under 4 ms.
 - Bot (`?bot=1&stage=2.2`): walks an A* path, fights, collects, and logs kills, XP and level-ups. Run on every stage.
 - Audio: every track rendered offline and checked for peak, limiter reduction and RMS. WAVs written to `music/`.
-- Manual checklist at the end: keyboard, gamepad and touch (portrait and landscape), swap, every special, party burst, KO and retry, save and load, pause, settings.
+- Manual checklist at the end: keyboard, gamepad and touch (portrait and landscape), swap, every special, Crit, KO and retry, save and load, pause, settings.
 
 ## Risks and cut line
 

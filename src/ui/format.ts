@@ -45,6 +45,55 @@ export function quarterFill(hp: number, hpMax: number, i: number): number {
   return hpMax > 0 ? clamp01((hp / hpMax) * 4 - i) : 0;
 }
 
+// ---------------------------------------------------------------- XP notches and MP casts
+/** Notches in the XP row under HP. */
+export const XP_NOTCHES = 10;
+
+/** Up to `n` equal notches across `w` px with a 1 px gap, as x offsets and widths. The positions are spread so the last
+ * notch ends on the edge. A bar too narrow for n notches of at least 1 px gets fewer. */
+export function notchSpans(w: number, n: number): { x: number; w: number }[] {
+  const count = Math.max(1, Math.min(n, Math.floor((w + 1) / 2)));
+  const out: { x: number; w: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const a = Math.round((i * (w + 1)) / count);
+    const b = Math.round(((i + 1) * (w + 1)) / count) - 1;
+    out.push({ x: a, w: b - a });
+  }
+  return out;
+}
+
+/** How full notch i of n is for a 0..1 fraction. */
+export function notchFill(frac: number, i: number, n: number): number {
+  return clamp01(frac * n - i);
+}
+
+export interface MpCell { x: number; w: number; fill: number; ready: boolean }
+/** The MP bar as cells to draw, and 1 px ticks to cut into it. */
+export interface MpBar { cells: MpCell[]; ticks: number[] }
+/** A cast segment needs this many px, gap included. Below it the bar is one piece with a tick per cast. */
+export const MP_MIN_PITCH = 3;
+
+/** The MP bar for a special that costs `cost`, in `w` px. One segment per cast: a segment is `ready` when it is full and
+ * holds a whole cast, so a bright one can be cast now and a dim one is still charging. The last segment is shorter when
+ * max MP is not a multiple of the cost. With too many casts for the width, it is one bar with a tick at every cast. */
+export function mpBar(w: number, mp: number, mpMax: number, cost: number): MpBar {
+  if (!(mpMax > 0)) return { cells: [], ticks: [] };
+  const casts = cost > 0 ? Math.ceil(mpMax / cost) : 0;
+  const pitch = casts > 0 ? Math.floor((w + 1) / casts) : 0;
+  if (casts > 0 && pitch >= MP_MIN_PITCH) {
+    const cells: MpCell[] = [];
+    for (let i = 0; i < casts; i++) {
+      const len = Math.min(cost, mpMax - i * cost);
+      const fill = clamp01((mp - i * cost) / len);
+      cells.push({ x: i * pitch, w: Math.max(2, Math.round(((pitch - 1) * len) / cost)), fill, ready: fill >= 1 && len >= cost });
+    }
+    return { cells, ticks: [] };
+  }
+  const ticks: number[] = [];
+  if (cost > 0) for (let k = 1; k * cost < mpMax; k++) ticks.push(Math.round((w * k * cost) / mpMax));
+  return { cells: [{ x: 0, w, fill: clamp01(mp / mpMax), ready: mp >= cost }], ticks };
+}
+
 // ---------------------------------------------------------------- clocks and numbers
 /** Frames to m:ss. Seconds are floored and minutes do not wrap. */
 export function formatTime(frames: number, fps = 60): string {

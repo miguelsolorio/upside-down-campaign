@@ -104,28 +104,48 @@ export function drawRoom(ctx: Ctx, struck: boolean): void {
   r(ctx, 240, 24, 14, 1, 'orange');
 }
 
-/** Chair backs and seats for the three kids at the sides. Drawn before the kids. */
-export function drawChairs(ctx: Ctx): void {
-  r(ctx, 70, 93, 3, 19, 'soil1');
-  r(ctx, 70, 109, 18, 4, 'soil2');
-  r(ctx, 70, 117, 3, 24, 'soil1');
-  r(ctx, 70, 133, 18, 4, 'soil2');
-  r(ctx, 185, 99, 3, 19, 'soil1');
-  r(ctx, 168, 115, 20, 4, 'soil2');
+/**
+ * Which kids sit on a chair and which side of them the chair back is on (-1 left, 1 right).
+ * The back is behind the kid, so it matches the way they face.
+ */
+const CHAIRS: readonly { kid: 'dustin' | 'lucas' | 'will'; back: -1 | 1 }[] = [
+  { kid: 'dustin', back: -1 },
+  { kid: 'will', back: -1 },
+  { kid: 'lucas', back: 1 },
+];
+
+/**
+ * One chair, side on, sized to the kid standing at feet x, y (a sprite about 16 tall): the seat is at hip height,
+ * the back reaches the shoulders and the legs are the last three pixels down to the floor.
+ */
+function chair(ctx: Ctx, x: number, y: number, back: -1 | 1): void {
+  const left = back < 0 ? x - 8 : x - 3;
+  const backX = back < 0 ? left : left + 9;
+  r(ctx, left, y - 6, 11, 3, 'soil2');
+  r(ctx, left, y - 6, 11, 1, 'soil3');
+  r(ctx, backX, y - 12, 2, 9, 'soil1');
+  r(ctx, backX, y - 12, 2, 1, 'soil2');
+  r(ctx, left, y - 3, 2, 3, 'soil1');
+  r(ctx, left + 9, y - 3, 2, 3, 'soil1');
 }
 
-/** The table: top, legs, shadow on the rug, the map, dice, snacks. */
+/** Chairs for the three kids at the sides. Drawn before the kids. */
+export function drawChairs(ctx: Ctx): void {
+  for (const { kid, back } of CHAIRS) chair(ctx, SEATS[kid].x, SEATS[kid].y, back);
+}
+
+/** The table: top, legs, shadow on the rug, the map, dice, snacks. The front face is 9 px high, well under a kid's 16. */
 export function drawTable(ctx: Ctx): void {
   const { x, y, w } = TABLE;
-  fade(ctx, 0.5, () => r(ctx, x + 4, y + 42, w - 8, 5, 'ink'));
-  r(ctx, x + 4, y + 24, 4, 20, 'soil1');
-  r(ctx, x + w - 8, y + 24, 4, 20, 'soil1');
-  r(ctx, x + 4, y + 24, 1, 20, 'soil0');
-  r(ctx, x + w - 8, y + 24, 1, 20, 'soil0');
+  fade(ctx, 0.5, () => r(ctx, x + 4, y + 31, w - 8, 4, 'ink'));
+  r(ctx, x + 4, y + 24, 4, 9, 'soil1');
+  r(ctx, x + w - 8, y + 24, 4, 9, 'soil1');
+  r(ctx, x + 4, y + 24, 1, 9, 'soil0');
+  r(ctx, x + w - 8, y + 24, 1, 9, 'soil0');
   r(ctx, x, y, w, 24, 'soil3');
   r(ctx, x, y, w, 1, 'sand');
-  r(ctx, x, y + 24, w, 5, 'soil2');
-  r(ctx, x, y + 29, w, 1, 'soil0');
+  r(ctx, x, y + 24, w, 3, 'soil2');
+  r(ctx, x, y + 27, w, 1, 'soil0');
   for (const [gx, gy, gw] of [[96, 108, 18], [140, 125, 20], [120, 110, 12], [150, 118, 10]] as const) r(ctx, gx, gy, gw, 1, 'soil2');
 
   // The map: parchment, a label, a forest, a creek and a cave mouth with a red X.

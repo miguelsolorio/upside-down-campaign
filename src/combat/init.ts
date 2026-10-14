@@ -57,7 +57,7 @@ export function createState(opts: SimOptions): S {
   const s: S = {
     grid: opts.grid, rng: createRng(seed), frng: createRng((seed ^ 0x9e3779b9) >>> 0),
     mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], frame: 0,
-    heroes, active: 0, swapCd: 0, trailX, trailY, trailHead: TRAIL - 1,
+    heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1,
     enemies: [], projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [], npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
     burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, over: false, nextUid: 1, nextDrop: 1,

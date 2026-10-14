@@ -3,10 +3,11 @@
 import type { ActorView, Floater, PropView, SimView, Vec2 } from '../core/types.ts';
 import type { Camera } from '../core/camera.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
-import { keyText, levelHintLines } from '../core/bindings.ts';
+import { controlRows, keyText } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped, dither } from '../ui/kit.ts';
+import { clamp01 } from '../ui/format.ts';
 import { drawActor, drawFx, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
@@ -113,12 +114,20 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   ctx.restore();
 }
 
-/** A two-line controls reminder at the bottom of the screen, for a few seconds when the story is skipped. */
-export function drawControlsHint(ctx: Ctx, t: number, total: number): void {
-  if (t > total - 60 && Math.floor(t / 4) % 2 === 0) return;
-  const lines = levelHintLines();
-  lines.forEach((line, k) => {
-    drawText(ctx, line, SCREEN_W / 2, 209 - (lines.length - 1 - k) * 9, k === 0 ? 'bone' : 'mist', { align: 'center', shadow: true });
+/** Key and word colors from bright to faded. The last step is one neutral grey, dim enough to ignore and still readable. */
+const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mist'], ['slate', 'slate']];
+
+/**
+ * The controls stacked tight in the bottom left corner. `fade` runs 0 to 1: keys in amber and words in bone at 0,
+ * a neutral grey at 1, in palette steps rather than alpha.
+ */
+export function drawControlsCorner(ctx: Ctx, fade = 0): void {
+  const [keyColor, wordColor] = CORNER_STEPS[Math.min(CORNER_STEPS.length - 1, Math.floor(clamp01(fade) * CORNER_STEPS.length))] as [ColorName, ColorName];
+  const rows = controlRows();
+  rows.forEach((r, i) => {
+    const y = 215 - (rows.length - 1 - i) * 8;
+    const w = drawText(ctx, r.keys, 4, y, keyColor, { shadow: true });
+    drawText(ctx, r.what, 4 + w + 4, y, wordColor, { shadow: true });
   });
 }
 

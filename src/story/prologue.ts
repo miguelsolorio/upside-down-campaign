@@ -192,7 +192,7 @@ export function createPrologueScene(opts: { onDone(): void }): Scene {
     enter() { audio.music(null); },
     update(g) {
       frame++;
-      // Tab skips the whole prologue, roll and flicker included. So does the skip-story setting.
+      // The skip key skips the whole prologue, roll and flicker included. So does the skip-story setting.
       if (!finished && (skipsDialogue() || g.input.pressed('skip'))) { finish(); return; }
       const s: Step | undefined = STEPS[idx];
       if (!s || finished) return;

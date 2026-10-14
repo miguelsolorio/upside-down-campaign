@@ -20,7 +20,7 @@ import { getStage } from './stage.ts';
 import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker } from './puzzles.ts';
-import { drawCallout, drawControlsHint, drawFade, drawFlash, drawPuzzleHighlight, drawPuzzleTip, drawWorld } from './render.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawPuzzleHighlight, drawPuzzleTip, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -30,6 +30,9 @@ const IDLE: SimInput = {
 /** Interact reaches this far (px) from the hero's feet to a lights prop. */
 const LIGHT_REACH = 20;
 const SPEECH_FRAMES = 90;
+/** How far (px) from the start the party goes before the controls in the corner start to fade, and how long the fade takes. */
+const HOME_RADIUS = 120;
+const HINT_FADE_FRAMES = 90;
 const WIPE_FRAMES = 100;
 const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
@@ -63,9 +66,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let checkpoint: Checkpoint = { x: stage.start.x, y: stage.start.y, state: { fired: [], cleared: [] } };
   let prompt: PropView | null = null;
   let speech: { who: HeroId; text: string; t: number } | null = null;
-  /** Ticks since the level began. Drives the controls reminder shown when the story is skipped. */
-  let hintT = 0;
-  const HINT_FRAMES = 540;
+  /** Set once the party has walked away from the yard it starts in. The corner controls fade after that. */
+  let leftHome = false;
+  let hintFade = 0;
   let speechCd = 0;
   let scare: { t: number; done: () => void } | null = null;
   let wipeT = -1;
@@ -324,6 +327,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (!frozen) {
         const p = sim.heroPos();
         director.tick((p.x / TILE) | 0, ((p.y - 4) / TILE) | 0);
+        if (!leftHome && Math.hypot(p.x - stage.start.x, p.y - stage.start.y) > HOME_RADIUS) leftHome = true;
         puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: view.props, hero: p });
       }
       if (scare) stepScare(scare);
@@ -335,9 +339,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       audio.intensity(sim.aggro() ? 1 : 0);
       cameraFollow(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
       if (!scare) glowLevel = 1;
+      if (leftHome) hintFade = Math.min(1, hintFade + 1 / HINT_FADE_FRAMES);
       if (speech && ++speech.t > SPEECH_FRAMES) speech = null;
       if (speechCd > 0) speechCd--;
-      hintT++;
       if (saved && ++saved.t > SAVED_FRAMES) saved = null;
       const me = view.hud.party.find((m) => m.active);
       if (me && !me.ko && me.hp / me.hpMax < 0.25 && g.frame % 60 === 0) speak(me.id, 'lowHp');
@@ -358,7 +362,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
-      if (skipsDialogue() && hintT < HINT_FRAMES) drawControlsHint(ctx, hintT, HINT_FRAMES);
+      drawControlsCorner(ctx, hintFade);
       const tip = skipsDialogue() ? puzzles.tip() : null;
       if (tip) drawPuzzleTip(ctx, tip.tip);
       dialog.draw(ctx);

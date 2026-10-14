@@ -11,7 +11,10 @@ import { hitEnemy } from './damage.ts';
 import { dist } from './space.ts';
 import { addFx, dust, flashScreen, floater, hitstop, schedule, sfx, shake } from './fx.ts';
 
+/** Frames after a swap that lands its shockwave and invulnerability before the next one does. */
 export const SWAP_COOLDOWN = 90;
+/** Frames after any swap before another is allowed. Short enough to cycle through the party at a tap a beat. */
+export const SWAP_LOCK = 6;
 export const SWAP_INVULN = 20;
 const FORCED_SWAP_COOLDOWN = 45;
 const SWAP_RADIUS = 34;
@@ -51,25 +54,30 @@ function shockwave(s: S, h: Hero): void {
   }
 }
 
-/** Swaps the active hero to slot `idx`. Forced swaps (a KO) ignore the cooldown. */
+/**
+ * Swaps the active hero to slot `idx`. Any swap is allowed once the short lock is over, so the party can be cycled
+ * quickly. Only a swap after the full cooldown, or a forced one after a KO, brings the invulnerability and the shockwave.
+ * Quick swaps in between don't restart that cooldown, so cycling never costs the next real swap anything.
+ */
 export function trySwap(s: S, idx: number, forced = false): boolean {
   const to = s.heroes[idx];
   if (!to || idx === s.active || to.ko) return false;
-  if (!forced && s.swapCd > 0) return false;
+  if (!forced && s.swapLock > 0) return false;
+  const charged = forced || s.swapCd <= 0;
   const from = activeHero(s);
   from.actId++; from.actT = 0; from.act = null; from.dashT = 0; from.vx = 0; from.vy = 0;
   to.x = from.x; to.y = from.y;
   to.dir = from.dir; to.aim = from.aim; to.vx = 0; to.vy = 0;
   to.actId++; to.actT = 0; to.act = null; to.dashT = 0; to.hurtT = 0;
   to.z = 12;
-  to.invuln = SWAP_INVULN;
-  to.blink = true;
+  if (charged) { to.invuln = SWAP_INVULN; to.blink = true; }
   s.active = idx;
-  s.swapCd = forced ? FORCED_SWAP_COOLDOWN : SWAP_COOLDOWN;
+  s.swapLock = SWAP_LOCK;
+  if (charged) s.swapCd = forced ? FORCED_SWAP_COOLDOWN : SWAP_COOLDOWN;
   s.buf.attack = 0; s.buf.special = 0; s.buf.dash = 0;
   s.events.push({ t: 'swap', from: from.id, to: to.id });
   sfx(s, 'swap');
-  schedule(s, 8, () => { if (activeHero(s) === to && !to.ko) shockwave(s, to); });
+  if (charged) schedule(s, 8, () => { if (activeHero(s) === to && !to.ko) shockwave(s, to); });
   return true;
 }
 

@@ -48,10 +48,10 @@ export const BIND_ROWS: readonly BindRow[] = [
 
 export const DEFAULT_BINDINGS: Record<BindAction, readonly [string | null, string | null]> = {
   up: ['KeyW', null], down: ['KeyS', null], left: ['KeyA', null], right: ['KeyD', null],
-  attack: ['KeyJ', 'KeyZ'], special: ['KeyK', 'KeyX'], dash: ['KeyL', 'KeyC'],
-  swapPrev: ['KeyQ', null], swapNext: ['KeyE', null],
+  attack: ['KeyZ', 'KeyJ'], special: ['KeyX', 'KeyK'], dash: ['KeyC', 'KeyL'],
+  swapPrev: ['KeyQ', null], swapNext: ['ShiftLeft', 'Tab'],
   swap1: ['Digit1', null], swap2: ['Digit2', null], swap3: ['Digit3', null], swap4: ['Digit4', null],
-  burst: ['KeyU', 'KeyV'], interact: ['Space', null], skip: ['Tab', null], pause: ['KeyP', null], mute: ['KeyM', null],
+  burst: ['KeyU', 'KeyV'], interact: ['Space', null], skip: ['KeyT', null], pause: ['KeyP', null], mute: ['KeyM', null],
 };
 
 /** Keys that always work and can't be rebound: menu navigation and the way out of anything. */
@@ -281,38 +281,21 @@ function pickLabels(): string[] {
   return (['swap1', 'swap2', 'swap3', 'swap4'] as const).map(labelOf);
 }
 
-/** Greedy line packing for the hint strips. */
-export function packLines(items: string[], max = 42, gap = '  '): string[] {
-  const lines: string[] = [];
-  let line = '';
-  for (const it of items) {
-    if (!it) continue;
-    if (!line) line = it;
-    else if (line.length + gap.length + it.length <= max) line += gap + it;
-    else { lines.push(line); line = it; }
-  }
-  if (line) lines.push(line);
-  return lines;
-}
+export interface HintRow { keys: string; what: string }
 
-/** The controls reminder on the title screen. */
-export function titleHintLines(max = 42): string[] {
-  const picks = pickLabels();
-  return packLines([
-    `${moveLabel()} MOVE`, `${labelOf('attack')} ATTACK`, `${labelOf('special')} SPECIAL`, `${labelOf('dash')} DASH`,
-    `${labelOf('swapPrev')} ${labelOf('swapNext')} SWAP`,
-    // A controller has no direct pick: the bumpers are the only way to swap.
-    onPad() ? '' : `${picks.join('') === '1234' ? '1-4' : picks.join(' ')} PICK`,
-    `${labelOf('burst')} BURST`, `${onPad() ? labelOf('pause') : 'ESC'} PAUSE`,
-  ], max);
-}
-
-/** The controls reminder shown over the level when the story is skipped. */
-export function levelHintLines(max = 42): string[] {
-  return packLines([
-    `${moveLabel()} MOVE`, `${labelOf('attack')} ATTACK`, `${labelOf('special')} SPECIAL`, `${labelOf('dash')} DASH`,
-    `${labelOf('swapPrev')} ${labelOf('swapNext')} SWAP`, `${labelOf('interact')} LIGHTS`, `${onPad() ? labelOf('pause') : 'ESC'} PAUSE`,
-  ], max);
+/**
+ * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
+ * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
+ * A keyboard shows the one key that cycles to the next hero. A controller has a bumper each way.
+ */
+export function controlRows(): HintRow[] {
+  return [
+    { keys: labelOf('attack'), what: 'ATTACK' },
+    { keys: labelOf('special'), what: 'SPECIAL' },
+    { keys: labelOf('dash'), what: 'DASH' },
+    { keys: onPad() ? `${labelOf('swapPrev')} ${labelOf('swapNext')}` : labelOf('swapNext'), what: 'SWAP' },
+    { keys: labelOf('burst'), what: 'BURST' },
+  ];
 }
 
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.

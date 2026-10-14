@@ -73,7 +73,7 @@ test('a controller player is never told to press a key', () => {
     for (const l of allLines) {
       const shown = keyText(l.text);
       assert.ok(!/\{|\}/.test(shown), `${l.id}[${l.i}] has an unfilled token: ${shown}`);
-      assert.ok(!/\b(WASD|SPACE|TAB|ESC|[JKLQEUV])\b/.test(shown), `${l.id}[${l.i}] names a key: ${shown}`);
+      assert.ok(!/\b(WASD|SPACE|TAB|SHIFT|ESC|[JKLQEUVZC])\b/.test(shown), `${l.id}[${l.i}] names a key: ${shown}`);
     }
     const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
     assert.match(text('l1_tut_attack'), /\bA attacks\b/);
@@ -110,19 +110,19 @@ test('speakers and expressions are valid', () => {
 test('tutorial scripts teach the real keys', () => {
   // Lines name keys as {tokens}. With the default bindings they read as the keys the game ships with.
   const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
-  assert.match(text('l1_tut_attack'), /\bJ\b/);
-  assert.match(text('l1_tut_special'), /\bK\b/);
+  assert.match(text('l1_tut_attack'), /\bZ\b/);
+  assert.match(text('l1_tut_special'), /\bX\b/);
   assert.match(text('l1_tut_special'), /\bMP\b/);
-  assert.match(text('l1_tut_swap'), /\bQ\b.*\bE\b/);
+  assert.match(text('l1_tut_swap'), /\bQ\b.*\bSHIFT\b/);
   assert.match(text('l1_tut_swap'), /1 to 4/);
-  assert.match(text('l1_agents'), /\bL\b/);
+  assert.match(text('l1_agents'), /\bC\b/);
   assert.match(text('l1_start'), /\bSPACE\b/);
   assert.match(text('l1_start'), /WASD/);
-  assert.match(text('l1_push_hint'), /\bJ\b/);
+  assert.match(text('l1_push_hint'), /\bZ\b/);
   // The puzzle hints name the hero's slot as well as the attack key.
-  assert.match(text('l1_gate_hint'), /with 3, Q or E/);
-  assert.match(text('l1_gate_hint'), /\bJ\b/);
-  assert.match(text('l1_push_hint'), /with 4, Q or E/);
+  assert.match(text('l1_gate_hint'), /with 3, Q or SHIFT/);
+  assert.match(text('l1_gate_hint'), /\bZ\b/);
+  assert.match(text('l1_push_hint'), /with 4, Q or SHIFT/);
 });
 
 test('each script is voiced by the people who should be in it', () => {

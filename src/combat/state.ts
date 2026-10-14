@@ -157,7 +157,10 @@ export interface S {
   frame: number;
   heroes: Hero[];
   active: number;
+  /** Frames until a swap brings the invulnerability and shockwave again. */
   swapCd: number;
+  /** Frames until any swap is allowed. */
+  swapLock: number;
   trailX: Float32Array; trailY: Float32Array; trailHead: number;
   enemies: Enemy[];
   projs: Proj[];

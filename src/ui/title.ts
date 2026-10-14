@@ -1,6 +1,6 @@
 // The title screen: the party at the edge of Mirkwood with the Upside Down glowing behind the trees. PRESS START (or
 // CONTINUE and NEW GAME) and OPTIONS sit under the logo, and START sends the party walking into the woods.
-// No key hints are drawn here. P still opens the options and Tab still flips skip story, and both are also on screen
+// No key hints are drawn here. P still opens the options and T still flips skip story, and both are also on screen
 // as a menu row and a status line.
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';

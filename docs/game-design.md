@@ -104,7 +104,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Attack | J / Z | Hero's basic. Melee chains three hits |
 | Special | K / X | Costs MP. Hold for the Lv 6 variant where a hero has one |
 | Dash | L / C | 12 frames of invulnerability, 0.7 s cooldown |
-| Swap | Q / E or 1–4 | 1.5 s cooldown. The incoming hero lands a small shockwave |
+| Swap | Shift or Tab (next), Q (back), 1–4 (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
 | Party burst | U / V | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |

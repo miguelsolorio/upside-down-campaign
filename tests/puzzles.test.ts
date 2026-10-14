@@ -153,6 +153,6 @@ test('puzzle labels and tips follow the copy rules and fit the bottom strip', ()
     // 256 px at 6 px a glyph is 42 columns. With the default keys a tip stays on one row, so no word is left alone below it.
     assert.ok(fitsBox(shown, 42, 1), `${p.id}: "${shown}" is ${shown.length} characters, over one row of 42`);
   }
-  assert.match(keyText(S.puzzles[0]?.tip ?? ''), /\b3\b.*\bJ\b/, 'the gate tip names Lucas\'s slot and the attack key');
-  assert.match(keyText(S.puzzles[1]?.tip ?? ''), /\b4\b.*\bJ\b/, 'the log tip names Eleven\'s slot and the attack key');
+  assert.match(keyText(S.puzzles[0]?.tip ?? ''), /\b3\b.*\bZ\b/, 'the gate tip names Lucas\'s slot and the attack key');
+  assert.match(keyText(S.puzzles[1]?.tip ?? ''), /\b4\b.*\bZ\b/, 'the log tip names Eleven\'s slot and the attack key');
 });

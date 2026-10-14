@@ -1,13 +1,15 @@
 // The title screen: the party at the edge of Mirkwood with the Upside Down glowing behind the trees. PRESS START (or
 // CONTINUE and NEW GAME) and OPTIONS sit under the logo, and START sends the party walking into the woods.
 // No key hints are drawn here. P still opens the options and T still flips skip story, and both are also on screen
-// as a menu row and a status line.
+// as a menu row and a status line. A mouse can pick the rows, and a click on the status line flips it.
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
 import { hasSave } from '../core/save.ts';
+import { inRect } from '../core/pointer.ts';
+import type { Rect } from '../core/pointer.ts';
 import type { HeroId } from '../core/types.ts';
-import { drawIcon, drawLogo, drawPanel, drawText, paintGlow } from '../gfx/index.ts';
+import { drawIcon, drawLogo, drawPanel, drawText, paintGlow, textWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { LAUNCH_FRAMES, launchLevel } from './format.ts';
 import { bigText, blinkOn, box, dither } from './kit.ts';
@@ -25,6 +27,14 @@ const PARTY: { id: HeroId; x: number; y: number }[] = [
   { id: 'eleven', x: 148, y: 192 },
   { id: 'lucas', x: 186, y: 188 },
 ];
+
+const SKIP_Y = 213;
+const skipLine = (on: boolean): string => `SKIP STORY: ${on ? 'ON' : 'OFF'}`;
+/** The status line's box for the mouse, a little bigger than its text. */
+function skipBox(on: boolean): Rect {
+  const w = textWidth(skipLine(on));
+  return { x: 128 - w / 2 - 4, y: SKIP_Y - 2, w: w + 8, h: 11 };
+}
 
 /** The big prompt blinks while it waits, flickers once it is pressed, then holds. */
 function promptOn(t: number, launch: number): boolean {
@@ -57,7 +67,9 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
   let launch = 0;
   let mode: StartMode = 'new';
   let settingsMenu: Menu | null = null;
-  const main: Menu = { sel: 0, items: [] };
+  /** The mouse is over the skip story line. */
+  let skipHot = false;
+  const main: Menu = { sel: 0, items: [], onMove: () => { armed = false; } };
   const begin = (m: StartMode): void => { mode = m; launch = 1; };
   const openOptions = (): void => { open = true; if (settingsMenu) settingsMenu.sel = 0; };
   const build = (g: Game): Menu => {
@@ -81,13 +93,17 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       ];
   };
 
-  /** The menu, centered. With no save the first row is the big prompt and OPTIONS sits under it. */
+  /** The menu, centered. With no save the first row is the big prompt and OPTIONS sits under it. Each row's box, for the
+   * mouse, runs from the cursor to the same distance past the text. */
   const drawMain = (ctx: Ctx): void => {
     let y = 78;
     let first = 0;
+    const boxes: Menu['boxes'] = [];
     if (!saved) {
       const on = main.sel === 0;
       if (promptOn(t, launch) || !on) bigText(ctx, 'PRESS START', 128, y, on ? 'white' : 'mist', 2);
+      const w = textWidth('PRESS START') * 2;
+      boxes.push({ x: 128 - w / 2 - 6, y: y - 4, w: w + 12, h: 22 });
       y += 24;
       first = 1;
     }
@@ -99,8 +115,10 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       const on = i === main.sel;
       if (on) drawIcon(ctx, 'cursor', x - 11, y - 1, t);
       drawText(ctx, text, x, y, on ? 'yellow' : 'bone', { shadow: true });
+      boxes.push({ x: x - 12, y: y - 3, w: textWidth(text) + 24, h: 13 });
       y += 13;
     }
+    main.boxes = boxes;
   };
 
   return {
@@ -125,17 +143,22 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
         return;
       }
       const m = settingsMenu ?? build(g);
+      skipHot = false;
       if (open) {
         updateMenu(m, g);
         if (i.pressed('cancel') || i.pressed('pause')) { open = false; audio.sfx('cancel'); }
         return;
       }
       if (i.pressed('skip')) { toggleSkipStory(g); return; }
+      const skipAt = skipBox(g.settings.skipDialogue);
+      const ptr = i.hover();
+      skipHot = !!ptr && inRect(ptr, skipAt);
+      if (skipHot) i.point();
+      const click = i.clicked();
+      if (click && inRect(click, skipAt)) { toggleSkipStory(g); return; }
       // A controller's Start button picks the highlighted row, the same as A.
       if (i.pressed('start')) { audio.sfx('confirm'); main.items[main.sel]?.activate?.(); return; }
-      const before = main.sel;
       updateMenu(main, g);
-      if (main.sel !== before) armed = false;
       if (launch > 0 || open) return;
       if (i.pressed('pause') || i.pressed('special')) { openOptions(); audio.sfx('select'); }
     },
@@ -160,7 +183,13 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       drawMain(ctx);
 
       const skip = g.settings.skipDialogue;
-      drawText(ctx, `SKIP STORY: ${skip ? 'ON' : 'OFF'}`, 128, 213, skip ? 'yellow' : 'mist', { align: 'center', shadow: true });
+      const skipColor = skip ? 'yellow' : 'mist';
+      drawText(ctx, skipLine(skip), 128, SKIP_Y, skipColor, { align: 'center', shadow: true });
+      // The mouse over the status line underlines it, like a link.
+      if (skipHot && !open && launch === 0) {
+        const w = textWidth(skipLine(skip));
+        box(ctx, 128 - w / 2, SKIP_Y + 8, w - 1, 1, skipColor);
+      }
       // A controller press can't always wake the browser's audio. Say so rather than leave the game silent.
       if (!open && g.input.device() === 'gamepad' && !audio.ready()) {
         drawText(ctx, 'CLICK THE GAME ONCE FOR SOUND', 128, 202, 'amber', { align: 'center', shadow: true });

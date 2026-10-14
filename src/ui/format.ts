@@ -173,6 +173,12 @@ export function stepVolume(v: number, dir: -1 | 1): number {
 export function volSegments(v: number): number {
   return Math.round(clamp01(v) * 10);
 }
+/** A click on segment k (0 to 9) of a ten segment bar lights it and every one before it. A click on the top lit one turns
+ * it off, so a mouse can reach zero. */
+export function clickSegments(lit: number, k: number): number {
+  const at = Math.max(0, Math.min(9, k));
+  return lit === at + 1 ? at : at + 1;
+}
 
 const SHAKE_STEPS = [0, 0.5, 1];
 /** Screen shake cycles off, half, full. Anything in between snaps to the nearest step first. */

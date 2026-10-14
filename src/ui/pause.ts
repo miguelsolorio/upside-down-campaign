@@ -28,6 +28,7 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
     menu = {
       sel: 0,
       items: [resume, ...settingItems(g), twice('START OVER', opts.onStartOver), twice('QUIT', opts.onQuit)],
+      onMove: () => { armed = null; },
     };
     return menu;
   };
@@ -44,9 +45,7 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
         opts.onResume();
         return;
       }
-      const before = m.sel;
       updateMenu(m, g);
-      if (m.sel !== before) armed = null;
     },
     draw(ctx, g) {
       dither(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink', 2);

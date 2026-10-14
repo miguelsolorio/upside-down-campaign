@@ -278,3 +278,88 @@ test('an offer lasts until the next poll', () => {
   i.poll();
   assert.ok(!i.offered('skip'));
 });
+
+/** A stand-in game canvas drawn at 2x from the page's top left, with its own listeners. */
+function fakeCanvas() {
+  const on = new Map<string, Handler[]>();
+  const canvas = {
+    style: { cursor: '' },
+    addEventListener: (type: string, fn: Handler) => { on.set(type, [...(on.get(type) ?? []), fn]); },
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 512, height: 448 }),
+  };
+  const send = (type: string, e: Record<string, unknown> = {}): void => { for (const fn of on.get(type) ?? []) fn(e); };
+  return { canvas: canvas as unknown as HTMLCanvasElement, style: canvas.style, send };
+}
+const at = (x: number, y: number, pointerType = 'mouse', button = 0) => ({ clientX: x * 2, clientY: y * 2, pointerType, button });
+
+test('only the mouse hovers, and moved is true just for the tick after it moves', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('pointermove', at(40, 30));
+  assert.deepEqual(i.hover(), { x: 40, y: 30 }, 'the spot is live');
+  assert.ok(!i.moved(), 'moved waits for the next poll');
+  i.poll();
+  assert.ok(i.moved());
+  i.poll();
+  assert.ok(!i.moved(), 'a resting mouse has not moved');
+  assert.deepEqual(i.hover(), { x: 40, y: 30 }, 'and is still there');
+  c.send('pointerleave');
+  assert.equal(i.hover(), null);
+  c.send('pointermove', at(10, 10, 'touch'));
+  c.send('pointerdown', at(10, 10, 'touch'));
+  i.poll();
+  assert.equal(i.hover(), null, 'a finger never hovers');
+  assert.ok(!i.moved());
+  assert.deepEqual(i.clicked(), { x: 10, y: 10 }, 'but it does click');
+});
+
+test('a mouse click lasts one tick, and only the primary button counts', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('pointerdown', at(100, 50));
+  i.poll();
+  assert.deepEqual(i.clicked(), { x: 100, y: 50 });
+  assert.deepEqual(i.hover(), { x: 100, y: 50 });
+  i.poll();
+  assert.equal(i.clicked(), null);
+  c.send('pointerdown', at(100, 50, 'mouse', 2));
+  i.poll();
+  assert.equal(i.clicked(), null, 'a right click is not a click');
+});
+
+test('the wheel gives one step per 50 px or per line, keeps the leftover going the same way, and ignores a pinch', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('wheel', { deltaY: 100, deltaMode: 0 });
+  i.poll();
+  assert.equal(i.wheel(), 2);
+  i.poll();
+  assert.equal(i.wheel(), 0);
+  c.send('wheel', { deltaY: 30, deltaMode: 0 });
+  i.poll();
+  assert.equal(i.wheel(), 0, 'a small trackpad nudge waits');
+  c.send('wheel', { deltaY: 30, deltaMode: 0 });
+  i.poll();
+  assert.equal(i.wheel(), 1, 'until there is enough');
+  c.send('wheel', { deltaY: -1, deltaMode: 1 });
+  i.poll();
+  assert.equal(i.wheel(), -1, 'lines count one each, and turning back drops the leftover');
+  c.send('wheel', { deltaY: 400, deltaMode: 0, ctrlKey: true });
+  i.poll();
+  assert.equal(i.wheel(), 0);
+});
+
+test('the hand cursor shows while a scene points at something, one tick behind', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  i.poll();
+  i.point();
+  assert.equal(c.style.cursor, '');
+  i.poll();
+  assert.equal(c.style.cursor, 'pointer');
+  i.point();
+  i.poll();
+  assert.equal(c.style.cursor, 'pointer');
+  i.poll();
+  assert.equal(c.style.cursor, '', 'gone once nothing asks');
+});

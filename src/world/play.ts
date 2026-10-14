@@ -335,6 +335,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       view = sim.view();
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
+      // A benched hero's face under the mouse is a button.
+      const ptr = g.input.hover();
+      if (ptr && !bot && slotAt(view.hud.party, ptr.x, ptr.y) >= 0) g.input.point();
 
       if (!frozen) {
         const p = sim.heroPos();
@@ -382,7 +385,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (hint) drawPuzzleCaret(ctx, hint.prop, cam, g.frame);
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
-      const ptr = g.input.pointer();
+      const ptr = g.input.hover();
       const hover = ptr && !overlay && !dialog.active && !bot ? slotAt(view.hud.party, ptr.x, ptr.y) : -1;
       drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, device: g.input.device() });
       if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');

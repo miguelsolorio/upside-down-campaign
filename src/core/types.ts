@@ -136,6 +136,8 @@ export type TimeOfDay = 'day' | 'night';
 export interface PartyHud {
   id: HeroId; name: string; level: number;
   hp: number; hpMax: number; mp: number; mpMax: number;
+  /** What the hero's special costs, so the MP bar can show casts. */
+  mpCost: number;
   xp: number; xpNext: number; ko: boolean; active: boolean;
 }
 export interface HudView {
@@ -223,7 +225,8 @@ export type SimEvent =
 export type SimSpawn =
   | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
-  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; cam?: CamDef }
+  /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. */
+  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; cam?: CamDef }
   | { kind: 'npc'; id: CharId; tx: number; ty: number; dir: Dir };
 
 export interface PartySeed {
@@ -318,7 +321,7 @@ export type BarkEvent = 'swapIn' | 'levelUp' | 'ko' | 'lowHp' | 'special' | 'kil
 // ---------------------------------------------------------------- gfx vocabulary
 export type IconId =
   | 'bulbRed' | 'bulbYellow' | 'bulbGreen' | 'bulbBlue' | 'bulbOff'
-  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'cursorDown' | 'cursorUp' | 'heart' | 'mpGem';
+  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'cursorDown' | 'cursorUp' | 'heart';
 export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 

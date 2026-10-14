@@ -155,7 +155,7 @@ test('level 2 puzzle scripts name the hero slot and the key, like the level 1 hi
   assert.match(text('l2_push_hint'), /with 4, C or V/);
   assert.match(text('l2_push_hint'), /\bZ\b/);
   assert.match(text('l2_start'), /\bSPACE\b/);
-  assert.match(text('l2_lockdown_start'), /\bU\b/);
+  assert.match(text('l2_lockdown_start'), /press SPACE\./, 'Space is the burst key the prompts teach');
 });
 
 test('each script is voiced by the people who should be in it', () => {

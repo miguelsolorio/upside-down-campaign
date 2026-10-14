@@ -107,8 +107,12 @@ function iconCanvas(key: string, build: () => Px): HTMLCanvasElement {
   return c;
 }
 
+/** The quarter: a 7 px coin in the corner of the 8x8 icon. A lit rim on the top left, a shaded one on the bottom right,
+ * a bone face with a glint, and a stamped mark. r is the lit rim, s the shaded rim, f the face, w the glint, m the mark. */
+const QUARTER_ROWS = ['..rrr...', '.rfffs..', 'rfwmffs.', 'rffmffs.', 'rfffffs.', '.sfffs..', '..sss...', '........'];
+const QUARTER_PAL: Record<string, ColorName> = { r: 'grey3', s: 'grey2', f: 'bone', w: 'white', m: 'grey3' };
 function quarterPx(): Px {
-  return new Px(8, 8).ellipse(4, 4, 3.9, 3.9, 'grey2').ellipse(4, 4, 2.9, 2.9, 'bone').set(2, 2, 'white').set(3, 2, 'white').set(2, 3, 'white').rect(4, 4, 2, 2, 'grey3').set(3, 5, 'grey3');
+  return new Px(8, 8).art(QUARTER_ROWS, QUARTER_PAL);
 }
 
 /** 8x8 icons. t drives the blink of the arrow, the nudge of the cursor and the d20 glow. */

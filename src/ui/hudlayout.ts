@@ -13,6 +13,17 @@ export const CELL_H = 20;
 /** The d20 meter starts here, and the quarters and Inspiration end by here. The bench ends against the meter. */
 export const METER_LEFT = 238;
 export const MIDDLE_END = 158;
+/** The active hero's text, HP bar and XP notches start here, right of the portrait and its shortcut key. */
+export const LEFT_X = 25;
+/** Width the HP bar's segments are fitted into. The bar is shorter than this until max HP is high. */
+export const LEFT_W = 100;
+/** The MP readout sits in the name row: a tiny label, then a bar. Level 12 Eleven has the longest name and level,
+ * and they end before the label. The bar ends before the quarters. */
+export const MP_LABEL_X = 94;
+export const MP_BAR_X = 103;
+export const MP_BAR_W = 24;
+/** The quarter counter starts here, and the Inspiration timer sits under it. */
+export const MIDDLE_X = 130;
 /** The active hero's portrait box and its click cell. */
 export const ACTIVE_CELL = { x: 0, y: 0, w: 20, h: CELL_H };
 

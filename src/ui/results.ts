@@ -33,7 +33,8 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
     const y = 54 + i * 11;
     drawText(ctx, label, 34, y, 'mist');
     drawText(ctx, value, 222, y, color, { align: 'right' });
-    if (icon) drawIcon(ctx, 'quarter', 222 - textWidth(value) - 10, y - 1, t);
+    // The coin is 7 px, the same height as the text, so it sits level with it.
+    if (icon) drawIcon(ctx, 'quarter', 222 - textWidth(value) - 9, y, t);
   }
 
   return {

@@ -4,6 +4,7 @@ import { createState } from '../src/combat/init.ts';
 import { hurtHero } from '../src/combat/damage.ts';
 import { setReduceFlashing, setShakeScale } from '../src/combat/index.ts';
 import { ENEMY_DEFS } from '../src/enemies/index.ts';
+import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { arena, agent, inp, makeWhite, ofType, rat, run, sfxIds, tc, tf } from './sim-helpers.ts';
 import type { S } from '../src/combat/state.ts';
 import type { SimEvent, SimSpawn } from '../src/core/types.ts';
@@ -281,6 +282,7 @@ test('view: actors are y-sorted and include followers and npcs; the HUD lists th
   assert.deepEqual(v.hud.party.map((p) => p.id), ['mike', 'dustin', 'lucas']);
   assert.deepEqual(v.hud.party.map((p) => p.active), [true, false, false]);
   assert.equal(v.hud.party[0]?.xpNext, 18);
+  assert.deepEqual(v.hud.party.map((p) => p.mpCost), ['mike', 'dustin', 'lucas'].map((id) => HERO_DEFS[id as 'mike'].special.mp), 'the HUD knows what each special costs');
   assert.equal(v.hud.boss, null);
   assert.deepEqual(v.focus, sim.heroPos());
   assert.equal(v.items[0]?.kind, 'quarter');

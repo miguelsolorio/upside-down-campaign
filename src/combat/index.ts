@@ -35,6 +35,8 @@
 //   { t: 'spotted', propId } once per spotting. PropView.cam is the live cone: angle and half in radians, range in px.
 //   A shot lights it (hitBy defaults to 'shoot') and a lit camera is off for good, which openProps restores. Cameras are
 //   not solid. tank, rack and generator are solid by default and do nothing else.
+// - A prop spawned with smash: true (a camera, a console) also lights for any hero's basic attack that starts within
+//   18 px of it, aimed its way (props.ts), whatever its hitBy asks for.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

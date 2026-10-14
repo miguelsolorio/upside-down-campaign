@@ -1,5 +1,6 @@
 // The top strip. 256 by 20 px, opaque. Left: the active hero. Middle: quarters and Inspiration. Right: the bench and the d20.
 // HP is a segmented bar on both sides: flat for the active hero, upright beside each bench face. Same colors, same blink.
+// Everything else beside it is just as quiet: no frames. XP is ten yellow notches under HP, MP is one blue segment per cast.
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
@@ -8,18 +9,14 @@ import { settings } from '../core/settings.ts';
 import { drawBar, drawBarV, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { INSPIRATION_SECONDS } from '../progression/index.ts';
-import { bulbCount, bulbDark, bulbFill, clamp01, hpTone, isLowHp, quarterFill } from './format.ts';
+import { XP_NOTCHES, bulbCount, bulbDark, bulbFill, clamp01, hpTone, isLowHp, mpBar, notchFill, notchSpans, quarterFill } from './format.ts';
 import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
-import { slotRects } from './hudlayout.ts';
+import { LEFT_W, LEFT_X, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, slotRects } from './hudlayout.ts';
 import type { SlotRect } from './hudlayout.ts';
 
-/** Text, the HP bar and the XP line start here, right of the face and its shortcut key. */
-const LEFT_X = 25;
-const LEFT_W = 100;
-const MID_X = 130;
 /** The Inspiration bar's full width. Kept short so the bench can sit beside it. */
 const INSPIRE_W = 28;
 /** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
@@ -68,10 +65,12 @@ function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): 
   drawText(ctx, p.name, LEFT_X, 1, 'white');
   drawText(ctx, `LV${p.level}`, LEFT_X + p.name.length * 6 + 6, 1, up ? 'white' : 'yellow');
 
-  // Level 12 Eleven is the longest name row, so the MP gem and bar sit at the right edge of the left panel.
-  drawIcon(ctx, 'mpGem', 94, 0, t);
-  outline(ctx, 103, 1, 22, 7, 'slate');
-  drawBar(ctx, 104, 2, 20, 5, p.mpMax > 0 ? p.mp / p.mpMax : 0, 'blue', 'night');
+  // MP is one segment per cast of the special. A bright segment holds a whole cast and can be used now, a dim one is still
+  // charging. A hero with more casts than the bar has room for gets one bar with a tick at every cast.
+  drawTinyText(ctx, 'MP', MP_LABEL_X, 2, 'mist');
+  const mp = mpBar(MP_BAR_W, p.mp, p.mpMax, p.mpCost);
+  for (const c of mp.cells) drawBar(ctx, MP_BAR_X + c.x, 2, c.w, 5, c.fill, c.ready ? 'blue' : 'slate', 'shadow');
+  for (const x of mp.ticks) box(ctx, MP_BAR_X + x, 2, 1, 5, 'ink');
 
   // One segment per 10 HP, 7 px of bar and a 1 px tick. The color is health: green above half, then yellow, then a red that blinks.
   const n = bulbCount(p.hpMax);
@@ -81,19 +80,21 @@ function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, o: HudOpts): 
   box(ctx, LEFT_X, 10, n * pitch - 1, 5, 'ink');
   for (let i = 0; i < n; i++) drawBar(ctx, LEFT_X + i * pitch, 10, pitch - 1, 5, bulbFill(p.hp, p.hpMax, i, n), color, p.ko ? 'night' : 'shadow');
 
+  // XP is ten yellow notches under HP, as wide as the HP bar. Yellow like the level. An empty notch is a step lighter than an
+  // empty HP segment, because at 2 px tall it would not read otherwise.
   const xp = p.xpNext > 0 ? clamp01(p.xp / p.xpNext) : 0;
-  box(ctx, LEFT_X, 17, LEFT_W, 1, 'dusk');
-  if (xp > 0) box(ctx, LEFT_X, 17, Math.max(1, Math.round(LEFT_W * xp)), 1, 'cyan');
+  const notches = notchSpans(n * pitch - 1, XP_NOTCHES);
+  notches.forEach((s, i) => drawBar(ctx, LEFT_X + s.x, 16, s.w, 2, notchFill(xp, i, notches.length), 'yellow', 'dusk'));
 }
 
 function drawMiddle(ctx: Ctx, hud: HudView, t: number): void {
-  drawIcon(ctx, 'quarter', MID_X, 1, t);
-  drawText(ctx, `x${hud.quarters}`, MID_X + 10, 2, 'white');
+  drawIcon(ctx, 'quarter', MIDDLE_X, 1, t);
+  drawText(ctx, `x${hud.quarters}`, MIDDLE_X + 9, 1, 'white');
   if (hud.inspiration <= 0) return;
-  drawIcon(ctx, 'd20Glow', MID_X, 9, t);
-  drawText(ctx, `${Math.ceil(hud.inspiration)}S`, MID_X + 10, 10, 'yellow');
-  box(ctx, MID_X, 17, INSPIRE_W, 1, 'dusk');
-  box(ctx, MID_X, 17, Math.max(1, Math.round(INSPIRE_W * clamp01(hud.inspiration / INSPIRATION_SECONDS))), 1, 'yellow');
+  drawIcon(ctx, 'd20Glow', MIDDLE_X, 9, t);
+  drawText(ctx, `${Math.ceil(hud.inspiration)}S`, MIDDLE_X + 10, 10, 'yellow');
+  box(ctx, MIDDLE_X, 17, INSPIRE_W, 1, 'dusk');
+  box(ctx, MIDDLE_X, 17, Math.max(1, Math.round(INSPIRE_W * clamp01(hud.inspiration / INSPIRATION_SECONDS))), 1, 'yellow');
 }
 
 /** One benched hero: the shortcut key, a small face and an upright HP bar, left to right.

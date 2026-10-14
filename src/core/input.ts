@@ -195,8 +195,12 @@ export function createInput(opts: InputOptions = {}): InputState {
   return self;
 }
 
-/** Turns the polled input into one tick of sim input. */
-export function toSimInput(i: InputState): SimInput {
+/**
+ * Turns the polled input into one tick of sim input. With `useBursts`, the interact key (Space) bursts too: the play
+ * scene sets it when there's nothing in reach to light. A controller's A is attack and interact at once, so a press
+ * that also attacks never bursts, and Y stays the controller's burst.
+ */
+export function toSimInput(i: InputState, useBursts = false): SimInput {
   const a = i.axis();
   let swapTo = -1;
   (['swap1', 'swap2', 'swap3', 'swap4'] as const).forEach((s, idx) => { if (i.pressed(s)) swapTo = idx; });
@@ -206,6 +210,6 @@ export function toSimInput(i: InputState): SimInput {
     specialPressed: i.pressed('special'), specialHeld: i.held('special'),
     swapDelta: i.pressed('swapPrev') ? -1 : i.pressed('swapNext') ? 1 : 0,
     swapTo,
-    burstPressed: i.pressed('burst'),
+    burstPressed: i.pressed('burst') || (useBursts && i.pressed('interact') && !i.pressed('attack')),
   };
 }

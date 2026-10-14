@@ -147,6 +147,8 @@ export interface Prop {
   x: number; y: number; w: number; h: number;
   solid: boolean; state: PropState; t: number;
   hitBy?: Utility; pushBy?: Utility;
+  /** Any hero's basic attack from up close lights it too (see smashAimed). */
+  smash?: boolean;
   /** Cameras only: the sweep, and the frames the head has been turning. */
   cam?: CamDef; camT: number;
   /** Frames before this prop can report another attempt (see pokes.ts). */

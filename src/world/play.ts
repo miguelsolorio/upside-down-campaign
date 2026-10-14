@@ -4,7 +4,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, DevHooks, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP } from '../core/config.ts';
-import { labelOf } from '../core/bindings.ts';
+import { burstHint, labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
@@ -22,7 +22,7 @@ import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, isNear } from './puzzles.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawWorld } from './render.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -72,6 +72,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let overlay: Scene | null = null;
   let checkpoint: Checkpoint = { x: stage.start.x, y: stage.start.y, state: { fired: [], cleared: [] } };
   let prompt: PropView | null = null;
+  /** The party burst is ready and the party is free to use it, so its key shows over the active hero. Not next to
+   * lights, where Space lights them instead. */
+  let burstCall = false;
   let speech: { who: HeroId; text: string; t: number } | null = null;
   /** Set once the party has walked away from the yard it starts in. The corner controls fade after that. */
   let leftHome = false;
@@ -226,7 +229,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   /** The keys and pad, plus a click on a HUD portrait, which is a swap to that hero. */
   function playerInput(g: Game): SimInput {
-    const keys = toSimInput(g.input);
+    // Space lights the lights in reach, and with none in reach it's the burst key. `prompt` is last tick's, the one on screen.
+    const keys = toSimInput(g.input, !prompt);
     const click = g.input.clicked();
     const slot = click ? slotAt(view.hud.party, click.x, click.y) : -1;
     return slot >= 0 ? { ...keys, swapTo: slot } : keys;
@@ -322,7 +326,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       setReduceFlashing(g.settings.reduceFlashing);
       expose();
       if (deferred.length > 0) for (const fn of deferred.splice(0)) fn();
-      if (dialog.active) { prompt = null; dialog.update(g); return; }
+      if (dialog.active) { prompt = null; burstCall = false; dialog.update(g); return; }
       if (!bot && wipeT < 0 && clearT < 0 && g.input.pressed('pause')) { pause(); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
@@ -340,6 +344,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       }
       if (scare) stepScare(scare);
       prompt = frozen || director.busy() ? null : nearLights();
+      burstCall = !frozen && !director.busy() && !prompt && view.hud.burstReady;
       if (prompt && !bot && g.input.pressed('interact')) lightUp(prompt);
       if (wipeT >= 0 && ++wipeT === WIPE_FRAMES) pushGameOver();
       if (clearT >= 0 && ++clearT === CLEAR_FRAMES) opts.onClear({ stats: sim.stats(), party: sim.party() });
@@ -386,6 +391,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
+      // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
+      if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
       // The subtitle sits where the corner controls do, so it replaces them while it shows.
       if (hint) drawSubtitle(ctx, hint.text);
       else drawControlsCorner(ctx, hintFade);

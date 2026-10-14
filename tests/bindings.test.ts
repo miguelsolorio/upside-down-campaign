@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   BIND_ROWS, DEFAULT_BINDINGS, SLOTS, actionsForCode, clearBinding, exportBindings, isReserved, keyLabel, keyText,
   getPromptDevice, keysOf, labelOf, parseBindings, resetBindings, setBinding, setPromptDevice,
-  slotKeyLabel, controlRows,
+  slotKeyLabel, controlRows, burstHint,
 } from '../src/core/bindings.ts';
 
 beforeEach(() => {
@@ -131,15 +131,25 @@ test('labels are short caps and fall back to the key that always works', () => {
 
 test('the corner controls are the combat keys only, and follow a rebind', () => {
   assert.deepEqual(controlRows(), [
-    { keys: 'Z', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' },
-    { keys: 'C V', what: 'SWAP' }, { keys: 'U', what: 'BURST' },
+    { keys: 'Z', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' }, { keys: 'C', what: 'SWAP' },
   ]);
   setBinding('attack', 0, 'KeyH');
-  setBinding('swapNext', 0, 'KeyN');
+  setBinding('swapPrev', 0, 'KeyN');
   assert.equal(controlRows()[0]?.keys, 'H');
-  assert.equal(controlRows()[2]?.keys, 'C N');
+  assert.equal(controlRows()[2]?.keys, 'N');
   const whats = controlRows().map((r) => r.what);
-  assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE'].some((w) => whats.includes(w)));
+  assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE', 'BURST'].some((w) => whats.includes(w)));
+});
+
+test('the burst line under the HUD names Space, follows an interact rebind, and names Y on a controller', () => {
+  assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST');
+  setBinding('burst', 0, 'KeyN');
+  assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST', 'U and B still burst, but the line teaches Space');
+  setBinding('interact', 0, 'KeyE');
+  assert.equal(burstHint(), 'PRESS E FOR PARTY BURST');
+  assert.equal(keyText('press {burst}'), 'press E', 'the story names the same key');
+  setPromptDevice('gamepad');
+  assert.equal(burstHint(), 'PRESS Y FOR PARTY BURST');
 });
 
 test('story key tokens fill in and follow rebinds', () => {
@@ -194,8 +204,7 @@ test('an action the controller cannot do keeps its key label', () => {
 test('the corner controls name the buttons on a controller', () => {
   setPromptDevice('gamepad');
   assert.deepEqual(controlRows(), [
-    { keys: 'A', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' },
-    { keys: 'LB RB', what: 'SWAP' }, { keys: 'Y', what: 'BURST' },
+    { keys: 'A', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' }, { keys: 'LB RB', what: 'SWAP' },
   ]);
 });
 
@@ -249,4 +258,9 @@ test('story tokens name the on-screen controls on a touch screen', () => {
   assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'The arrows cycle through us. Or tap a face up top to pick.');
   assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with an arrow.');
   assert.equal(keyText('press {burst}'), 'press the d20');
+});
+
+test('the burst line names the d20 on a touch screen, since its A also attacks and never bursts', () => {
+  setPromptDevice('touch');
+  assert.equal(burstHint(), 'TAP THE D20 FOR PARTY BURST');
 });

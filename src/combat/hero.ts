@@ -9,6 +9,7 @@ import { footBlocked, los, moveBody } from './space.ts';
 import { floater, sfx } from './fx.ts';
 import { speedMul } from './status.ts';
 import { pokeAimed, trackBump } from './pokes.ts';
+import { smashAimed } from './props.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -54,6 +55,8 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
   const wantsBasic = s.buf.attack > 0 || input.attackHeld;
   if (!casting && wantsBasic && h.cdBasic <= 0) {
     s.buf.attack = 0;
+    // Smash first: a prop it lights is solved, so the same swing doesn't also count as the wrong hero trying it.
+    smashAimed(s, h);
     pokeAimed(s, h, def.basic.reach);
     useBasic(s, h);
   }

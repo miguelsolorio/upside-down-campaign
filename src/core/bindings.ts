@@ -39,7 +39,7 @@ export const BIND_ROWS: readonly BindRow[] = [
   { action: 'swap3', label: 'HERO 3', required: false },
   { action: 'swap4', label: 'HERO 4', required: false },
   { action: 'burst', label: 'PARTY BURST', required: false },
-  { action: 'interact', label: 'TALK OR LIGHT', required: false },
+  { action: 'interact', label: 'LIGHT OR BURST', required: false },
   { action: 'skip', label: 'SKIP DIALOGUE', required: false },
   { action: 'pause', label: 'PAUSE', required: false },
   { action: 'mute', label: 'MUTE', required: false },
@@ -297,17 +297,27 @@ export interface HintRow { keys: string; what: string }
 /**
  * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
  * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
- * Swap shows both keys, back then next: C and V on a keyboard, the bumpers on a controller.
- * A touch screen has none: its buttons say what they do.
+ * Swap shows one key on a keyboard, C, so every row has a single key. A controller shows both bumpers.
+ * Burst is left out too: a word with no meter means nothing, so `burstHint` names it under the HUD once it's ready.
+ * A touch screen has no rows at all: its buttons say what they do.
  */
 export function controlRows(): HintRow[] {
   if (onTouch()) return [];
   return [
     { keys: labelOf('attack'), what: 'ATTACK' },
     { keys: labelOf('special'), what: 'SPECIAL' },
-    { keys: `${labelOf('swapPrev')} ${labelOf('swapNext')}`, what: 'SWAP' },
-    { keys: labelOf('burst'), what: 'BURST' },
+    { keys: onPad() ? `${labelOf('swapPrev')} ${labelOf('swapNext')}` : labelOf('swapPrev'), what: 'SWAP' },
   ];
+}
+
+/** The burst key the prompts teach. On a keyboard it's the interact key, Space, which bursts whenever there's nothing
+ * in reach to light. U and B burst too but go unnamed. A controller names Y. A touch screen names its d20 button,
+ * since its A also attacks and so never bursts, the same as a controller's. */
+const burstKey = (): string => (onTouch() ? 'the d20' : labelOf(onPad() ? 'burst' : 'interact'));
+
+/** The line under the HUD while the d20 is full and the party burst is ready. */
+export function burstHint(): string {
+  return onTouch() ? 'TAP THE D20 FOR PARTY BURST' : `PRESS ${burstKey()} FOR PARTY BURST`;
 }
 
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.
@@ -324,7 +334,7 @@ const TOKENS: Record<string, () => string> = {
   },
   attack: () => labelOf('attack'),
   special: () => labelOf('special'),
-  burst: () => (onTouch() ? 'the d20' : labelOf('burst')),
+  burst: burstKey,
   interact: () => labelOf('interact'),
   skip: () => labelOf('skip'),
   /** On touch this starts a sentence, the only place the lines use it. */

@@ -2,6 +2,7 @@
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { drawText } from '../gfx/index.ts';
+import { FRAME_X } from '../core/config.ts';
 import { settings } from '../core/settings.ts';
 import { rampIndex } from './format.ts';
 
@@ -18,6 +19,15 @@ export function outline(ctx: Ctx, x: number, y: number, w: number, h: number, co
   box(ctx, x, y + h - 1, w, 1, color);
   box(ctx, x, y + 1, 1, h - 2, color);
   box(ctx, x + w - 1, y + 1, 1, h - 2, color);
+}
+
+/** Runs `fn` with the origin moved to the left edge of a BASE_W wide layout centered on the screen. Screens laid out
+ * for 256 px draw inside this, and their full-width backgrounds outside it. Inside, center on BASE_W, never SCREEN_W. */
+export function inFrame(ctx: Ctx, fn: () => void): void {
+  ctx.save();
+  ctx.translate(FRAME_X, 0);
+  fn();
+  ctx.restore();
 }
 
 export function clipped(ctx: Ctx, x: number, y: number, w: number, h: number, fn: () => void): void {

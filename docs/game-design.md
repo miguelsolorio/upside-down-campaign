@@ -192,7 +192,10 @@ Jingles and stingers: level-up, victory, game over, recruit, item, dice roll, cu
 
 ## Look
 
-- 256×224 canvas, 16×16 tiles, integer-scaled and letterboxed, `image-rendering: pixelated`.
+- The canvas fills the browser window. It is always 224 px tall and as wide as the window's shape asks (256 to 1024, in steps of 8), so a bigger monitor gets bigger pixels, not more of the level. 16×16 tiles.
+- The world shows in a clear band at most 28 tiles (448 px) wide, about half a level across. A laptop or a 16:9 monitor's browser window fits inside it. On an ultrawide the world past the band fades to black in four dithered steps, so you still have to move to see more.
+- Menus, cards, dialogue and the prologue's basement are laid out for 256 px and centered. Their backgrounds, the HUD strip and the title woods run to the edges. The HUD keeps the active hero at the band's left edge and the bench and d20 at its right.
+- The game draws at 1x, is blown up a whole number of times with hard edges, and the browser smooths only the last small step to the window, so every pixel comes out the same size.
 - One fixed palette of about 40 NES-style colors. Sprites use at most five. No gradients and no alpha. Pools of light at night are dithered, not blended.
 - Paper-doll sprite generator: three body templates (kid, teen, big), hair masks, accessories and a palette per hero, drawn to offscreen canvases at boot. Bosses are hand-authored grids or drawn limbs (the Mind Flayer's legs are pixel-snapped lines). 24×24 portraits come from a head template with five expressions.
 - Upside Down: palette swap to blue-black and vein red, palette cycling on the veins, drifting spores. Hawkins stays warm: sodium streetlights over teal night.

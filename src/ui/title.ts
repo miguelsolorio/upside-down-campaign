@@ -3,14 +3,14 @@
 // No key hints are drawn here. P still opens the options and T still flips skip story, and both are also on screen
 // as a menu row and a status line.
 import type { Game, Scene } from '../core/scene.ts';
-import { SCREEN_H, SCREEN_W } from '../core/config.ts';
+import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
 import { hasSave } from '../core/save.ts';
 import type { HeroId } from '../core/types.ts';
 import { drawIcon, drawLogo, drawPanel, drawText, paintGlow } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { LAUNCH_FRAMES, launchLevel } from './format.ts';
-import { bigText, blinkOn, box, dither } from './kit.ts';
+import { bigText, blinkOn, box, dither, inFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { drawMenu, settingItems, toggleSkipStory, updateMenu } from './menu.ts';
 import type { Menu } from './menu.ts';
@@ -145,32 +145,37 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       woods(ctx);
       spores(ctx, t);
 
-      // Light on the path: the flashlights Mike and Lucas hold, which travel with the party as it walks off.
-      const lights: Glow[] = PARTY.filter((p) => p.id !== 'eleven').map((p) => ({ x: p.x, y: p.y - 6 - walk * 30, r: 30, k: 0.85, flicker: 0.4 }));
+      // Light on the path: the flashlights Mike and Lucas hold, which travel with the party as it walks off. The
+      // pools are painted straight onto the pixels, so they take screen x, not the frame's.
+      const lights: Glow[] = PARTY.filter((p) => p.id !== 'eleven').map((p) => ({ x: FRAME_X + p.x, y: p.y - 6 - walk * 30, r: 30, k: 0.85, flicker: 0.4 }));
       paintGlow(ctx, lights, t, 1);
 
-      // Heroes in the back row first, so the front one overlaps them.
-      for (const p of [...PARTY].sort((a, b) => a.y - b.y)) {
-        const off = launch > 0 ? Math.round(launch * 1.1) : 0;
-        bigActor(ctx, p.id, p.x, p.y - off, 2, launch > 0 ? launch : t, {
-          dir: launch > 0 ? 'up' : 'down', anim: launch > 0 ? 'walk' : 'idle', strained: p.id === 'eleven',
-        });
-      }
-      drawLogo(ctx, t, 128, 14);
-      drawMain(ctx);
+      inFrame(ctx, () => {
+        // Heroes in the back row first, so the front one overlaps them.
+        for (const p of [...PARTY].sort((a, b) => a.y - b.y)) {
+          const off = launch > 0 ? Math.round(launch * 1.1) : 0;
+          bigActor(ctx, p.id, p.x, p.y - off, 2, launch > 0 ? launch : t, {
+            dir: launch > 0 ? 'up' : 'down', anim: launch > 0 ? 'walk' : 'idle', strained: p.id === 'eleven',
+          });
+        }
+        drawLogo(ctx, t, 128, 14);
+        drawMain(ctx);
 
-      const skip = g.settings.skipDialogue;
-      drawText(ctx, `SKIP STORY: ${skip ? 'ON' : 'OFF'}`, 128, 213, skip ? 'yellow' : 'mist', { align: 'center', shadow: true });
-      // A controller press can't always wake the browser's audio. Say so rather than leave the game silent.
-      if (!open && g.input.device() === 'gamepad' && !audio.ready()) {
-        drawText(ctx, 'CLICK THE GAME ONCE FOR SOUND', 128, 202, 'amber', { align: 'center', shadow: true });
-      }
+        const skip = g.settings.skipDialogue;
+        drawText(ctx, `SKIP STORY: ${skip ? 'ON' : 'OFF'}`, 128, 213, skip ? 'yellow' : 'mist', { align: 'center', shadow: true });
+        // A controller press can't always wake the browser's audio. Say so rather than leave the game silent.
+        if (!open && g.input.device() === 'gamepad' && !audio.ready()) {
+          drawText(ctx, 'CLICK THE GAME ONCE FOR SOUND', 128, 202, 'amber', { align: 'center', shadow: true });
+        }
+      });
       fadeOut(ctx, walk > 0.45 ? (walk - 0.45) / 0.55 : 0);
 
       if (open) {
         dither(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink', 2);
-        drawPanel(ctx, 36, 58, 184, 92, 'menu');
-        drawMenu(ctx, settingsMenu ?? build(g), 48, 65, 160, t, 10);
+        inFrame(ctx, () => {
+          drawPanel(ctx, 36, 58, 184, 92, 'menu');
+          drawMenu(ctx, settingsMenu ?? build(g), 48, 65, 160, t, 10);
+        });
       }
     },
   };

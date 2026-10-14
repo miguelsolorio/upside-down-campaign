@@ -1,4 +1,5 @@
-// The top strip. 256 by 20 px, opaque. Left: the active hero. Middle: quarters and Inspiration. Right: the bench and the d20.
+// The top strip. Opaque, 20 px tall and as wide as the screen. Left: the active hero. Middle: quarters and Inspiration.
+// Right: the bench and the d20. On a wide screen the contents hug the edges of the clear band, not of the screen.
 // HP is a segmented bar on both sides: flat for the active hero, upright beside each bench face. Same colors, same blink.
 // Everything else beside it is just as quiet: no frames. XP is ten yellow notches under HP, MP is one blue segment per cast.
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
@@ -13,7 +14,7 @@ import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
-import { LEFT_W, LEFT_X, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, slotRects } from './hudlayout.ts';
+import { LEFT_W, LEFT_X, METER_X, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, hudBand, leftShift, rightShift, slotRects } from './hudlayout.ts';
 import type { SlotRect } from './hudlayout.ts';
 
 /** The Inspiration bar's full width. Kept short so the bench can sit beside it. */
@@ -27,7 +28,6 @@ const ACTIVE_KEY_X = LEFT_X - 7;
 const FACE_Y = 2;
 const KEY_DX = 2;
 const BAR_DX = 13;
-const METER_X = 246;
 /** The strip is near black, so the lit die gets an orange outline instead of the usual ink one. */
 const METER_LIT: DieScheme = { ...DIE_GOLD, edge: 'orange' };
 
@@ -127,17 +127,17 @@ function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, 
 }
 
 /** The party meter: a d20 that fills with light from the bottom and glows gold, with sparks, once the burst is ready. */
-function drawMeter(ctx: Ctx, hud: HudView, t: number): void {
+function drawMeter(ctx: Ctx, hud: HudView, t: number, mx: number): void {
   if (!hud.burstReady) {
-    drawDie(ctx, METER_X, 9, 8, { scheme: DIE_DIM, lit: hud.burst, litScheme: METER_LIT });
+    drawDie(ctx, mx, 9, 8, { scheme: DIE_DIM, lit: hud.burst, litScheme: METER_LIT });
     return;
   }
-  drawDie(ctx, METER_X, 9, 8, { scheme: METER_LIT });
+  drawDie(ctx, mx, 9, 8, { scheme: METER_LIT });
   if (settings.reduceFlashing) return;
   const s = (t >> 3) & 3;
   const hot = s === 1 ? 'white' : 'yellow';
   for (const [dx, dy] of [[-9, -6], [9, -6], [-9, 6], [9, 6]] as [number, number][]) {
-    if (((dx + dy + s) & 1) === 0) box(ctx, METER_X + dx, 9 + dy, 1, 1, hot);
+    if (((dx + dy + s) & 1) === 0) box(ctx, mx + dx, 9 + dy, 1, 1, hot);
   }
 }
 
@@ -153,14 +153,24 @@ function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>): void {
  * rectangles (`slotRects`) answer clicks, so a portrait is a button. */
 export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, o: HudOpts = {}): void {
   drawPanel(ctx, 0, 0, SCREEN_W, VIEW_TOP, 'hud');
-  const rects = slotRects(hud.party);
+  const band = hudBand();
+  const lx = leftShift(band);
+  const rects = slotRects(hud.party, band);
   for (const r of rects) {
     const p = hud.party[r.index];
     if (!p) continue;
-    if (r.active) drawActive(ctx, p, r, t, o);
-    else drawSlot(ctx, p, r, t, hud.swapReady, o);
+    // The active hero and the middle are drawn from the constants, so they move with the band's left edge.
+    if (r.active) {
+      ctx.save();
+      ctx.translate(lx, 0);
+      drawActive(ctx, p, r, t, o);
+      ctx.restore();
+    } else drawSlot(ctx, p, r, t, hud.swapReady, o);
   }
+  ctx.save();
+  ctx.translate(lx, 0);
   drawMiddle(ctx, hud, t);
-  drawMeter(ctx, hud, t);
+  ctx.restore();
+  drawMeter(ctx, hud, t, METER_X + rightShift(band));
   if (hud.boss) drawBoss(ctx, hud.boss);
 }

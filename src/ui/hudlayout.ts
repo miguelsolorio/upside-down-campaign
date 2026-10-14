@@ -1,6 +1,13 @@
 // Where each hero sits in the top strip. The HUD draws from these rectangles and the play scene hit-tests clicks
 // against the same ones, so what you see is what you can press. Pure, so Node can test it.
+// The constants below place things in a strip STRIP_W wide. On a wider screen the strip runs edge to edge, but its
+// contents follow the clear band: the active hero and the middle stay against the band's left edge (leftShift), and
+// the bench and the d20 against its right edge (rightShift).
+import { VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud } from '../core/types.ts';
+
+/** The width the constants below are laid out for. */
+export const STRIP_W = 256;
 
 /** A bench slot is a shortcut key, an 11 px face and a 3 px HP bar side by side, with room before the next slot. */
 export const BENCH_PITCH = 26;
@@ -24,6 +31,8 @@ export const MP_BAR_X = 103;
 export const MP_BAR_W = 24;
 /** The quarter counter starts here, and the Inspiration timer sits under it. */
 export const MIDDLE_X = 130;
+/** Center of the d20 meter. */
+export const METER_X = 246;
 /** The active hero's portrait box and its click cell. */
 export const ACTIVE_CELL = { x: 0, y: 0, w: 20, h: CELL_H };
 
@@ -48,30 +57,40 @@ export function benchPitch(count: number): number {
 /** Right edge of the bench. */
 export const BENCH_END = METER_LEFT - 1;
 
+/** The part of the screen the strip's contents span, in screen px. */
+export interface HudBand { x: number; w: number }
+/** The clear band, read when called, so the strip and its clicks always use the current screen width. */
+export const hudBand = (): HudBand => ({ x: VIEW_X, w: VIEW_W });
+/** How far the left-hand contents (active hero, middle) move from where the constants put them. */
+export const leftShift = (b: HudBand): number => b.x;
+/** How far the right-hand contents (bench, d20) move from where the constants put them. */
+export const rightShift = (b: HudBand): number => b.x + b.w - STRIP_W;
+
 /** Left edge of bench slot `k` of `count`. */
-export function benchX(k: number, count: number): number {
-  return BENCH_END - (count - k) * benchPitch(count);
+export function benchX(k: number, count: number, band: HudBand = hudBand()): number {
+  return BENCH_END + rightShift(band) - (count - k) * benchPitch(count);
 }
 
 /** One rectangle per hero, the active one first and then the bench left to right in party order. */
-export function slotRects(party: readonly PartyHud[]): SlotRect[] {
+export function slotRects(party: readonly PartyHud[], band: HudBand = hudBand()): SlotRect[] {
   const out: SlotRect[] = [];
   const bench = party.map((p, i) => ({ p, i })).filter((b) => !b.p.active);
+  const lx = leftShift(band);
   party.forEach((p, i) => {
     if (!p.active) return;
-    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, ...ACTIVE_CELL, px: 1 });
+    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, px: 1 + lx });
   });
   const pitch = benchPitch(bench.length);
   bench.forEach((b, k) => {
-    const x = benchX(k, bench.length);
+    const x = benchX(k, bench.length, band);
     out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, x, y: 0, w: pitch, h: CELL_H, px: x + BENCH_FACE_DX });
   });
   return out;
 }
 
 /** Party index under a point in game px, or -1. The active hero and a KO'd hero are not swap targets. */
-export function slotAt(party: readonly PartyHud[], x: number, y: number): number {
-  for (const r of slotRects(party)) {
+export function slotAt(party: readonly PartyHud[], x: number, y: number, band: HudBand = hudBand()): number {
+  for (const r of slotRects(party, band)) {
     if (r.active || r.ko) continue;
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return r.index;
   }

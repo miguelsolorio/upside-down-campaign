@@ -8,3 +8,4 @@ export { createChapterCard, createGameOverScene } from './cards.ts';
 export { createResultsScene } from './results.ts';
 export { createPauseScene } from './pause.ts';
 export { mountDevPanel } from './devpanel.ts';
+export { inFrame } from './kit.ts';

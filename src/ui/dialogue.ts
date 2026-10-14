@@ -9,7 +9,7 @@ import { audio } from '../audio/index.ts';
 import { drawIcon, drawPanel, drawPortrait, drawText } from '../gfx/index.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { pagesOf, typeCount, typeFrames, wantsBlip } from './format.ts';
-import { blinkOn, box, outline } from './kit.ts';
+import { blinkOn, box, inFrame, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 
 export interface DialogueBox {
@@ -91,31 +91,35 @@ export function createDialogueBox(): DialogueBox {
     },
     draw(ctx: Ctx) {
       if (!live || !script) return;
-      const line = script.lines[idx];
-      const who = line.who;
-      const face = who !== 'narrator';
-      const portrait = (who === 'dm' ? 'mike' : who) as CharId;
-      const { x, y, w, h } = PANEL;
-      drawPanel(ctx, x, y, w, h, 'dialog');
-      const skipKey = labelOf('skip');
-      if (skipKey !== '--') drawText(ctx, `${skipKey} SKIP`, x + w - 4, y - 9, 'bone', { align: 'right', shadow: true });
-      if (face) drawPortrait(ctx, portrait, line.expr ?? 'neutral', x + 6, y + 7);
-      const name = speakerName(who);
-      if (name) {
-        const tw = name.length * 6 + 8, tx = x + 6, ty = y - 7;
-        box(ctx, tx - 1, ty - 1, tw + 2, 13, 'ink');
-        box(ctx, tx, ty, tw, 11, 'shadow');
-        outline(ctx, tx, ty, tw, 11, 'mist');
-        drawText(ctx, name, tx + 4, ty + 2, TAG_COLOR[who]);
-      }
-      const textX = face ? x + 36 : 32;
-      let left = shown;
-      (pages[page] as string[]).forEach((text, k) => {
-        const vis = Math.max(0, Math.min(text.length, left));
-        left -= text.length;
-        if (vis > 0) drawText(ctx, text.slice(0, vis), textX, y + 7 + k * LINE_H, 'white');
+      const sc = script;
+      // The box is laid out for 256 px and centered on a wider screen.
+      inFrame(ctx, () => {
+        const line = sc.lines[idx];
+        const who = line.who;
+        const face = who !== 'narrator';
+        const portrait = (who === 'dm' ? 'mike' : who) as CharId;
+        const { x, y, w, h } = PANEL;
+        drawPanel(ctx, x, y, w, h, 'dialog');
+        const skipKey = labelOf('skip');
+        if (skipKey !== '--') drawText(ctx, `${skipKey} SKIP`, x + w - 4, y - 9, 'bone', { align: 'right', shadow: true });
+        if (face) drawPortrait(ctx, portrait, line.expr ?? 'neutral', x + 6, y + 7);
+        const name = speakerName(who);
+        if (name) {
+          const tw = name.length * 6 + 8, tx = x + 6, ty = y - 7;
+          box(ctx, tx - 1, ty - 1, tw + 2, 13, 'ink');
+          box(ctx, tx, ty, tw, 11, 'shadow');
+          outline(ctx, tx, ty, tw, 11, 'mist');
+          drawText(ctx, name, tx + 4, ty + 2, TAG_COLOR[who]);
+        }
+        const textX = face ? x + 36 : 32;
+        let left = shown;
+        (pages[page] as string[]).forEach((text, k) => {
+          const vis = Math.max(0, Math.min(text.length, left));
+          left -= text.length;
+          if (vis > 0) drawText(ctx, text.slice(0, vis), textX, y + 7 + k * LINE_H, 'white');
+        });
+        if (shown >= total() && blinkOn(t, 48, 34)) drawIcon(ctx, 'arrow', x + w - 14, y + h - 13, t);
       });
-      if (shown >= total() && blinkOn(t, 48, 34)) drawIcon(ctx, 'arrow', x + w - 14, y + h - 13, t);
     },
   };
 }

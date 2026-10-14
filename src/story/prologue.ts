@@ -4,12 +4,13 @@
 import type { Scene } from '../core/scene.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
+import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { PAL } from '../gfx/palette.ts';
-import { drawActor, drawIcon, drawText } from '../gfx/index.ts';
+import { drawActor, drawIcon, drawSideFade, drawText } from '../gfx/index.ts';
 import { audio } from '../audio/index.ts';
-import { createDialogueBox } from '../ui/index.ts';
+import { createDialogueBox, inFrame } from '../ui/index.ts';
 import {
-  DIE_FROM, DIE_REST, SCREEN_H, SCREEN_W, SEATS, drawChairs, drawLamp, drawRoom, drawScreen, drawTable,
+  DIE_FROM, DIE_REST, SEATS, drawChairs, drawLamp, drawRoom, drawRoomShell, drawScreen, drawTable,
 } from './basement.ts';
 import { prologuePart } from './prologue_script.ts';
 
@@ -208,21 +209,26 @@ export function createPrologueScene(opts: { onDone(): void }): Scene {
     draw(ctx, g) {
       const s: Step | undefined = STEPS[idx];
       ctx.imageSmoothingEnabled = false;
-      drawRoom(ctx, struck);
-      drawChairs(ctx);
-      drawActor(ctx, viewOf('mike'));
-      drawTable(ctx);
-      drawScreen(ctx);
-      for (const id of ['dustin', 'lucas', 'will'] as const) drawActor(ctx, viewOf(id));
-      if (dieShown) drawDie(ctx, dieAt(rollT), rollT >= ROLL_LAND, frame);
+      const lamp = lampLevel(s?.id, t, g.settings.reduceFlashing);
+      drawRoomShell(ctx);
+      inFrame(ctx, () => {
+        drawRoom(ctx, struck);
+        drawChairs(ctx);
+        drawActor(ctx, viewOf('mike'));
+        drawTable(ctx);
+        drawScreen(ctx);
+        for (const id of ['dustin', 'lucas', 'will'] as const) drawActor(ctx, viewOf(id));
+        if (dieShown) drawDie(ctx, dieAt(rollT), rollT >= ROLL_LAND, frame);
+      });
 
       // The room is dim; the lamp lights a cone and a pool on the table. When it dies the room goes nearly dark.
-      const lamp = lampLevel(s?.id, t, g.settings.reduceFlashing);
       ctx.globalAlpha = (tension ? 0.28 : 0.14) + (1 - lamp) * 0.5;
       ctx.fillStyle = PAL.ink;
       ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
       ctx.globalAlpha = 1;
-      drawLamp(ctx, lamp);
+      inFrame(ctx, () => drawLamp(ctx, lamp));
+      // On a wider screen, the room past the set falls away into the dark.
+      drawSideFade(ctx, FRAME_X, FRAME_X + 256, 0, SCREEN_H);
       box.draw(ctx);
 
       let black = 0;

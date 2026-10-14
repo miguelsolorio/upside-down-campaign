@@ -3,14 +3,14 @@
 // World-space draws assume the caller translated by (-camX, VIEW_TOP - camY); drawWorld does that itself.
 import type { ActorView, Floater, HeroId, PropView, SimView, Vec2 } from '../core/types.ts';
 import type { Camera } from '../core/camera.ts';
-import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
+import { SCREEN_H, SCREEN_W, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import { isSolidTile } from '../core/tiles.ts';
 import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01 } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -111,7 +111,8 @@ function solidAt(stage: Stage): (tx: number, ty: number) => boolean {
 
 /**
  * Stage, the ground layer (light pools at night, camera cones, floor hazards, items), then props and actors in one
- * painter's pass by their bottom edge, then fx and floaters.
+ * painter's pass by their bottom edge, then fx and floaters. On a screen wider than the clear band, the world past
+ * the band fades to black.
  */
 export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t: number, o: WorldOpts): void {
   ctx.save();
@@ -147,22 +148,23 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   for (const f of view.floaters) drawFloater(ctx, f);
   if (o.hitboxes) drawBoxes(ctx, view);
   ctx.restore();
+  if (VIEW_W < SCREEN_W) drawSideFade(ctx, VIEW_X, VIEW_X + VIEW_W, VIEW_TOP, SCREEN_H - VIEW_TOP);
 }
 
 /** Key and word colors from bright to faded. The last step is one neutral grey, dim enough to ignore and still readable. */
 const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mist'], ['slate', 'slate']];
 
 /**
- * The controls stacked tight in the bottom left corner. `fade` runs 0 to 1: keys in amber and words in bone at 0,
- * a neutral grey at 1, in palette steps rather than alpha.
+ * The controls stacked tight in the bottom left corner of the clear band. `fade` runs 0 to 1: keys in amber and words
+ * in bone at 0, a neutral grey at 1, in palette steps rather than alpha.
  */
 export function drawControlsCorner(ctx: Ctx, fade = 0): void {
   const [keyColor, wordColor] = CORNER_STEPS[Math.min(CORNER_STEPS.length - 1, Math.floor(clamp01(fade) * CORNER_STEPS.length))] as [ColorName, ColorName];
   const rows = controlRows();
   rows.forEach((r, i) => {
-    const y = 215 - (rows.length - 1 - i) * 8;
-    const w = drawText(ctx, r.keys, 4, y, keyColor, { shadow: true });
-    drawText(ctx, r.what, 4 + w + 4, y, wordColor, { shadow: true });
+    const x = VIEW_X + 4, y = SCREEN_H - 9 - (rows.length - 1 - i) * 8;
+    const w = drawText(ctx, r.keys, x, y, keyColor, { shadow: true });
+    drawText(ctx, r.what, x + w + 4, y, wordColor, { shadow: true });
   });
 }
 
@@ -195,12 +197,13 @@ export function drawFlash(ctx: Ctx, view: SimView): void {
 }
 
 // ---------------------------------------------------------------- small overlays
-/** A short line over a point in world space, on a dark strip so it reads on any ground. It wraps at `cols` characters. */
+/** A short line over a point in world space, on a dark strip so it reads on any ground. It wraps at `cols` characters
+ * and stays inside the clear band. */
 export function drawCallout(ctx: Ctx, text: string, wx: number, wy: number, cam: Camera, color: ColorName = 'white', cols = 26): void {
   const lines = wrapText(text, cols);
   const w = Math.max(...lines.map((l) => textWidth(l)));
   const h = lines.length * 9;
-  const x = Math.max(2, Math.min(SCREEN_W - w - 4, Math.round(wx - cam.x - w / 2)));
+  const x = Math.max(VIEW_X + 2, Math.min(VIEW_X + VIEW_W - w - 4, Math.round(wx - cam.x - w / 2)));
   const y = Math.max(VIEW_TOP + 2, Math.round(wy - cam.y + VIEW_TOP - h - 2));
   ctx.fillStyle = PAL.ink;
   ctx.fillRect(x - 2, y - 2, w + 4, h + 3);
@@ -208,15 +211,15 @@ export function drawCallout(ctx: Ctx, text: string, wx: number, wy: number, cam:
 }
 
 /** The title screen's yellow caret, turned to point down at the prop and bobbing over it: where to look when the party
- * is stuck. A prop at the top of the view has no room above it, so the caret sits under it and points up. It stays on
- * screen either way, so a prop just out of view still gets a caret at the edge facing it. Holds still when Reduce
+ * is stuck. A prop at the top of the view has no room above it, so the caret sits under it and points up. It stays in
+ * the clear band either way, so a prop just out of view still gets a caret at the edge facing it. Holds still when Reduce
  * flashing is on. Draw it after the world so nothing covers it. */
 export function drawPuzzleCaret(ctx: Ctx, r: { x: number; y: number; w: number; h: number }, cam: Camera, t: number): void {
   const bob = settings.reduceFlashing ? 0 : BOB[(t >> 3) % BOB.length] as number;
   const top = Math.round(r.y - cam.y + VIEW_TOP), bottom = top + r.h;
   const up = top - CARET_ROOM < VIEW_TOP;
   // The tip is the caret's fourth column. It is the seventh row of the down caret and the second row of the up one.
-  const x = Math.max(1, Math.min(SCREEN_W - 8, Math.round(r.x + r.w / 2 - cam.x) - 3));
+  const x = Math.max(VIEW_X + 1, Math.min(VIEW_X + VIEW_W - 8, Math.round(r.x + r.w / 2 - cam.x) - 3));
   const y = up ? Math.max(VIEW_TOP + 1, bottom + 1 + bob) : Math.min(SUBTITLE_Y - 12, top - 9 - bob);
   drawIcon(ctx, up ? 'cursorUp' : 'cursorDown', x, y, t);
 }

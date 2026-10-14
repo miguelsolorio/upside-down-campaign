@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, LEFT_W, LEFT_X, METER_LEFT, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, benchPitch, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, LEFT_W, LEFT_X, METER_LEFT, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { bulbCount } from '../src/ui/format.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
@@ -145,4 +145,33 @@ test('a click on a portrait, mapped from page pixels, lands on the right hero', 
   const at = clientToGame(box.left + gx * 3, box.top + gy * 3, box);
   assert.ok(at);
   assert.equal(slotAt(p, at?.x ?? -1, at?.y ?? -1), 3);
+});
+
+test('on a wide screen the active hero hugs the band\'s left edge and the bench its right edge, and clicks follow', () => {
+  for (const band of [{ x: 44, w: 448 }, { x: 0, w: 400 }, { x: 0, w: 256 }]) {
+    const lx = leftShift(band), rx = rightShift(band);
+    for (let n = 1; n <= 4; n++) {
+      for (let active = 0; active < n; active++) {
+        const p = party(n, active);
+        const rects = slotRects(p, band);
+        const me = rects.find((r) => r.active);
+        assert.equal(me?.x, band.x, 'the active cell starts at the band');
+        const bench = rects.filter((r) => !r.active);
+        const last = bench[bench.length - 1];
+        if (last) assert.equal(last.x + last.w, BENCH_END + rx, 'the bench ends against the d20');
+        for (const r of bench) {
+          assert.ok(r.x >= MIDDLE_END + lx, `band ${band.x},${band.w}: the bench clears the middle`);
+          assert.ok(r.x + r.w <= METER_LEFT + rx, 'the bench clears the d20');
+          const [cx, cy] = center(r);
+          assert.equal(slotAt(p, cx, cy, band), r.index);
+        }
+      }
+    }
+  }
+});
+
+test('at 256 the band changes nothing', () => {
+  assert.deepEqual(hudBand(), { x: 0, w: STRIP_W });
+  assert.equal(leftShift(hudBand()), 0);
+  assert.equal(rightShift(hudBand()), 0);
 });

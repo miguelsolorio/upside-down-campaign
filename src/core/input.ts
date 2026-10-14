@@ -24,7 +24,7 @@ export interface InputState {
   axis(): Vec2;
   /** Whichever the player touched last. A connected controller counts as touched. */
   device(): 'keyboard' | 'gamepad';
-  /** Where the mouse or finger is over the game, in game px (256 by 224), or null when it is elsewhere. */
+  /** Where the mouse or finger is over the game, in game px (SCREEN_W by SCREEN_H), or null when it is elsewhere. */
   pointer(): Vec2 | null;
   /** Where the primary button went down this tick, in game px, or null. A short click is never lost. */
   clicked(): Vec2 | null;

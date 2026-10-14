@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Tileset Variations</title>
+<meta name="description" content="Five night versions of the Level 1 environment art, next to the retired darkness overlay. D is the one now in the game.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a; --leaf: #6cc35a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; width: 100%; height: auto; aspect-ratio: 256 / 204; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 6px; max-width: 78ch; }
+  .muted { color: var(--mist); }
+
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group > .lbl { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .seg { display: inline-flex; border: 2px solid var(--dusk); }
+  .seg button { border: 0; background: var(--ink); padding: 6px 12px; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .seg button + button { border-left: 2px solid var(--dusk); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--cream); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 22px; padding: 22px 0 56px; }
+  .card { margin: 0; background: var(--night); border: 2px solid var(--shadow); }
+  .card.ref { border-style: dashed; border-color: var(--slate); }
+  .card.shipped { border-color: var(--leaf); }
+  .card figcaption { padding: 12px 14px 14px; }
+  .tag { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+  .tag .id { font: 700 13px/1 var(--mono); color: var(--ink); background: var(--amber); padding: 3px 7px; }
+  .card.ref .tag .id { background: var(--slate); color: var(--bone); }
+  .tag b { font-size: 16px; }
+  .badge { font: 700 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--leaf); padding: 3px 6px; }
+  .card p { margin: 0; color: var(--mist); font-size: 13.5px; }
+</style>
+</head>
+<body>
+<header class="wrap hero">
+  <p class="kicker">Level 1 night look, the tileset round</p>
+  <h1>Night tileset variations</h1>
+  <p>Five night versions of the Level 1 map, each with its tiles redrawn: a night palette per material, plus night-only details painted in, such as moon rim light on the pines, dew, glowing plants, spores and moon glints on the water. There is no darkness layer. The only lighting is a small painted warm pool around windows, lamps and bulbs.</p>
+  <p class="muted"><b>D, Creeping spores,</b> is the one that shipped, and it is what the game draws now. The dashed card is how the game looked before: daytime art under the retired darkness overlay, drawn here with a copy of that old code. Heroes, enemies and pickups keep their normal art in every card.</p>
+</header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="group"><span class="lbl" id="sceneLbl">Scene</span>
+      <div class="seg" id="scenes" role="group" aria-labelledby="sceneLbl"></div>
+    </div>
+    <label class="chk"><input id="pools" type="checkbox" checked> Painted light pools</label>
+    <label class="chk"><input id="flash" type="checkbox"> Flashlight pool</label>
+    <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+  </div>
+</div>
+
+<main class="wrap"><div id="grid"></div></main>
+
+<script type="module">
+import { initGfx, drawActor, drawFx, drawItem, drawProp } from '/src/gfx/index.ts';
+import { BAYER4, canvasFromPixels, ctx2d, hash2, makeCanvas, px32 } from '/src/gfx/canvas.ts';
+import { PAL } from '/src/gfx/palette.ts';
+import { bankMask, groundTile, isTree, waterTile } from '/src/gfx/tile_ground.ts';
+import { objectTile } from '/src/gfx/tile_objects.ts';
+import { TILES } from '/src/core/tiles.ts';
+import { createRng } from '/src/core/rng.ts';
+import { settings } from '/src/core/settings.ts';
+import { getStage } from '/src/world/stage.ts';
+import { drawWorld } from '/src/world/render.ts';
+import { createCamera, cameraSnap } from '/src/core/camera.ts';
+import { SCREEN_H, SCREEN_W, VIEW_TOP } from '/src/core/config.ts';
+import { createSim } from '/src/combat/index.ts';
+
+initGfx();
+const W = SCREEN_W, H = SCREEN_H - VIEW_TOP, N = W * H, T = 16;
+const stage = getStage('1.1');
+const dayStage = getStage('1.1', 'day');
+
+// ---------------------------------------------------------------- scenes
+const px = (tx) => tx * 16 + 8, fy = (ty) => ty * 16 + 12;
+const SCENES = [
+  { id: 'woods', name: 'Woods', tile: [17, 29], open: [] },
+  { id: 'yard', name: 'Yard', tile: [7, 32], open: ['lights_yard'] },
+  { id: 'creek', name: 'Creek', tile: [37, 22], open: [] },
+  { id: 'road', name: 'Floodlights', tile: [33, 4], open: [] },
+];
+const built = new Map();
+function build(sc) {
+  let b = built.get(sc.id);
+  if (b) return b;
+  const sim = createSim(stage.sim({
+    party: [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }], start: { x: px(sc.tile[0]), y: fy(sc.tile[1]) },
+    difficulty: 'chief', seed: 1983, god: true, skipSpawns: [], openProps: sc.open,
+  }));
+  const view = sim.view();
+  const cam = createCamera();
+  cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
+  b = { view, cam };
+  built.set(sc.id, b);
+  return b;
+}
+
+// ---------------------------------------------------------------- color helpers
+/** Packed little-endian RGBA, the same form as px32 and ImageData's Uint32 view. */
+const pk = (c) => ((255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
+/** Which palette name a packed pixel is. Every palette value is unique, so this is exact. */
+const REV = new Map(Object.keys(PAL).map((n) => [px32(n), n]));
+const thr = (x, y) => (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+
+// ---------------------------------------------------------------- the five night tilesets
+// map: the night color for each material, by the name the day art uses. A name that is not listed (the lamp and
+// window glow, bulbs, red, hot, pink, amber, yellow, orange, cream) keeps its color, so lights stay lights.
+// Everything else in a style is a detail pass: what extra art gets painted into the tiles.
+const STYLES = [
+  {
+    id: 'A', name: 'Moonlit forest',
+    blurb: 'Cool blue-teal night with moon rim light on the pines, dew on the grass and pale pebbles on the trail.',
+    map: {
+      pine0: [3, 11, 16], pine1: [7, 25, 32], pine2: [11, 40, 48], pine3: [20, 64, 72], leaf: [48, 104, 104],
+      soil0: [12, 12, 24], soil1: [24, 24, 44], soil2: [44, 46, 78], soil3: [44, 50, 80], sand: [76, 90, 124],
+      grey1: [10, 14, 28], grey2: [28, 38, 64], grey3: [64, 80, 112],
+      night: [8, 12, 30], shadow: [14, 20, 40], dusk: [26, 38, 70], slate: [40, 56, 92], mist: [78, 100, 140], bone: [120, 142, 178], white: [170, 196, 222],
+      teal0: [5, 14, 34], teal1: [12, 40, 78], cyan: [150, 215, 240], sky: [110, 160, 215], blue: [30, 56, 140],
+    },
+    col: { rim: [132, 188, 200], rim2: [70, 116, 132], dew: [190, 225, 240], pebble: [120, 140, 180], glint: [220, 240, 255], warm: [255, 170, 80] },
+    flowers: { white: [120, 140, 170], pink: [120, 80, 120], yellow: [150, 140, 80], magenta: [120, 70, 130] },
+    rim: 'top-left', dew: 55, pebble: true,
+  },
+  {
+    id: 'B', name: 'Rim-lit silhouettes',
+    blurb: 'Near-black shapes picked out by a thin cyan edge light. Graphic and high contrast, and the darkest of the five.',
+    map: {
+      pine0: [2, 4, 7], pine1: [3, 8, 12], pine2: [5, 13, 19], pine3: [9, 22, 30], leaf: [24, 60, 70],
+      soil0: [5, 5, 10], soil1: [8, 8, 18], soil2: [13, 13, 28], soil3: [20, 22, 44], sand: [40, 46, 84],
+      grey1: [5, 7, 13], grey2: [12, 16, 28], grey3: [26, 34, 58],
+      night: [4, 6, 16], shadow: [8, 10, 20], dusk: [14, 20, 38], slate: [22, 30, 54], mist: [44, 60, 96], bone: [70, 90, 130], white: [120, 150, 190],
+      teal0: [3, 7, 16], teal1: [7, 20, 44], cyan: [100, 220, 240], sky: [80, 150, 210], blue: [20, 40, 110],
+    },
+    col: { rim: [70, 220, 235], rim2: [30, 120, 140], dew: [60, 150, 170], pebble: [50, 80, 130], glint: [120, 240, 255], warm: [255, 160, 70] },
+    flowers: { white: [50, 80, 110], pink: [60, 40, 70], yellow: [80, 80, 40], magenta: [60, 40, 80] },
+    rim: 'all', dew: 25,
+  },
+  {
+    id: 'C', name: 'Glow forest',
+    blurb: 'Deep green night with bioluminescent mushrooms, glowing flowers and fireflies, so the woods light themselves.',
+    map: {
+      pine0: [3, 12, 10], pine1: [6, 26, 22], pine2: [10, 40, 34], pine3: [16, 62, 50], leaf: [40, 120, 90],
+      soil0: [14, 10, 14], soil1: [26, 20, 28], soil2: [42, 34, 46], soil3: [52, 44, 60], sand: [84, 76, 96],
+      grey1: [10, 14, 22], grey2: [28, 36, 54], grey3: [60, 74, 100],
+      night: [8, 12, 26], shadow: [14, 20, 36], dusk: [26, 36, 62], slate: [40, 54, 86], mist: [78, 96, 130], bone: [120, 138, 168], white: [170, 190, 215],
+      teal0: [4, 16, 26], teal1: [10, 46, 66], cyan: [110, 240, 220], sky: [110, 190, 230], blue: [30, 70, 150],
+    },
+    col: {
+      rim: [60, 170, 140], rim2: [30, 90, 80], dew: [130, 255, 220], pebble: [130, 120, 150], glint: [200, 255, 240], warm: [255, 190, 90],
+      cap: [90, 240, 210], capHalo: [20, 90, 80], stem: [40, 56, 70], ffCore: [255, 235, 110], ffHalo: [88, 84, 28],
+    },
+    flowers: { white: [120, 255, 230], pink: [255, 120, 210], yellow: [255, 236, 120], magenta: [255, 90, 220] },
+    rim: 'top-left', dew: 30, mushroom: 11, firefly: 9, glowFlowers: true,
+  },
+  {
+    id: 'D', name: 'Creeping spores', shipped: true,
+    blurb: 'Purple-red night with drifting spores and dark vines crawling over the ground. The Upside Down leaking through.',
+    map: {
+      pine0: [8, 3, 14], pine1: [18, 6, 26], pine2: [30, 10, 40], pine3: [52, 18, 60], leaf: [104, 44, 96],
+      soil0: [14, 5, 9], soil1: [30, 10, 16], soil2: [54, 20, 28], soil3: [86, 32, 42], sand: [140, 66, 72],
+      grey1: [14, 8, 22], grey2: [34, 22, 52], grey3: [70, 50, 98],
+      night: [12, 6, 24], shadow: [20, 10, 34], dusk: [36, 20, 60], slate: [54, 34, 86], mist: [96, 68, 130], bone: [150, 110, 160], white: [210, 170, 200],
+      teal0: [16, 4, 26], teal1: [44, 12, 60], cyan: [255, 120, 190], sky: [220, 110, 200], blue: [120, 40, 150],
+    },
+    col: {
+      rim: [160, 70, 140], rim2: [90, 34, 84], dew: [230, 150, 210], pebble: [190, 110, 120], glint: [255, 180, 225], warm: [255, 150, 90],
+      spore: [255, 150, 210], sporeHalo: [90, 28, 70], vine: [74, 10, 30], vine2: [128, 20, 44],
+    },
+    flowers: { white: [200, 150, 190], pink: [200, 60, 110], yellow: [200, 120, 80], magenta: [160, 50, 150] },
+    road: { yellow: [150, 70, 90], amber: [110, 40, 60] },
+    rim: 'top-left', spores: 5, vines: 8,
+  },
+  {
+    id: 'E', name: 'Retro blue night',
+    blurb: 'A flat blue palette with structured dither patches instead of noise, and star glints on the water. Classic 8-bit night.',
+    map: {
+      pine0: [4, 8, 24], pine1: [8, 16, 44], pine2: [14, 28, 70], pine3: [28, 52, 110], leaf: [64, 100, 170],
+      soil0: [10, 12, 34], soil1: [22, 26, 70], soil2: [30, 36, 84], soil3: [36, 44, 92], sand: [70, 82, 134],
+      grey1: [8, 10, 30], grey2: [24, 30, 70], grey3: [56, 70, 130],
+      night: [6, 8, 26], shadow: [10, 14, 38], dusk: [22, 30, 72], slate: [38, 50, 100], mist: [80, 100, 160], bone: [140, 160, 205], white: [200, 215, 240],
+      teal0: [4, 8, 40], teal1: [14, 28, 100], cyan: [150, 190, 255], sky: [120, 160, 240], blue: [40, 70, 190],
+    },
+    col: { rim: [140, 160, 205], rim2: [60, 80, 140], dew: [200, 215, 240], pebble: [140, 160, 205], glint: [235, 240, 255], warm: [255, 190, 100] },
+    flowers: { white: [150, 170, 220], pink: [120, 110, 190], yellow: [180, 180, 130], magenta: [130, 100, 200] },
+    rim: 'top', dew: 20, dither: true,
+  },
+];
+
+for (const st of STYLES) {
+  st.pmap = new Map(Object.entries(st.map).map(([n, c]) => [px32(n), pk(c)]));
+  st.c = Object.fromEntries(Object.entries(st.col).map(([n, c]) => [n, pk(c)]));
+  const over = (src) => { const m = new Map(st.pmap); for (const [n, c] of Object.entries(src)) m.set(px32(n), pk(c)); return m; };
+  st.flowerMap = over(st.flowers);
+  st.roadMap = over(st.road ?? { yellow: [160, 136, 52], amber: [120, 92, 36] });
+  st.ground = (n) => st.pmap.get(px32(n));
+  // Trees sit darker than the ground around them: the same greens at about half the brightness.
+  const TREE = { pine0: 0.5, pine1: 0.5, pine2: 0.55, pine3: 0.62, leaf: 0.6 };
+  st.treeMap = new Map(st.pmap);
+  for (const [n, f] of Object.entries(TREE)) st.treeMap.set(px32(n), pk(st.map[n].map((v) => Math.round(v * f))));
+  st.waterCache = new Map();
+}
+
+// ---------------------------------------------------------------- painting helpers (16 by 16 Uint32 tiles)
+function remap(u, map) { for (let i = 0; i < u.length; i++) { const m = map.get(u[i]); if (m !== undefined) u[i] = m; } }
+function put(u, x, y, c) { if (x >= 0 && y >= 0 && x < T && y < T) u[y * T + x] = c; }
+function glowDot(u, x, y, core, halo) {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(u, x + dx, y + dy, halo);
+  put(u, x, y, core);
+}
+const PETALS = new Set(['white', 'pink', 'yellow', 'magenta'].map((n) => px32(n)));
+
+/** The exact canopy shape of a pine tile, the same rule the game's tree painter uses (src/gfx/tile_objects.ts). */
+function pineMask(c) {
+  const { near } = c;
+  const below = isTree(near.s), above = isTree(near.n), left = isTree(near.w), right = isTree(near.e);
+  const mask = new Uint8Array(256);
+  const cy = below ? 8 : 6.2, ry = below ? 9 : 6.6, flip = hash2(c.tx, c.ty, 4) & 1;
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const a = (x + 0.5 - 8) / (flip ? 7.4 : 7.9), b = (y + 0.5 - cy) / ry;
+    let on = a * a + b * b <= 1;
+    if (above && y < 8 && x >= 1 && x <= 14) on = true;
+    if (below && y >= 8 && x >= 1 && x <= 14) on = true;
+    if (left && x < 5 && y >= 1 && y <= (below ? 15 : 12)) on = true;
+    if (right && x > 10 && y >= 1 && y <= (below ? 15 : 12)) on = true;
+    mask[y * T + x] = on ? 1 : 0;
+  }
+  return mask;
+}
+
+/** The new night-only art painted into a tile, after its colors are remapped. */
+function detail(st, u, name, c, canopy) {
+  const r = createRng(hash2(c.tx, c.ty, 901));
+  const rnd = (a, b) => a + Math.floor(r() * (b - a + 1));
+  const k = st.c;
+  if (canopy) {
+    const cAt = (x, y) => (x < 0 ? isTree(c.near.w) : x > 15 ? isTree(c.near.e) : y < 0 ? isTree(c.near.n) : y > 15 ? isTree(c.near.s)
+      : canopy[y * T + x] === 1 || (x === 0 && isTree(c.near.w)) || (x === 15 && isTree(c.near.e)) || (y === 0 && isTree(c.near.n)) || (y === 15 && isTree(c.near.s)));
+    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+      if (!canopy[y * T + x]) continue;
+      const top = !cAt(x, y - 1), left = !cAt(x - 1, y), right = !cAt(x + 1, y), bottom = !cAt(x, y + 1);
+      if (top) put(u, x, y, k.rim);
+      else if (left && st.rim !== 'top' && (x + y) % 2 === 0) put(u, x, y, k.rim2);
+      else if (st.rim === 'all' && (right || bottom) && (x + y) % 2 === 0) put(u, x, y, k.rim2);
+    }
+  }
+  const grass = name === 'grass' || name === 'grass2', path = name === 'trail' || name === 'dirt' || name === 'gravel';
+  if (grass && st.dew && hash2(c.tx, c.ty, 31) % 100 < st.dew) { for (let i = 0; i < 2; i++) put(u, rnd(1, 14), rnd(1, 14), k.dew); }
+  if (path && st.pebble) { for (let i = 0; i < 3; i++) put(u, rnd(1, 14), rnd(1, 14), k.pebble); }
+  if (grass && st.firefly && hash2(c.tx, c.ty, 41) % st.firefly === 0) glowDot(u, rnd(3, 12), rnd(3, 12), k.ffCore, k.ffHalo);
+  if (grass && st.mushroom && hash2(c.tx, c.ty, 43) % st.mushroom === 0) {
+    const x = rnd(3, 10), y = rnd(4, 11);
+    for (const [dx, dy] of [[-1, 0], [3, 0], [0, -1], [2, -1], [1, -2]]) put(u, x + dx, y + dy, k.capHalo);
+    put(u, x, y, k.cap); put(u, x + 1, y, k.cap); put(u, x + 2, y, k.cap); put(u, x + 1, y - 1, k.cap); put(u, x + 1, y + 1, k.stem);
+  }
+  if ((grass || path) && st.spores && hash2(c.tx, c.ty, 47) % st.spores === 0) {
+    glowDot(u, rnd(3, 12), rnd(3, 12), k.spore, k.sporeHalo);
+    if (r() < 0.5) put(u, rnd(1, 14), rnd(1, 14), k.spore);
+  }
+  if (grass && st.vines && hash2(c.tx, c.ty, 53) % st.vines === 0) {
+    let x = rnd(0, 15), y = rnd(0, 15);
+    const dir = r() < 0.5 ? 1 : -1;
+    for (let i = 0; i < 11; i++) {
+      put(u, x, y, i % 4 === 3 ? k.vine2 : k.vine);
+      x += dir * (r() < 0.7 ? 1 : 0); y += r() < 0.5 ? 1 : -1;
+      if (i % 5 === 2) put(u, x, y - 1, k.vine);
+    }
+  }
+  if (st.dither && (grass || path)) {
+    // Structured patches instead of noise: a few 4 by 4 blocks of checkerboard, the way old tilesets did it.
+    const hi = st.ground(path ? 'soil2' : 'pine3'), lo = st.ground(path ? 'soil2' : 'pine1');
+    for (let by = 0; by < 4; by++) for (let bx = 0; bx < 4; bx++) {
+      const h = hash2(c.tx * 4 + bx, c.ty * 4 + by, 71) % 7;
+      if (h > 1) continue;
+      for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (((x + y) & 1) === 0) put(u, bx * 4 + x, by * 4 + y, h === 0 ? lo : hi);
+    }
+  }
+}
+
+/** One finished night tile, made from the game's day painter. */
+function nightTile(st, name, c) {
+  const day = groundTile(name, c) ?? objectTile(name, c) ?? groundTile('grass', c);
+  const u = new Uint32Array(day.d);
+  let canopy = null;
+  const win = name === 'housewall' && day.get(5, 9) === px32('amber');
+  if (name === 'pine') {
+    // Canopy pixels get the darker tree palette; the trunk and the ground showing through keep the normal one.
+    canopy = pineMask(c);
+    for (let i = 0; i < 256; i++) { const m = (canopy[i] ? st.treeMap : st.pmap).get(u[i]); if (m !== undefined) u[i] = m; }
+  } else {
+    remap(u, name === 'roadline' ? st.roadMap : name === 'flowers' ? st.flowerMap : st.pmap);
+  }
+  if (name === 'flowers' && st.glowFlowers) {
+    // The blossoms glow: a dim halo on the grass around every petal.
+    for (let i = 0; i < 256; i++) {
+      if (!PETALS.has(day.d[i])) continue;
+      const x = i % T, y = (i / T) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= T || yy >= T) continue;
+        if (String(REV.get(day.d[yy * T + xx])).startsWith('pine')) u[yy * T + xx] = st.c.capHalo;
+      }
+    }
+  }
+  detail(st, u, name, c, canopy);
+  return { u, win };
+}
+
+/** Bakes the whole stage once for a style. Water is kept apart because it animates. */
+function bakeNight(st) {
+  const rows = stage.rows, cols = rows[0].length, nrows = rows.length;
+  const names = [];
+  for (let y = 0; y < nrows; y++) for (let x = 0; x < cols; x++) names.push((TILES[rows[y][x]] ?? TILES['.']).name);
+  const WP = cols * T, HP = nrows * T, buf = new Uint32Array(WP * HP);
+  const water = [], sources = [];
+  const at = (x, y, self) => (x < 0 || y < 0 || x >= cols || y >= nrows ? self : names[y * cols + x]);
+  for (let ty = 0; ty < nrows; ty++) for (let tx = 0; tx < cols; tx++) {
+    const name = names[ty * cols + tx];
+    const near = { n: at(tx, ty - 1, name), e: at(tx + 1, ty, name), s: at(tx, ty + 1, name), w: at(tx - 1, ty, name) };
+    if (name === 'creek' || name === 'shallows') { water.push({ tx, ty, deep: name === 'creek', variant: hash2(tx, ty, 2) % 3, banks: bankMask(near) }); continue; }
+    const { u, win } = nightTile(st, name, { tx, ty, near });
+    for (let j = 0; j < T; j++) buf.set(u.subarray(j * T, j * T + T), (ty * T + j) * WP + tx * T);
+    if (win) sources.push({ x: tx * T + 8, y: ty * T + 16, r: 30, k: 1.1 });
+  }
+  st.baked = { canvas: canvasFromPixels(buf, WP, HP), water, sources, w: WP, h: HP };
+}
+function waterCanvas(st, s, frame) {
+  const key = `${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
+  let cv = st.waterCache.get(key);
+  if (cv) return cv;
+  const u = new Uint32Array(waterTile(s.deep, s.variant, frame, s.banks).d);
+  remap(u, st.pmap);
+  const r = createRng(s.variant * 131 + (s.deep ? 7 : 3));
+  for (let i = 0; i < 2; i++) { const y = 2 + Math.floor(r() * 12), x0 = Math.floor(r() * 16); if ((frame + i) % 2 === 0) u[y * T + ((x0 + frame * 4) & 15)] = st.c.glint; }
+  cv = canvasFromPixels(u, T, T);
+  st.waterCache.set(key, cv);
+  return cv;
+}
+for (const st of STYLES) bakeNight(st);
+
+// ---------------------------------------------------------------- painted light pools
+// Around each real light source, ground pixels are lifted and warmed in four dithered steps. It is a painted
+// decal around the light, not a layer over the world.
+const poolLvl = new Uint8Array(N);
+const LIFT = [0, 0.3, 0.6, 0.95, 1.35];
+function paintPools(d, lights, warm, t) {
+  poolLvl.fill(0);
+  lights.forEach((L, li) => {
+    const jitter = L.flicker ? ((hash2(li, (t / 3) | 0, 31) % 200) - 100) / 100 : 0;
+    const R = Math.round(L.r * (1 + (L.flicker ?? 0) * 0.14 * jitter));
+    if (R < 2) return;
+    const cx = Math.round(L.x), cy = Math.round(L.y);
+    const x0 = Math.max(0, cx - R), x1 = Math.min(W - 1, cx + R), y0 = Math.max(0, cy - R), y1 = Math.min(H - 1, cy + R);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const dd = Math.hypot(x - cx, y - cy);
+      if (dd >= R) continue;
+      const f = 1 - dd / R, q = f * f * (3 - 2 * f) * 4 * (L.k ?? 1), lo = Math.floor(q);
+      const lvl = Math.min(4, lo + (q - lo > thr(x, y) ? 1 : 0)), i = y * W + x;
+      if (lvl > poolLvl[i]) poolLvl[i] = lvl;
+    }
+  });
+  for (let i = 0, p = 0; i < N; i++, p += 4) {
+    const l = poolLvl[i];
+    if (!l) continue;
+    const lift = LIFT[l];
+    d[p] = Math.min(255, d[p] * (1 + lift) + warm[0] * lift * 0.2);
+    d[p + 1] = Math.min(255, d[p + 1] * (1 + lift) + warm[1] * lift * 0.2);
+    d[p + 2] = Math.min(255, d[p + 2] * (1 + lift) + warm[2] * lift * 0.2);
+  }
+}
+
+/** Every real light in view, in world px: lamps, windows, lit bulbs, floodlights, the lantern and, if asked, the flashlight. */
+function lightList(st, view, flash) {
+  const out = [];
+  for (const l of stage.lights) out.push({ x: l.x, y: l.y, r: l.r * 0.85, flicker: l.flicker ?? 0 });
+  for (const s of st.baked.sources) out.push({ ...s });
+  for (const p of view.props) {
+    const cx = p.x + p.w / 2, cy = p.y + p.h / 2, on = p.state === 'lit' || p.state === 'open';
+    if (p.kind === 'lights' && on) out.push({ x: cx, y: cy, r: 40, flicker: 0.4 });
+    else if (p.kind === 'floodlight' && p.state !== 'off') out.push({ x: cx, y: cy - 6, r: 64, k: 1.15, flicker: 0.1 });
+    else if (p.kind === 'target') out.push({ x: cx, y: cy, r: on ? 34 : 22, flicker: 0.3 });
+  }
+  if (flash) out.push({ x: view.focus.x, y: view.focus.y - 7, r: 46, flicker: 0.15 });
+  return out;
+}
+
+// ---------------------------------------------------------------- one frame per style
+const mkCtx = (w, h) => { const c = makeCanvas(w, h); const g = c.getContext('2d', { willReadFrequently: true }); g.imageSmoothingEnabled = false; return { c, g }; };
+const PTW = 128, PTH = 96, POX = 32, POY = 40;
+const propA = mkCtx(PTW, PTH), propB = mkCtx(PTW, PTH);
+
+/** A prop drawn by the game, then repainted into the style's night palette. Same art, new colors. */
+function drawPropNight(ctx, st, p) {
+  const x = Math.round(p.x), y = Math.round(p.y);
+  propA.g.clearRect(0, 0, PTW, PTH);
+  propA.g.save(); propA.g.translate(POX - x, POY - y); drawProp(propA.g, p); propA.g.restore();
+  const id = propA.g.getImageData(0, 0, PTW, PTH);
+  remap(new Uint32Array(id.data.buffer), st.pmap);
+  propB.g.putImageData(id, 0, 0);
+  ctx.drawImage(propB.c, x - POX, y - POY);
+}
+
+function renderStyle(st, view, cam, t, o) {
+  const s = st.surf ?? (st.surf = mkCtx(SCREEN_W, SCREEN_H)), g = s.g;
+  g.fillStyle = '#000'; g.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  g.save();
+  g.translate(-cam.x, VIEW_TOP - cam.y);
+  const x0 = Math.max(0, cam.x), y0 = Math.max(0, cam.y), x1 = Math.min(st.baked.w, cam.x + SCREEN_W), y1 = Math.min(st.baked.h, cam.y + H);
+  g.drawImage(st.baked.canvas, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+  const frame = ((t / 16) | 0) & 3;
+  for (const w of st.baked.water) {
+    const wx = w.tx * T, wy = w.ty * T;
+    if (wx + T <= x0 || wx >= x1 || wy + T <= y0 || wy >= y1) continue;
+    g.drawImage(waterCanvas(st, w, frame), wx, wy);
+  }
+  g.restore();
+  if (o.pools) {
+    const img = g.getImageData(0, VIEW_TOP, W, H);
+    paintPools(img.data, lightList(st, view, o.flash).map((L) => ({ ...L, x: L.x - cam.x, y: L.y - cam.y })), st.col.warm, t);
+    g.putImageData(img, 0, VIEW_TOP);
+  }
+  g.save();
+  g.beginPath(); g.rect(0, VIEW_TOP, SCREEN_W, H); g.clip();
+  g.translate(-cam.x, VIEW_TOP - cam.y);
+  for (const it of view.items) drawItem(g, it);
+  const order = [];
+  for (const p of view.props) order.push({ y: p.y + p.h, prop: p });
+  for (const a of view.actors) order.push({ y: a.y, actor: a });
+  order.sort((l, r) => l.y - r.y);
+  for (const e of order) { if (e.prop) drawPropNight(g, st, e.prop); else drawActor(g, e.actor); }
+  for (const f of view.fx) drawFx(g, f);
+  g.restore();
+}
+
+// ---------------------------------------------------------------- the "before" card
+// The game used to draw daytime art and then cover it with a dithered darkness layer, with the lights cut out of it.
+// That renderer was retired when the night art shipped, so this is a copy of it, kept only for this comparison.
+const oThr = new Uint8Array(N), oStamp = new Uint32Array(N), oLvl = new Uint8Array(N), oBases = new Map();
+let oCanvas = null, oCtx = null, oImage = null, oOut = null, oInk = 0, oFrame = 0;
+function oldDarkness(ctx, lights, darkness, t) {
+  const base = Math.min(16, Math.max(0, Math.round(darkness * 16)));
+  if (!(base > 0)) return;
+  if (!oCanvas) {
+    oCanvas = makeCanvas(W, H); oCtx = ctx2d(oCanvas); oImage = oCtx.createImageData(W, H); oOut = new Uint32Array(oImage.data.buffer);
+    oInk = px32('ink');
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) oThr[y * W + x] = BAYER4[(y & 3) * 4 + (x & 3)];
+  }
+  let b = oBases.get(base);
+  if (!b) { b = new Uint32Array(N); for (let i = 0; i < N; i++) if (oThr[i] < base) b[i] = oInk; oBases.set(base, b); }
+  oOut.set(b);
+  oFrame++;
+  const calm = settings.reduceFlashing;
+  lights.forEach((L, li) => {
+    const jitter = !calm && L.flicker ? ((hash2(li, (t / 3) | 0, 31) % 200) - 100) / 100 : 0;
+    const R = Math.round(L.r * (1 + (L.flicker ?? 0) * 0.16 * jitter));
+    if (R < 2) return;
+    const r0 = R * 0.6, cx = Math.round(L.x), cy = Math.round(L.y) - VIEW_TOP;
+    const x0 = Math.max(0, cx - R), x1 = Math.min(W - 1, cx + R), y0 = Math.max(0, cy - R), y1 = Math.min(H - 1, cy + R);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const d = Math.hypot(x - cx, y - cy);
+      if (d >= R) continue;
+      const i = y * W + x;
+      if (oStamp[i] !== oFrame) { oStamp[i] = oFrame; oLvl[i] = base; }
+      let level = 0;
+      if (d > r0) { const u = (d - r0) / (R - r0); level = Math.min(base, Math.round(base * u * u * (3 - 2 * u))); }
+      if (level < oLvl[i]) oLvl[i] = level;
+      oOut[i] = oThr[i] < oLvl[i] ? oInk : 0;
+    }
+  });
+  oCtx.putImageData(oImage, 0, 0);
+  ctx.drawImage(oCanvas, 0, VIEW_TOP);
+}
+function oldLights(view, cam) {
+  const sx = (wx) => wx - cam.x, sy = (wy) => wy - cam.y + VIEW_TOP;
+  const out = [{ x: sx(view.focus.x), y: sy(view.focus.y - 7), r: 52, flicker: 0.15 }];
+  for (const l of stage.lights) out.push({ x: sx(l.x), y: sy(l.y), r: l.r, flicker: l.flicker ?? 0 });
+  for (const p of view.props) {
+    const cx = p.x + p.w / 2, cy = p.y + p.h / 2, on = p.state === 'lit' || p.state === 'open';
+    if (p.kind === 'lights' && on) out.push({ x: sx(cx), y: sy(cy), r: 52, flicker: 0.5 });
+    else if (p.kind === 'floodlight' && p.state !== 'off') out.push({ x: sx(cx), y: sy(cy - 6), r: 74, flicker: 0.1 });
+    else if (p.kind === 'target') out.push({ x: sx(cx), y: sy(cy), r: on ? 40 : 26, flicker: 0.35 });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- page
+const grid = document.getElementById('grid');
+const VARIANTS = [
+  { id: 'now', name: 'Before', ref: true, blurb: 'The retired look: daytime art under black pixels on a 4 by 4 grid, with a flashlight cut into it.' },
+  ...STYLES,
+];
+const cards = VARIANTS.map((v) => {
+  const fig = document.createElement('figure');
+  fig.className = 'card' + (v.ref ? ' ref' : '') + (v.shipped ? ' shipped' : '');
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const cap = document.createElement('figcaption');
+  cap.innerHTML = `<div class="tag"><span class="id">${v.ref ? 'BEFORE' : v.id}</span><b>${v.name}</b>${v.shipped ? '<span class="badge">In the game</span>' : ''}</div><p>${v.blurb}</p>`;
+  fig.append(cv, cap);
+  grid.append(fig);
+  return { v, ctx: cv.getContext('2d') };
+});
+
+const sceneBox = document.getElementById('scenes');
+const poolsBox = document.getElementById('pools'), flashBox = document.getElementById('flash'), anim = document.getElementById('anim');
+let scene = SCENES[0], t = 0;
+function pick(sc) { scene = sc; for (const b of sceneBox.children) b.setAttribute('aria-pressed', String(b.dataset.id === sc.id)); }
+for (const sc of SCENES) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = sc.name; b.dataset.id = sc.id;
+  b.addEventListener('click', () => pick(sc));
+  sceneBox.append(b);
+}
+pick(SCENES[0]);
+
+const refFrame = mkCtx(SCREEN_W, SCREEN_H), refDark = mkCtx(SCREEN_W, SCREEN_H);
+
+function tick() {
+  if (anim.checked) t++;
+  const { view, cam } = build(scene);
+  const o = { pools: poolsBox.checked, flash: flashBox.checked };
+  for (const c of cards) {
+    if (c.v.ref) {
+      refFrame.g.fillStyle = '#000'; refFrame.g.fillRect(0, 0, SCREEN_W, SCREEN_H);
+      drawWorld(refFrame.g, dayStage, view, cam, t, { hitboxes: false, figure: null, light: { level: 1, flicker: 0 } });
+      refDark.g.drawImage(refFrame.c, 0, 0);
+      oldDarkness(refDark.g, oldLights(view, cam), 0.8, t);
+      c.ctx.drawImage(refDark.c, 0, VIEW_TOP, W, H, 0, 0, W, H);
+    } else {
+      renderStyle(c.v, view, cam, t, o);
+      c.ctx.drawImage(c.v.surf.c, 0, VIEW_TOP, W, H, 0, 0, W, H);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

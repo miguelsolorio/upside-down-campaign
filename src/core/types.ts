@@ -136,6 +136,8 @@ export type TimeOfDay = 'day' | 'night';
 export interface PartyHud {
   id: HeroId; name: string; level: number;
   hp: number; hpMax: number; mp: number; mpMax: number;
+  /** What the hero's special costs, so the MP bar can show casts. */
+  mpCost: number;
   xp: number; xpNext: number; ko: boolean; active: boolean;
 }
 export interface HudView {
@@ -318,7 +320,7 @@ export type BarkEvent = 'swapIn' | 'levelUp' | 'ko' | 'lowHp' | 'special' | 'kil
 // ---------------------------------------------------------------- gfx vocabulary
 export type IconId =
   | 'bulbRed' | 'bulbYellow' | 'bulbGreen' | 'bulbBlue' | 'bulbOff'
-  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'cursorDown' | 'cursorUp' | 'heart' | 'mpGem';
+  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'cursorDown' | 'cursorUp' | 'heart';
 export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 

@@ -40,8 +40,4 @@ export const ICON_ART: Record<string, IconArt> = {
     rows: ['........', '.rr.rr..', 'rhrrrrr.', 'rrrrrrd.', '.rrrrd..', '..rrd...', '...r....', '........'],
     map: { r: 'red', h: 'pink', d: 'blood1' },
   },
-  mpGem: {
-    rows: ['........', '..hhhh..', '.hbbbbd.', 'hbbwbbbd', '.dbbbbd.', '..dbbd..', '...dd...', '........'],
-    map: { h: 'sky', b: 'blue', d: 'dusk', w: 'white' },
-  },
 };

@@ -6,8 +6,9 @@ import { drawText } from './font.ts';
 import { PAGES_A } from './sheet_a.ts';
 import { PAGES_B } from './sheet_b.ts';
 import { PAGES_C } from './sheet_foes.ts';
+import { PAGES_D } from './sheet_school.ts';
 
-const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C];
+const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D];
 
 function startPage(): { page: number; sub: number } {
   const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();

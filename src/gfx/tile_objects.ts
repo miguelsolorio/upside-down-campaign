@@ -1,4 +1,4 @@
-// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts.
+// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts, the school's walls in tile_school2.ts and its furniture in tile_school3.ts.
 // Trees read their neighbours so a forest is one canopy with trunks only along its south edge.
 import type { TileName } from '../core/tiles.ts';
 import { hash2 } from './canvas.ts';
@@ -8,10 +8,12 @@ import type { TileCtx } from './tile_ground.ts';
 import type { ColorName } from './palette.ts';
 import { labObject } from './tile_lab.ts';
 import { lab2Object } from './tile_lab3.ts';
+import { schoolWall } from './tile_school2.ts';
+import { schoolFurniture } from './tile_school3.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
-  'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines',
+  'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines', 'schoolfloor', 'checker', 'gymfloor',
 ]);
 /** Floors that are a mark on another floor: an object beside one stands on the plain floor named here, unless a plain floor is also beside it. */
 const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet' };
@@ -273,12 +275,9 @@ function mailbox(c: TileCtx): Px {
   return px;
 }
 
-// Flat stand-ins for the school (1.3) and the patch and arcade (2.1) tiles until Art paints them: a fill and a frame.
+// Flat stand-ins for the patch and arcade (2.1) tiles until Art paints them: a fill and a frame. The school (1.3) is painted.
 const PLACEHOLDER: Partial<Record<TileName, [ColorName, ColorName]>> = {
-  schoolfloor: ['grey2', 'grey3'], checker: ['bone', 'grey2'], gymfloor: ['amber', 'soil1'], schoolwall: ['grey1', 'ink'],
-  schoolcap: ['ink', 'grey1'], lockerwall: ['teal0', 'ink'], desk: ['soil1', 'soil0'], chalkboard: ['leaf', 'ink'],
-  trophy: ['yellow', 'soil0'], table: ['grey3', 'grey1'], counter: ['grey1', 'ink'], bleachers: ['soil1', 'soil0'],
-  brick: ['red', 'soil0'], arcadecarpet: ['dusk', 'magenta'], arcadewall: ['ink', 'magenta'], sidewalk: ['grey3', 'grey2'],
+  arcadecarpet: ['dusk', 'magenta'], arcadewall: ['ink', 'magenta'], sidewalk: ['grey3', 'grey2'],
   storefront: ['grey1', 'cyan'], furrow: ['soil1', 'soil0'], pumpkin: ['amber', 'soil0'], rotpumpkin: ['soil0', 'ink'],
   haybale: ['yellow', 'soil1'], barnwall: ['red', 'soil0'], barnroof: ['soil0', 'ink'], corn: ['leaf', 'soil1'],
   rot: ['soil0', 'ink'], hole: ['ink', 'soil0'],
@@ -314,6 +313,18 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
     case 'mass':
     case 'wallsign':
       return lab2Object(name, c, rngFor(c, name), under);
+    case 'schoolwall':
+    case 'schoolcap':
+    case 'lockerwall':
+    case 'chalkboard':
+    case 'trophy':
+    case 'brick':
+      return schoolWall(name, c, rngFor(c, name));
+    case 'desk':
+    case 'table':
+    case 'counter':
+    case 'bleachers':
+      return schoolFurniture(name, c, rngFor(c, name), under);
     default: return PLACEHOLDER[name] ? placeholder(PLACEHOLDER[name] as [ColorName, ColorName]) : null;
   }
 }

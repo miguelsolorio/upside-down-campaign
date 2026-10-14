@@ -1,11 +1,13 @@
 // Actor sprites: one atlas canvas per character (13 frames by 4 directions), plus flash and tint variants.
 // Overlays (shadow, nosebleed, "!" and HP bar) are drawn with plain rects around the sprite. A cell is 16 by 16, or
-// 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own.
+// 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own. The
+// Demogorgon is drawn from frames of its own, 32 by 36 (actor_demo.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
 import { ANIM_ORDER, CELL, POSES, bodyShift, composeFrame, composeRat } from './actor_pose.ts';
 import { composeGuard, composeWarden, FOE_CELL } from './actor_foes.ts';
+import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
 import { AGENT, RAT_PAL } from './data/foes.ts';
@@ -213,8 +215,22 @@ function drawNosebleed(ctx: Ctx, v: ActorView, ox: number, oy: number, frame: nu
   if (phase >= 34 && phase < 44) rect(ctx, px, y0 + 4, 1, 1, 'red');
 }
 
+/** The Demogorgon: a 32 by 36 cell of its own (actor_demo.ts), with the same shadow, bar and "!" as the others. */
+function drawBoss(ctx: Ctx, v: ActorView): void {
+  const f = demoFrame(v);
+  const cx = Math.round(v.x), cy = Math.round(v.y), z = Math.max(0, Math.round(v.z));
+  const oy = cy - DEMO_H - z, head = oy + f.top;
+  if (!v.blink) {
+    drawShadow(ctx, cx, cy, z, true);
+    ctx.drawImage(f.img, cx - (DEMO_W >> 1), oy);
+    if (v.bar) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax);
+  }
+  if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar ? 15 : 10) + ((v.t >> 2) & 1));
+}
+
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
 export function drawActor(ctx: Ctx, v: ActorView): void {
+  if (v.id === 'demogorgon') { drawBoss(ctx, v); return; }
   const sh = sheetOf(keyOf(v.id, v.guarding, v.elite, v.kind));
   const C = sh.cell;
   const cx = Math.round(v.x), cy = Math.round(v.y);

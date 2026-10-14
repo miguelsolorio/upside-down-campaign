@@ -1,9 +1,10 @@
-// Props (log, gate, target, lights, bike, sign, van, floodlight, crate, door, console, camera, tank, rack, generator) and pickup items.
+// Props (log, gate, target, lights, bike, sign, van, floodlight, crate, door, console, camera, tank, rack, generator, firebox,
+// vines) and pickup items.
 // Static art is cached per kind, size and state; blinking bulbs, glare and sparkles are drawn live.
 //
 // State meaning: log closed = in the way, open = cleared. gate open = swung wide. target closed or off = unhit,
 // open or lit = hit. lights lit or open = glowing, anything else dark. floodlight is on unless state is off.
-// van open = rear doors wide. crate open = smashed. door open = slid back. console lit (or open) = on. camera alert = dark and
+// van open = tipped on its side (shoved clear). firebox lit or open = released, vines open = burned away. crate open = smashed. door open = slid back. console lit (or open) = on. camera alert = dark and
 // red-lit, lit or off = shot and dead, any other state = calm. tank, rack and generator ignore their state.
 import type { ItemView, PropView } from '../core/types.ts';
 import { settings } from '../core/settings.ts';
@@ -16,6 +17,7 @@ import { BULB_ROWS, CHIPS, COKE, EGGO, SIGN_TEXT } from './data/props.ts';
 import { nightSprite } from './night.ts';
 import { consoleArt, consoleLive, doorArt } from './props_lab.ts';
 import { drawLab2Prop } from './props_lab2.ts';
+import { drawSchoolProp, vanTippedArt } from './props_school.ts';
 
 const cache = new Map<string, HTMLCanvasElement>();
 function cached(key: string, build: () => HTMLCanvasElement): HTMLCanvasElement {
@@ -137,6 +139,7 @@ function floodArt(on: boolean): Px {
 }
 
 function vanArt(w: number, h: number, open: boolean): Px {
+  if (open) return rimmed(vanTippedArt(w, h));
   const p = new Px(w, h);
   const bodyH = h - 5;
   p.rect(1, 1, w - 2, bodyH, 'bone').rect(2, 0, w - 4, 1, 'bone').rect(1, 1, w - 2, 1, 'white');
@@ -148,7 +151,6 @@ function vanArt(w: number, h: number, open: boolean): Px {
   p.disc(Math.floor(w * 0.5), bodyH - 8, 2.2, 'blue').set(Math.floor(w * 0.5), bodyH - 8, 'white');
   p.rect(w - 2, bodyH - 8, 2, 2, 'yellow').rect(0, bodyH - 8, 2, 2, 'red');
   p.rect(0, bodyH - 1, w, 2, 'grey2').rect(0, bodyH - 1, w, 1, 'grey3');
-  if (open) p.rect(0, 2, 5, bodyH - 3, 'ink').rect(0, 2, 2, bodyH - 3, 'grey3').rect(2, 2, 1, bodyH - 3, 'grey2');
   for (const cx of [Math.floor(w * 0.22), Math.floor(w * 0.78)]) p.disc(cx, h - 4, 4, 'ink').disc(cx, h - 4, 2.4, 'grey3').set(cx, h - 4, 'grey1');
   return rimmed(p);
 }
@@ -234,6 +236,7 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
       return;
     }
     case 'camera': case 'tank': case 'rack': case 'generator': drawLab2Prop(ctx, v, art); return;
+    case 'firebox': case 'vines': drawSchoolProp(ctx, v, art, calm()); return;
     case 'lights':
       ctx.drawImage(art(`lights${w}x${h}`, () => lightsArt(w, h)), x, y);
       drawLights(ctx, v, x, y);

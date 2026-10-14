@@ -14,6 +14,7 @@ import { drawPanel } from './ui.ts';
 import { PAL } from './palette.ts';
 import { drawLabContext, drawLabStage } from './sheet_lab.ts';
 import { drawLab2Context, drawLab2Stage } from './sheet_lab2.ts';
+import { SCHOOL_TILES } from './tile_school.ts';
 
 export interface Page { title: string; subs: number; draw(ctx: Ctx, t: number, sub: number): void }
 
@@ -89,7 +90,7 @@ const flags: Page = {
 
 const LAB_TILES = ['labfloor', 'labfloor2', 'hazard', 'vent', 'labwall', 'labcap', 'pipe', 'glass', 'cage'];
 const LAB2_TILES = ['locker', 'bench', 'cabinet', 'shelf', 'cable', 'drain', 'stain', 'vines', 'mass', 'tilegreen', 'carpet', 'wallsign', 'plate'];
-const OUTDOOR_TILES = TILE_NAMES.filter((n) => !LAB_TILES.includes(n) && !LAB2_TILES.includes(n));
+const OUTDOOR_TILES = TILE_NAMES.filter((n) => !LAB_TILES.includes(n) && !LAB2_TILES.includes(n) && !SCHOOL_TILES.includes(n));
 
 // Three pages: the outdoor tiles (sub 0), the lab tiles with a strip showing them beside their neighbours (sub 1),
 // then the second pass of lab tiles, three variants each, with their own strip (sub 2).

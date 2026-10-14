@@ -4,6 +4,7 @@ import type { Dir, FxView } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import { arcPx, discPx, hash2, linepx, rect, ringPx, unit } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
+import { acid, mark } from './fx_boss.ts';
 
 const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
@@ -319,6 +320,8 @@ export function drawFx(ctx: Ctx, f: FxView): void {
     case 'heal': heal(ctx, f, p, f.t); break;
     case 'ring': ring(ctx, f, p); break;
     case 'spore': spore(ctx, f, p, f.t); break;
+    case 'acid': acid(ctx, f, ang); break;
+    case 'mark': mark(ctx, f, p); break;
     default: break;
   }
 }

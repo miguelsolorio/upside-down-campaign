@@ -141,7 +141,7 @@ test('the corner controls are the combat keys only, and follow a rebind', () => 
   assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE', 'BURST'].some((w) => whats.includes(w)));
 });
 
-test('the burst line over the hero names Space, follows an interact rebind, and names Y on a controller', () => {
+test('the burst line under the HUD names Space, follows an interact rebind, and names Y on a controller', () => {
   assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST');
   setBinding('burst', 0, 'KeyN');
   assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST', 'U and B still burst, but the line teaches Space');

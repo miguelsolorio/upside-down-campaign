@@ -49,12 +49,11 @@ export function readPad(pad: PadLike, prev: ReadonlySet<Action> = new Set()): Pa
 
   if (down(BTN.A)) { out.add('attack'); out.add('confirm'); out.add('interact'); }
   if (down(BTN.X)) out.add('special');
-  if (down(BTN.B)) { out.add('dash'); out.add('cancel'); }
+  if (down(BTN.B)) out.add('cancel');
   if (down(BTN.Y)) out.add('burst');
   if (down(BTN.LB)) out.add('swapPrev');
   if (down(BTN.RB)) out.add('swapNext');
   if (trigger(BTN.RT)) out.add('attack');
-  if (trigger(BTN.LT)) out.add('dash');
   if (down(BTN.VIEW)) out.add('skip');
   if (down(BTN.MENU)) { out.add('pause'); out.add('start'); }
   if (down(BTN.UP)) out.add('up');

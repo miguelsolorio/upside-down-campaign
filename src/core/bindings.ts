@@ -4,7 +4,7 @@ import { storage } from './storage.ts';
 
 export type Action =
   | 'up' | 'down' | 'left' | 'right'
-  | 'attack' | 'special' | 'dash' | 'swapPrev' | 'swapNext'
+  | 'attack' | 'special' | 'swapPrev' | 'swapNext'
   | 'swap1' | 'swap2' | 'swap3' | 'swap4' | 'burst'
   | 'interact' | 'confirm' | 'cancel' | 'pause' | 'mute' | 'skip'
   /** Only a controller's Start button sends this, together with pause. The title uses it to begin. */
@@ -13,7 +13,7 @@ export type Action =
 /** The actions a player can rebind. confirm follows attack and interact. cancel follows special. */
 export type BindAction =
   | 'up' | 'down' | 'left' | 'right'
-  | 'attack' | 'special' | 'dash' | 'swapPrev' | 'swapNext'
+  | 'attack' | 'special' | 'swapPrev' | 'swapNext'
   | 'swap1' | 'swap2' | 'swap3' | 'swap4' | 'burst'
   | 'interact' | 'skip' | 'pause' | 'mute';
 
@@ -32,7 +32,6 @@ export const BIND_ROWS: readonly BindRow[] = [
   { action: 'right', label: 'MOVE RIGHT', required: false },
   { action: 'attack', label: 'ATTACK', required: true },
   { action: 'special', label: 'SPECIAL', required: true },
-  { action: 'dash', label: 'DASH', required: true },
   { action: 'swapPrev', label: 'SWAP BACK', required: false },
   { action: 'swapNext', label: 'SWAP NEXT', required: false },
   { action: 'swap1', label: 'HERO 1', required: false },
@@ -48,10 +47,10 @@ export const BIND_ROWS: readonly BindRow[] = [
 
 export const DEFAULT_BINDINGS: Record<BindAction, readonly [string | null, string | null]> = {
   up: ['KeyW', null], down: ['KeyS', null], left: ['KeyA', null], right: ['KeyD', null],
-  attack: ['KeyZ', 'KeyJ'], special: ['KeyX', 'KeyK'], dash: ['KeyC', 'KeyL'],
-  swapPrev: ['KeyQ', null], swapNext: ['ShiftLeft', 'Tab'],
+  attack: ['KeyZ', 'KeyJ'], special: ['KeyX', 'KeyK'],
+  swapPrev: ['KeyC', null], swapNext: ['KeyV', null],
   swap1: ['Digit1', null], swap2: ['Digit2', null], swap3: ['Digit3', null], swap4: ['Digit4', null],
-  burst: ['KeyU', 'KeyV'], interact: ['Space', null], skip: ['KeyT', null], pause: ['KeyP', null], mute: ['KeyM', null],
+  burst: ['KeyU', 'KeyB'], interact: ['Space', null], skip: ['KeyT', null], pause: ['KeyP', null], mute: ['KeyM', null],
 };
 
 /** Keys that always work and can't be rebound: menu navigation and the way out of anything. */
@@ -77,7 +76,8 @@ function cloneDefaults(): Bindings {
 
 let current: Bindings = cloneDefaults();
 let cache: Map<string, Action[]> | null = null;
-const STORE_KEY = 'upside-down:keys:v1';
+/** v2 dropped dash and moved swap to C and V, so older saves start from the new defaults. */
+const STORE_KEY = 'upside-down:keys:v2';
 
 export function rowLabel(action: BindAction): string {
   return BIND_ROWS.find((r) => r.action === action)?.label ?? action.toUpperCase();
@@ -247,7 +247,7 @@ const onPad = (): boolean => promptDevice === 'gamepad';
 
 /** The Xbox face for each action a controller can do. These are fixed, so a key rebind never touches them. */
 const PAD_LABEL: Partial<Record<BindAction, string>> = {
-  attack: 'A', special: 'X', dash: 'B', swapPrev: 'LB', swapNext: 'RB', burst: 'Y',
+  attack: 'A', special: 'X', swapPrev: 'LB', swapNext: 'RB', burst: 'Y',
   interact: 'A', skip: 'VIEW', pause: 'START',
 };
 
@@ -286,14 +286,13 @@ export interface HintRow { keys: string; what: string }
 /**
  * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
  * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
- * A keyboard shows the one key that cycles to the next hero. A controller has a bumper each way.
+ * Swap shows both keys, back then next: C and V on a keyboard, the bumpers on a controller.
  */
 export function controlRows(): HintRow[] {
   return [
     { keys: labelOf('attack'), what: 'ATTACK' },
     { keys: labelOf('special'), what: 'SPECIAL' },
-    { keys: labelOf('dash'), what: 'DASH' },
-    { keys: onPad() ? `${labelOf('swapPrev')} ${labelOf('swapNext')}` : labelOf('swapNext'), what: 'SWAP' },
+    { keys: `${labelOf('swapPrev')} ${labelOf('swapNext')}`, what: 'SWAP' },
     { keys: labelOf('burst'), what: 'BURST' },
   ];
 }
@@ -310,7 +309,6 @@ const TOKENS: Record<string, () => string> = {
   },
   attack: () => labelOf('attack'),
   special: () => labelOf('special'),
-  dash: () => labelOf('dash'),
   burst: () => labelOf('burst'),
   interact: () => labelOf('interact'),
   skip: () => labelOf('skip'),
@@ -319,7 +317,7 @@ const TOKENS: Record<string, () => string> = {
   pick: () => { const p = pickLabels(); return p.join('') === '1234' ? '1 to 4' : p.join(', '); },
   pick3: () => labelOf('swap3'),
   pick4: () => labelOf('swap4'),
-  /** "3, Q or E" on a keyboard, "LB or RB" on a controller. */
+  /** "3, C or V" on a keyboard, "LB or RB" on a controller. */
   swapTo3: () => swapTo(3),
   swapTo4: () => swapTo(4),
   /** A whole closing sentence, so a controller line can leave it out. Starts with a space. */

@@ -120,7 +120,6 @@ export interface SimInput {
   mx: number; my: number;
   attackHeld: boolean; attackPressed: boolean;
   specialPressed: boolean; specialHeld: boolean;
-  dashPressed: boolean;
   swapDelta: -1 | 0 | 1;
   /** 0..3 = swap to that party slot, -1 = none. */
   swapTo: number;

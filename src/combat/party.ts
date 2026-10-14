@@ -28,7 +28,7 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
   return {
     id, level: lv, xp, hp: st.hp, mp: st.mp, st, bonus, advantage: false, ko: false,
     x, y, dir: 'down', aim: Math.PI / 2, vx: 0, vy: 0, z: 0, moving: false, anim: 'idle', animT: 0,
-    flash: 0, invuln: 0, blink: false, hurtT: 0, dashT: 0, dashCd: 0, dashX: 0, dashY: 0,
+    flash: 0, invuln: 0, blink: false, hurtT: 0,
     actT: 0, act: null, lock: 1, actId: 0, cdBasic: 0, cdSpecial: 0, combo: 0, comboT: 0,
     stat: noStatus(), nosebled: false,
   };
@@ -65,16 +65,16 @@ export function trySwap(s: S, idx: number, forced = false): boolean {
   if (!forced && s.swapLock > 0) return false;
   const charged = forced || s.swapCd <= 0;
   const from = activeHero(s);
-  from.actId++; from.actT = 0; from.act = null; from.dashT = 0; from.vx = 0; from.vy = 0;
+  from.actId++; from.actT = 0; from.act = null; from.vx = 0; from.vy = 0;
   to.x = from.x; to.y = from.y;
   to.dir = from.dir; to.aim = from.aim; to.vx = 0; to.vy = 0;
-  to.actId++; to.actT = 0; to.act = null; to.dashT = 0; to.hurtT = 0;
+  to.actId++; to.actT = 0; to.act = null; to.hurtT = 0;
   to.z = 12;
   if (charged) { to.invuln = SWAP_INVULN; to.blink = true; }
   s.active = idx;
   s.swapLock = SWAP_LOCK;
   if (charged) s.swapCd = forced ? FORCED_SWAP_COOLDOWN : SWAP_COOLDOWN;
-  s.buf.attack = 0; s.buf.special = 0; s.buf.dash = 0;
+  s.buf.attack = 0; s.buf.special = 0;
   s.events.push({ t: 'swap', from: from.id, to: to.id });
   sfx(s, 'swap');
   if (charged) schedule(s, 8, () => { if (activeHero(s) === to && !to.ko) shockwave(s, to); });
@@ -100,7 +100,7 @@ export function reapHeroes(s: S): void {
     if (h.ko || h.hp > 0) continue;
     h.ko = true;
     h.hp = 0;
-    h.invuln = 0; h.blink = false; h.dashT = 0; h.actT = 0; h.act = null; h.actId++;
+    h.invuln = 0; h.blink = false; h.actT = 0; h.act = null; h.actId++;
     h.anim = 'ko'; h.animT = 0;
     s.stats.kos++;
     s.events.push({ t: 'heroKO', hero: h.id });

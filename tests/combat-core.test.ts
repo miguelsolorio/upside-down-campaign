@@ -103,53 +103,6 @@ test('solid props block like walls until opened', () => {
   assert.equal(sim.view().props.find((p) => p.id === 'gate1')?.state, 'open');
 });
 
-test('dash: 12 frames of i-frames, a 42-frame cooldown, covers ground fast', () => {
-  const sim = makeSim({ party: [{ id: 'dustin' }], start: { x: tc(3), y: tf(8) } });
-  const ev = press(sim, { dashPressed: true, mx: 1 }, 0);
-  assert.ok(sfxIds(ev).includes('dash'));
-  assert.equal(sim.view().actors.find((a) => a.kind === 'hero' && a.x === sim.heroPos().x)?.anim, 'dash');
-  run(sim, 11, inp({ mx: 1 }));
-  const after12 = sim.heroPos().x - tc(3);
-  assert.ok(after12 > 30 && after12 < 45, `dash covered ${after12}`);
-  // A second press inside the cooldown does nothing.
-  const x0 = sim.heroPos().x;
-  const ev2 = press(sim, { dashPressed: true }, 5);
-  assert.ok(!sfxIds(ev2).includes('dash'));
-  assert.ok(near(sim.heroPos().x, x0, 0.01));
-  // After 42 frames from the first dash it works again.
-  run(sim, 42 - 18);
-  const ev3 = press(sim, { dashPressed: true, mx: -1 }, 0);
-  assert.ok(sfxIds(ev3).includes('dash'));
-});
-
-test('dash makes the hero untouchable for 12 frames: an agent dart passes through', () => {
-  const grid = arena(24, 16);
-  const mk = (): ReturnType<typeof createSim> => createSim({
-    grid, party: [{ id: 'dustin' }], start: { x: tc(4), y: tf(8) }, seed: 3,
-    spawns: [agent('a', 9, 8, 'g')],
-  });
-  // Without dashing the hero takes the first dart.
-  const plain = mk();
-  const evA = run(plain, 120);
-  assert.ok(ofType(evA, 'hit').some((h) => !h.onEnemy), 'dart lands on a standing hero');
-  // Dash into the dart's last few frames.
-  const sim = mk();
-  let dashed = false, hits = 0;
-  for (let f = 0; f < 120; f++) {
-    const v = sim.view();
-    const dart = v.fx.find((x) => x.kind === 'dart');
-    const me = sim.heroPos();
-    const press = !dashed && dart !== undefined && Math.abs(dart.x - me.x) < 14;
-    if (press) dashed = true;
-    // Dash straight into the dart so only the i-frames can save the hero.
-    const ev = sim.step(inp({ dashPressed: press, mx: press ? 1 : 0, my: 0 }));
-    hits += ofType(ev, 'hit').filter((h) => !h.onEnemy).length;
-    if (dashed && f > 60 && !sim.view().fx.some((x) => x.kind === 'dart')) break;
-  }
-  assert.ok(dashed, 'the dart was seen');
-  assert.equal(hits, 0, 'dash i-frames soaked the first dart');
-});
-
 test('a hit knocks the enemy back, flashes it, shows its bar and freezes the action for 2 to 5 frames', () => {
   const sim = makeSim({ party: [{ id: 'mike' }], spawns: [agent('r', 6, 8, 'g')], start: { x: tc(5), y: tf(8) }, seed: 4 });
   let hitFrame = -1;

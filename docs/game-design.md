@@ -28,8 +28,8 @@ Level 1 is stage 1.1, Mirkwood, plus the title screen and the basement prologue.
 
 **In**
 - Title screen, then the basement prologue (Mike, Dustin, Lucas, Will's roll goes wrong), then a chapter card.
-- Stage 1.1, about 48×40 tiles, five to eight minutes. It runs from the Byers yard (Joyce's lights are the first save point) through the woods to the Lab road. Beats: a rat skirmish that teaches attack, a Lab agent patrol that teaches the dash, a shot gate only Lucas can open, a scripted scare (lights flicker, a growl, a shape crosses the trail, no fight), Eleven's recruit scene with an Eggo, a push gate only she can open, and a three-wave ambush that ends the level.
-- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, dash, swap, the Lv 3 talent, KO and retry, and a simple party burst (all four specials at once).
+- Stage 1.1, about 48×40 tiles, five to eight minutes. It runs from the Byers yard (Joyce's lights are the first save point) through the woods to the Lab road. Beats: a rat skirmish that teaches attack, a Lab agent patrol that teaches sidestepping darts, a shot gate only Lucas can open, a scripted scare (lights flicker, a growl, a shape crosses the trail, no fight), Eleven's recruit scene with an Eggo, a push gate only she can open, and a three-wave ambush that ends the level.
+- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, swap, the Lv 3 talent, KO and retry, and a simple party burst (all four specials at once).
 - Leveling: XP, bench XP, the d20 level-up shown as an effect in the world. A normal run ends at Lv 3, so everyone shows their first talent.
 - Enemies: Lab agent, rat. Pickups: Eggo, Coke, quarters.
 - Music: Static (title) and Mirkwood with its combat layer, jingles for level-up, recruit, clear and game over, about 20 effects, and speech blips for the four heroes plus Joyce. The scare plays the motif inverted.
@@ -101,15 +101,14 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Input | Keys | Action |
 |---|---|---|
 | Move | WASD / arrows | Eight-way |
-| Attack | J / Z | Hero's basic. Melee chains three hits |
-| Special | K / X | Costs MP. Hold for the Lv 6 variant where a hero has one |
-| Dash | L / C | 12 frames of invulnerability, 0.7 s cooldown |
-| Swap | Shift or Tab (next), Q (back), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
-| Party burst | U / V | When the d20 meter is full |
+| Attack | Z / J | Hero's basic. Melee chains three hits |
+| Special | X / K | Costs MP. Hold for the Lv 6 variant where a hero has one |
+| Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
+| Party burst | U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |
 
-Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B dashes, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains the dash.
+Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and burst.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.
@@ -198,7 +197,7 @@ Jingles and stingers: level-up, victory, game over, recruit, item, dice roll, cu
 - Paper-doll sprite generator: three body templates (kid, teen, big), hair masks, accessories and a palette per hero, drawn to offscreen canvases at boot. Bosses are hand-authored grids or drawn limbs (the Mind Flayer's legs are pixel-snapped lines). 24×24 portraits come from a head template with five expressions.
 - Upside Down: palette swap to blue-black and vein red, palette cycling on the veins, drifting spores. Hawkins stays warm: sodium streetlights over teal night.
 - Night stages (Level 1 is one) repaint their tiles in a night palette and paint a pool of light around each lamp, lit window and string of bulbs. Daytime stages use the normal art with nothing over it. Christmas lights and streetlights flicker faster as danger closes in.
-- HUD: HP is a string of Christmas bulbs (one per 10 HP), MP is a bar, XP a thin line, and the party meter is a d20 that fills and glows when ready. Every hero shows the key that picks them, in quiet slate, left of their name. A benched hero has a small face, a column of HP pips and a three-letter tag that fills from dim to bright while the swap recharges. Q and E (LB and RB on a gamepad) print on each side of a short bench. Each bench slot is also a button: hover lights it and a click swaps to that hero. `ui/hudlayout.ts` holds the rectangles that both the drawing and the click use.
+- HUD: HP is a string of Christmas bulbs (one per 10 HP), MP is a bar, XP a thin line, and the party meter is a d20 that fills and glows when ready. Every hero shows the key that picks them, in quiet slate, left of their name. A benched hero has a small face, a column of HP pips and a three-letter tag that fills from dim to bright while the swap recharges. C and V (LB and RB on a gamepad) print on each side of a short bench. Each bench slot is also a button: hover lights it and a click swaps to that hero. `ui/hudlayout.ts` holds the rectangles that both the drawing and the click use.
 - Title: red pixel logo with a flicker over the party at the edge of Mirkwood, the Upside Down glowing behind the trees. PRESS START (or CONTINUE and NEW GAME) and OPTIONS are menu rows, with no key hints on screen. START sends the party walking into the woods.
 - A hand-drawn 5×7 caps font. Dialogue boxes have the portrait on the left, three lines of 32 characters and typewriter text with the hero's blip.
 - Settings: music and effects volume, difficulty, scanlines, screen shake, reduce flashing.
@@ -295,7 +294,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - Browser pane: screenshots of the title, map, every stage, dialogue, level-up and every boss; zero console errors; frame time under 4 ms.
 - Bot (`?bot=1&stage=2.2`): walks an A* path, fights, collects, and logs kills, XP and level-ups. Run on every stage.
 - Audio: every track rendered offline and checked for peak, limiter reduction and RMS. WAVs written to `music/`.
-- Manual checklist at the end: keyboard and gamepad, swap, every special, dash, party burst, KO and retry, save and load, pause, settings.
+- Manual checklist at the end: keyboard and gamepad, swap, every special, party burst, KO and retry, save and load, pause, settings.
 
 ## Risks and cut line
 

@@ -27,7 +27,7 @@ import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
   mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false,
-  dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false,
+  swapDelta: 0, swapTo: -1, burstPressed: false,
 };
 /** Interact reaches this far (px) from the hero's feet to a lights prop. */
 const LIGHT_REACH = 20;

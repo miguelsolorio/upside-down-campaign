@@ -26,9 +26,9 @@ const CELL_X = [146, 198];
 const NOTICE_FRAMES = 220;
 
 const PAD_LINES: [string, string][] = [
-  ['A', 'ATTACK, CONFIRM, TALK'], ['X', 'SPECIAL'], ['B', 'DASH AND BACK'], ['LB RB', 'SWAP HERO'],
+  ['A', 'ATTACK, CONFIRM, TALK'], ['X', 'SPECIAL'], ['B', 'BACK'], ['LB RB', 'SWAP HERO'],
   ['Y', 'PARTY BURST'], ['START', 'PAUSE, OR BEGIN'], ['VIEW', 'SKIP DIALOGUE'], ['STICK', 'MOVE, D-PAD TOO'],
-  ['RT LT', 'ATTACK, DASH TOO'],
+  ['RT', 'ATTACK TOO'],
 ];
 
 function drawPad(ctx: Ctx): void {

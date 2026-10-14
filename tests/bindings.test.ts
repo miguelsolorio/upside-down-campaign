@@ -21,8 +21,11 @@ test('defaults give every key the actions the game shipped with', () => {
   assert.deepEqual(set(actionsForCode('Escape')), set(['cancel', 'pause']));
   assert.deepEqual(actionsForCode('ArrowLeft'), ['left']);
   assert.ok(actionsForCode('KeyW').includes('up'));
-  assert.deepEqual(actionsForCode('ShiftLeft'), ['swapNext']);
-  assert.deepEqual(actionsForCode('Tab'), ['swapNext']);
+  assert.deepEqual(actionsForCode('KeyC'), ['swapPrev']);
+  assert.deepEqual(actionsForCode('KeyV'), ['swapNext']);
+  assert.deepEqual(actionsForCode('KeyB'), ['burst']);
+  assert.deepEqual(actionsForCode('ShiftLeft'), []);
+  assert.deepEqual(actionsForCode('Tab'), []);
   assert.ok(actionsForCode('KeyT').includes('skip'));
   assert.ok(actionsForCode('KeyP').includes('pause'));
   assert.ok(actionsForCode('KeyM').includes('mute'));
@@ -57,18 +60,18 @@ test('taking a key into an empty slot leaves the other action one key short', ()
   const r = setBinding('mute', 1, 'KeyU');
   assert.equal(r.ok, true);
   assert.match(r.note, /TAKEN FROM PARTY BURST/);
-  assert.deepEqual(keysOf('burst'), ['KeyV']);
+  assert.deepEqual(keysOf('burst'), ['KeyB']);
   assert.deepEqual(keysOf('mute'), ['KeyM', 'KeyU']);
 });
 
 test('required actions never lose their last key', () => {
-  assert.equal(clearBinding('dash', 1).ok, true);
-  const cleared = clearBinding('dash', 0);
+  assert.equal(clearBinding('special', 1).ok, true);
+  const cleared = clearBinding('special', 0);
   assert.equal(cleared.ok, false);
-  assert.match(cleared.note, /DASH NEEDS A KEY/);
-  const stolen = setBinding('mute', 1, 'KeyC');
+  assert.match(cleared.note, /SPECIAL NEEDS A KEY/);
+  const stolen = setBinding('mute', 1, 'KeyX');
   assert.equal(stolen.ok, false);
-  assert.deepEqual(keysOf('dash'), ['KeyC']);
+  assert.deepEqual(keysOf('special'), ['KeyX']);
   assert.deepEqual(keysOf('mute'), ['KeyM']);
 });
 
@@ -99,10 +102,11 @@ test('reset restores the defaults', () => {
 test('saved data is cleaned on the way in', () => {
   assert.deepEqual(parseBindings(null), exportBindings());
   assert.deepEqual(parseBindings('nonsense'), exportBindings());
-  const cleaned = parseBindings({ attack: ['KeyH', 'Escape'], mute: ['KeyH', 'KeyN'], junk: 1 });
+  const cleaned = parseBindings({ attack: ['KeyH', 'Escape'], mute: ['KeyH', 'KeyN'], dash: ['KeyL', null], junk: 1 });
   assert.deepEqual(cleaned.attack, ['KeyH', null]);
   assert.deepEqual(cleaned.mute, [null, 'KeyN']);
-  assert.deepEqual(cleaned.dash, ['KeyC', 'KeyL']);
+  assert.deepEqual(cleaned.swapPrev, ['KeyC', null]);
+  assert.ok(!Object.hasOwn(cleaned, 'dash'), 'an old save keeps no dash row');
   assert.deepEqual(parseBindings({ attack: [null, null] }), exportBindings());
   setBinding('swap2', 0, 'KeyN');
   assert.deepEqual(parseBindings(JSON.parse(JSON.stringify(exportBindings()))), exportBindings());
@@ -127,21 +131,21 @@ test('labels are short caps and fall back to the key that always works', () => {
 
 test('the corner controls are the combat keys only, and follow a rebind', () => {
   assert.deepEqual(controlRows(), [
-    { keys: 'Z', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' }, { keys: 'C', what: 'DASH' },
-    { keys: 'SHIFT', what: 'SWAP' }, { keys: 'U', what: 'BURST' },
+    { keys: 'Z', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' },
+    { keys: 'C V', what: 'SWAP' }, { keys: 'U', what: 'BURST' },
   ]);
   setBinding('attack', 0, 'KeyH');
   setBinding('swapNext', 0, 'KeyN');
   assert.equal(controlRows()[0]?.keys, 'H');
-  assert.equal(controlRows()[3]?.keys, 'N');
+  assert.equal(controlRows()[2]?.keys, 'C N');
   const whats = controlRows().map((r) => r.what);
   assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE'].some((w) => whats.includes(w)));
 });
 
 test('story key tokens fill in and follow rebinds', () => {
   assert.equal(keyText('Press {attack}.'), 'Press Z.');
-  assert.equal(keyText('{swap} cycle. Press {pick}.'), 'Q and SHIFT cycle. Press 1 to 4.');
-  assert.equal(keyText('with {pick4}, {swapOr}'), 'with 4, Q or SHIFT');
+  assert.equal(keyText('{swap} cycle. Press {pick}.'), 'C and V cycle. Press 1 to 4.');
+  assert.equal(keyText('with {pick4}, {swapOr}'), 'with 4, C or V');
   assert.equal(keyText('{move} to move'), 'WASD or the arrow keys to move');
   assert.equal(keyText('{nope} {constructor}'), '{nope} {constructor}');
   setBinding('attack', 0, 'KeyH');
@@ -172,7 +176,7 @@ test('no key ever sends start, so the controller is the only way to it', () => {
 
 test('a controller player sees button names, and a key rebind does not touch them', () => {
   setPromptDevice('gamepad');
-  const names = { attack: 'A', special: 'X', dash: 'B', burst: 'Y', interact: 'A', swapPrev: 'LB', swapNext: 'RB', skip: 'VIEW', pause: 'START' } as const;
+  const names = { attack: 'A', special: 'X', burst: 'Y', interact: 'A', swapPrev: 'LB', swapNext: 'RB', skip: 'VIEW', pause: 'START' } as const;
   for (const [action, name] of Object.entries(names)) assert.equal(labelOf(action as keyof typeof names), name, action);
   setBinding('attack', 0, 'KeyH');
   clearBinding('skip', 0);
@@ -190,7 +194,7 @@ test('an action the controller cannot do keeps its key label', () => {
 test('the corner controls name the buttons on a controller', () => {
   setPromptDevice('gamepad');
   assert.deepEqual(controlRows(), [
-    { keys: 'A', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' }, { keys: 'B', what: 'DASH' },
+    { keys: 'A', what: 'ATTACK' }, { keys: 'X', what: 'SPECIAL' },
     { keys: 'LB RB', what: 'SWAP' }, { keys: 'Y', what: 'BURST' },
   ]);
 });
@@ -212,9 +216,9 @@ test('story tokens read as buttons on a controller, and the pick-a-hero sentence
 });
 
 test('the same story tokens still read as keys on a keyboard', () => {
-  assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'Q and SHIFT cycle through us. Or press 1 to 4 to pick.');
-  assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with 3, Q or SHIFT.');
-  assert.equal(keyText('Swap her in with {swapTo4}.'), 'Swap her in with 4, Q or SHIFT.');
+  assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'C and V cycle through us. Or press 1 to 4 to pick.');
+  assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with 3, C or V.');
+  assert.equal(keyText('Swap her in with {swapTo4}.'), 'Swap her in with 4, C or V.');
   setBinding('swap1', 0, 'KeyN');
   assert.equal(keyText('{pickHint}'), ' Or press N, 2, 3, 4 to pick.');
 });

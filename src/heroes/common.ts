@@ -27,7 +27,7 @@ export function beginAct(h: Hero, ab: AbilityDef, kind: 'basic' | 'special', ove
   return h.actId;
 }
 
-/** Runs fn after `frames` unless the hero's action was cancelled (hurt, dash, swap, KO) in the meantime. */
+/** Runs fn after `frames` unless the hero's action was cancelled (hurt, swap, KO) in the meantime. */
 export function later(s: S, h: Hero, frames: number, fn: () => void): void {
   const id = h.actId;
   if (frames <= 0) { fn(); return; }

@@ -16,7 +16,7 @@ const acts = (p: PadLike, prev: ReadonlySet<Action> = new Set()): Action[] => [.
 test('face buttons, bumpers and the menu buttons map to the game actions', () => {
   assert.deepEqual(acts(pad({ [BTN.A]: 1 })), ['attack', 'confirm', 'interact']);
   assert.deepEqual(acts(pad({ [BTN.X]: 1 })), ['special']);
-  assert.deepEqual(acts(pad({ [BTN.B]: 1 })), ['cancel', 'dash']);
+  assert.deepEqual(acts(pad({ [BTN.B]: 1 })), ['cancel']);
   assert.deepEqual(acts(pad({ [BTN.Y]: 1 })), ['burst']);
   assert.deepEqual(acts(pad({ [BTN.LB]: 1 })), ['swapPrev']);
   assert.deepEqual(acts(pad({ [BTN.RB]: 1 })), ['swapNext']);
@@ -39,9 +39,9 @@ test('the d-pad moves and navigates', () => {
   assert.deepEqual(acts(pad({ [BTN.RIGHT]: 1 })), ['right']);
 });
 
-test('triggers count past half pull: right attacks, left dashes', () => {
+test('the right trigger attacks past half pull, and the left does nothing', () => {
   assert.deepEqual(acts(pad({ [BTN.RT]: 0.7 })), ['attack']);
-  assert.deepEqual(acts(pad({ [BTN.LT]: 0.7 })), ['dash']);
+  assert.deepEqual(acts(pad({ [BTN.LT]: 1 })), []);
   assert.deepEqual(acts(pad({ [BTN.RT]: 0.3 })), []);
   // The trigger aliases don't confirm or cancel, so a stray pull can't push through a menu.
   assert.ok(!readPad(pad({ [BTN.RT]: 1 })).actions.has('confirm'));

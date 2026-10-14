@@ -8,7 +8,7 @@ import type { S } from '../src/combat/state.ts';
 export function idle(): SimInput {
   return {
     mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false,
-    dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false,
+    swapDelta: 0, swapTo: -1, burstPressed: false,
   };
 }
 

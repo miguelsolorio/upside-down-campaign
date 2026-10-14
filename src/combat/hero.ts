@@ -1,4 +1,4 @@
-// The active hero each tick: timers, dash, movement, attack and special, animation, regen, and the follower trail.
+// The active hero each tick: timers, movement, attack and special, animation, regen, and the follower trail.
 import type { AnimId, SimInput } from '../core/types.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import { speedFactor } from '../heroes/common.ts';
@@ -6,7 +6,7 @@ import { useBasic, useSpecial } from '../heroes/kit.ts';
 import type { Hero, S } from './state.ts';
 import { activeHero, dirOfAngle, dirOfVec, snap8 } from './state.ts';
 import { moveBody } from './space.ts';
-import { dust, floater, sfx } from './fx.ts';
+import { floater, sfx } from './fx.ts';
 import { speedMul } from './status.ts';
 
 export const DEADZONE = 0.15;
@@ -22,7 +22,6 @@ export function bufferInput(s: S, input: SimInput): void {
   const b = s.buf;
   b.attack = input.attackPressed ? INPUT_BUFFER : Math.max(0, b.attack - 1);
   b.special = input.specialPressed ? INPUT_BUFFER : Math.max(0, b.special - 1);
-  b.dash = input.dashPressed ? INPUT_BUFFER : Math.max(0, b.dash - 1);
   b.burst = input.burstPressed ? INPUT_BUFFER : Math.max(0, b.burst - 1);
   if (input.swapTo >= 0) { b.swapT = INPUT_BUFFER; b.swapTo = input.swapTo; b.swapDelta = 0; }
   else if (input.swapDelta !== 0) { b.swapT = INPUT_BUFFER; b.swapDelta = input.swapDelta; b.swapTo = -1; }
@@ -33,24 +32,6 @@ function checkNosebleed(s: S, h: Hero): void {
   const low = h.mp < h.st.mp * 0.25;
   if (low && !h.nosebled) sfx(s, 'nosebleed');
   h.nosebled = low;
-}
-
-function tryDash(s: S, h: Hero, ux: number, uy: number): void {
-  const d = HERO_DEFS[h.id].dash;
-  if (s.buf.dash <= 0 || h.dashCd > 0 || h.dashT > 0) return;
-  s.buf.dash = 0;
-  const fx = ux !== 0 || uy !== 0 ? ux : Math.cos(h.aim);
-  const fy = ux !== 0 || uy !== 0 ? uy : Math.sin(h.aim);
-  const m = Math.hypot(fx, fy) || 1;
-  h.dashX = fx / m; h.dashY = fy / m;
-  h.dashT = d.dur;
-  h.dashCd = d.cd;
-  if (h.invuln <= 0) h.blink = false;
-  h.invuln = Math.max(h.invuln, d.iframes);
-  h.actId++; h.actT = 0; h.act = null;
-  h.dir = dirOfVec(h.dashX, h.dashY, h.dir);
-  sfx(s, 'dash');
-  dust(s, h.x, h.y, 3);
 }
 
 function tryActions(s: S, h: Hero, input: SimInput): void {
@@ -78,7 +59,6 @@ export function updateActive(s: S, input: SimInput): void {
   const h = activeHero(s);
   const def = HERO_DEFS[h.id];
   if (h.ko) return;
-  if (h.dashCd > 0) h.dashCd--;
   if (h.cdBasic > 0) h.cdBasic--;
   if (h.cdSpecial > 0) h.cdSpecial--;
   if (h.comboT > 0 && --h.comboT === 0) h.combo = 0;
@@ -96,17 +76,10 @@ export function updateActive(s: S, input: SimInput): void {
   const x0 = h.x, y0 = h.y;
 
   if (h.hurtT <= 0) {
-    if (live && h.dashT <= 0) {
+    if (live) {
       h.aim = snap8(Math.atan2(uy, ux));
       h.dir = dirOfAngle(h.aim);
     }
-    tryDash(s, h, ux, uy);
-  }
-  if (h.dashT > 0) {
-    h.dashT--;
-    moveBody(s, h, h.dashX * def.dash.speed, h.dashY * def.dash.speed);
-    if (h.dashT % 3 === 0) dust(s, h.x, h.y, 1);
-  } else if (h.hurtT <= 0) {
     tryActions(s, h, input);
     const lock = h.actT > 0 ? h.lock : 1;
     const sp = def.speed * speedFactor(h) * speedMul(h.stat) * lock * Math.min(1, mag);
@@ -121,7 +94,6 @@ export function updateActive(s: S, input: SimInput): void {
 
   let anim: AnimId = 'idle';
   if (h.hurtT > 0) anim = 'hurt';
-  else if (h.dashT > 0) anim = 'dash';
   else if (h.actT > 0 && h.act) anim = h.act === 'special' ? 'cast' : 'attack';
   else if (h.moving) anim = 'walk';
   setAnim(h, anim);
@@ -140,7 +112,6 @@ export function regen(s: S): void {
       // Cooldowns keep running on the bench, so a hero who tags back in is ready.
       if (h.cdBasic > 0) h.cdBasic--;
       if (h.cdSpecial > 0) h.cdSpecial--;
-      if (h.dashCd > 0) h.dashCd--;
     }
     if (h.id === 'eleven' && h.mp >= h.st.mp * 0.25) h.nosebled = false;
   }

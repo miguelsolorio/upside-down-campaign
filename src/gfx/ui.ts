@@ -4,7 +4,7 @@ import { settings } from '../core/settings.ts';
 import type { ColorName } from './palette.ts';
 import type { Part } from './data/types.ts';
 import { Px } from './px.ts';
-import { hash2, rect } from './canvas.ts';
+import { hash2, px32, rect } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 import { EXPR, HEAD, NOSE, PORTRAITS, SHOULDERS } from './data/portraits.ts';
 import type { PortraitSpec, Shirt } from './data/portraits.ts';
@@ -31,7 +31,21 @@ function camoRole(x: number, y: number): string {
   return n < 2 ? 'g' : n < 4 ? 'G' : 'H';
 }
 
-function buildPortrait(who: CharId, expr: Expr): HTMLCanvasElement {
+// Grayscale portraits stay inside the palette: each pixel's brightness picks a step on the grey ramp.
+const GRAY_RAMP: ColorName[] = ['ink', 'grey1', 'grey2', 'grey3', 'bone'];
+const GRAY_CUTS = [28, 80, 140, 215];
+function toGray(px: Px): void {
+  for (let i = 0; i < px.d.length; i++) {
+    const v = px.d[i] as number;
+    if (v === 0) continue;
+    const luma = 0.299 * (v & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * ((v >> 16) & 255);
+    let k = 0;
+    while (k < GRAY_CUTS.length && luma >= (GRAY_CUTS[k] as number)) k++;
+    px.d[i] = px32(GRAY_RAMP[k] as ColorName);
+  }
+}
+
+function buildPortrait(who: CharId, expr: Expr, gray = false): HTMLCanvasElement {
   const spec: PortraitSpec = PORTRAITS[who];
   const px = new Px(24, 24).fill(spec.bg);
   const color = (ch: string): ColorName | null => {
@@ -67,15 +81,16 @@ function buildPortrait(who: CharId, expr: Expr): HTMLCanvasElement {
   for (const p of spec.front) draw(p, camoFill);
   for (const p of late) draw(p);
   px.frame(0, 0, 24, 24, 'ink');
+  if (gray) toGray(px);
   return px.toCanvas();
 }
 
 const portraits = new Map<string, HTMLCanvasElement>();
-/** 24x24 portrait with its top-left at x,y. */
-export function drawPortrait(ctx: Ctx, who: CharId, expr: Expr, x: number, y: number): void {
-  const key = `${who}:${expr}`;
+/** 24x24 portrait with its top-left at x,y. `gray` draws it in greys, for a hero who is down. */
+export function drawPortrait(ctx: Ctx, who: CharId, expr: Expr, x: number, y: number, gray = false): void {
+  const key = gray ? `${who}:${expr}:gray` : `${who}:${expr}`;
   let c = portraits.get(key);
-  if (!c) { c = buildPortrait(who, expr); portraits.set(key, c); }
+  if (!c) { c = buildPortrait(who, expr, gray); portraits.set(key, c); }
   ctx.drawImage(c, Math.round(x), Math.round(y));
 }
 
@@ -178,6 +193,18 @@ export function drawBar(ctx: Ctx, x: number, y: number, w: number, h: number, fr
   rect(ctx, x, y, n, h, color);
   if (h >= 3) rect(ctx, x, y, n, 1, LIGHT[color] ?? 'white');
   if (h >= 4) rect(ctx, x, y + h - 1, n, 1, DARK[color] ?? 'black');
+}
+
+/** A bar of exactly w by h that fills from the bottom up. The vertical twin of drawBar: the left column is lit and the right shaded. */
+export function drawBarV(ctx: Ctx, x: number, y: number, w: number, h: number, frac: number, color: ColorName, back: ColorName = 'ink'): void {
+  x = Math.round(x); y = Math.round(y);
+  rect(ctx, x, y, w, h, back);
+  const f = Math.max(0, Math.min(1, frac));
+  const n = f > 0 ? Math.max(1, Math.round(h * f)) : 0;
+  if (n <= 0) return;
+  rect(ctx, x, y + h - n, w, n, color);
+  if (w >= 3) rect(ctx, x, y + h - n, 1, n, LIGHT[color] ?? 'white');
+  if (w >= 3) rect(ctx, x + w - 1, y + h - n, 1, n, DARK[color] ?? 'black');
 }
 
 /** Builds every portrait up front so the first dialogue box has no hitch. */

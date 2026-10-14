@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, isLowHp,
-  MAX_BULBS, pagesOf, pipCount, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpTone, isLowHp,
+  MAX_BULBS, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
 } from '../src/ui/format.ts';
 import { wrapText } from '../src/core/text.ts';
 
-test('bulbs: one per 10 HP, rounded up, capped', () => {
+test('HP segments: one per 10 HP, rounded up, capped', () => {
   assert.equal(bulbCount(48), 5);
   assert.equal(bulbCount(50), 5);
   assert.equal(bulbCount(51), 6);
@@ -14,15 +14,15 @@ test('bulbs: one per 10 HP, rounded up, capped', () => {
   assert.equal(bulbCount(9999), MAX_BULBS);
 });
 
-test('bulb fill: full, partial, empty, and a short last bulb', () => {
+test('segment fill: full, partial, empty, and a short last segment', () => {
   const n = bulbCount(48);
   const fills = (hp: number): number[] => Array.from({ length: n }, (_, i) => bulbFill(hp, 48, i, n));
   assert.deepEqual(fills(48), [1, 1, 1, 1, 1]);
   assert.deepEqual(fills(0), [0, 0, 0, 0, 0]);
   assert.deepEqual(fills(25), [1, 1, 0.5, 0, 0]);
-  // The fifth bulb only owns 8 HP, so 44 HP lights it halfway.
+  // The fifth segment only owns 8 HP, so 44 HP fills it halfway.
   assert.equal(bulbFill(44, 48, 4, n), 0.5);
-  // Lit bulbs add up to the HP share, whatever the cap does.
+  // Filled segments add up to the HP share, whatever the cap does.
   const m = bulbCount(400);
   const lit = Array.from({ length: m }, (_, i) => bulbFill(200, 400, i, m)).reduce((a, b) => a + b, 0);
   assert.ok(Math.abs(lit - m / 2) < 1e-9);
@@ -39,12 +39,25 @@ test('low HP flickers, reduce flashing keeps it steady', () => {
   for (let t = 0; t < 600; t++) assert.equal(bulbDark(t, 2, false, false), false);
 });
 
-test('pips: any HP keeps one lit, full HP lights all', () => {
-  assert.equal(pipCount(48, 48), 4);
-  assert.equal(pipCount(24, 48), 2);
-  assert.equal(pipCount(25, 48), 3);
-  assert.equal(pipCount(1, 48), 1);
-  assert.equal(pipCount(0, 48), 0);
+test('the HP bar is green above half, yellow above 30%, and red from 30% down, where the blink starts', () => {
+  assert.equal(hpTone(48, 48), 'leaf');
+  assert.equal(hpTone(25, 48), 'leaf');
+  assert.equal(hpTone(24, 48), 'yellow');
+  assert.equal(hpTone(15, 48), 'yellow');
+  assert.equal(hpTone(14, 48), 'hot');
+  assert.equal(hpTone(0, 48), 'hot');
+  assert.equal(hpTone(5, 0), 'hot');
+  for (let hp = 0; hp <= 48; hp++) assert.equal(hpTone(hp, 48) === 'hot' && hp > 0, isLowHp(hp, 48), `hp ${hp}`);
+});
+
+test('bench quarters fill from the bottom, and any HP at all lights part of the first', () => {
+  const q = (hp: number): number[] => [0, 1, 2, 3].map((i) => quarterFill(hp, 48, i));
+  assert.deepEqual(q(48), [1, 1, 1, 1]);
+  assert.deepEqual(q(24), [1, 1, 0, 0]);
+  assert.deepEqual(q(0), [0, 0, 0, 0]);
+  assert.deepEqual(q(6), [0.5, 0, 0, 0]);
+  assert.ok((q(1)[0] as number) > 0);
+  assert.deepEqual([0, 1, 2, 3].map((i) => quarterFill(5, 0, i)), [0, 0, 0, 0]);
 });
 
 test('time formats as m:ss from frames', () => {

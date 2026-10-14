@@ -2,17 +2,18 @@
 
 export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-// ---------------------------------------------------------------- HP bulbs and pips
-/** Most bulbs the HUD string shows. Past this, each bulb stands for more than 10 HP. */
+// ---------------------------------------------------------------- HP segments
+// The HUD drew a string of bulbs here once, which is why these are named for them. Each bulb is now one segment of the bar.
+/** Most segments the HUD bar shows. Past this, each segment stands for more than 10 HP. */
 export const MAX_BULBS = 16;
 
-/** One bulb per 10 max HP, rounded up, at least one. */
+/** One segment per 10 max HP, rounded up, at least one. */
 export function bulbCount(hpMax: number, cap: number = MAX_BULBS): number {
   if (!(hpMax > 0)) return 1;
   return Math.max(1, Math.min(cap, Math.ceil(hpMax / 10)));
 }
 
-/** How lit bulb i of n is, 0..1. Each bulb owns 10 HP, the last one may own fewer. Capped strings share HP evenly. */
+/** How full segment i of n is, 0..1. Each owns 10 HP, the last one may own fewer. Capped bars share HP evenly. */
 export function bulbFill(hp: number, hpMax: number, i: number, n: number): number {
   const per = n * 10 >= hpMax ? 10 : hpMax / n;
   const start = i * per;
@@ -21,22 +22,27 @@ export function bulbFill(hp: number, hpMax: number, i: number, n: number): numbe
   return clamp01((hp - start) / len);
 }
 
-/** Below this share of max HP the bulbs flicker. */
+/** At or below this share of max HP the bar is red and blinks. */
 export const LOW_HP = 0.3;
 export function isLowHp(hp: number, hpMax: number): boolean {
   return hp > 0 && hpMax > 0 && hp / hpMax <= LOW_HP;
 }
 
-/** Whether a lit bulb is dark on this frame while HP is low. About one frame in five, never when flashing is reduced. */
+/** Whether a lit segment is dark on this frame while HP is low. About one frame in five, never when flashing is reduced. */
 export function bulbDark(t: number, i: number, low: boolean, reduceFlashing: boolean): boolean {
   if (!low || reduceFlashing) return false;
   return ((((t >> 2) * 7) + i * 13) % 5) === 0;
 }
 
-/** Lit pips on a small HP bar. Any HP at all keeps one pip lit. */
-export function pipCount(hp: number, hpMax: number, pips = 4): number {
-  if (hp <= 0 || hpMax <= 0) return 0;
-  return Math.max(1, Math.min(pips, Math.ceil((hp / hpMax) * pips - 1e-9)));
+/** The bar's color: green above half, yellow above LOW_HP, red at or below it. Red is also where the blink starts. */
+export function hpTone(hp: number, hpMax: number): 'leaf' | 'yellow' | 'hot' {
+  const r = hpMax > 0 ? hp / hpMax : 0;
+  return r > 0.5 ? 'leaf' : r > LOW_HP ? 'yellow' : 'hot';
+}
+
+/** How full quarter i (0..3, from the bottom) of the bench bar is, 0..1. */
+export function quarterFill(hp: number, hpMax: number, i: number): number {
+  return hpMax > 0 ? clamp01((hp / hpMax) * 4 - i) : 0;
 }
 
 // ---------------------------------------------------------------- clocks and numbers

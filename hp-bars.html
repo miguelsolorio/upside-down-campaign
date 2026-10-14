@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Bar Check</title>
+<meta name="description" content="The shipped HP bar, active hero and bench, drawn by the game's own HUD code at every level and HP state.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 78ch; }
+  .muted { color: var(--mist); }
+  .rules { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; font: 12px/1.4 var(--mono); color: var(--mist); }
+  .rules b { color: var(--bone); font-weight: 600; }
+
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group > .lbl { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .seg { display: inline-flex; border: 2px solid var(--dusk); }
+  .seg button { border: 0; background: var(--ink); padding: 6px 12px; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .seg button + button { border-left: 2px solid var(--dusk); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--cream); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .scrub { display: inline-flex; align-items: center; gap: 8px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .scrub input { width: 140px; accent-color: var(--amber); }
+  .scrub output { min-width: 4ch; color: var(--bone); }
+
+  #cards { display: grid; gap: 26px; padding: 24px 0 64px; }
+  .card { border: 2px solid var(--shadow); background: var(--night); padding: 18px 20px 20px; }
+  .card.ref { border-style: dashed; }
+  .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
+  .badge { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 18px/1 var(--mono); }
+  .ref .badge { background: var(--dusk); color: var(--bone); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .head h2 { margin: 0; font-size: 20px; }
+  .blurb { margin: 0 0 4px; max-width: 90ch; }
+  .match { margin: 0 0 14px; max-width: 90ch; color: var(--mist); font-size: 13px; }
+  .match b { color: var(--cream); font-weight: 600; }
+  .scroll { overflow-x: auto; padding-bottom: 4px; }
+  .strip { border: 1px solid var(--shadow); }
+  .zoom { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-top: 14px; align-items: flex-start; }
+  .zoom figure { margin: 0; }
+  .zoom figcaption { margin-bottom: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">HUD review</p>
+  <h1>HP bar check</h1>
+  <p>The HP bars the game ships, drawn by the game's own HUD code. The active hero's bar runs flat with a tick every 10 HP, so it grows with max HP. Each bench hero's runs upright beside the face, one segment per quarter, with the shortcut key to the left of the face. The key fills from the bottom as the swap recharges.</p>
+  <ul class="rules">
+    <li><b>Color:</b> green above half, yellow above 30%, red at 30% and below</li>
+    <li><b>Low:</b> red blinks on both sides, in step</li>
+    <li><b>KO:</b> the bar is empty and the face goes gray</li>
+  </ul>
+</div></header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="group"><span class="lbl" id="lvLbl">Level</span><div class="seg" id="level" role="group" aria-labelledby="lvLbl"></div></div>
+    <div class="group"><span class="lbl" id="hpLbl">HP</span><div class="seg" id="scenario" role="group" aria-labelledby="hpLbl"></div></div>
+    <label class="scrub">All heroes <input id="scrub" type="range" min="0" max="100" value="100" aria-label="HP for every hero"><output id="scrubOut">100%</output></label>
+    <label class="scrub">Swap recharge <input id="swap" type="range" min="0" max="100" value="100" aria-label="How far the hero swap has recharged"><output id="swapOut">100%</output></label>
+    <div class="group"><span class="lbl" id="ptLbl">Party</span><div class="seg" id="party" role="group" aria-labelledby="ptLbl"></div></div>
+    <div class="group"><span class="lbl" id="acLbl">Active</span><div class="seg" id="active" role="group" aria-labelledby="acLbl"></div></div>
+    <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+    <label class="chk"><input id="calm" type="checkbox"> Reduce flashing</label>
+  </div>
+</div>
+
+<main class="wrap"><div id="cards"></div></main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { drawHud } from '/src/ui/hud.ts';
+import { HERO_DEFS } from '/src/heroes/defs.ts';
+import { settings } from '/src/core/settings.ts';
+import { SCREEN_W, VIEW_TOP } from '/src/core/config.ts';
+
+initGfx();
+
+// ---------------------------------------------------------------- state
+const HEROES = ['mike', 'dustin', 'lucas', 'eleven'];
+const SCENARIOS = {
+  full: { label: 'Full', r: [1, 1, 1, 1] },
+  mixed: { label: 'Mixed', r: [0.72, 0.45, 0.2, 0.9] },
+  low: { label: 'Low', r: [0.18, 0.28, 0.1, 0.25] },
+  ko: { label: 'KO', r: [0.5, 0, 0.35, 0] },
+};
+const st = { level: 1, scenario: 'mixed', slider: null, swap: 1, party: 3, active: 0, animate: true };
+
+function buildHud() {
+  const ids = HEROES.slice(0, st.party);
+  const ratios = st.slider != null ? ids.map(() => st.slider) : SCENARIOS[st.scenario].r;
+  const active = Math.min(st.active, ids.length - 1);
+  const party = ids.map((id, i) => {
+    const d = HERO_DEFS[id];
+    const hpMax = d.base.hp + Math.floor(d.growth.hp * (st.level - 1));
+    const mpMax = d.base.mp + Math.floor(d.growth.mp * (st.level - 1));
+    const r = ratios[i] ?? 1;
+    const hp = r <= 0 ? 0 : Math.max(1, Math.round(hpMax * r));
+    return { id, name: d.name, level: st.level, hp, hpMax, mp: Math.round(mpMax * 0.7), mpMax, xp: 40, xpNext: 100, ko: hp <= 0, active: i === active };
+  });
+  return { party, burst: 0.6, burstReady: false, quarters: 0, inspiration: 0, swapReady: st.swap, boss: null };
+}
+
+// ---------------------------------------------------------------- render
+const SW = SCREEN_W, SH = VIEW_TOP;
+const CROPS = [
+  { key: 'left', label: 'Active hero', sx: 0, w: 130, s: 5 },
+  { key: 'bench', label: 'Bench', sx: 156, w: 82, s: 8 },
+];
+
+const VARIANTS = [{ id: 'HUD', name: 'In the game' }];
+const cardsEl = document.getElementById('cards');
+for (const v of VARIANTS) {
+  const sec = document.createElement('section');
+  sec.className = 'card' + (v.ref ? ' ref' : '');
+  sec.id = 'hud';
+  sec.innerHTML = `
+    <div class="head"><span class="badge">${v.id}</span><h2>${v.name}</h2></div>
+    <div class="scroll"><canvas class="strip" width="${SW}" height="${SH}" style="width:${SW * 4}px;height:${SH * 4}px" aria-label="${v.name}, full strip"></canvas></div>
+    <div class="zoom">${CROPS.map((c) => `<figure><figcaption>${c.label}</figcaption><canvas data-crop="${c.key}" width="${c.w}" height="${SH}" style="width:${c.w * c.s}px;height:${SH * c.s}px"></canvas></figure>`).join('')}</div>`;
+  cardsEl.append(sec);
+  v.el = sec;
+  v.full = sec.querySelector('.strip').getContext('2d');
+  v.crops = CROPS.map((c) => ({ ...c, ctx: sec.querySelector(`[data-crop="${c.key}"]`).getContext('2d') }));
+  const off = document.createElement('canvas');
+  off.width = SW; off.height = SH;
+  v.off = off;
+  v.offCtx = off.getContext('2d');
+  for (const c of [v.full, ...v.crops.map((k) => k.ctx)]) c.imageSmoothingEnabled = false;
+}
+
+let t = 0;
+function renderAll() {
+  const hud = buildHud();
+  for (const v of VARIANTS) {
+    drawHud(v.offCtx, hud, t);
+    v.full.drawImage(v.off, 0, 0);
+    for (const c of v.crops) c.ctx.drawImage(v.off, c.sx, 0, c.w, SH, 0, 0, c.w, SH);
+  }
+}
+function frame() {
+  if (st.animate) t++;
+  renderAll();
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- controls
+function seg(id, options, get, set) {
+  const root = document.getElementById(id);
+  const paint = () => root.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(String(get()) === b.dataset.v)));
+  for (const [value, label] of options) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.v = String(value); b.textContent = label;
+    b.addEventListener('click', () => { set(value); paint(); });
+    root.append(b);
+  }
+  paint();
+  return paint;
+}
+seg('level', [[1, 'LV1'], [6, 'LV6'], [12, 'LV12']], () => st.level, (v) => { st.level = Number(v); });
+const scrub = document.getElementById('scrub'), scrubOut = document.getElementById('scrubOut');
+const paintScenario = seg('scenario', Object.entries(SCENARIOS).map(([k, s]) => [k, s.label]), () => (st.slider == null ? st.scenario : ''), (v) => { st.scenario = v; st.slider = null; });
+scrub.addEventListener('input', () => {
+  st.slider = Number(scrub.value) / 100;
+  scrubOut.textContent = `${scrub.value}%`;
+  paintScenario();
+});
+const swapEl = document.getElementById('swap'), swapOut = document.getElementById('swapOut');
+swapEl.addEventListener('input', () => { st.swap = Number(swapEl.value) / 100; swapOut.textContent = `${swapEl.value}%`; });
+seg('party', [[3, '3'], [4, '4']], () => st.party, (v) => { st.party = Number(v); });
+seg('active', HEROES.map((h, i) => [i, h.toUpperCase()]), () => st.active, (v) => { st.active = Number(v); });
+// Paused means no flicker either, so a low-HP strip holds still in its lit state instead of freezing on a dark frame.
+const animEl = document.getElementById('anim'), calmEl = document.getElementById('calm');
+const syncMotion = () => { st.animate = animEl.checked; settings.reduceFlashing = calmEl.checked || !animEl.checked; };
+animEl.addEventListener('change', syncMotion);
+calmEl.addEventListener('change', syncMotion);
+
+frame();
+window.__hp = { st, VARIANTS };
+</script>
+</body>
+</html>

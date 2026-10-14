@@ -18,7 +18,7 @@ Scope for this pass: Level 1 only (stage 1.1, the title, the basement prologue).
 - The autosave at Joyce's lights keeps levels, kills and story beats but not health, and the results screen only times the stretch since the last Continue.
 - Keyboard rebinding is saved per browser. Arrow keys, Enter, Escape and Backspace are fixed so menus can't get stuck.
 - Losing focus silences the game but doesn't pause it, so enemies keep moving while you're away.
-- With skip story on, the level's tutorial lines never show. A controls strip covers the first nine seconds instead.
+- Skip story is on by default, so the level's tutorial lines never show unless the player turns it off. A controls strip covers the first nine seconds instead.
 - Only four tag-in stingers exist (one per playable hero).
 - Level 1 takes the bot 86 seconds. A person should need five to eight minutes.
 

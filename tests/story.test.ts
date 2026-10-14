@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { BarkEvent, Expr, HeroId, Speaker } from '../src/core/types.ts';
 import { keyText } from '../src/core/bindings.ts';
+import { settings } from '../src/core/settings.ts';
 import { fitsBox, hasEmDash, wrapText } from '../src/core/text.ts';
 import { SCRIPTS } from '../src/story/scripts.ts';
 import { PROLOGUE, PROLOGUE_PARTS, prologuePart } from '../src/story/prologue_script.ts';
@@ -145,6 +146,9 @@ test('the prologue scene runs its timeline in order and calls onDone once', asyn
   audio.sfx = (id) => { heard.push(id); };
   audio.music = () => { /* silent */ };
   audio.blip = () => { /* silent */ };
+  // Skip story is on by default and the prologue would end on its first frame, so play it for real.
+  const skipWas = settings.skipDialogue;
+  settings.skipDialogue = false;
   try {
     let done = 0;
     const scene = story.createPrologueScene({ onDone() { done++; } });
@@ -171,6 +175,7 @@ test('the prologue scene runs its timeline in order and calls onDone once', asyn
     const growl = at('growl');
     assert.ok(open[2] < flicker && flicker < growl && growl < open[3], 'flicker, then growl, then the last part');
   } finally {
+    settings.skipDialogue = skipWas;
     audio.sfx = real.sfx; audio.music = real.music; audio.blip = real.blip;
   }
 });

@@ -16,12 +16,12 @@ export const HORIZON = 150;
 const RAMP: ColorName[] = ['ink', 'blood0', 'blood1', 'red'];
 
 const glows = new Map<number, HTMLCanvasElement>();
-/** The red light behind the trees as a baked ordered dither, in three strengths so it can breathe. BASE_W wide: it
- * fades to ink before its edges, so the sky beyond it is plain ink. */
+/** The red light behind the trees as a baked ordered dither, in three strengths so it can breathe. BASE_W wide and
+ * clear where it is dark, so the sky and the wide screen's haze show through. */
 function riftGlow(level: number): HTMLCanvasElement {
   const hit = glows.get(level);
   if (hit) return hit;
-  const px = new Px(BASE_W, HORIZON + 4).fill('ink');
+  const px = new Px(BASE_W, HORIZON + 4);
   const k = [2.7, 3.0, 3.35][level] as number;
   for (let y = 0; y < px.h; y++) {
     for (let x = 0; x < px.w; x++) {
@@ -39,10 +39,38 @@ function riftGlow(level: number): HTMLCanvasElement {
   return c;
 }
 
-/** The sky: the glow behind the trees, slowly breathing, with a few stars above it. */
+const HAZE: ColorName[] = ['ink', 'blood0', 'blood1'];
+const HAZE_TOP = HORIZON - 48;
+const hazes = new Map<number, HTMLCanvasElement>();
+/** The low red haze along the horizon, as wide as the screen, in two dithered steps. Baked once per width. */
+function haze(): HTMLCanvasElement {
+  const hit = hazes.get(SCREEN_W);
+  if (hit) return hit;
+  const top = HAZE_TOP;
+  const px = new Px(SCREEN_W, HORIZON + 2 - top);
+  const mid = SCREEN_W / 2;
+  for (let y = 0; y < px.h; y++) {
+    const v = y / (px.h - 1);
+    for (let x = 0; x < px.w; x++) {
+      const across = 1 - (Math.abs(x - mid) / mid) * 0.4;
+      const q = v * v * across * 1.45;
+      const lo = Math.floor(q);
+      const up = q - lo > ((BAYER4[((y + top) & 3) * 4 + (x & 3)] as number) + 0.5) / 16 ? 1 : 0;
+      const c = HAZE[Math.min(2, lo + up)] as ColorName;
+      if (c !== 'ink') px.set(x, y, c);
+    }
+  }
+  const c = px.toCanvas();
+  hazes.set(SCREEN_W, c);
+  return c;
+}
+
+/** The sky: the glow behind the trees, slowly breathing, with a few stars above it. On a wider screen the glow spreads
+ * into a low haze along the whole horizon. */
 export function sky(ctx: Ctx, t: number): void {
   const pulse = settings.reduceFlashing ? 1 : Math.min(2, Math.floor((Math.sin(t / 50) + 1) * 1.5));
   box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');
+  if (FRAME_X > 0) ctx.drawImage(haze(), 0, HAZE_TOP);
   ctx.drawImage(riftGlow(pulse), FRAME_X, 0);
   // The same density of stars however wide the sky is.
   const stars = Math.round((18 * SCREEN_W) / BASE_W);
@@ -54,7 +82,7 @@ export function sky(ctx: Ctx, t: number): void {
 }
 
 /** A pine seen from the side: tiers of widening boughs on a trunk. */
-function pine(ctx: Ctx, cx: number, base: number, h: number, body: ColorName): void {
+export function pine(ctx: Ctx, cx: number, base: number, h: number, body: ColorName): void {
   const tiers = Math.max(3, Math.round(h / 9));
   const tierH = (h - 4) / tiers;
   const maxHalf = h * 0.28;
@@ -88,13 +116,10 @@ export function woods(ctx: Ctx): void {
   }
   const near: [number, number, number][] = [[10, 176, 92], [34, 170, 78], [58, 164, 66], [236, 176, 92], [212, 170, 78], [190, 164, 66]];
   for (const [x, base, h] of near) pine(ctx, FRAME_X + x, base, h, 'ink');
-  // On a wider screen, more near trees stand out to both edges, a little taller the further out they are.
+  // On a wider screen, one more near tree on each side softens the frame's edges. title_wide fills in past them.
   if (FRAME_X <= 0) return;
-  for (let k = 1, dx = 24; FRAME_X + 10 - dx > -30; k++, dx += 22 + (hash2(k, 6, 9) % 7)) {
-    const base = 176 + Math.min(8, k * 2), h = 92 + Math.min(16, k * 4) + (hash2(k, 7, 9) % 6);
-    pine(ctx, FRAME_X + 10 - dx, base, h, 'ink');
-    pine(ctx, FRAME_X + 236 + dx, base, h, 'ink');
-  }
+  pine(ctx, FRAME_X - 14, 178, 96, 'ink');
+  pine(ctx, FRAME_X + 260, 178, 96, 'ink');
 }
 
 /** Specks drifting up through the whole screen, the Upside Down's snow. As many per column however wide it is. */

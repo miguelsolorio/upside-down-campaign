@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01 } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -30,6 +30,9 @@ const BOB = [0, 1, 2, 1];
 const CARET_ROOM = 7 + 2 + 2;
 /** Top of the subtitle text, low on the screen like a film subtitle. */
 const SUBTITLE_Y = SCREEN_H - 16;
+/** Top of the line just under the HUD strip, and of the same line when the boss bar (VIEW_TOP + 1 to + 12) is there. */
+const TOP_LINE_Y = VIEW_TOP + 4;
+const TOP_LINE_BOSS_Y = VIEW_TOP + 15;
 
 export interface WorldOpts {
   /** Draw the foot and hurt boxes (dev panel). */
@@ -225,6 +228,15 @@ export function drawSubtitle(ctx: Ctx, text: string): void {
   ctx.fillStyle = PAL.ink;
   ctx.fillRect(x - 4, SUBTITLE_Y - 3, w + 8, 13);
   drawText(ctx, text, x, SUBTITLE_Y, 'white');
+}
+
+/** One line in the 3x5 font centered just under the HUD strip, with a 1 px ink outline and no strip behind it, so it
+ * reads on the dark yard and the white Lab walls alike without covering the world. It stays put while the camera moves,
+ * and drops under the boss bar while one shows. */
+export function drawTopLine(ctx: Ctx, text: string, color: ColorName, underBoss = false): void {
+  const x = Math.round((SCREEN_W - tinyWidth(text)) / 2), y = underBoss ? TOP_LINE_BOSS_Y : TOP_LINE_Y;
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]] as const) drawTinyText(ctx, text, x + dx, y + dy, 'ink');
+  drawTinyText(ctx, text, x, y, color);
 }
 
 /** The level-up effect around each hero who just gained a level: a ring at the feet, sparkles circling up and, for a

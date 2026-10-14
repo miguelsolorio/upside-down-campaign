@@ -287,7 +287,7 @@ export interface HintRow { keys: string; what: string }
  * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
  * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
  * Swap shows one key on a keyboard, C, so every row has a single key. A controller shows both bumpers.
- * Burst is left out too: a word with no meter means nothing, so `burstHint` names it over the hero once it's ready.
+ * Burst is left out too: a word with no meter means nothing, so `burstHint` names it under the HUD once it's ready.
  */
 export function controlRows(): HintRow[] {
   return [
@@ -301,7 +301,7 @@ export function controlRows(): HintRow[] {
  * in reach to light. U and B burst too but go unnamed. A controller names Y. */
 const burstKey = (): string => labelOf(onPad() ? 'burst' : 'interact');
 
-/** The line over the active hero while the d20 is full and the party burst is ready. */
+/** The line under the HUD while the d20 is full and the party burst is ready. */
 export function burstHint(): string {
   return `PRESS ${burstKey()} FOR PARTY BURST`;
 }

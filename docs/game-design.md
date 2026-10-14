@@ -116,7 +116,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - Feel: 2 to 5 frames of hit-stop, screen shake, a white flash, knockback, floating numbers, pixel dust.
 - Every real enemy attack has a red "!" and a 0.4 s wind-up, and each attack has its own telegraph shape, so color is never the only cue.
 - Specials spend MP. MP regenerates 4% per second. Benched heroes regenerate 6% MP and 2% HP per second.
-- Party burst: the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR PARTY BURST shows over the active hero (the corner controls leave burst out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
+- Party burst: the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR PARTY BURST shows just under the HUD with no box behind it (the corner controls leave burst out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
 - Status: burn, stun, slow, confuse, curse (Vecna's clock).
 - A KO'd hero drops out and the next swaps in. All four down returns you to the last light with XP kept.
 - Difficulty: Kid, Chief, Upside Down (enemy HP and damage ×0.7, ×1, ×1.4).

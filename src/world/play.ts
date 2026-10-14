@@ -22,7 +22,7 @@ import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, isNear } from './puzzles.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawWorld } from './render.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -32,8 +32,6 @@ const IDLE: SimInput = {
 /** Interact reaches this far (px) from the hero's feet to a lights prop. */
 const LIGHT_REACH = 20;
 const SPEECH_FRAMES = 90;
-/** The burst line stays on one line even with a long key name like SPACE. */
-const BURST_COLS = 32;
 /** How far (px) from the start the party goes before the controls in the corner start to fade, and how long the fade takes. */
 const HOME_RADIUS = 120;
 const HINT_FADE_FRAMES = 90;
@@ -390,10 +388,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (speech) {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
-      } else if (burstCall) {
-        // A bark takes the spot over the hero for a moment, and the burst line comes back after it.
-        drawCallout(ctx, burstHint(), view.focus.x, view.focus.y - 24, cam, 'yellow', BURST_COLS);
       }
+      // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
+      if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
       // The subtitle sits where the corner controls do, so it replaces them while it shows.
       if (hint) drawSubtitle(ctx, hint.text);
       else drawControlsCorner(ctx, hintFade);

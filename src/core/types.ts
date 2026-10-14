@@ -225,7 +225,8 @@ export type SimEvent =
 export type SimSpawn =
   | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
-  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; cam?: CamDef }
+  /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. */
+  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; cam?: CamDef }
   | { kind: 'npc'; id: CharId; tx: number; ty: number; dir: Dir };
 
 export interface PartySeed {

@@ -1,21 +1,22 @@
 // The top strip. Opaque, VIEW_TOP tall and as wide as the screen. Left: the active hero. Middle: quarters and Inspiration.
-// Right: the bench and the d20. On a wide screen the contents sit inside the clear band with room around them.
-// HP is a segmented bar on both sides: flat for the active hero, upright beside each bench face. Same colors, same blink.
-// Everything else beside it is just as quiet: no frames. XP is ten yellow notches under HP, MP is one blue segment per cast.
+// Right: the Crit meter and the bench. On a wide screen the contents sit inside the clear band with room around them.
+// HP is a segmented bar under the active hero's name, with the XP notches under it. A bench slot is just the key and the
+// face: every hero's health is also the bar over their head in the world. The strip is quiet, with no frames.
+// MP is one blue segment per cast.
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
 import type { PromptDevice } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
-import { drawBar, drawBarV, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
+import { drawBar, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { INSPIRATION_SECONDS } from '../progression/index.ts';
-import { XP_NOTCHES, bulbCount, bulbFill, clamp01, hpBarColor, isLowHp, mpBar, notchFill, notchSpans, quarterFill } from './format.ts';
+import { XP_NOTCHES, bulbCount, bulbFill, clamp01, hpBarColor, isLowHp, mpBar, notchFill, notchSpans } from './format.ts';
 import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
-import { LEFT_W, LEFT_X, METER_X, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, hudBand, leftShift, rightShift, slotRects } from './hudlayout.ts';
+import { LEFT_W, LEFT_X, METER_LABEL_X, METER_X, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, hudBand, leftShift, rightShift, slotRects } from './hudlayout.ts';
 import type { SlotRect } from './hudlayout.ts';
 
 /** The Inspiration bar's full width. Kept short so the bench can sit beside it. */
@@ -25,10 +26,15 @@ const KEY_COLOR = 'slate';
 /** The active hero's shortcut key sits this far left of the name. */
 const ACTIVE_KEY_X = LEFT_X - 7;
 /** On a bench slot the face sits a little below the top, so the slot is centered in the strip like the active portrait.
- * The key is 2 px in from the slot's left edge, and the HP bar is 2 px right of the face. */
+ * The key is 2 px in from the slot's left edge. */
 const FACE_Y = 2;
 const KEY_DX = 2;
-const BAR_DX = 13;
+/** The Crit meter: a d20 of this radius, 8.7 px wide and 10 tall, centered this far down (level with the bench faces),
+ * with the label to its right, centered on the die's height. */
+const METER_R = 5;
+const METER_CY = 7;
+const METER_LABEL = 'CRIT';
+const METER_LABEL_Y = 5;
 /** The strip is near black, so the lit die gets an orange outline instead of the usual ink one. */
 const METER_LIT: DieScheme = { ...DIE_GOLD, edge: 'orange' };
 
@@ -48,7 +54,7 @@ export interface HudOpts {
 /** How long the new active hero's portrait flashes after a swap, in frames. */
 const SWAP_FLASH = 20;
 
-/** One color for the whole bar, so the active hero and the bench read the same. Low HP makes it blink, in step on both sides. */
+/** One color for the whole bar, so the HP over the heroes in the world and in the strip read the same, blink included. */
 function barColor(p: PartyHud, t: number): ColorName {
   return hpBarColor(p.hp, p.hpMax, t, settings.reduceFlashing);
 }
@@ -96,7 +102,7 @@ function drawMiddle(ctx: Ctx, hud: HudView, t: number): void {
   box(ctx, MIDDLE_X, 17, Math.max(1, Math.round(INSPIRE_W * clamp01(hud.inspiration / INSPIRATION_SECONDS))), 1, 'yellow');
 }
 
-/** One benched hero: the shortcut key, a small face and an upright HP bar, left to right.
+/** One benched hero: the shortcut key and a small face, left to right.
  * The key fills from the bottom as the swap recharges, so it reads as ready once it is fully lit. */
 function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, o: HudOpts): void {
   const x = r.px, y = FACE_Y;
@@ -109,13 +115,6 @@ function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, 
   // A hero who is down keeps the neutral face, in greys.
   clipped(ctx, x + 1, y + 1, 9, 9, () => drawPortrait(ctx, p.id, 'neutral', x - 7, y - 5, dead));
 
-  // The face's height, in four quarters from the bottom: 2 px of bar and a 1 px tick. No frame, so the empty part is a
-  // shade lighter than the strip to stay visible.
-  const bx = x + BAR_DX;
-  box(ctx, bx, y, 3, 11, 'ink');
-  const color = barColor(p, t);
-  for (let i = 0; i < 4; i++) drawBarV(ctx, bx, y + 9 - i * 3, 3, 2, quarterFill(p.hp, p.hpMax, i), color, dead ? 'night' : 'shadow');
-
   if ((o.device ?? 'keyboard') !== 'keyboard') return;
   const key = slotKeyLabel(r.n);
   const kx = r.x + KEY_DX, ky = y + 3;
@@ -126,18 +125,20 @@ function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, 
   if (rows > 0) clipped(ctx, kx, ky + TINY_H - rows, tinyWidth(key), rows, () => drawTinyText(ctx, key, kx, ky, 'mist'));
 }
 
-/** The party meter: a d20 that fills with light from the bottom and glows gold, with sparks, once the burst is ready. */
+/** The party meter: a small d20 that fills with light from the bottom and glows gold, with sparks, once the burst is ready,
+ * and a CRIT label to its right that lights up with it. */
 function drawMeter(ctx: Ctx, hud: HudView, t: number, mx: number): void {
+  drawTinyText(ctx, METER_LABEL, mx + METER_LABEL_X - METER_X, METER_LABEL_Y, hud.burstReady ? 'yellow' : 'mist');
   if (!hud.burstReady) {
-    drawDie(ctx, mx, 9, 8, { scheme: DIE_DIM, lit: hud.burst, litScheme: METER_LIT });
+    drawDie(ctx, mx, METER_CY, METER_R, { scheme: DIE_DIM, lit: hud.burst, litScheme: METER_LIT });
     return;
   }
-  drawDie(ctx, mx, 9, 8, { scheme: METER_LIT });
+  drawDie(ctx, mx, METER_CY, METER_R, { scheme: METER_LIT });
   if (settings.reduceFlashing) return;
   const s = (t >> 3) & 3;
   const hot = s === 1 ? 'white' : 'yellow';
-  for (const [dx, dy] of [[-9, -6], [9, -6], [-9, 6], [9, 6]] as [number, number][]) {
-    if (((dx + dy + s) & 1) === 0) box(ctx, mx + dx, 9 + dy, 1, 1, hot);
+  for (const [dx, dy] of [[-6, -5], [6, -5], [-6, 5], [6, 5]] as [number, number][]) {
+    if (((dx + dy + s) & 1) === 0) box(ctx, mx + dx, METER_CY + dy, 1, 1, hot);
   }
 }
 
@@ -148,7 +149,7 @@ function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>): void {
   drawText(ctx, boss.name, SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
 }
 
-/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, bench faces, d20 burst meter, quarters, boss bar.
+/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, quarters, d20 Crit meter, bench faces, boss bar.
  * Every portrait shows the key that picks it, and the bench shows how far the swap has recharged. The same
  * rectangles (`slotRects`) answer clicks, so a portrait is a button. */
 export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, o: HudOpts = {}): void {

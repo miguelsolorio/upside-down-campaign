@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, LEFT_W, LEFT_X, METER_LEFT, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CELL_H, LEFT_W, LEFT_X, METER_LABEL_X, METER_LEFT, METER_W, METER_X, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
-import { bulbCount } from '../src/ui/format.ts';
+import { XP_NOTCHES, bulbCount, notchSpans } from '../src/ui/format.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
 
 const IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
@@ -30,31 +30,43 @@ test('every hero gets one rectangle, the active one first, numbered by party slo
   }
 });
 
-test('bench slots sit left to right in party order, clear of the middle readout and the d20 meter', () => {
+test('bench slots sit left to right in party order, clear of the middle readout and the Crit meter', () => {
   for (let n = 2; n <= 4; n++) {
     const bench = slotRects(party(n, 1)).filter((r) => !r.active);
     assert.equal(bench.length, n - 1);
     for (let i = 1; i < bench.length; i++) assert.ok((bench[i] as { px: number }).px > (bench[i - 1] as { px: number }).px);
-    for (const r of bench) {
+    bench.forEach((r, k) => {
       assert.equal(r.y, 0);
       assert.equal(r.h, CELL_H);
       assert.equal(r.w, BENCH_PITCH, 'every slot is the same width, whoever else is benched');
       assert.equal(r.px, r.x + BENCH_FACE_DX, 'the face sits after the key');
-      assert.ok(r.x >= MIDDLE_END, `slot ${r.n} starts at ${r.x}, inside the quarters and Inspiration readout`);
-      assert.ok(r.x + r.w <= METER_LEFT, `slot ${r.n} ends at ${r.x + r.w}, over the d20 meter`);
-    }
-    const last = bench[bench.length - 1] as { x: number };
-    assert.equal(last.x + benchPitch(bench.length), BENCH_END, 'the last slot ends against the d20 meter, however many are benched');
+      assert.equal(r.x, BENCH_START + k * BENCH_PITCH, 'the slots sit in fixed places, so nobody moves when the party grows');
+      assert.ok(r.x >= METER_LEFT + METER_W, `slot ${r.n} starts at ${r.x}, over the Crit meter`);
+      assert.ok(r.x + r.w <= BENCH_END, `slot ${r.n} ends at ${r.x + r.w}, past the bench`);
+    });
   }
+  assert.equal(BENCH_START + BENCH_W, BENCH_END, 'three slots fill the bench');
+  assert.equal(BENCH_PITCH * 3, BENCH_W);
 });
 
-test('a bench slot holds its key, face and HP bar with room before the next slot\'s key', () => {
-  // 2 px of padding, a 3 px key, a 2 px gap, the 11 px face, a 2 px gap and the 3 px bar.
+test('a bench slot holds its key and face with room before the next slot\'s key', () => {
+  // 2 px of padding, a 3 px key, a 2 px gap and the 11 px face.
   const pad = 2;
   assert.equal(BENCH_FACE_DX, pad + 3 + 2);
-  const end = BENCH_FACE_DX + 11 + 2 + 3;
+  const end = BENCH_FACE_DX + 11;
   const air = BENCH_PITCH + pad - end;
-  assert.ok(end <= BENCH_PITCH && air >= 4, `the bar ends at ${end}, leaving ${air} px before the next key`);
+  assert.ok(end <= BENCH_PITCH && air >= 4, `the face ends at ${end}, leaving ${air} px before the next key`);
+});
+
+test('the Crit meter sits between the quarters and the bench: the die, then its CRIT label to the right', () => {
+  for (const ch of 'CRIT') assert.ok(TINY_GLYPHS[ch], `the tiny font has ${ch}`);
+  const label = 'CRIT'.length * 4 - 1;
+  const dieRight = METER_X + 4;
+  assert.ok(METER_X - 4 >= METER_LEFT, 'the die starts inside the meter box');
+  assert.ok(METER_LABEL_X > dieRight + 1, 'the label clears the die and its sparks');
+  assert.ok(METER_LABEL_X + label <= METER_LEFT + METER_W, `the label is ${label} px and ends inside the ${METER_W} px box`);
+  assert.ok(METER_LEFT > MIDDLE_END + 1, 'the meter starts after the quarters and Inspiration');
+  assert.ok(BENCH_START - (METER_LEFT + METER_W) >= 3, 'and ends at least 3 px before the first bench slot, whose key has 2 more');
 });
 
 test('the tiny font has every letter and digit, in 3 columns by 5 rows', () => {
@@ -82,6 +94,7 @@ test('the active hero\'s panel never collides, for every hero up to level 12 and
       const pitch = Math.max(6, Math.min(8, Math.floor(LEFT_W / n)));
       const hpEnd = LEFT_X + n * pitch - 1;
       assert.ok(hpEnd < MIDDLE_X, `${d.name} L${level} HP bar and the XP notches under it end at ${hpEnd}, into the quarters`);
+      assert.equal(notchSpans(n * pitch - 1, XP_NOTCHES).length, XP_NOTCHES, `${d.name} L${level}: the XP row has room for all ten notches`);
     }
   }
 });
@@ -165,7 +178,7 @@ test('a click on a portrait, mapped from page pixels, lands on the right hero', 
   assert.equal(slotAt(p, at?.x ?? -1, at?.y ?? -1), 3);
 });
 
-test('on a wide screen the active hero hugs the band\'s left edge and the bench its right edge, and clicks follow', () => {
+test('on a wide screen the active hero hugs the band\'s left edge and the meter and bench its right edge, and clicks follow', () => {
   for (const band of [{ x: 50, w: 436, top: 3, h: 26 }, { x: 6, w: 388, top: 3, h: 26 }, { x: 4, w: 256, top: 3, h: 26 }, { x: 0, w: 256, top: 0, h: 20 }]) {
     const lx = leftShift(band), rx = rightShift(band);
     for (let n = 1; n <= 4; n++) {
@@ -176,11 +189,12 @@ test('on a wide screen the active hero hugs the band\'s left edge and the bench 
         assert.equal(me?.x, band.x, 'the active cell starts at the band');
         for (const r of rects) assert.ok(r.y === 0 && r.h === band.h, 'a click cell spans the whole strip');
         const bench = rects.filter((r) => !r.active);
-        const last = bench[bench.length - 1];
-        if (last) assert.equal(last.x + last.w, BENCH_END + rx, 'the bench ends against the d20');
+        const first = bench[0];
+        if (first) assert.equal(first.x, BENCH_START + rx, 'the bench starts against the meter');
         for (const r of bench) {
           assert.ok(r.x >= MIDDLE_END + lx, `band ${band.x},${band.w}: the bench clears the middle`);
-          assert.ok(r.x + r.w <= METER_LEFT + rx, 'the bench clears the d20');
+          assert.ok(r.x >= METER_LEFT + METER_W + rx, 'the bench clears the Crit meter');
+          assert.ok(r.x + r.w <= BENCH_END + rx, 'the bench stays inside the band');
           const [cx, cy] = center(r);
           assert.equal(slotAt(p, cx, cy, band), r.index);
         }

@@ -11,7 +11,7 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | `X` or `K` | Special. Costs MP |
 | `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
 | `1` to `4`, or click a portrait | Pick a hero |
-| `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise Crit when the d20 at the top right is full. Also advances dialogue |
+| `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
 | `U` or `B` | Crit, even next to the lights |
 | `Esc` or `P` | Pause and settings |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |

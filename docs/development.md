@@ -94,7 +94,7 @@ Besides `index.html`, the HTML pages at the root are dev-only review pages that 
 - `social.html` draws the cards and the icon.
 - `character-variations.html` holds the face options for each hero.
 - `darkness-variations.html` holds the night tileset options.
-- `hp-bars.html` draws the HUD's HP bars at every level and HP state.
+- `hp-bars.html` draws the HUD's HP bar at every level and HP state.
 - `hud-variations.html` holds the HUD options.
 - `touch-controls.html` shows the touch controls on phone frames.
 

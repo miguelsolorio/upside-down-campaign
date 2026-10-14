@@ -6,7 +6,9 @@ export type Action =
   | 'up' | 'down' | 'left' | 'right'
   | 'attack' | 'special' | 'dash' | 'swapPrev' | 'swapNext'
   | 'swap1' | 'swap2' | 'swap3' | 'swap4' | 'burst'
-  | 'interact' | 'confirm' | 'cancel' | 'pause' | 'mute' | 'skip';
+  | 'interact' | 'confirm' | 'cancel' | 'pause' | 'mute' | 'skip'
+  /** Only a controller's Start button sends this, together with pause. The title uses it to begin. */
+  | 'start';
 
 /** The actions a player can rebind. confirm follows attack and interact. cancel follows special. */
 export type BindAction =
@@ -230,22 +232,45 @@ export function keyLabel(code: string | null): string {
   return code.toUpperCase().slice(0, 6);
 }
 
-/** What to show for an action: its first key, or the fixed key that always works for it. */
+// ---------------------------------------------------------------- which device the prompts speak for
+export type PromptDevice = 'keyboard' | 'gamepad';
+let promptDevice: PromptDevice = 'keyboard';
+
+/** Every hint, token and label below follows this. The main loop sets it from whichever device was touched last. */
+export function setPromptDevice(d: PromptDevice): void {
+  promptDevice = d;
+}
+export function getPromptDevice(): PromptDevice {
+  return promptDevice;
+}
+const onPad = (): boolean => promptDevice === 'gamepad';
+
+/** The Xbox face for each action a controller can do. These are fixed, so a key rebind never touches them. */
+const PAD_LABEL: Partial<Record<BindAction, string>> = {
+  attack: 'A', special: 'X', dash: 'B', swapPrev: 'LB', swapNext: 'RB', burst: 'Y',
+  interact: 'A', skip: 'VIEW', pause: 'START',
+};
+
+/** What to show for an action: its first key, or the fixed key that always works for it. A controller shows its button. */
 const FALLBACK: Partial<Record<BindAction, string>> = {
   up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT', interact: 'ENTER', pause: 'ESC',
 };
 export function labelOf(action: BindAction): string {
+  const button = onPad() ? PAD_LABEL[action] : undefined;
+  if (button) return button;
   const first = keysOf(action)[0];
   return first ? keyLabel(first) : (FALLBACK[action] ?? '--');
 }
 
 /** The key printed next to a bench hero in the HUD: the key if it's one character, else the slot number. */
 export function slotKeyLabel(n: 1 | 2 | 3 | 4): string {
+  if (onPad()) return String(n);
   const l = labelOf(`swap${n}` as BindAction);
   return l.length === 1 ? l : String(n);
 }
 
 function moveLabel(): string {
+  if (onPad()) return 'STICK';
   const ls = (['up', 'left', 'down', 'right'] as const).map((a) => {
     const k = keysOf(a)[0];
     return k ? keyLabel(k) : '';
@@ -275,8 +300,10 @@ export function titleHintLines(max = 42): string[] {
   const picks = pickLabels();
   return packLines([
     `${moveLabel()} MOVE`, `${labelOf('attack')} ATTACK`, `${labelOf('special')} SPECIAL`, `${labelOf('dash')} DASH`,
-    `${labelOf('swapPrev')} ${labelOf('swapNext')} SWAP`, `${picks.join('') === '1234' ? '1-4' : picks.join(' ')} PICK`,
-    `${labelOf('burst')} BURST`, 'ESC PAUSE',
+    `${labelOf('swapPrev')} ${labelOf('swapNext')} SWAP`,
+    // A controller has no direct pick: the bumpers are the only way to swap.
+    onPad() ? '' : `${picks.join('') === '1234' ? '1-4' : picks.join(' ')} PICK`,
+    `${labelOf('burst')} BURST`, `${onPad() ? labelOf('pause') : 'ESC'} PAUSE`,
   ], max);
 }
 
@@ -284,13 +311,20 @@ export function titleHintLines(max = 42): string[] {
 export function levelHintLines(max = 42): string[] {
   return packLines([
     `${moveLabel()} MOVE`, `${labelOf('attack')} ATTACK`, `${labelOf('special')} SPECIAL`, `${labelOf('dash')} DASH`,
-    `${labelOf('swapPrev')} ${labelOf('swapNext')} SWAP`, `${labelOf('interact')} LIGHTS`, 'ESC PAUSE',
+    `${labelOf('swapPrev')} ${labelOf('swapNext')} SWAP`, `${labelOf('interact')} LIGHTS`, `${onPad() ? labelOf('pause') : 'ESC'} PAUSE`,
   ], max);
 }
 
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.
+// A controller player gets button names instead, and the lines that mention picking a hero by number drop that part.
+const swapOr = (): string => `${labelOf('swapPrev')} or ${labelOf('swapNext')}`;
+const swapTo = (n: 3 | 4): string => (onPad() ? swapOr() : `${labelOf(`swap${n}`)}, ${swapOr()}`);
 const TOKENS: Record<string, () => string> = {
-  move: () => { const m = moveLabel(); return m === 'ARROWS' ? 'the arrow keys' : `${m} or the arrow keys`; },
+  move: () => {
+    if (onPad()) return 'the stick or D-pad';
+    const m = moveLabel();
+    return m === 'ARROWS' ? 'the arrow keys' : `${m} or the arrow keys`;
+  },
   attack: () => labelOf('attack'),
   special: () => labelOf('special'),
   dash: () => labelOf('dash'),
@@ -298,10 +332,19 @@ const TOKENS: Record<string, () => string> = {
   interact: () => labelOf('interact'),
   skip: () => labelOf('skip'),
   swap: () => `${labelOf('swapPrev')} and ${labelOf('swapNext')}`,
-  swapOr: () => `${labelOf('swapPrev')} or ${labelOf('swapNext')}`,
+  swapOr,
   pick: () => { const p = pickLabels(); return p.join('') === '1234' ? '1 to 4' : p.join(', '); },
   pick3: () => labelOf('swap3'),
   pick4: () => labelOf('swap4'),
+  /** "3, Q or E" on a keyboard, "LB or RB" on a controller. */
+  swapTo3: () => swapTo(3),
+  swapTo4: () => swapTo(4),
+  /** A whole closing sentence, so a controller line can leave it out. Starts with a space. */
+  pickHint: () => {
+    if (onPad()) return '';
+    const p = pickLabels();
+    return ` Or press ${p.join('') === '1234' ? '1 to 4' : p.join(', ')} to pick.`;
+  },
 };
 
 /** Fills {attack}, {move} and the other key tokens in a line of dialogue. Unknown tokens stay as written. */

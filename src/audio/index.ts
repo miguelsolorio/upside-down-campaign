@@ -4,7 +4,7 @@
 // the track, and the first unlock starts it. Effects asked for before that are dropped.
 // Everything is synthesized: pulse, triangle and noise voices through a master gain and a limiter.
 import type { AudioApi } from '../core/types.ts';
-import { duckMusic, isAway, isMuted, liveGraph, setAway, setMuted, setVolumes, unlock } from './engine.ts';
+import { duckMusic, isAway, isMuted, isRunning, liveGraph, setAway, setMuted, setVolumes, unlock } from './engine.ts';
 import type { Graph } from './engine.ts';
 import { playBlip, playCue } from './cues.ts';
 import { setLevel, setWanted, sync } from './live.ts';
@@ -28,6 +28,8 @@ export const audio: AudioApi = {
   unlock() {
     if (unlock()) sync();
   },
+
+  ready: isRunning,
 
   music(id) {
     setWanted(id);

@@ -2,7 +2,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
-import { labelOf } from '../core/bindings.ts';
+import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import { drawPanel, drawText } from '../gfx/index.ts';
 import { bigText, dither } from './kit.ts';
 import { drawMenu, settingItems, updateMenu } from './menu.ts';
@@ -53,8 +53,10 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
       bigText(ctx, 'PAUSED', 128, 30, 'yellow', 2, 'center', true);
       drawPanel(ctx, 36, 48, 184, 132, 'menu');
       drawMenu(ctx, menu ?? build(g), 48, 56, 160, t);
+      // Escape always works on a keyboard. On a controller the back button does.
       const key = labelOf('pause');
-      drawText(ctx, key === 'ESC' ? 'ESC TO RESUME' : `${key} OR ESC TO RESUME`, 128, 189, 'mist', { align: 'center' });
+      const back = getPromptDevice() === 'gamepad' ? 'B' : 'ESC';
+      drawText(ctx, key === back ? `${back} TO RESUME` : `${key} OR ${back} TO RESUME`, 128, 189, 'mist', { align: 'center' });
     },
   };
 }

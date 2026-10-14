@@ -39,6 +39,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 - Facing is `'down' | 'up' | 'left' | 'right'`. Art draws left by flipping right.
 - The sim draws nothing and plays nothing. It returns events and a `view()`. World forwards `sfx` events to `audio.sfx`.
 - Only the active hero is on the field with collision. The other party members trail behind it as cosmetic followers (no collision, no AI).
+- Input: `core/input.ts` merges the keys (`core/bindings.ts`) with an Xbox pad (`core/gamepad.ts`, pure). The sim scales speed by stick magnitude, and its own deadzone is 0.15, so the pad deadzone (0.2) sits above it and passes the raw vector. The main loop copies `input.device()` into `bindings.setPromptDevice` each tick, and every hint, label and `{token}` in story lines then names keys or buttons for that device. Add new prompts through `labelOf` or `keyText`, not literals.
 
 ## Time of day
 

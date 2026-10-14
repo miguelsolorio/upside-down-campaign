@@ -36,7 +36,21 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | `Tab` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
 | `M` | Mute |
 
-A gamepad works too (A attack, X special, B dash, bumpers swap, Y burst, Start pause, Select skip). It's in but untested.
+**Controller.** An Xbox controller plays the whole game, menus included. Plug it in or pair it, then press any button once. Browsers hide a controller until it's touched, and `CONTROLLER CONNECTED` shows across the top when the game sees it.
+
+| Button | Action |
+| --- | --- |
+| Left stick or D-pad | Move. A light tilt walks slower |
+| `A` | Attack, talk, light Joyce's lights, confirm |
+| `X` | Special. Opens the options on the title |
+| `B` | Dash, back |
+| `Y` | Party burst |
+| `LB` `RB` | Swap hero |
+| `RT` `LT` | Attack and dash, same as `A` and `B` |
+| `Start` | Pause. Begins the game on the title |
+| `View` | Skip dialogue |
+
+Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
 
 **Changing keys.** The table above is the defaults. Open CONTROLS from the options (`P` on the title) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK, SPECIAL and DASH always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the title, the HUD's hero numbers, the skip prompt and the tutorial lines. The gamepad layout is listed there too but can't be changed yet.
 

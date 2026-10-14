@@ -21,9 +21,9 @@ export interface TouchLayout {
   /** The part of the screen clear of notches, rounded corners and the home bar. */
   safe: Rect;
   game: Rect;
-  /** A thumb that lands in here grabs the stick, and the stick's base centers on it. */
+  /** A thumb that lands anywhere in here grabs the stick. */
   stickZone: Rect;
-  /** Where the stick waits while no thumb is on it. */
+  /** The center of the stick's ring. The ring stays here, and only the knob moves. */
   stickRest: Vec2;
   /** Radius of the stick's base, in CSS px. */
   stickR: number;

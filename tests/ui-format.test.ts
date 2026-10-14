@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpBarColor, hpTone, isLowHp,
-  MAX_BULBS, clickSegments, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  MAX_BULBS, clickSegments, mpBar, notchFill, notchSpans, pagesOf, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
   XP_NOTCHES,
 } from '../src/ui/format.ts';
 import { wrapText } from '../src/core/text.ts';
@@ -66,16 +66,6 @@ test('the bar over a hero takes the HUD color, and blinks to dark red only where
     assert.equal(hpBarColor(40, 48, t, false), 'leaf', 'a healthy bar does not blink');
   }
   assert.ok(dark > 60 && dark < 180, `${dark} of 600 frames dark`);
-});
-
-test('bench quarters fill from the bottom, and any HP at all lights part of the first', () => {
-  const q = (hp: number): number[] => [0, 1, 2, 3].map((i) => quarterFill(hp, 48, i));
-  assert.deepEqual(q(48), [1, 1, 1, 1]);
-  assert.deepEqual(q(24), [1, 1, 0, 0]);
-  assert.deepEqual(q(0), [0, 0, 0, 0]);
-  assert.deepEqual(q(6), [0.5, 0, 0, 0]);
-  assert.ok((q(1)[0] as number) > 0);
-  assert.deepEqual([0, 1, 2, 3].map((i) => quarterFill(5, 0, i)), [0, 0, 0, 0]);
 });
 
 test('XP notches tile the bar edge to edge with a 1 px gap, and a bar too narrow for ten gets fewer', () => {

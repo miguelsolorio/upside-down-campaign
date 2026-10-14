@@ -2,7 +2,7 @@
 // against the same ones, so what you see is what you can press. Pure, so Node can test it.
 // The constants below place things in a strip STRIP_W wide and CELL_H tall. On a wider screen the strip runs edge to
 // edge and is taller, and its contents follow the clear band with some room around them: the active hero and the
-// middle stay against the band's left edge (leftShift), the bench and the d20 against its right edge (rightShift),
+// middle stay against the band's left edge (leftShift), the burst meter and the bench against its right edge (rightShift),
 // and everything is moved down by the band's `top` so it sits centered in the strip.
 import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud } from '../core/types.ts';
@@ -10,17 +10,28 @@ import type { PartyHud } from '../core/types.ts';
 /** The width the constants below are laid out for. */
 export const STRIP_W = 256;
 
-/** A bench slot is a shortcut key, an 11 px face and a 3 px HP bar side by side, with room before the next slot. */
-export const BENCH_PITCH = 26;
+/** A bench slot is a shortcut key and an 11 px face side by side, with room before the next slot. */
+export const BENCH_PITCH = 21;
 /** In a bench slot, from its left edge to the face: 2 px of padding, the 3 px key and a 2 px gap. */
 export const BENCH_FACE_DX = 7;
 /** Room for three benched heroes. */
-export const BENCH_W = 78;
+export const BENCH_W = 63;
 /** The strip is 20 px tall on a 256 px screen and a slot's click cell spans all of it. The last two rows are its border. */
 export const CELL_H = STRIP_H;
-/** The d20 meter starts here, and the quarters and Inspiration end by here. The bench ends against the meter. */
-export const METER_LEFT = 238;
+/** The quarters and Inspiration end by here. The burst meter starts after them. */
 export const MIDDLE_END = 158;
+/** The bench ends at the strip's edge (a slot has 3 px of its own past the face), and its first slot starts BENCH_W before that. The slots sit in fixed places from
+ * the first one on, so a hero joining the party fills the next one and nothing else moves. */
+export const BENCH_END = STRIP_W;
+export const BENCH_START = BENCH_END - BENCH_W;
+/** The burst meter is a small d20 with its BURST label to the right, just left of the bench: a 9 px die, a 2 px gap and
+ * the 19 px label. The label ends 5 px before the first key (3 here and the key's 2 px of padding), so the number reads as
+ * the hero's and not as part of the label. */
+export const METER_W = 30;
+export const METER_LEFT = BENCH_START - 3 - METER_W;
+/** Center of the burst die, and the left edge of its label. */
+export const METER_X = METER_LEFT + 4;
+export const METER_LABEL_X = METER_LEFT + 11;
 /** The active hero's text, HP bar and XP notches start here, right of the portrait and its shortcut key. */
 export const LEFT_X = 25;
 /** Width the HP bar's segments are fitted into. The bar is shorter than this until max HP is high. */
@@ -32,8 +43,6 @@ export const MP_BAR_X = 103;
 export const MP_BAR_W = 24;
 /** The quarter counter starts here, and the Inspiration timer sits under it. */
 export const MIDDLE_X = 130;
-/** Center of the d20 meter. */
-export const METER_X = 246;
 /** The active hero's portrait box and its click cell. */
 export const ACTIVE_CELL = { x: 0, y: 0, w: 20, h: CELL_H };
 
@@ -44,19 +53,16 @@ export interface SlotRect {
   n: 1 | 2 | 3 | 4;
   active: boolean;
   ko: boolean;
-  /** The click cell. It covers the portrait, its key label and its HP bar. */
+  /** The click cell. It covers the portrait and its key label. */
   x: number; y: number; w: number; h: number;
   /** Left edge of the face frame: 11 px wide for a bench slot, 16 px for the active hero. */
   px: number;
 }
 
-/** Pitch between bench slots. It stays 26 for any bench size, so a hero's tag looks the same whoever else is out. */
+/** Pitch between bench slots. It stays 21 for any bench size, so a hero's tag looks the same whoever else is out. */
 export function benchPitch(count: number): number {
   return Math.min(BENCH_PITCH, Math.floor(BENCH_W / Math.max(1, count)));
 }
-
-/** Right edge of the bench. */
-export const BENCH_END = METER_LEFT - 1;
 
 /** Where the strip's contents go, in screen px: across from x for w, moved down by top, in a strip h tall. */
 export interface HudBand { x: number; w: number; top: number; h: number }
@@ -68,12 +74,12 @@ export function hudBand(): HudBand {
 }
 /** How far the left-hand contents (active hero, middle) move from where the constants put them. */
 export const leftShift = (b: HudBand): number => b.x;
-/** How far the right-hand contents (bench, d20) move from where the constants put them. */
+/** How far the right-hand contents (burst meter, bench) move from where the constants put them. */
 export const rightShift = (b: HudBand): number => b.x + b.w - STRIP_W;
 
-/** Left edge of bench slot `k` of `count`. */
+/** Left edge of bench slot `k`. */
 export function benchX(k: number, count: number, band: HudBand = hudBand()): number {
-  return BENCH_END + rightShift(band) - (count - k) * benchPitch(count);
+  return BENCH_START + rightShift(band) + k * benchPitch(count);
 }
 
 /** One rectangle per hero, the active one first and then the bench left to right in party order. */

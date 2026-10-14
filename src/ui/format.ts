@@ -47,11 +47,6 @@ export function hpBarColor(hp: number, hpMax: number, t: number, reduceFlashing:
   return hpTone(hp, hpMax);
 }
 
-/** How full quarter i (0..3, from the bottom) of the bench bar is, 0..1. */
-export function quarterFill(hp: number, hpMax: number, i: number): number {
-  return hpMax > 0 ? clamp01((hp / hpMax) * 4 - i) : 0;
-}
-
 // ---------------------------------------------------------------- XP notches and MP casts
 /** Notches in the XP row under HP. */
 export const XP_NOTCHES = 10;

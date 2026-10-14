@@ -1,5 +1,4 @@
-// Pure helpers for the UI: bulbs, clocks, typewriter, fades, dice. No DOM, no audio, so Node can test them.
-import type { StatKey } from '../core/types.ts';
+// Pure helpers for the UI: bulbs, clocks, typewriter, fades. No DOM, no audio, so Node can test them.
 
 export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -90,49 +89,6 @@ export function rampIndex(len: number, a: number): number {
   return Math.round(clamp01(a) * (len - 1));
 }
 
-// ---------------------------------------------------------------- dice
-/** Frames at which the tumbling die shows a new face. The gaps grow, so the die seems to slow down. */
-export function tumbleTicks(land: number): number[] {
-  const out: number[] = [];
-  let t = 0;
-  let gap = 3;
-  for (;;) {
-    t += Math.round(gap);
-    if (t >= land - 4) return out;
-    out.push(t);
-    gap *= 1.18;
-  }
-}
-
-function mix(k: number, seed: number): number {
-  let h = Math.imul(k + 1, 0x9e3779b1) ^ Math.imul(seed + 7, 0x85ebca6b);
-  h ^= h >>> 15;
-  h = Math.imul(h, 0x2c1b3c6d);
-  h ^= h >>> 12;
-  return (h >>> 0) % 20 + 1;
-}
-
-/** The face a die shows at a frame: random while tumbling, never the same twice in a row, `roll` once landed. */
-export function dieFace(frame: number, roll: number, seed: number, land: number): number {
-  if (frame >= land) return roll;
-  const k = tumbleTicks(land).filter((t) => t <= frame).length;
-  const away = (n: number, a: number): number => {
-    let v = n;
-    while (v === a || v === roll) v = (v % 20) + 1;
-    return v;
-  };
-  // Never the answer before the die lands, never the same face twice in a row.
-  let face = away(mix(0, seed), -1);
-  for (let i = 1; i <= k; i++) face = away(mix(i, seed), face);
-  return face;
-}
-
-/** The second die when rolling with advantage: 1..roll, so the kept die is always the higher one. */
-export function otherDie(roll: number, seed = 0): number {
-  const r = Math.max(1, Math.min(20, Math.round(roll)));
-  return 1 + ((Math.imul(r + seed * 31 + 11, 0x9e3779b1) >>> 0) % r);
-}
-
 // ---------------------------------------------------------------- title wall
 /** Which letters of Joyce's wall are lit at frame t: R, then U, then N, then all three, then dark, on a 330 frame loop. */
 export function wallLit(t: number): string {
@@ -154,20 +110,7 @@ export function launchLevel(launch: number): number {
   return clamp01(launch / LAUNCH_FRAMES);
 }
 
-// ---------------------------------------------------------------- stats and settings
-export const STAT_ORDER: StatKey[] = ['hp', 'mp', 'atk', 'def', 'spd'];
-const STAT_LABEL: Record<StatKey, string> = { hp: 'HP', mp: 'MP', atk: 'ATK', def: 'DEF', spd: 'SPD' };
-
-/** Gains in a fixed order, zero and missing stats left out. */
-export function gainRows(gains: Partial<Record<StatKey, number>>): { label: string; amount: number }[] {
-  const out: { label: string; amount: number }[] = [];
-  for (const k of STAT_ORDER) {
-    const n = gains[k] ?? 0;
-    if (n > 0) out.push({ label: STAT_LABEL[k], amount: n });
-  }
-  return out;
-}
-
+// ---------------------------------------------------------------- settings
 /** Volume steps of one tenth, clamped to 0..1. */
 export function stepVolume(v: number, dir: -1 | 1): number {
   return Math.round(clamp01(v + dir * 0.1) * 10) / 10;

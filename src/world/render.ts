@@ -1,9 +1,9 @@
 // Drawing for the play scene: the world pass (with the light pools at night), the flash, the scare figure and the small overlays.
 // World-space draws assume the caller translated by (-camX, VIEW_TOP - camY); drawWorld does that itself.
-import type { ActorView, Floater, PropView, SimView, Vec2 } from '../core/types.ts';
+import type { ActorView, Floater, HeroId, PropView, SimView, Vec2 } from '../core/types.ts';
 import type { Camera } from '../core/camera.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
-import { controlRows, keyText } from '../core/bindings.ts';
+import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped, dither } from '../ui/kit.ts';
@@ -13,6 +13,8 @@ import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import type { Stage } from './stage.ts';
+import { SPARKLES, TALENT_TO, ringRadius, sparkle, talentShowing } from './levelfx.ts';
+import type { LevelFx } from './levelfx.ts';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -172,9 +174,9 @@ export function drawCallout(ctx: Ctx, text: string, wx: number, wy: number, cam:
   lines.forEach((l, i) => drawText(ctx, l, x, y + i * 9, color));
 }
 
-/** Corner brackets that breathe in and out, a light dither over the prop and a label above it: where to look when
- * the party is stuck. Holds still when Reduce flashing is on. Draw it after the world so nothing covers it. */
-export function drawPuzzleHighlight(ctx: Ctx, r: { x: number; y: number; w: number; h: number }, cam: Camera, t: number, label: string): void {
+/** Corner brackets that breathe in and out and a light dither over the prop: where to look when the party is stuck.
+ * An optional label sits above it. Holds still when Reduce flashing is on. Draw it after the world so nothing covers it. */
+export function drawPuzzleHighlight(ctx: Ctx, r: { x: number; y: number; w: number; h: number }, cam: Camera, t: number, label?: string): void {
   const gap = settings.reduceFlashing ? 2 : 1 + (BREATH[(t >> 3) % BREATH.length] as number);
   const x0 = Math.round(r.x - cam.x) - gap, y0 = Math.round(r.y - cam.y + VIEW_TOP) - gap;
   const w = r.w + gap * 2, h = r.h + gap * 2;
@@ -187,17 +189,50 @@ export function drawPuzzleHighlight(ctx: Ctx, r: { x: number; y: number; w: numb
       box(ctx, dx > 0 ? cx : cx - 2, dy > 0 ? cy : cy - arm, 2, arm, 'yellow');
     }
   });
-  drawCallout(ctx, label, r.x + r.w / 2, r.y - gap - 1, cam, 'yellow');
+  if (label) drawCallout(ctx, label, r.x + r.w / 2, r.y - gap - 1, cam, 'yellow');
 }
 
-/** The objective for a puzzle, on a dark strip at the bottom of the screen. Stands in for the arrival dialogue when the story is skipped. */
-export function drawPuzzleTip(ctx: Ctx, text: string): void {
-  const lines = wrapText(keyText(text), 42);
-  const w = Math.max(...lines.map((l) => textWidth(l)));
-  const top = 209 - (lines.length - 1) * 9;
-  ctx.fillStyle = PAL.ink;
-  ctx.fillRect(Math.round((SCREEN_W - w) / 2) - 3, top - 2, w + 6, lines.length * 9 + 2);
-  lines.forEach((l, k) => drawText(ctx, l, SCREEN_W / 2, top + k * 9, 'yellow', { align: 'center' }));
+/** The level-up effect around each hero who just gained a level: a ring at the feet, sparkles circling up and, for a
+ * talent or a Nat 20, a callout. It follows the hero, so it keeps playing while they run, and the game never stops for it.
+ * Draw it after the world and before the HUD. */
+export function drawLevelFx(ctx: Ctx, fx: readonly LevelFx[], view: SimView, cam: Camera): void {
+  // Callouts per hero, so two level-ups in one tick stack up the screen and never share a spot.
+  const calls = new Map<HeroId, { text: string; color: ColorName }[]>();
+  const say = (hero: HeroId, text: string, color: ColorName): void => {
+    const list = calls.get(hero) ?? [];
+    if (!list.some((c) => c.text === text)) list.push({ text, color });
+    calls.set(hero, list);
+  };
+  for (const f of fx) {
+    const a = view.actors.find((m) => m.kind === 'hero' && m.id === f.hero);
+    if (!a) continue;
+    const sx = Math.round(a.x - cam.x + view.shake.x), sy = Math.round(a.y - cam.y + VIEW_TOP + view.shake.y);
+    const main: ColorName = f.nat20 ? 'orange' : 'yellow';
+    clipped(ctx, 0, VIEW_TOP, SCREEN_W, SCREEN_H - VIEW_TOP, () => {
+      const r = ringRadius(f.t, f.nat20 ? 30 : 22);
+      if (r > 0) {
+        const n = Math.max(16, r * 2);
+        // Squashed to half height so the ring lies flat on the ground.
+        for (let k = 0; k < n; k++) {
+          const ang = (k / n) * Math.PI * 2;
+          box(ctx, sx + Math.cos(ang) * r, sy + Math.sin(ang) * r * 0.5, 1, 1, main);
+        }
+      }
+      for (let i = 0; i < SPARKLES; i++) {
+        const p = sparkle(f.t, i);
+        if (!p) continue;
+        const lit = p.bright || settings.reduceFlashing;
+        box(ctx, sx + p.dx, sy + p.dy, lit ? 2 : 1, lit ? 2 : 1, lit ? 'white' : main);
+      }
+    });
+    if (f.nat20 && f.t >= 4 && f.t < TALENT_TO) say(f.hero, 'NAT 20!', 'yellow');
+    if (f.talent && talentShowing(f.t)) say(f.hero, `NEW TALENT: ${f.talent}`, 'cyan');
+  }
+  for (const [hero, list] of calls) {
+    const a = view.actors.find((m) => m.kind === 'hero' && m.id === hero);
+    if (!a) continue;
+    list.forEach((c, k) => drawCallout(ctx, c.text, a.x, a.y - 40 - k * 12, cam, c.color));
+  }
 }
 
 export function drawFade(ctx: Ctx, amount: number): void {

@@ -30,7 +30,7 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | `X` or `K` | Special. Costs MP |
 | `C` or `L` | Dash, with a few frames of invulnerability |
 | `Shift` or `Tab` | Cycle to the next hero |
-| `Q` or `1` to `4` | Back one hero, or pick one by number. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
+| `Q`, `1` to `4`, or click a portrait | Back one hero, or pick one. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
 | `U` or `V` | Party burst, when the d20 at the top right is full |
 | `Space` or `Enter` | Talk, light Joyce's Christmas lights, advance dialogue |
 | `Esc` or `P` | Pause and settings |
@@ -98,7 +98,7 @@ src/heroes      hero stats, abilities, growth
 src/enemies     enemy stats and behavior
 src/progression XP curve, the d20 level-up
 src/world       stage 1.1 and the play scene
-src/ui          HUD, dialogue, title, menus, level-up screen
+src/ui          HUD, dialogue, title, menus
 src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy
 docs            game design, architecture, Level 1 spec, screenshots

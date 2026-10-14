@@ -2,7 +2,7 @@
 // sim's events to audio, ui and story, fires the stage's beats, and moves the camera. draw() layers the world,
 // the pools of light at night, the HUD and the dialogue. Retry rebuilds the sim from the last lit checkpoint.
 import type { Game, Scene } from '../core/scene.ts';
-import type { BarkEvent, DevHooks, HeroId, LevelUpInfo, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
+import type { BarkEvent, DevHooks, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
@@ -15,12 +15,14 @@ import type { Bot } from '../combat/bot.ts';
 import { HERO_IDS } from '../heroes/index.ts';
 import { audio } from '../audio/index.ts';
 import { SCRIPTS, bark } from '../story/index.ts';
-import { createDialogueBox, createGameOverScene, createLevelUpOverlay, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
+import { createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
+import { slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
 import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
-import { createPuzzleTracker } from './puzzles.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawPuzzleHighlight, drawPuzzleTip, drawWorld } from './render.ts';
+import { HINT_NUDGE, createPuzzleTracker } from './puzzles.ts';
+import { createLevelFx, hudPulse } from './levelfx.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleHighlight, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -53,7 +55,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const swallow = new Set<string>();
   /** Dialogue-finished callbacks, run on the next tick so a beat can start its next script outside the box's own update. */
   const deferred: (() => void)[] = [];
-  const levelUps: LevelUpInfo[] = [];
+  /** Level-up effects playing around the heroes. They never stop the game. */
+  const levelFx = createLevelFx();
   /** Counts the time spent near each unsolved puzzle, to know when to highlight it. */
   const puzzles = createPuzzleTracker(stage.puzzles);
   let game!: Game;
@@ -77,6 +80,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let glowLevel = 1;
   /** Where the SAVED callout floats and how many frames it has shown. Null = hidden. */
   let saved: { x: number; y: number; t: number } | null = null;
+  /** Frames since the last hero swap, to flash the new active portrait. Null before the first one. */
+  let swapAge: number | null = null;
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -158,16 +163,6 @@ export function createPlayScene(opts: PlayOptions): Scene {
     if (overlay === sc) overlay = null;
   }
 
-  function showLevelUp(): void {
-    const info = levelUps.shift();
-    if (!info) return;
-    if (bot) { speak(info.hero, 'levelUp', true, info.to); return; }
-    audio.jingle('levelUp');
-    const sc = createLevelUpOverlay({ info, onDone: () => closeOverlay(sc) });
-    overlay = sc;
-    game.scenes.push(sc);
-  }
-
   /** Eleven's npc spawn goes once she has joined, so she is never at the shed twice. */
   function skipFor(party: PartySeed[]): string[] {
     return party.some((p) => p.id === 'eleven') ? [...killed, 'eleven'] : [...killed];
@@ -184,7 +179,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   function restart(p: Progress): void {
     build(p.party, checkpoint, p.skip, p.open);
     director.restore(checkpoint.state);
-    levelUps.length = 0;
+    levelFx.clear();
+    swapAge = null;
     deferred.length = 0;
     swallow.clear();
     scare = null; speech = null; wipeT = -1;
@@ -223,25 +219,29 @@ export function createPlayScene(opts: PlayOptions): Scene {
     game.scenes.push(sc);
   }
 
+  /** The keys and pad, plus a click on a HUD portrait, which is a swap to that hero. */
+  function playerInput(g: Game): SimInput {
+    const keys = toSimInput(g.input);
+    const click = g.input.clicked();
+    const slot = click ? slotAt(view.hud.party, click.x, click.y) : -1;
+    return slot >= 0 ? { ...keys, swapTo: slot } : keys;
+  }
+
   // ---------------------------------------------------------------- events, lights
   function forward(ev: SimEvent[]): void {
-    // The level-up screen plays the Nat 20 sound when its die lands, so the sim's early copy is dropped.
-    const lvl20 = ev.some((x) => x.t === 'levelUp' && x.info.roll === 20);
-    if (lvl20) swallow.add('natTwenty');
     for (const e of ev) {
       switch (e.t) {
         case 'sfx': if (!swallow.delete(e.id)) audio.sfx(e.id); break;
         case 'kill': killed.add(e.spawnId); break;
-        case 'levelUp': levelUps.push(e.info); break;
+        case 'levelUp': levelFx.push(e.info); break;
         case 'natTwenty': if (e.source === 'crit') speak(e.hero, 'crit'); break;
         case 'heroKO': speak(e.hero, 'ko', true); break;
         case 'pickup': if (e.item === 'eggo') speak(e.hero, 'eggo'); break;
-        case 'swap': speak(e.to, 'swapIn'); break;
+        case 'swap': speak(e.to, 'swapIn'); swapAge = 0; break;
         case 'allDown': if (wipeT < 0) wipeT = 0; break;
         default: break;
       }
     }
-    if (lvl20) swallow.delete('natTwenty');
     director.events(ev);
   }
 
@@ -320,7 +320,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (!bot && wipeT < 0 && clearT < 0 && g.input.pressed('pause')) { pause(); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
-      const input = frozen ? IDLE : bot ? bot.next(sim) : toSimInput(g.input);
+      const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
       forward(sim.step(input));
       view = sim.view();
 
@@ -342,20 +342,28 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (leftHome) hintFade = Math.min(1, hintFade + 1 / HINT_FADE_FRAMES);
       if (speech && ++speech.t > SPEECH_FRAMES) speech = null;
       if (speechCd > 0) speechCd--;
+      levelFx.tick();
+      if (swapAge !== null) swapAge++;
       if (saved && ++saved.t > SAVED_FRAMES) saved = null;
       const me = view.hud.party.find((m) => m.active);
       if (me && !me.ko && me.hp / me.hpMax < 0.25 && g.frame % 60 === 0) speak(me.id, 'lowHp');
-      if (levelUps.length > 0 && !overlay && !dialog.active) showLevelUp();
     },
 
     draw(ctx, g) {
       const fig = figure();
       drawWorld(ctx, stage, view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
       drawFlash(ctx, view);
+      drawLevelFx(ctx, levelFx.list(), view, cam);
       const stuck = puzzles.highlight();
       const stuckProp = stuck && view.props.find((p) => p.id === stuck.prop);
-      if (stuck && stuckProp) drawPuzzleHighlight(ctx, stuckProp, cam, g.frame, stuck.label);
-      drawHud(ctx, view.hud, g.frame, stuck?.hero);
+      // Say where to look. Only nudge toward another hero if the one who can solve it is not already out front.
+      const leading = view.hud.party.find((m) => m.active)?.id;
+      if (stuck && stuckProp) drawPuzzleHighlight(ctx, stuckProp, cam, g.frame, stuck.hero === leading ? undefined : HINT_NUDGE);
+      const lit = new Set<HeroId>();
+      for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
+      const ptr = g.input.pointer();
+      const hover = ptr && !overlay && !dialog.active && !bot ? slotAt(view.hud.party, ptr.x, ptr.y) : -1;
+      drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, device: g.input.device() });
       if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
       if (speech) {
@@ -363,8 +371,6 @@ export function createPlayScene(opts: PlayOptions): Scene {
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
       drawControlsCorner(ctx, hintFade);
-      const tip = skipsDialogue() ? puzzles.tip() : null;
-      if (tip) drawPuzzleTip(ctx, tip.tip);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);
     },

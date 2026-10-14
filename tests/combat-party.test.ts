@@ -44,6 +44,19 @@ test('swap: a tap every few frames walks the whole party, one hero a tap once th
   assert.deepEqual(seen, ['mike', 'dustin', 'lucas', 'mike', 'dustin', 'lucas', 'mike']);
 });
 
+test('swap: the HUD reports how recharged the swap is, from 0 up to 1 over the cooldown', () => {
+  const sim = makeSim();
+  const ready = (): number => sim.view().hud.swapReady;
+  assert.equal(ready(), 1, 'ready at the start');
+  press(sim, { swapDelta: 1 }, 1);
+  assert.ok(ready() < 0.05, `just swapped: ${ready()}`);
+  run(sim, 44);
+  const half = ready();
+  assert.ok(half > 0.4 && half < 0.6, `halfway: ${half}`);
+  run(sim, 50);
+  assert.equal(ready(), 1, 'ready again after 90 frames');
+});
+
 test('swap: the incoming hero is invulnerable for 20 frames and lands a shockwave', () => {
   const sim = makeSim({ spawns: [agent('a', 5, 8, 'g')], seed: 9 });
   let blinks = 0, lastBlink = -1;
@@ -210,6 +223,30 @@ test('level-up: heals, applies fixed growth plus the d20 bonus, and reports it',
   assert.equal(after?.xp, 0);
   assert.deepEqual(sim.stats().levelUps, [{ hero: 'mike', from: 1, to: 2 }]);
   assert.equal(sim.party()[1]?.xp, 9, 'the bench got half');
+});
+
+test('level-up: it chimes and floats LEVEL UP over the hero in the same tick, with nothing for the player to dismiss', () => {
+  const sim = makeSim({ seed: 3 });
+  sim.dev.giveXp(18);
+  const ev = sim.step(inp());
+  assert.equal(levelUps(ev).length, 1);
+  assert.ok(sfxIds(ev).includes('levelUp'), 'the chime comes from the sim, so the play scene needs no screen to play it');
+  assert.ok(sim.view().floaters.some((f) => f.text === 'LEVEL UP'));
+  // The sim keeps running on its own, so the effect can play while the player moves.
+  const before = sim.view().focus.x;
+  run(sim, 30, inp({ mx: 1 }));
+  assert.ok(sim.view().focus.x > before, 'the hero moved on after the level-up');
+});
+
+test('level-up: two levels in one tick report both but float a single LEVEL UP', () => {
+  const sim = makeSim({ seed: 3 });
+  sim.dev.giveXp(76);
+  const ev = sim.step(inp());
+  const ups = levelUps(ev);
+  assert.deepEqual(ups.filter((u) => u.hero === 'mike').map((u) => u.to), [2, 3]);
+  const heroes = new Set(ups.map((u) => u.hero));
+  assert.ok(ups.length > heroes.size, 'someone gained more than one level');
+  assert.equal(sim.view().floaters.filter((f) => f.text === 'LEVEL UP').length, heroes.size, 'one floater per hero, not per level');
 });
 
 test('level-up: the Lv 3 talent shows up exactly once, at level 3', () => {

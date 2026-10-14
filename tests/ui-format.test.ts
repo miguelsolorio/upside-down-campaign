@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bulbCount, bulbDark, bulbFill, countUp, cycleShake, dieFace, fadeLevel, formatTime, gainRows, isLowHp,
-  MAX_BULBS, otherDie, pagesOf, pipCount, shakeLabel, stepVolume, tumbleTicks, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, isLowHp,
+  MAX_BULBS, pagesOf, pipCount, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
 } from '../src/ui/format.ts';
 import { wrapText } from '../src/core/text.ts';
 
@@ -94,35 +94,6 @@ test('fade runs in, holds, runs out', () => {
   assert.equal(fadeLevel(999, 40, 100, 40), 0);
 });
 
-test('the d20 slows down, settles on the roll and never gives the answer early', () => {
-  const land = 72;
-  const ticks = tumbleTicks(land);
-  assert.ok(ticks.length >= 7 && ticks.length <= 14, `ticks ${ticks.length}`);
-  assert.ok(ticks[ticks.length - 1] < land);
-  const gaps = ticks.map((t, i) => t - (ticks[i - 1] ?? 0));
-  assert.ok((gaps[gaps.length - 1] as number) > (gaps[0] as number), 'gaps grow');
-  for (let roll = 1; roll <= 20; roll++) {
-    let prev = -1;
-    for (let f = 0; f < land; f++) {
-      const face = dieFace(f, roll, 5, land);
-      assert.ok(face >= 1 && face <= 20 && face !== roll, `frame ${f} showed ${face} for roll ${roll}`);
-      if (ticks.includes(f)) assert.notEqual(face, prev);
-      prev = face;
-    }
-    assert.equal(dieFace(land, roll, 5, land), roll);
-    assert.equal(dieFace(land + 50, roll, 5, land), roll);
-  }
-});
-
-test('advantage: the other die is never higher than the kept one', () => {
-  for (let roll = 1; roll <= 20; roll++) {
-    for (let seed = 0; seed < 6; seed++) {
-      const o = otherDie(roll, seed);
-      assert.ok(o >= 1 && o <= roll, `roll ${roll} other ${o}`);
-    }
-  }
-});
-
 test('the title wall lights R, U and N one at a time, then together, then goes dark, and loops', () => {
   const seen = new Set<string>();
   for (let t = 0; t < 330; t++) seen.add(wallLit(t));
@@ -132,13 +103,6 @@ test('the title wall lights R, U and N one at a time, then together, then goes d
   assert.equal(wallLit(140), 'N');
   assert.equal(wallLit(200), 'RUN');
   for (let t = 0; t < 330; t++) assert.equal(wallLit(t), wallLit(t + 330));
-});
-
-test('stat gains come out in a fixed order without zeros', () => {
-  assert.deepEqual(gainRows({ spd: 1, hp: 7, atk: 0, mp: 2 }), [
-    { label: 'HP', amount: 7 }, { label: 'MP', amount: 2 }, { label: 'SPD', amount: 1 },
-  ]);
-  assert.deepEqual(gainRows({}), []);
 });
 
 test('settings steps stay in range', () => {

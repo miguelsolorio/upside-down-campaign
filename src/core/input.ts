@@ -1,6 +1,7 @@
 import type { SimInput, Vec2 } from './types.ts';
 import { actionsForCode } from './bindings.ts';
 import type { Action } from './bindings.ts';
+import { clientToGame } from './pointer.ts';
 import { pickPads, readPads } from './gamepad.ts';
 
 export type { Action };
@@ -8,6 +9,8 @@ export type { Action };
 export interface InputOptions {
   /** Fires when a controller button or stick direction goes down. The page uses it to try to start the sound. */
   onPadPress?(): void;
+  /** The game canvas. With it, the mouse or a finger can point at and click the HUD. */
+  canvas?: HTMLCanvasElement;
 }
 
 export interface InputState {
@@ -21,6 +24,10 @@ export interface InputState {
   axis(): Vec2;
   /** Whichever the player touched last. A connected controller counts as touched. */
   device(): 'keyboard' | 'gamepad';
+  /** Where the mouse or finger is over the game, in game px (256 by 224), or null when it is elsewhere. */
+  pointer(): Vec2 | null;
+  /** Where the primary button went down this tick, in game px, or null. A short click is never lost. */
+  clicked(): Vec2 | null;
   /** Takes and clears a one-line message about the controller (connected, lost), for a toast. */
   notice(): string | null;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
@@ -42,6 +49,9 @@ export function createInput(opts: InputOptions = {}): InputState {
   let device: 'keyboard' | 'gamepad' = 'keyboard';
   let message: string | null = null;
   let captureCb: ((code: string) => void) | null = null;
+  let at: Vec2 | null = null;
+  let clickLatch: Vec2 | null = null;
+  let clickNow: Vec2 | null = null;
 
   addEventListener('keydown', (e) => {
     if (captureCb) {
@@ -63,6 +73,17 @@ export function createInput(opts: InputOptions = {}): InputState {
   });
   addEventListener('keyup', (e) => { down.delete(e.code); });
   addEventListener('blur', () => { down.clear(); });
+
+  const canvas = opts.canvas;
+  if (canvas) {
+    const place = (e: PointerEvent): Vec2 | null => clientToGame(e.clientX, e.clientY, canvas.getBoundingClientRect());
+    canvas.addEventListener('pointermove', (e) => { at = place(e); });
+    canvas.addEventListener('pointerleave', () => { at = null; });
+    canvas.addEventListener('pointerdown', (e) => {
+      at = place(e);
+      if (e.button === 0 && at) clickLatch = at;
+    });
+  }
 
   const livePads = () => pickPads(typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : []);
 
@@ -104,6 +125,8 @@ export function createInput(opts: InputOptions = {}): InputState {
       for (const a of latch) pressedNow.add(a);
       for (const a of prev) if (!now.has(a)) releasedNow.add(a);
       latch.clear();
+      clickNow = clickLatch;
+      clickLatch = null;
     },
     held: (a) => now.has(a),
     pressed: (a) => pressedNow.has(a),
@@ -118,6 +141,8 @@ export function createInput(opts: InputOptions = {}): InputState {
       return { x, y };
     },
     device: () => device,
+    pointer: () => at,
+    clicked: () => clickNow,
     notice() {
       const m = message;
       message = null;

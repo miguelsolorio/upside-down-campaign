@@ -31,7 +31,6 @@ function randomInput(rng: () => number, prev: SimInput): SimInput {
     my: hold ? prev.my : pick() * (rng() < 0.2 ? 0.3 : 1),
     attackHeld: rng() < 0.5, attackPressed: rng() < 0.2,
     specialPressed: rng() < 0.05, specialHeld: false,
-    dashPressed: rng() < 0.04,
     swapDelta: rng() < 0.02 ? (rng() < 0.5 ? -1 : 1) : 0,
     swapTo: rng() < 0.02 ? Math.floor(rng() * 5) - 1 : -1,
     burstPressed: rng() < 0.05,
@@ -103,7 +102,7 @@ test('fuzz: a god-mode hero cannot be hurt, and the sim stays valid without any 
     grid: level(), party: [{ id: 'eleven' }], start: { x: tc(3), y: tf(11) }, god: true, difficulty: 'upside', seed: 3,
     spawns: [rat('r', 4, 11), rat('r2', 4, 12), agent('a', 8, 11)],
   });
-  for (let f = 0; f < 1500; f++) sim.step({ mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false });
+  for (let f = 0; f < 1500; f++) sim.step({ mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, swapDelta: 0, swapTo: -1, burstPressed: false });
   assert.equal(sim.stats().damageTaken, 0);
   assert.equal(sim.party()[0]?.hp, sim.party()[0]?.hpMax);
   sim.dev.god = false;

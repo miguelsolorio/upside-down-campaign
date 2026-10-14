@@ -76,6 +76,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
     return drain(s);
   }
   if (s.swapCd > 0) s.swapCd--;
+  if (s.swapLock > 0) s.swapLock--;
   handleSwap(s);
   if (tryBurst(s)) {
     tickVisuals(s);

@@ -19,7 +19,7 @@ You also asked for level one first, the work split across sub-agents, and attent
 | Assets | None. Pixel art and music are generated in code | Same as your runtime score. Nothing to download or license |
 | Scope | The full design is five chapters (one per season), 16 stages, 11 heroes, about an hour. This pass builds Level 1 only | You asked for feedback before the rest |
 | Frame | Mike runs one last D&D campaign. Dice drive crits, level-ups and the final boss | It's the show's own metaphor. Demogorgon, Mind Flayer and Vecna are all D&D monsters |
-| IP | Fan tribute. Original code, art, music and lines. No show audio, lyrics or actor likenesses | The title screen says so |
+| IP | Fan tribute. Original code, art, music and lines. No show audio, lyrics or actor likenesses | The README says so |
 | Folder name | Reading `stranger-ninjas` as Stranger Things | Tell me if the ninjas were on purpose |
 
 ## This pass: Level 1 only
@@ -28,9 +28,9 @@ Level 1 is stage 1.1, Mirkwood, plus the title screen and the basement prologue.
 
 **In**
 - Title screen, then the basement prologue (Mike, Dustin, Lucas, Will's roll goes wrong), then a chapter card.
-- Stage 1.1, about 48×40 tiles, five to eight minutes. It runs from the Byers yard (Joyce's lights are the first save point) through the woods to the Lab road. Beats: a rat skirmish that teaches attack, a Lab agent patrol that teaches the dash, a shot gate only Lucas can open, a scripted scare (lights flicker, a growl, a shape crosses the trail, no fight), Eleven's recruit scene with an Eggo, a push gate only she can open, and a three-wave ambush that ends the level.
-- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, dash, swap, the Lv 3 talent, KO and retry, and a simple party burst (all four specials at once).
-- Leveling: XP, bench XP, the d20 level-up screen. A normal run ends at Lv 3, so everyone shows their first talent.
+- Stage 1.1, about 48×40 tiles, five to eight minutes. It runs from the Byers yard (Joyce's lights are the first save point) through the woods to the Lab road. Beats: a rat skirmish that teaches attack, a Lab agent patrol that teaches sidestepping darts, a shot gate only Lucas can open, a scripted scare (lights flicker, a growl, a shape crosses the trail, no fight), Eleven's recruit scene with an Eggo, a push gate only she can open, and a three-wave ambush that ends the level.
+- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, swap, the Lv 3 talent, KO and retry, and a simple party burst (all four specials at once).
+- Leveling: XP, bench XP, the d20 level-up shown as an effect in the world. A normal run ends at Lv 3, so everyone shows their first talent.
 - Enemies: Lab agent, rat. Pickups: Eggo, Coke, quarters.
 - Music: Static (title) and Mirkwood with its combat layer, jingles for level-up, recruit, clear and game over, about 20 effects, and speech blips for the four heroes plus Joyce. The scare plays the motif inverted.
 - HUD (bulbs, MP, XP, bench, d20 meter), dialogue with portraits, results screen, scanlines and reduce-flashing toggles, gamepad, `?dev=1` and `?bot=1`.
@@ -101,15 +101,14 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Input | Keys | Action |
 |---|---|---|
 | Move | WASD / arrows | Eight-way |
-| Attack | J / Z | Hero's basic. Melee chains three hits |
-| Special | K / X | Costs MP. Hold for the Lv 6 variant where a hero has one |
-| Dash | L / C | 12 frames of invulnerability, 0.7 s cooldown |
-| Swap | Q / E or 1–4 | 1.5 s cooldown. The incoming hero lands a small shockwave |
-| Party burst | U / V | When the d20 meter is full |
+| Attack | Z / J | Hero's basic. Melee chains three hits |
+| Special | X / K | Costs MP. Hold for the Lv 6 variant where a hero has one |
+| Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
+| Party burst | U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |
 
-Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B dashes, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains the dash.
+Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and burst.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.
@@ -126,7 +125,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - Cap is 12. XP to next level is `round(18 × L^1.7)`, about 4,900 XP from 1 to 12.
 - The active hero earns full XP and the bench earns half. A recruit joins at the party's average level minus one, so nobody arrives useless.
 - On level-up the hero heals 50% and rolls a d20. Bonus points are `floor(roll / 5)`, spread by the hero's growth weights on top of fixed per-level gains. A 20 gives five points, a full heal and 20 s of Inspiration for the party. A 1 gives none and the next roll has advantage. Nothing here can make a hero worse.
-- The level-up screen shows the tumbling die, stat deltas, the hero's own line and any new talent.
+- A level-up never stops play. It shows as a ring and sparkles around the hero that follow them, the LEVEL UP floater, a short chime and a pulse on the HUD level and portrait. A new talent gets a callout with its name, and a Nat 20 gets a gold ring and a NAT 20 callout. The roll itself still sizes the bonus points, but the die and the stat deltas are not shown.
 - Talents arrive at levels 3, 6 and 9. Will's change from Wizard to Cleric at 6 follows the show, where his class changes between campaigns.
 - Pace target: Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4, and 12 only if you clear most of chapter 5. A balance test enforces it.
 
@@ -198,8 +197,8 @@ Jingles and stingers: level-up, victory, game over, recruit, item, dice roll, cu
 - Paper-doll sprite generator: three body templates (kid, teen, big), hair masks, accessories and a palette per hero, drawn to offscreen canvases at boot. Bosses are hand-authored grids or drawn limbs (the Mind Flayer's legs are pixel-snapped lines). 24×24 portraits come from a head template with five expressions.
 - Upside Down: palette swap to blue-black and vein red, palette cycling on the veins, drifting spores. Hawkins stays warm: sodium streetlights over teal night.
 - Night stages (Level 1 is one) repaint their tiles in a night palette and paint a pool of light around each lamp, lit window and string of bulbs. Daytime stages use the normal art with nothing over it. Christmas lights and streetlights flicker faster as danger closes in.
-- HUD: HP is a string of Christmas bulbs (one per 10 HP), MP is a bar, XP a thin line, and the party meter is a d20 that fills and glows when ready. Bench heroes show a face and a pip bar.
-- Title: red pixel logo with a flicker, Joyce's alphabet wall lighting R-U-N, "Fan tribute. Not affiliated with Netflix."
+- HUD: HP is a string of Christmas bulbs (one per 10 HP), MP is a bar, XP a thin line, and the party meter is a d20 that fills and glows when ready. Every hero shows the key that picks them, in quiet slate, left of their name. A benched hero has a small face, a column of HP pips and a three-letter tag that fills from dim to bright while the swap recharges. C and V (LB and RB on a gamepad) print on each side of a short bench. Each bench slot is also a button: hover lights it and a click swaps to that hero. `ui/hudlayout.ts` holds the rectangles that both the drawing and the click use.
+- Title: red pixel logo with a flicker over the party at the edge of Mirkwood, the Upside Down glowing behind the trees. PRESS START (or CONTINUE and NEW GAME) and OPTIONS are menu rows, with no key hints on screen. START sends the party walking into the woods.
 - A hand-drawn 5×7 caps font. Dialogue boxes have the portrait on the left, three lines of 32 characters and typewriter text with the hero's blip.
 - Settings: music and effects volume, difficulty, scanlines, screen shake, reduce flashing.
 
@@ -217,7 +216,7 @@ src/
   progression/       xp, level-up roll, talents
   audio/             engine, synth, sequencer, tracks/*.ts, sfx, voices, render
   story/             chapters, dialogue, cutscenes
-  ui/                hud, dialogue box, menus, level-up, map, dev panel
+  ui/                hud, dialogue box, menus, map, dev panel
 tests/               xp, damage, heroes, maps, dialogue, tracks, balance
 docs/                game-design, character-plan, music-plan, technical-architecture, screenshots/
 music/               rendered WAVs
@@ -251,7 +250,7 @@ Sub-agents start with small contexts, which is cheaper than one long thread doin
 | Agent | Owns | Delivers |
 |---|---|---|
 | World | `src/world/`, `src/story/` | Stage loader, collision, gates, lights, pickups, the play scene, stage 1.1 map and script, prologue and Eleven scenes, reachability test |
-| UI | `src/ui/` | HUD, dialogue box, level-up screen, title, results, pause and settings, dev panel |
+| UI | `src/ui/` | HUD, dialogue box, title, results, pause and settings, dev panel |
 
 4. **Integrate and prove (me).** Typecheck, run the tests, boot the game, run the bot through 1.1, read state and console in the browser pane, take a few screenshots, fix the glue, hand it to you.
 
@@ -279,7 +278,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 | 2 | Art: sprite generator, portraits, tiles, enemy and boss sprites, `?sheet=1` review page | Every hero, enemy and portrait reads correctly in a screenshot of the sheet |
 | 3 | World and dialogue: stage format, collision, interactables, darkness, lights, dialogue box | 1.1 is walkable, doors and lights work, text types out with blips |
 | 4 | Combat: hitboxes, attacks, enemy AI, damage, juice, items, KO and retry | Three heroes fight agents and rats with no console errors |
-| 5 | Progression: XP, d20 level-up screen, talents, bench XP, catch-up, bonds, swap, all 11 specials, party burst | The bot takes a hero from Lv 1 to 4 in 1.1 and the tests pass |
+| 5 | Progression: XP, d20 level-up, talents, bench XP, catch-up, bonds, swap, all 11 specials, party burst | The bot takes a hero from Lv 1 to 4 in 1.1 and the tests pass |
 | 6 | Audio: engine, sequencer, SFX, blips, first four tracks, offline render and metrics | Title, Hawkins, Mirkwood and Lab render clean WAVs |
 | 7 | Chapter 1 end to end: prologue, three stages, Demogorgon, map screen, saves | Playable from title to the chapter 1 results screen. This is the vertical slice |
 | 8 | Chapters 2 to 5: stages, enemies, bosses, cutscenes, remaining tracks, ending | The bot clears every stage and every boss is beatable |
@@ -295,7 +294,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - Browser pane: screenshots of the title, map, every stage, dialogue, level-up and every boss; zero console errors; frame time under 4 ms.
 - Bot (`?bot=1&stage=2.2`): walks an A* path, fights, collects, and logs kills, XP and level-ups. Run on every stage.
 - Audio: every track rendered offline and checked for peak, limiter reduction and RMS. WAVs written to `music/`.
-- Manual checklist at the end: keyboard and gamepad, swap, every special, dash, party burst, KO and retry, save and load, pause, settings.
+- Manual checklist at the end: keyboard and gamepad, swap, every special, party burst, KO and retry, save and load, pause, settings.
 
 ## Risks and cut line
 

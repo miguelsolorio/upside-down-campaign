@@ -9,7 +9,7 @@ export interface Settings {
   /** 0 = no shake, 1 = full. */
   shake: number;
   reduceFlashing: boolean;
-  /** Skips every dialogue box, the prologue and the chapter card. On by default. Tab on the title screen flips it. */
+  /** Skips every dialogue box, the prologue and the chapter card. On by default. The skip key (T) on the title screen flips it. */
   skipDialogue: boolean;
   difficulty: Difficulty;
 }

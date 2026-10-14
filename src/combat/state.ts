@@ -36,10 +36,9 @@ export interface Hero {
   anim: AnimId; animT: number;
   flash: number;
   invuln: number;
-  /** True while the flicker should show (after a hit or a swap, not during a dash). */
+  /** True while the flicker should show (after a hit or a swap). */
   blink: boolean;
   hurtT: number;
-  dashT: number; dashCd: number; dashX: number; dashY: number;
   /** Frames left in the current attack or cast animation. */
   actT: number;
   act: 'basic' | 'special' | null;
@@ -136,7 +135,7 @@ export interface Body { id: HeroId; x: number; y: number; dir: Dir; t: number }
 export interface Timer { n: number; fn: () => void }
 
 export interface Buf {
-  attack: number; special: number; dash: number; burst: number;
+  attack: number; special: number; burst: number;
   /** Pending swap request: 0 none, frames left otherwise. */
   swapT: number; swapDelta: number; swapTo: number;
 }
@@ -157,7 +156,10 @@ export interface S {
   frame: number;
   heroes: Hero[];
   active: number;
+  /** Frames until a swap brings the invulnerability and shockwave again. */
   swapCd: number;
+  /** Frames until any swap is allowed. */
+  swapLock: number;
   trailX: Float32Array; trailY: Float32Array; trailHead: number;
   enemies: Enemy[];
   projs: Proj[];

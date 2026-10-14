@@ -106,7 +106,7 @@ export function fakeEnv(alive: Record<string, number>, party: string[] = ['mike'
 }
 
 // ---------------------------------------------------------------- the real sim
-export const idle: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false };
+export const idle: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, swapDelta: 0, swapTo: -1, burstPressed: false };
 
 /** Steps the sim until an event passes `stop` (returned) or `frames` run out (null). */
 export function runUntil(sim: Sim, frames: number, input: (f: number) => SimInput, stop: (e: SimEvent) => boolean): SimEvent | null {

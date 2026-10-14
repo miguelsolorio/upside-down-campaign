@@ -29,7 +29,7 @@ const toast = createToast();
 
 const g: Game = {
   // A controller press only counts as a user gesture in some browsers, so ask for sound only when this one did.
-  input: createInput({ onPadPress: () => { if (navigator.userActivation?.isActive) audio.unlock(); } }),
+  input: createInput({ canvas, onPadPress: () => { if (navigator.userActivation?.isActive) audio.unlock(); } }),
   settings,
   flags,
   scenes: createSceneManager(() => g),

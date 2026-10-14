@@ -90,14 +90,13 @@ test('a controller player is never told to press a key', () => {
     for (const l of allLines) {
       const shown = keyText(l.text);
       assert.ok(!/\{|\}/.test(shown), `${l.id}[${l.i}] has an unfilled token: ${shown}`);
-      assert.ok(!/\b(WASD|SPACE|TAB|ESC|[JKLQEUV])\b/.test(shown), `${l.id}[${l.i}] names a key: ${shown}`);
+      assert.ok(!/\b(WASD|SPACE|TAB|SHIFT|ESC|[JKLQEUVZC])\b/.test(shown), `${l.id}[${l.i}] names a key: ${shown}`);
     }
     const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
     assert.match(text('l1_tut_attack'), /\bA attacks\b/);
     assert.match(text('l1_tut_special'), /\bX is your special\b/);
     assert.match(text('l1_tut_swap'), /LB and RB/);
     assert.doesNotMatch(text('l1_tut_swap'), /1 to 4/, 'a controller has no hero numbers');
-    assert.match(text('l1_agents'), /\bB gives you\b/);
     assert.match(text('l1_start'), /stick or D-pad/);
     assert.match(text('l1_gate_hint'), /with LB or RB/);
     assert.match(text('l1_push_hint'), /with LB or RB/);
@@ -132,29 +131,29 @@ test('speakers and expressions are valid', () => {
 test('tutorial scripts teach the real keys', () => {
   // Lines name keys as {tokens}. With the default bindings they read as the keys the game ships with.
   const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
-  assert.match(text('l1_tut_attack'), /\bJ\b/);
-  assert.match(text('l1_tut_special'), /\bK\b/);
+  assert.match(text('l1_tut_attack'), /\bZ\b/);
+  assert.match(text('l1_tut_special'), /\bX\b/);
   assert.match(text('l1_tut_special'), /\bMP\b/);
-  assert.match(text('l1_tut_swap'), /\bQ\b.*\bE\b/);
+  assert.match(text('l1_tut_swap'), /\bC and V\b/);
   assert.match(text('l1_tut_swap'), /1 to 4/);
-  assert.match(text('l1_agents'), /\bL\b/);
+  assert.doesNotMatch(text('l1_agents'), /\bdash/i, 'there is no dash to teach');
   assert.match(text('l1_start'), /\bSPACE\b/);
   assert.match(text('l1_start'), /WASD/);
-  assert.match(text('l1_push_hint'), /\bJ\b/);
+  assert.match(text('l1_push_hint'), /\bZ\b/);
   // The puzzle hints name the hero's slot as well as the attack key.
-  assert.match(text('l1_gate_hint'), /with 3, Q or E/);
-  assert.match(text('l1_gate_hint'), /\bJ\b/);
-  assert.match(text('l1_push_hint'), /with 4, Q or E/);
+  assert.match(text('l1_gate_hint'), /with 3, C or V/);
+  assert.match(text('l1_gate_hint'), /\bZ\b/);
+  assert.match(text('l1_push_hint'), /with 4, C or V/);
 });
 
-test('level 2 puzzle scripts name the hero slot and the key, like the puzzle tips do', () => {
+test('level 2 puzzle scripts name the hero slot and the key, like the level 1 hints do', () => {
   const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
-  assert.match(text('l2_burn_hint'), /with 2, Q or E/);
-  assert.match(text('l2_burn_hint'), /\bK\b/);
-  assert.match(text('l2_shoot_hint'), /with 3, Q or E/);
-  assert.match(text('l2_shoot_hint'), /\bJ\b/);
-  assert.match(text('l2_push_hint'), /with 4, Q or E/);
-  assert.match(text('l2_push_hint'), /\bJ\b/);
+  assert.match(text('l2_burn_hint'), /with 2, C or V/);
+  assert.match(text('l2_burn_hint'), /\bX\b/);
+  assert.match(text('l2_shoot_hint'), /with 3, C or V/);
+  assert.match(text('l2_shoot_hint'), /\bZ\b/);
+  assert.match(text('l2_push_hint'), /with 4, C or V/);
+  assert.match(text('l2_push_hint'), /\bZ\b/);
   assert.match(text('l2_start'), /\bSPACE\b/);
   assert.match(text('l2_lockdown_start'), /\bU\b/);
 });

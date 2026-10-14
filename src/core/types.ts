@@ -93,6 +93,8 @@ export interface HudView {
   quarters: number;
   /** Seconds of Nat 20 Inspiration left. */
   inspiration: number;
+  /** How recharged the hero swap is: 0 just swapped, 1 ready. */
+  swapReady: number;
   boss: { name: string; hp: number; hpMax: number } | null;
 }
 export interface SimView {
@@ -118,7 +120,6 @@ export interface SimInput {
   mx: number; my: number;
   attackHeld: boolean; attackPressed: boolean;
   specialPressed: boolean; specialHeld: boolean;
-  dashPressed: boolean;
   swapDelta: -1 | 0 | 1;
   /** 0..3 = swap to that party slot, -1 = none. */
   swapTo: number;
@@ -131,7 +132,7 @@ export type SfxId =
   | 'dash' | 'swap' | 'burst' | 'pickup' | 'heal' | 'noMp' | 'nosebleed'
   | 'select' | 'confirm' | 'cancel' | 'pause' | 'dialogOpen'
   | 'gateOpen' | 'targetHit' | 'logPush' | 'lights' | 'flicker' | 'growl' | 'klaxon'
-  | 'roll' | 'rollLand' | 'natTwenty' | 'alert' | 'step';
+  | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
   hero: HeroId; from: number; to: number;

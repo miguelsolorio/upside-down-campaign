@@ -30,17 +30,6 @@ export interface AbilityDef {
   x: Record<string, number>;
 }
 
-export interface DashDef {
-  name: string;
-  /** Frames from one dash start to the next. */
-  cd: number;
-  /** Frames of invulnerability, from the first frame of the dash. */
-  iframes: number;
-  dur: number;
-  /** px per frame while dashing. */
-  speed: number;
-}
-
 export interface HeroDef {
   id: HeroId;
   name: string;
@@ -58,13 +47,10 @@ export interface HeroDef {
   utilities: Utility[];
   basic: AbilityDef;
   special: AbilityDef;
-  dash: DashDef;
   talent: Talent;
 }
 
 const st = (hp: number, mp: number, atk: number, def: number, spd: number): Stats => ({ hp, mp, atk, def, spd });
-
-const DASH: DashDef = { name: 'Dash', cd: 42, iframes: 12, dur: 12, speed: 3.2 };
 
 export const BASE_CRIT = 0.05;
 
@@ -83,7 +69,7 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // life: frames the screen stands. half: radius in px of the dome the art draws and the sim blocks with.
       x: { life: 300, half: 15 },
     },
-    dash: DASH, talent: TALENTS.mike,
+    talent: TALENTS.mike,
   },
   dustin: {
     id: 'dustin', name: CHAR_NAMES.dustin, role: 'Bard',
@@ -100,7 +86,7 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // half: cone half angle in degrees. life and tick in frames. burn: burn frames. burnTick: frames between burn ticks.
       x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30 },
     },
-    dash: DASH, talent: TALENTS.dustin,
+    talent: TALENTS.dustin,
   },
   lucas: {
     id: 'lucas', name: CHAR_NAMES.lucas, role: 'Ranger',
@@ -116,7 +102,7 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // fan: degrees between shots. n: shots.
       x: { speed: 3.8, r: 5, fan: 18, n: 3 },
     },
-    dash: DASH, talent: TALENTS.lucas,
+    talent: TALENTS.lucas,
   },
   eleven: {
     id: 'eleven', name: CHAR_NAMES.eleven, role: 'Sorcerer',
@@ -132,7 +118,7 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // width: beam half width px. life: frames the beam is drawn.
       x: { width: 8, life: 12 },
     },
-    dash: DASH, talent: TALENTS.eleven,
+    talent: TALENTS.eleven,
   },
 };
 

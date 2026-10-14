@@ -9,7 +9,7 @@ One stage, five to eight minutes. World builds it, Story writes the words, Art d
 - Light: `time: 'day'`. There is no darkness and no glow pool. The lab gets its look from its own tiles, drawn in cold greys, teal and bone. The loading dock may use outdoor tiles (gravel, road, lab fence, lamp) so the level begins outside and goes in.
 - Music: `lab`. The combat layer fades in while `sim.aggro()` is true.
 - Party: Mike (active), Dustin, Lucas, Eleven. They arrive from stage 1.1 with levels, XP and d20 bonus carried. There is no recruit and no `eleven` npc. A jump straight to the stage (`?stage=1.2`) starts all four at Lv 3.
-- Dialogue is off by default. Every puzzle teaches through its `tip` and `label`. The scripts below are for players who turn story on.
+- Dialogue is off by default. A stuck player gets the 30 second highlight and nothing else. The scripts below are for players who turn story on.
 
 ## Tiles
 
@@ -56,17 +56,17 @@ Scripts Story writes: `l2_start`, `l2_agents`, `l2_burn_hint`, `l2_burn_done`, `
 
 Listed in `puzzles` in `stage12.ts`, in this order. Gate order on the route is fixed: `door1`, then `door2`, then `crate1`.
 
-| Id | Beat | Prop | Hero | Label | Tip |
-|---|---|---|---|---|---|
-| `burn` | `burn_hint` | `sensor1` | dustin | BURN | `Dustin on {pick2}. Face the sensor, press {special}.` |
-| `relay` | `relay_hint` | `relay1` | lucas | SHOOT | `Lucas on {pick3}. Face the glass, press {attack}.` |
-| `crate` | `crate_hint` | `crate1` | eleven | PUSH | `Eleven on {pick4}. Face the crate, press {attack}.` |
+| Id | Beat | Prop | Hero |
+|---|---|---|---|
+| `burn` | `burn_hint` | `sensor1` | dustin |
+| `relay` | `relay_hint` | `relay1` | lucas |
+| `crate` | `crate_hint` | `crate1` | eleven |
 
 - `sensor1`: prop `console`, `hitBy: 'burn'`. Sits in a wall face. A standable tile must be within Dustin's spray reach (54 px, 32 degree half cone) in a straight line. Only Dustin lights it.
 - `relay1`: prop `console`, `hitBy: 'shoot'`. Sits in a sealed control room behind `G` glass, in a straight 8-way line and within Lucas's range (152 px) of some walkable tile. The room has no walkable way in. A solid prop between shooter and relay would block the shot, so keep the line clear.
 - `crate1`: prop `crate`, `pushBy: 'push'`, `w` and `h` sized to fill the corridor. Only Eleven clears it.
 - `door1`, `door2`: prop `door`, sized to fill the doorway (`w` or `h` of 32 for a two-tile doorway). Start closed and solid. Opened by the `open` step.
-- Tips: one row of 42 characters or fewer once expanded, no digits in the copy (the key comes from the token), no em dashes.
+- Hints: a `PuzzleDef` carries only an id, its arrival beat, its prop and the hero who solves it. With the story skipped there is no text. After 30 seconds near an unsolved prop it gets yellow corner brackets, the hero's HUD slot pulses, and a callout reads TRY CHANGING CHARACTERS (see `docs/level-1.md`, "Puzzle hints"). With the story on, the `l2_*` hint scripts name the hero and the key.
 
 ## Spawns and the XP budget
 

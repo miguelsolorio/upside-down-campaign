@@ -17,10 +17,10 @@ World triggers them, Story writes the scripts. Trigger ids and script ids are fi
 | Trigger | Where | Script id | What happens |
 |---|---|---|---|
 | `start` | yard | `l1_start` | Joyce, Mike, Dustin. Will is missing. Move hint. `lights_yard` is the first save point |
-| `tut_attack` | first trail bend | `l1_tut_attack` | Dustin explains attack (J). Then group `rats1` wakes |
-| `tut_special` | `rats1` cleared | `l1_tut_special` | Mike explains special (K) and MP |
-| `tut_swap` | after `tut_special` | `l1_tut_swap` | Lucas explains swap (Q, E, 1 to 4) |
-| `agents1` | before the creek | `l1_agents` | Lucas explains dash (L). Group `agents1` patrols |
+| `tut_attack` | first trail bend | `l1_tut_attack` | Dustin explains attack (Z). Then group `rats1` wakes |
+| `tut_special` | `rats1` cleared | `l1_tut_special` | Mike explains special (X) and MP |
+| `tut_swap` | after `tut_special` | `l1_tut_swap` | Lucas explains swap (C, V, 1 to 4) |
+| `agents1` | before the creek | `l1_agents` | Lucas explains sidestepping darts and the swap's invulnerability. Group `agents1` patrols |
 | `gate_lucas` | at the fence gate | `l1_gate_hint` | Lucas spots the lantern `target1` across the creek. When it's hit, `openProp('gate1')`, then `l1_gate_open` |
 | `scare` | bend after the creek | `l1_scare` | Lights flicker, `growl`, stinger `scare`, a dark shape crosses the trail. No fight |
 | `rats2` | dump clearing | none | Group `rats2` is awake from the start |
@@ -34,11 +34,11 @@ Scripts Story writes: `prologue`, `l1_start`, `l1_tut_attack`, `l1_tut_special`,
 
 ## Puzzle hints
 
-Both puzzles (the lantern behind `gate_lucas`, the log behind `push_gate`) are listed in `puzzles` in `stage11.ts`. Each names its arrival beat, the prop to watch, the hero who solves it, a one-word label and a short tip.
+Both puzzles (the lantern behind `gate_lucas`, the log behind `push_gate`) are listed in `puzzles` in `stage11.ts`. Each names its arrival beat, the prop to watch and the hero who solves it. The hints point at things and never print instructions.
 
 - **Arrival.** The beat's script says which hero to swap to, with the slot key, and which key to press. Lucas is slot 3 (`{pick3}`) and Eleven is slot 4 (`{pick4}`).
-- **Skip story.** Dialogue is off by default, so the tip shows on a strip at the bottom of the screen for about eight seconds instead.
-- **After 30 seconds.** Once the arrival beat has finished, time spent near the prop without solving it counts up. At 30 seconds (1800 ticks) the prop gets pulsing yellow corner brackets and a label (SHOOT or PUSH), and if the right hero is on the bench, their slot in the HUD pulses too. It clears when the prop is `open` or `lit`. Pause, dialogue and walking away stop the clock, and a retry starts it over. Reduce flashing makes the brackets hold still.
+- **Skip story.** Dialogue is off by default and there is no text strip, so the 30 second highlight below is the only hint.
+- **After 30 seconds.** Once the arrival beat has finished, time spent near the prop without solving it counts up. At 30 seconds (1800 ticks) the prop gets pulsing yellow corner brackets and a dither over it. If the right hero is on the bench, their slot in the HUD pulses too and a callout over the prop reads TRY CHANGING CHARACTERS (`HINT_NUDGE` in `puzzles.ts`). If that hero is already leading, the brackets show with no text. It clears when the prop is `open` or `lit`. Pause, dialogue and walking away stop the clock, and a retry starts it over. Reduce flashing makes the brackets hold still.
 - **Code.** `world/puzzles.ts` holds the clock (pure, tested in `tests/puzzles.test.ts`). `play.ts` ticks it and `render.ts` draws it.
 
 ## Spawns and the XP budget

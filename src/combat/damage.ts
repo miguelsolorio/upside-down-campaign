@@ -137,7 +137,7 @@ export function hurtHero(s: S, h: Hero, sx: number, sy: number, power: number, a
   h.blink = true;
   h.hurtT = HERO_HURT_FRAMES;
   h.flash = 1;
-  h.actId++; h.actT = 0; h.act = null; h.dashT = 0;
+  h.actId++; h.actT = 0; h.act = null;
   const a = Math.atan2(h.y - sy, h.x - sx);
   h.vx += Math.cos(a) * kb;
   h.vy += Math.sin(a) * kb;

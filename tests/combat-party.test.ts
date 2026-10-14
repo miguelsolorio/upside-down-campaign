@@ -4,11 +4,12 @@ import { fixedGain, HERO_DEFS } from '../src/heroes/index.ts';
 import { POINT_VALUE, STAT_KEYS, xpToNext } from '../src/progression/index.ts';
 import { agent, inp, makeSim, makeWhite, ofType, press, rat, run, sfxIds, tc, tf } from './sim-helpers.ts';
 import type { SimSpawn, SimEvent, Sim, LevelUpInfo } from '../src/core/types.ts';
+import { SWAP_COOLDOWN, SWAP_LOCK } from '../src/combat/party.ts';
 
 const levelUps = (ev: SimEvent[]): LevelUpInfo[] => ofType(ev, 'levelUp').map((e) => e.info);
 const activeId = (sim: Sim): string => sim.view().hud.party.find((p) => p.active)?.id ?? '';
 
-test('swap: swapDelta and swapTo change the active hero, with a 90-frame cooldown', () => {
+test('swap: swapDelta and swapTo change the active hero, and the party cycles quickly', () => {
   const sim = makeSim();
   assert.equal(activeId(sim), 'mike');
   const ev = press(sim, { swapDelta: 1 }, 1);
@@ -17,26 +18,43 @@ test('swap: swapDelta and swapTo change the active hero, with a 90-frame cooldow
   assert.deepEqual([sw[0]?.from, sw[0]?.to], ['mike', 'dustin']);
   assert.ok(sfxIds(ev).includes('swap'));
   assert.equal(activeId(sim), 'dustin');
-  // Inside the cooldown a swap request is ignored, even buffered ones.
-  run(sim, 50);
-  press(sim, { swapTo: 2 }, 10);
-  assert.equal(activeId(sim), 'dustin');
-  // 90 frames after the swap it works again.
-  run(sim, 40);
-  press(sim, { swapTo: 2 }, 2);
+  // A request right behind it waits out the short lock and lands. It does not wait for the 90-frame cooldown.
+  press(sim, { swapDelta: 1 }, SWAP_LOCK + 2);
   assert.equal(activeId(sim), 'lucas');
-  // swapDelta wraps and goes backwards.
-  run(sim, 95);
-  press(sim, { swapDelta: 1 }, 1);
+  // swapDelta wraps and goes backwards, and swapTo picks a slot.
+  press(sim, { swapDelta: 1 }, SWAP_LOCK + 2);
   assert.equal(activeId(sim), 'mike');
-  run(sim, 95);
-  press(sim, { swapDelta: -1 }, 1);
+  press(sim, { swapDelta: -1 }, SWAP_LOCK + 2);
   assert.equal(activeId(sim), 'lucas');
+  press(sim, { swapTo: 1 }, SWAP_LOCK + 2);
+  assert.equal(activeId(sim), 'dustin');
   // Swapping to the active hero or an empty slot does nothing.
-  run(sim, 95);
-  press(sim, { swapTo: 2 }, 1);
+  press(sim, { swapTo: 1 }, 1);
   press(sim, { swapTo: 3 }, 1);
-  assert.equal(activeId(sim), 'lucas');
+  assert.equal(activeId(sim), 'dustin');
+});
+
+test('swap: a tap every few frames walks the whole party, one hero a tap once the lock is over', () => {
+  const sim = makeSim();
+  const seen: string[] = [activeId(sim)];
+  for (let i = 0; i < 6; i++) {
+    press(sim, { swapDelta: 1 }, SWAP_LOCK);
+    seen.push(activeId(sim));
+  }
+  assert.deepEqual(seen, ['mike', 'dustin', 'lucas', 'mike', 'dustin', 'lucas', 'mike']);
+});
+
+test('swap: the HUD reports how recharged the swap is, from 0 up to 1 over the cooldown', () => {
+  const sim = makeSim();
+  const ready = (): number => sim.view().hud.swapReady;
+  assert.equal(ready(), 1, 'ready at the start');
+  press(sim, { swapDelta: 1 }, 1);
+  assert.ok(ready() < 0.05, `just swapped: ${ready()}`);
+  run(sim, 44);
+  const half = ready();
+  assert.ok(half > 0.4 && half < 0.6, `halfway: ${half}`);
+  run(sim, 50);
+  assert.equal(ready(), 1, 'ready again after 90 frames');
 });
 
 test('swap: the incoming hero is invulnerable for 20 frames and lands a shockwave', () => {
@@ -54,6 +72,25 @@ test('swap: the incoming hero is invulnerable for 20 frames and lands a shockwav
   const hits = ofType(evs, 'hit').filter((h) => h.onEnemy);
   assert.ok(hits.length >= 1, 'the shockwave hit the agent next to the hero');
   assert.ok(sim.view().actors.some((a) => a.kind === 'enemy' && a.bar !== null));
+});
+
+test('swap: only a swap after the full cooldown brings the invulnerability and shockwave', () => {
+  const { sim, s } = makeWhite({ spawns: [agent('a', 5, 8, 'g')], seed: 9 });
+  const me = (): { invuln: number } => s.heroes[s.active] as { invuln: number };
+  const first = press(sim, { swapDelta: 1 }, 1);
+  assert.ok(me().invuln > 0, 'the first swap is invulnerable');
+  first.push(...run(sim, 12));
+  assert.ok(ofType(first, 'hit').some((h) => h.onEnemy), 'and lands a shockwave on the agent beside it');
+  // A quick swap lands at once but brings neither, and does not restart the cooldown.
+  const quick = press(sim, { swapDelta: 1 }, 14);
+  assert.equal(activeId(sim), 'lucas');
+  assert.equal(me().invuln, 0, 'a quick swap brings no invulnerability');
+  assert.equal(ofType(quick, 'hit').filter((h) => h.onEnemy).length, 0, 'and no shockwave');
+  assert.ok(s.swapCd < SWAP_COOLDOWN - 20, `the cooldown kept running: ${s.swapCd}`);
+  // Once the cooldown has run out, a swap is the full one again.
+  run(sim, SWAP_COOLDOWN);
+  press(sim, { swapDelta: 1 }, 1);
+  assert.ok(me().invuln > 0, 'a swap after the cooldown is invulnerable again');
 });
 
 test('the bench trails the active hero as followers with no collision', () => {
@@ -186,6 +223,30 @@ test('level-up: heals, applies fixed growth plus the d20 bonus, and reports it',
   assert.equal(after?.xp, 0);
   assert.deepEqual(sim.stats().levelUps, [{ hero: 'mike', from: 1, to: 2 }]);
   assert.equal(sim.party()[1]?.xp, 9, 'the bench got half');
+});
+
+test('level-up: it chimes and floats LEVEL UP over the hero in the same tick, with nothing for the player to dismiss', () => {
+  const sim = makeSim({ seed: 3 });
+  sim.dev.giveXp(18);
+  const ev = sim.step(inp());
+  assert.equal(levelUps(ev).length, 1);
+  assert.ok(sfxIds(ev).includes('levelUp'), 'the chime comes from the sim, so the play scene needs no screen to play it');
+  assert.ok(sim.view().floaters.some((f) => f.text === 'LEVEL UP'));
+  // The sim keeps running on its own, so the effect can play while the player moves.
+  const before = sim.view().focus.x;
+  run(sim, 30, inp({ mx: 1 }));
+  assert.ok(sim.view().focus.x > before, 'the hero moved on after the level-up');
+});
+
+test('level-up: two levels in one tick report both but float a single LEVEL UP', () => {
+  const sim = makeSim({ seed: 3 });
+  sim.dev.giveXp(76);
+  const ev = sim.step(inp());
+  const ups = levelUps(ev);
+  assert.deepEqual(ups.filter((u) => u.hero === 'mike').map((u) => u.to), [2, 3]);
+  const heroes = new Set(ups.map((u) => u.hero));
+  assert.ok(ups.length > heroes.size, 'someone gained more than one level');
+  assert.equal(sim.view().floaters.filter((f) => f.text === 'LEVEL UP').length, heroes.size, 'one floater per hero, not per level');
 });
 
 test('level-up: the Lv 3 talent shows up exactly once, at level 3', () => {

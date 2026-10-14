@@ -11,7 +11,10 @@ import { hitEnemy } from './damage.ts';
 import { dist } from './space.ts';
 import { addFx, dust, flashScreen, floater, hitstop, schedule, sfx, shake } from './fx.ts';
 
+/** Frames after a swap that lands its shockwave and invulnerability before the next one does. */
 export const SWAP_COOLDOWN = 90;
+/** Frames after any swap before another is allowed. Short enough to cycle through the party at a tap a beat. */
+export const SWAP_LOCK = 6;
 export const SWAP_INVULN = 20;
 const FORCED_SWAP_COOLDOWN = 45;
 const SWAP_RADIUS = 34;
@@ -25,7 +28,7 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
   return {
     id, level: lv, xp, hp: st.hp, mp: st.mp, st, bonus, advantage: false, ko: false,
     x, y, dir: 'down', aim: Math.PI / 2, vx: 0, vy: 0, z: 0, moving: false, anim: 'idle', animT: 0,
-    flash: 0, invuln: 0, blink: false, hurtT: 0, dashT: 0, dashCd: 0, dashX: 0, dashY: 0,
+    flash: 0, invuln: 0, blink: false, hurtT: 0,
     actT: 0, act: null, lock: 1, actId: 0, cdBasic: 0, cdSpecial: 0, combo: 0, comboT: 0,
     stat: noStatus(), nosebled: false,
   };
@@ -51,25 +54,30 @@ function shockwave(s: S, h: Hero): void {
   }
 }
 
-/** Swaps the active hero to slot `idx`. Forced swaps (a KO) ignore the cooldown. */
+/**
+ * Swaps the active hero to slot `idx`. Any swap is allowed once the short lock is over, so the party can be cycled
+ * quickly. Only a swap after the full cooldown, or a forced one after a KO, brings the invulnerability and the shockwave.
+ * Quick swaps in between don't restart that cooldown, so cycling never costs the next real swap anything.
+ */
 export function trySwap(s: S, idx: number, forced = false): boolean {
   const to = s.heroes[idx];
   if (!to || idx === s.active || to.ko) return false;
-  if (!forced && s.swapCd > 0) return false;
+  if (!forced && s.swapLock > 0) return false;
+  const charged = forced || s.swapCd <= 0;
   const from = activeHero(s);
-  from.actId++; from.actT = 0; from.act = null; from.dashT = 0; from.vx = 0; from.vy = 0;
+  from.actId++; from.actT = 0; from.act = null; from.vx = 0; from.vy = 0;
   to.x = from.x; to.y = from.y;
   to.dir = from.dir; to.aim = from.aim; to.vx = 0; to.vy = 0;
-  to.actId++; to.actT = 0; to.act = null; to.dashT = 0; to.hurtT = 0;
+  to.actId++; to.actT = 0; to.act = null; to.hurtT = 0;
   to.z = 12;
-  to.invuln = SWAP_INVULN;
-  to.blink = true;
+  if (charged) { to.invuln = SWAP_INVULN; to.blink = true; }
   s.active = idx;
-  s.swapCd = forced ? FORCED_SWAP_COOLDOWN : SWAP_COOLDOWN;
-  s.buf.attack = 0; s.buf.special = 0; s.buf.dash = 0;
+  s.swapLock = SWAP_LOCK;
+  if (charged) s.swapCd = forced ? FORCED_SWAP_COOLDOWN : SWAP_COOLDOWN;
+  s.buf.attack = 0; s.buf.special = 0;
   s.events.push({ t: 'swap', from: from.id, to: to.id });
   sfx(s, 'swap');
-  schedule(s, 8, () => { if (activeHero(s) === to && !to.ko) shockwave(s, to); });
+  if (charged) schedule(s, 8, () => { if (activeHero(s) === to && !to.ko) shockwave(s, to); });
   return true;
 }
 
@@ -92,7 +100,7 @@ export function reapHeroes(s: S): void {
     if (h.ko || h.hp > 0) continue;
     h.ko = true;
     h.hp = 0;
-    h.invuln = 0; h.blink = false; h.dashT = 0; h.actT = 0; h.act = null; h.actId++;
+    h.invuln = 0; h.blink = false; h.actT = 0; h.act = null; h.actId++;
     h.anim = 'ko'; h.animT = 0;
     s.stats.kos++;
     s.events.push({ t: 'heroKO', hero: h.id });
@@ -116,7 +124,8 @@ export function ageBodies(s: S): void {
   if (s.bodies.length > 0 && !s.over) s.bodies = s.bodies.filter((b) => b.t < BODY_FRAMES);
 }
 
-function levelUp(s: S, h: Hero, from: number, to: number): void {
+/** `show` is false for all but the last level of a batch, so a big XP drop floats one LEVEL UP, not several on top of each other. */
+function levelUp(s: S, h: Hero, from: number, to: number, show = true): void {
   const def = HERO_DEFS[h.id];
   const fixed = fixedGain(def, from);
   const roll = rollLevelUp(s.rng, def.weights, h.advantage);
@@ -144,7 +153,10 @@ function levelUp(s: S, h: Hero, from: number, to: number): void {
   };
   s.events.push({ t: 'levelUp', info });
   s.stats.levelUps.push({ hero: h.id, from, to });
-  if (!h.ko) floater(s, 'LEVEL UP', h.x, h.y - 22, 'yellow', true, 60);
+  if (!h.ko) {
+    if (show) floater(s, 'LEVEL UP', h.x, h.y - 22, 'yellow', true, 60);
+    sfx(s, 'levelUp');
+  }
   if (roll.natTwenty) {
     s.inspire = INSPIRATION_SECONDS * 60;
     s.events.push({ t: 'natTwenty', hero: h.id, source: 'levelUp' });
@@ -160,7 +172,7 @@ export function awardXp(s: S, n: number): void {
   s.heroes.forEach((h, i) => {
     const r = addXp(h.level, h.xp, xpShare(n, i === s.active));
     h.xp = r.xp;
-    for (const to of r.gained) levelUp(s, h, to - 1, to);
+    r.gained.forEach((to, k) => levelUp(s, h, to - 1, to, k === r.gained.length - 1));
   });
 }
 

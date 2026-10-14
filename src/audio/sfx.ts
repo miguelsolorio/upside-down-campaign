@@ -152,6 +152,12 @@ export const SFX: Record<SfxId, Recipe> = {
     T('p12', 1568, 0.06, 0.2, { at: 0.12, hold: true }), T('p12', 2093, 0.35, 0.22, { at: 0.18 }),
     T('p25', 523, 0.5, 0.2, { at: 0.18 }), T('p12', 3136, 0.3, 0.12, { at: 0.3 }),
   ], 0),
+  // a level-up while the game runs on: short and soft, so it never talks over a fight
+  levelUp: R([
+    T('tri', 523, 0.09, 0.3, { hold: true }), T('tri', 659, 0.09, 0.3, { at: 0.07, hold: true }),
+    T('tri', 784, 0.09, 0.3, { at: 0.14, hold: true }), T('tri', 1047, 0.34, 0.3, { at: 0.21 }),
+    T('p12', 2093, 0.2, 0.08, { at: 0.21 }),
+  ], 0.02),
   alert: R([T('p50', 880, 0.05, 0.3, { hold: true }), T('p50', 1320, 0.09, 0.3, { at: 0.05, hold: true })], 0.01),
   step: R([N(7, 5000, 0.025, 0.4, { f: bp(900, undefined, 1.5) })], 0.08),
 };
@@ -166,7 +172,7 @@ const LEVEL: Record<SfxId, number> = {
   dash: 0.45, swap: 0.94, burst: 0.67, pickup: 0.96, heal: 0.81, noMp: 0.65, nosebleed: 1,
   select: 1.1, confirm: 0.8, cancel: 0.7, pause: 1.17, dialogOpen: 1,
   gateOpen: 1, targetHit: 1, logPush: 0.41, lights: 1.22, flicker: 0.3, growl: 0.44, klaxon: 0.7,
-  roll: 0.89, rollLand: 0.47, natTwenty: 0.95, alert: 0.47, step: 0.8,
+  roll: 0.89, rollLand: 0.47, natTwenty: 0.95, levelUp: 0.9, alert: 0.47, step: 0.8,
 };
 
 /** Plays one effect at context time t. `mul` scales every pitch, so 1.05 is about a semitone sharp. */

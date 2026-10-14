@@ -44,7 +44,7 @@ export function drawMenu(ctx: Ctx, m: Menu, x: number, y: number, w: number, t: 
   });
 }
 
-/** Flips "skip story" and saves it. The title screen calls this on Tab. */
+/** Flips "skip story" and saves it. The title screen calls this on the skip key. */
 export function toggleSkipStory(g: Game): void {
   g.settings.skipDialogue = !g.settings.skipDialogue;
   saveSettings();

@@ -11,7 +11,7 @@ Scope for this pass: Level 2, stage 1.2 Hawkins Lab, and the plumbing that leads
   - Audio: `Track.barSteps` (variable bar lengths), the `lab` track (E minor, 104 bpm, every fourth bar in 7/8), the `klaxon` effect
   - World and story: `world/stages/stage12.ts`, 13 `l2_*` scripts, three new puzzles (BURN, SHOOT, PUSH), the lockdown waves
   - Flow: clearing 1.1 shows LEVEL 1 CLEAR and CONTINUE, writes an entry save for 1.2, and carries levels, XP and d20 bonus. START OVER restarts the stage with the party it was entered with
-- [x] Verified: typecheck clean, 291 tests pass (248 before this pass). The bot clears 1.2 in the browser (21 kills, 124 XP, 0 KOs, lead Lv 4, bench Lv 3). The three gates work with real key events (Dustin burns the sensor, Lucas shoots the relay through the glass, Eleven pushes the crate and Mike's bat does not). 1.1 chains into 1.2 with the party carried. CONTINUE and START OVER on 1.2 work. No console errors
+- [x] Verified, and again after merging the latest `main` (new controls, no dash, highlight-only hints): typecheck clean, 309 tests pass. The bot clears 1.2 in the browser (21 kills, 124 XP, 0 KOs, lead Lv 4, bench Lv 3). The gates work with real key events (Dustin burns the sensor, Lucas shoots the relay through the glass, Eleven pushes the crate and Mike's bat does not). Before the merge, 1.1 chained into 1.2 with the party carried, and CONTINUE and START OVER on 1.2 worked. After it, the burn gate and the 30 second hint highlight were re-checked by hand. No console errors
 - [ ] Feedback on Levels 1 and 2, then the rest
 
 ## Known rough edges
@@ -27,7 +27,7 @@ Scope for this pass: Level 2, stage 1.2 Hawkins Lab, and the plumbing that leads
 - The autosave at Joyce's lights keeps levels, kills and story beats but not health, and the results screen only times the stretch since the last Continue.
 - Keyboard rebinding is saved per browser. Arrow keys, Enter, Escape and Backspace are fixed so menus can't get stuck.
 - Losing focus silences the game but doesn't pause it, so enemies keep moving while you're away.
-- Skip story is on by default, so the tutorial lines never show unless the player turns it off. A controls strip covers the first nine seconds of Level 1, and each puzzle shows a tip strip instead.
+- Skip story is on by default, so the level's tutorial lines never show unless the player turns it off. The combat controls sit in the bottom left corner of the level instead, and fade to grey once the party leaves the starting yard. A puzzle that is left alone for thirty seconds gets a highlight, and no text, so the Lab's three gates teach nothing in words when the story is skipped.
 - Only four tag-in stingers exist (one per playable hero).
 - Level 1 takes the bot 86 seconds and Level 2 takes it 58. A person should need five to eight minutes for each.
 

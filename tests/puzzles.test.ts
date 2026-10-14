@@ -1,20 +1,19 @@
 // The puzzle hint clock and the Level 1 puzzle data. Pure logic, so Node runs it without a canvas.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { keyText } from '../src/core/bindings.ts';
 import { fitsBox, hasEmDash } from '../src/core/text.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { STAGE_11 as S } from '../src/world/stages/stage11.ts';
 import { STAGE_12 as S2 } from '../src/world/stages/stage12.ts';
 import { fakeEnv } from './stage-helpers.ts';
-import { HINT_AFTER, NEAR_PX, TIP_FRAMES, createPuzzleTracker } from '../src/world/puzzles.ts';
+import { HINT_AFTER, HINT_NUDGE, NEAR_PX, createPuzzleTracker } from '../src/world/puzzles.ts';
 import type { PuzzleTracker } from '../src/world/puzzles.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import type { DirectorEnv } from '../src/world/triggers.ts';
 import type { PuzzleDef } from '../src/world/types.ts';
 import type { PropState, PropView, SimSpawn, Vec2 } from '../src/core/types.ts';
 
-const DEF: PuzzleDef = { id: 'p', beat: 'b', prop: 'rock', hero: 'lucas', label: 'SHOOT', tip: 'Do the thing.' };
+const DEF: PuzzleDef = { id: 'p', beat: 'b', prop: 'rock', hero: 'lucas' };
 const prop = (state: PropState): PropView => ({ id: 'rock', kind: 'target', x: 100, y: 100, w: 32, h: 16, state, t: 0 });
 const NEAR: Vec2 = { x: 116, y: 108 };
 const FAR: Vec2 = { x: 116 + NEAR_PX + 50, y: 108 };
@@ -38,7 +37,6 @@ test('nothing happens before the arrival beat has fired', () => {
   const tr = createPuzzleTracker([DEF]);
   run(tr, HINT_AFTER + 60, { fired: false });
   assert.equal(tr.highlight(), null);
-  assert.equal(tr.tip(), null);
 });
 
 test('highlights after thirty seconds near the prop, not a tick sooner', () => {
@@ -82,22 +80,8 @@ test('reset forgets the clock', () => {
   run(tr, HINT_AFTER);
   tr.reset();
   assert.equal(tr.highlight(), null);
-  assert.equal(tr.tip(), null);
   run(tr, HINT_AFTER - 1);
   assert.equal(tr.highlight(), null, 'a retry starts the thirty seconds over');
-});
-
-test('the objective tip shows when the clock starts and is gone before the highlight', () => {
-  const tr = createPuzzleTracker([DEF]);
-  assert.equal(tr.tip(), null);
-  run(tr, 1);
-  assert.equal(tr.tip(), DEF);
-  run(tr, TIP_FRAMES - 2);
-  assert.equal(tr.tip(), DEF, 'still up on the last tip tick');
-  run(tr, 1);
-  assert.equal(tr.tip(), null);
-  assert.ok(TIP_FRAMES < HINT_AFTER);
-  assert.equal(tr.highlight(), null);
 });
 
 test('each puzzle keeps its own clock', () => {
@@ -142,21 +126,13 @@ test('Level 1 has the gate and log puzzles, each wired to a real beat, prop and 
   }
 });
 
-test('puzzle labels and tips follow the copy rules and fit the bottom strip', () => {
-  for (const p of S.puzzles) {
-    assert.match(p.label, /^[A-Z]{3,8}$/, `${p.id}: a one-word label`);
-    for (const text of [p.label, p.tip]) {
-      assert.ok(!hasEmDash(text), `${p.id}: em dash in ${text}`);
-      assert.ok(!/seamless|robust|leverage|unlock|delve/i.test(text), `${p.id}: banned word in ${text}`);
-      assert.ok(!/\b[0-9]\b/.test(text), `${p.id}: key digits come from tokens, not the copy: ${text}`);
-    }
-    const shown = keyText(p.tip);
-    assert.ok(!shown.includes('{'), `${p.id}: every token in "${p.tip}" is known`);
-    // 256 px at 6 px a glyph is 42 columns. With the default keys a tip stays on one row, so no word is left alone below it.
-    assert.ok(fitsBox(shown, 42, 1), `${p.id}: "${shown}" is ${shown.length} characters, over one row of 42`);
-  }
-  assert.match(keyText(S.puzzles[0]?.tip ?? ''), /\b3\b.*\bJ\b/, 'the gate tip names Lucas\'s slot and the attack key');
-  assert.match(keyText(S.puzzles[1]?.tip ?? ''), /\b4\b.*\bJ\b/, 'the log tip names Eleven\'s slot and the attack key');
+test('the hint nudge is vague: it fits one callout row and names no hero, key or action', () => {
+  // drawCallout wraps at 26 columns, so the nudge stays on one line.
+  assert.ok(fitsBox(HINT_NUDGE, 26, 1), `"${HINT_NUDGE}" is ${HINT_NUDGE.length} characters, over one row of 26`);
+  assert.ok(!hasEmDash(HINT_NUDGE), 'no em dash');
+  assert.ok(!/seamless|robust|leverage|unlock|delve/i.test(HINT_NUDGE), 'no banned words');
+  assert.ok(!/\b[0-9]\b/.test(HINT_NUDGE), 'no key digits');
+  assert.ok(!/shoot|push|lucas|eleven|lantern|log/i.test(HINT_NUDGE), 'does not give the answer away');
 });
 
 // ---------------------------------------------------------------- Level 2 data
@@ -168,7 +144,6 @@ test('Level 2 has the burn, relay and crate puzzles, each wired to a real beat, 
   assert.deepEqual(S2.puzzles.map((p) => p.beat), ['burn_hint', 'relay_hint', 'crate_hint']);
   assert.deepEqual(S2.puzzles.map((p) => p.prop), ['sensor1', 'relay1', 'crate1']);
   assert.deepEqual(S2.puzzles.map((p) => p.hero), ['dustin', 'lucas', 'eleven']);
-  assert.deepEqual(S2.puzzles.map((p) => p.label), ['BURN', 'SHOOT', 'PUSH']);
   for (const p of S2.puzzles) {
     assert.ok(S2.beats.some((b) => b.id === p.beat), `${p.id}: beat ${p.beat} exists`);
     const target = props2.find((x) => x.id === p.prop);
@@ -180,29 +155,6 @@ test('Level 2 has the burn, relay and crate puzzles, each wired to a real beat, 
     const can = HEROES.filter((h) => HERO_DEFS[h].utilities.includes(need as never));
     assert.deepEqual(can, [p.hero], `${p.id}: only ${p.hero} has ${need}`);
   }
-});
-
-test('Level 2 labels and tips follow the copy rules and fit one row of the bottom strip', () => {
-  for (const p of S2.puzzles) {
-    assert.match(p.label, /^[A-Z]{3,8}$/, `${p.id}: a one-word label`);
-    for (const text of [p.label, p.tip]) {
-      assert.ok(!hasEmDash(text), `${p.id}: em dash in ${text}`);
-      assert.ok(!/seamless|robust|leverage|unlock|delve/i.test(text), `${p.id}: banned word in ${text}`);
-      assert.ok(!/\b[0-9]\b/.test(text), `${p.id}: key digits come from tokens, not the copy: ${text}`);
-    }
-    const shown = keyText(p.tip);
-    assert.ok(!shown.includes('{'), `${p.id}: every token in "${p.tip}" is known`);
-    assert.ok(fitsBox(shown, 42, 1), `${p.id}: "${shown}" is ${shown.length} characters, over one row of 42`);
-  }
-  const tips = S2.puzzles.map((p) => keyText(p.tip));
-  assert.match(tips[0] ?? '', /\b2\b.*\bK\b/, "the burn tip names Dustin's slot and the special key");
-  assert.match(tips[1] ?? '', /\b3\b.*\bJ\b/, "the relay tip names Lucas's slot and the attack key");
-  assert.match(tips[2] ?? '', /\b4\b.*\bJ\b/, "the crate tip names Eleven's slot and the attack key");
-  assert.deepEqual(S2.puzzles.map((p) => p.tip), [
-    'Dustin on {pick2}. Face the sensor, press {special}.',
-    'Lucas on {pick3}. Face the glass, press {attack}.',
-    'Eleven on {pick4}. Face the crate, press {attack}.',
-  ]);
 });
 
 test('Level 2 hints wake in route order through the real beat chain, and a solved prop clears its hint', () => {

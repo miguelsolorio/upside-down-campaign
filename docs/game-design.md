@@ -104,7 +104,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Attack | Z / J | Hero's basic. Melee chains three hits |
 | Special | X / K | Costs MP. Hold for the Lv 6 variant where a hero has one |
 | Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
-| Party burst | U / B | When the d20 meter is full |
+| Party burst | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |
 
@@ -116,7 +116,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - Feel: 2 to 5 frames of hit-stop, screen shake, a white flash, knockback, floating numbers, pixel dust.
 - Every real enemy attack has a red "!" and a 0.4 s wind-up, and each attack has its own telegraph shape, so color is never the only cue.
 - Specials spend MP. MP regenerates 4% per second. Benched heroes regenerate 6% MP and 2% HP per second.
-- Party burst: the d20 meter fills from hits dealt, hits taken and kills. At full, press U for a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
+- Party burst: the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR PARTY BURST shows over the active hero (the corner controls leave burst out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
 - Status: burn, stun, slow, confuse, curse (Vecna's clock).
 - A KO'd hero drops out and the next swaps in. All four down returns you to the last light with XP kept.
 - Difficulty: Kid, Chief, Upside Down (enemy HP and damage ×0.7, ×1, ×1.4).

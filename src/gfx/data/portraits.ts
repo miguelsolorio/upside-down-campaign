@@ -220,7 +220,47 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-} satisfies Record<Exclude<CharId, 'max'>, PortraitSpec>;
+  max: {
+    bg: 'purple', shirt: 'plain',
+    pal: { s: 'skin0', d: 'skin1', h: 'orange', i: 'amber', j: 'red', g: 'cyan', G: 'ink', H: 'bone', a: 'teal1', b: 'cyan', c: 'teal1' },
+    back: [
+      { y: 7, rows: [
+        '....................H.H.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................H.H.',
+      ] },
+      { y: 12, rows: [
+        '...hhh..........hhh.....',
+        '...hhh..........hhh.....',
+        '....hh..........hh......',
+      ] },
+    ],
+    front: [{ y: 2, rows: [
+      '.......hhhhhhhhhh.......',
+      '.....hhhhhhihhhhhhh.....',
+      '....hhhhhiiihhhhhhhh....',
+      '....hhhhhhhhhhhhhhhh....',
+      '....hhjhhhhhhhhhhjhh....',
+      '....hhh.hhhhhhh.hhhh....',
+      '....hh............hh....',
+      '....hh............hh....',
+      '....hhh..........hhh....',
+      '....hh............hh....',
+    ] }],
+    trim: [],
+    grin: [{ y: 13, rows: [
+      '........eeeeeeee........',
+      '........ewweewwe........',
+      '.........eeeeee.........',
+    ] }],
+  },
+} satisfies Record<CharId, PortraitSpec>;
 
-// Max borrows Will's portrait until Art draws hers (docs/level-4.md).
-export const PORTRAITS: Record<CharId, PortraitSpec> = { ...BASE_PORTRAITS, max: BASE_PORTRAITS.will };
+export const PORTRAITS: Record<CharId, PortraitSpec> = BASE_PORTRAITS;

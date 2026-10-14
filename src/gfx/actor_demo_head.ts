@@ -14,7 +14,7 @@ export interface Head { px: Px; ax: number; ay: number }
 const PETAL_ANGLES = [-90, -18, 54, 126, 198].map((d) => (d * Math.PI) / 180);
 
 /** A rotated ellipse: center, the angle of its long axis, half length a and half width b. */
-function blob(px: Px, cx: number, cy: number, ang: number, a: number, b: number, col: Parameters<Px['set']>[2]): void {
+export function blob(px: Px, cx: number, cy: number, ang: number, a: number, b: number, col: Parameters<Px['set']>[2]): void {
   const c = Math.cos(ang), s = Math.sin(ang), m = Math.ceil(a) + 1;
   for (let y = Math.floor(cy) - m; y <= Math.ceil(cy) + m; y++) {
     for (let x = Math.floor(cx) - m; x <= Math.ceil(cx) + m; x++) {

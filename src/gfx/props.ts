@@ -1,10 +1,10 @@
 // Props (log, gate, target, lights, bike, sign, van, floodlight, crate, door, console, camera, tank, rack, generator, firebox,
-// vines) and pickup items.
+// vines, arcade, hidden) and pickup items.
 // Static art is cached per kind, size and state; blinking bulbs, glare and sparkles are drawn live.
 //
 // State meaning: log closed = in the way, open = cleared. gate open = swung wide. target closed or off = unhit,
 // open or lit = hit. lights lit or open = glowing, anything else dark. floodlight is on unless state is off.
-// van open = tipped on its side (shoved clear). firebox lit or open = released, vines open = burned away. crate open = smashed. door open = slid back. console lit (or open) = on. camera alert = dark and
+// arcade ignores its state; hidden closed = corn, open = a dark gap. van open = tipped on its side (shoved clear). firebox lit or open = released, vines open = burned away. crate open = smashed. door open = slid back. console lit (or open) = on. camera alert = dark and
 // red-lit, lit or off = shot and dead, any other state = calm. tank, rack and generator ignore their state.
 import type { ItemView, PropView } from '../core/types.ts';
 import { settings } from '../core/settings.ts';
@@ -18,6 +18,7 @@ import { nightSprite } from './night.ts';
 import { consoleArt, consoleLive, doorArt } from './props_lab.ts';
 import { drawLab2Prop } from './props_lab2.ts';
 import { drawSchoolProp, vanTippedArt } from './props_school.ts';
+import { drawTownProp } from './props_town.ts';
 
 const cache = new Map<string, HTMLCanvasElement>();
 function cached(key: string, build: () => HTMLCanvasElement): HTMLCanvasElement {
@@ -237,6 +238,7 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
     }
     case 'camera': case 'tank': case 'rack': case 'generator': drawLab2Prop(ctx, v, art); return;
     case 'firebox': case 'vines': drawSchoolProp(ctx, v, art, calm()); return;
+    case 'arcade': case 'hidden': drawTownProp(ctx, v, art, calm()); return;
     case 'lights':
       ctx.drawImage(art(`lights${w}x${h}`, () => lightsArt(w, h)), x, y);
       drawLights(ctx, v, x, y);

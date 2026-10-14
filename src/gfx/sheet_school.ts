@@ -6,7 +6,7 @@ import type { PropKind, PropState } from '../core/types.ts';
 import type { TileName } from '../core/tiles.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import type { Ctx } from './canvas.ts';
-import { drawText } from './font.ts';
+import { drawText, drawTinyText } from './font.ts';
 import { drawProp } from './props.ts';
 import { paintGlow } from './glow.ts';
 import { nightTile } from './night.ts';
@@ -112,7 +112,7 @@ const tiles: Page = {
     if (sub === 0) {
       ctx.fillStyle = PAL.night;
       ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
-      drawText(ctx, 'SCHOOL TILES: DAY THEN NIGHT, THREE EACH', 4, 3, 'bone');
+      drawText(ctx, 'SCHOOL TILES, DAY THEN NIGHT', 4, 3, 'bone');
       SCHOOL_TILES.forEach((n, i) => {
         const col = i % 7, blockY = i < 7 ? 14 : 112, cx = 2 + col * 36;
         ctx.drawImage(tileSample(n, 0), cx, blockY);
@@ -121,7 +121,7 @@ const tiles: Page = {
         ctx.drawImage(nightSample(n, 0), cx + 17, blockY + 17);
         ctx.drawImage(nightSample(n, 1), cx, blockY + 34);
         ctx.drawImage(nightSample(n, 2), cx + 17, blockY + 34);
-        drawText(ctx, n.toUpperCase().slice(0, 6), cx, blockY + 53, 'mist');
+        drawTinyText(ctx, n.toUpperCase().slice(0, 8), cx, blockY + 54, 'mist');
       });
       drawText(ctx, 'UP DOWN', 4, 214, 'slate');
       return;

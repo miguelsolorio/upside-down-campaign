@@ -5,7 +5,8 @@
 // each with the petals shut or open, in a front rig (down and up) and a side rig (right, flipped for left). Pure pixel
 // work, so Node can run it; the canvases are built on first use.
 import type { ActorView } from '../core/types.ts';
-import { canvasFromPixels, px32 } from './canvas.ts';
+import { frameFor } from './actor_kit.ts';
+import type { Frame } from './actor_kit.ts';
 import type { ColorName } from './palette.ts';
 import { Px } from './px.ts';
 import { B, D, G, K, headFor } from './actor_demo_head.ts';
@@ -256,34 +257,10 @@ export function demoPx(s: DemoSpec): Px {
   return p;
 }
 
-/** The first row with a pixel in it: where the HP bar and the "!" go. */
-export function topRow(p: Px): number {
-  for (let i = 0; i < p.d.length; i++) if (p.d[i]) return (i / p.w) | 0;
-  return p.h;
-}
-
-export interface DemoFrame { img: HTMLCanvasElement; top: number }
-const canvasCache = new Map<string, DemoFrame>();
+const frames = new Map<string, Frame>();
 
 /** The canvas for what a view shows now: normal, a white flash, or a dithered tint. */
-export function demoFrame(v: ActorView): DemoFrame {
+export function demoFrame(v: ActorView): Frame {
   const s = demoSpec(v);
-  const tint: ColorName | null = v.flash > 0.25 && v.flash <= 0.6 ? 'white' : v.tint;
-  const mode = v.flash > 0.6 ? 'w' : tint ?? 'n';
-  const key = `${s.view}${s.pose}${s.frame}${s.open ? 1 : 0}${s.flip ? 1 : 0}${mode}`;
-  let c = canvasCache.get(key);
-  if (!c) {
-    const src = demoPx(s);
-    const out = new Px(DEMO_W, DEMO_H);
-    const white = px32('white'), tc = tint && mode !== 'w' ? px32(tint) : 0, ink = px32('ink');
-    for (let i = 0; i < out.d.length; i++) {
-      const d = src.d[i] as number;
-      if (!d) continue;
-      const x = i % DEMO_W, y = (i / DEMO_W) | 0;
-      out.d[i] = mode === 'w' ? white : tc && d !== ink && ((x + y) & 1) === 0 ? tc : d;
-    }
-    c = { img: canvasFromPixels(out.d, DEMO_W, DEMO_H), top: topRow(src) };
-    canvasCache.set(key, c);
-  }
-  return c;
+  return frameFor(frames, `${s.view}${s.pose}${s.frame}${s.open ? 1 : 0}${s.flip ? 1 : 0}`, demoPx(s), v);
 }

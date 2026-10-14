@@ -1,4 +1,4 @@
-// Ground and water tiles (the lab floors are in tile_lab.ts and tile_lab2.ts, the school floors in tile_school.ts). Every static tile is generated from its position hash, so no two are alike.
+// Ground and water tiles (the lab floors are in tile_lab.ts and tile_lab2.ts, the school floors in tile_school.ts, the arcade and street floors in tile_town.ts, the patch in tile_patch.ts). Every static tile is generated from its position hash, so no two are alike.
 import type { TileName } from '../core/tiles.ts';
 import { createRng } from '../core/rng.ts';
 import { hash2 } from './canvas.ts';
@@ -7,6 +7,8 @@ import type { ColorName } from './palette.ts';
 import { labGround } from './tile_lab.ts';
 import { lab2Ground } from './tile_lab2.ts';
 import { schoolGround } from './tile_school.ts';
+import { townGround } from './tile_town.ts';
+import { patchGround } from './tile_patch.ts';
 
 type Rnd = () => number;
 
@@ -159,6 +161,13 @@ export function groundTile(name: TileName, c: TileCtx): Px | null {
     case 'checker':
     case 'gymfloor':
       return schoolGround(name, c, r);
+    case 'arcadecarpet':
+    case 'sidewalk':
+      return townGround(name, c, r);
+    case 'furrow':
+    case 'rot':
+    case 'hole':
+      return patchGround(name, c, r);
     default:
       return null;
   }

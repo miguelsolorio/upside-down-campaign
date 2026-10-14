@@ -4,7 +4,7 @@
 import type { ActorView, Dir, FxKind } from '../core/types.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import type { Ctx } from './canvas.ts';
-import { drawText } from './font.ts';
+import { drawText, drawTinyText } from './font.ts';
 import { drawActor } from './actors.ts';
 import { drawFx } from './fx.ts';
 import { PAL } from './palette.ts';
@@ -39,7 +39,7 @@ const creature: Page = {
       FRAMES.forEach(([name, over], i) => {
         const col = i % 8, row = (i / 8) | 0, x = col * 32 + 16, y = 56 + panel * 98 + row * 46;
         drawActor(ctx, boss(x, y, { dir, petals, ...over }));
-        drawText(ctx, name, x - 15, y + 2, 'mist');
+        drawTinyText(ctx, name, x - ((name.length * 4 - 1) >> 1), y + 2, 'mist');
       });
     }
   },

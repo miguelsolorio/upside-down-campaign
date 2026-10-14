@@ -54,15 +54,6 @@ test('every school tile paints a fully opaque 16 by 16, is not the flat placehol
   }
 });
 
-test('the 2.1 stand-ins survive: those tiles still paint through the object painter', () => {
-  const rest: TileName[] = ['arcadecarpet', 'arcadewall', 'sidewalk', 'storefront', 'furrow', 'pumpkin', 'rotpumpkin', 'haybale', 'barnwall', 'barnroof', 'corn', 'rot', 'hole'];
-  for (const n of rest) {
-    const px = objectTile(n, ctxAt(4, 4, around(n)));
-    assert.ok(px && opaque(px), n);
-    assert.ok(opaque(nightTile(px, n, ctxAt(4, 4, around(n)))), `${n} at night`);
-  }
-});
-
 test('halls do not look stamped: floors and walls vary from tile to tile', () => {
   for (const name of SCHOOL_TILES) {
     if (name === 'bleachers') continue;

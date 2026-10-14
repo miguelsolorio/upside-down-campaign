@@ -1,8 +1,11 @@
 // The results screen: time, kills, XP, quarters, level-ups and the party's levels. `final` ends the build with the feedback note.
+// A click anywhere does what confirm does. The mouse over CONTINUE stops its blink and lights it.
 import type { Scene } from '../core/scene.ts';
 import type { HeroSnapshot, RunStats } from '../core/types.ts';
 import { CHAR_NAMES, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
+import { inRect } from '../core/pointer.ts';
+import type { Rect } from '../core/pointer.ts';
 import { drawIcon, drawPanel, drawPortrait, drawText, textWidth } from '../gfx/index.ts';
 import { countUp, formatTime } from './format.ts';
 import { bigText, blinkOn, box } from './kit.ts';
@@ -27,6 +30,11 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
   const kinds = Object.entries(stats.killsByKind).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
   const gained = (id: string): number => stats.levelUps.filter((u) => u.hero === id).reduce((n, u) => n + (u.to - u.from), 0);
   const at = (row: number): number => ROW_AT + row * ROW_GAP;
+  const label = final ? 'BACK TO TITLE' : 'CONTINUE';
+  /** The prompt and its arrow, for the mouse. */
+  const prompt: Rect = { x: 128 - textWidth(label) / 2 - 14, y: 194, w: textWidth(label) + 28, h: 12 };
+  /** The mouse is over the prompt. */
+  let hot = false;
 
   function row(ctx: Ctx, i: number, label: string, value: string, color: 'white' | 'leaf' | 'yellow', icon = false): void {
     if (t < at(i)) return;
@@ -42,7 +50,10 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
     enter() { audio.jingle('clear'); },
     update(g) {
       t++;
-      if (!g.input.pressed('confirm')) return;
+      const ptr = g.input.hover();
+      hot = t >= FOOT_AT && !!ptr && inRect(ptr, prompt);
+      if (hot) g.input.point();
+      if (!g.input.pressed('confirm') && !g.input.clicked()) return;
       if (t < FOOT_AT) { t = FOOT_AT; return; }
       if (t >= READY && !finished) {
         finished = true;
@@ -77,10 +88,9 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
         });
       }
 
-      if (t >= FOOT_AT && blinkOn(t, 60, 42)) {
-        const label = final ? 'BACK TO TITLE' : 'CONTINUE';
+      if (t >= FOOT_AT && (hot || blinkOn(t, 60, 42))) {
         drawIcon(ctx, 'arrow', 128 - textWidth(label) / 2 - 12, 196, t);
-        drawText(ctx, label, 128, 197, 'white', { align: 'center' });
+        drawText(ctx, label, 128, 197, hot ? 'yellow' : 'white', { align: 'center' });
       }
     },
   };

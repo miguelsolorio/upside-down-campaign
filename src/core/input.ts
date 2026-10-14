@@ -9,6 +9,9 @@ export type { Action };
 /** Whichever the player touched last. The prompts name its keys or buttons. */
 export type Device = 'keyboard' | 'gamepad' | 'touch';
 
+/** CSS px of wheel scroll per wheel() step. */
+const WHEEL_STEP = 50;
+
 export interface InputOptions {
   /** Fires when a controller button or stick direction goes down. The page uses it to try to start the sound. */
   onPadPress?(): void;
@@ -31,10 +34,16 @@ export interface InputState {
   axis(): Vec2;
   /** Whichever the player touched last. A connected controller counts as touched. */
   device(): Device;
-  /** Where the mouse or finger is over the game, in game px (256 by 224), or null when it is elsewhere. */
-  pointer(): Vec2 | null;
-  /** Where the primary button went down this tick, in game px, or null. A short click is never lost. */
+  /** Where the mouse is over the game, in game px (256 by 224), or null when it is elsewhere. A finger can't hover, so it's never here. */
+  hover(): Vec2 | null;
+  /** True on a tick the mouse moved over the game. A menu row under it takes the selection only then, so a resting mouse never fights the keys. */
+  moved(): boolean;
+  /** Mouse wheel steps since the last tick, down positive. */
+  wheel(): number;
+  /** Where the primary button or a finger went down this tick, in game px, or null. A short click is never lost. */
   clicked(): Vec2 | null;
+  /** A scene says the mouse is over something a click would do, so the page shows a hand cursor. Cleared by poll. */
+  point(): void;
   /** Takes and clears a one-line message about the controller (connected, lost), for a toast. */
   notice(): string | null;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
@@ -63,8 +72,14 @@ export function createInput(opts: InputOptions = {}): InputState {
   let message: string | null = null;
   let captureCb: ((code: string) => void) | null = null;
   let at: Vec2 | null = null;
+  let moveLatch = false;
+  let movedNow = false;
+  let wheelPx = 0;
+  let wheelNow = 0;
   let clickLatch: Vec2 | null = null;
   let clickNow: Vec2 | null = null;
+  let hand = false;
+  let handShown = false;
 
   addEventListener('keydown', (e) => {
     if (captureCb) {
@@ -92,12 +107,27 @@ export function createInput(opts: InputOptions = {}): InputState {
   const canvas = opts.canvas;
   if (canvas) {
     const place = (e: PointerEvent): Vec2 | null => clientToGame(e.clientX, e.clientY, canvas.getBoundingClientRect());
-    canvas.addEventListener('pointermove', (e) => { at = place(e); });
+    // Only the mouse hovers. A finger is over the game just while it's down, and it only clicks.
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      at = place(e);
+      moveLatch = true;
+    });
     canvas.addEventListener('pointerleave', () => { at = null; });
     canvas.addEventListener('pointerdown', (e) => {
-      at = place(e);
-      if (e.button === 0 && at) clickLatch = at;
+      const p = place(e);
+      if (e.pointerType === 'mouse') at = p;
+      if (e.button === 0 && p) clickLatch = p;
     });
+    // A notch is about 100 px in most browsers and a trackpad sends many small steps, so every 50 px is one step.
+    // Turning back drops what was left over the other way. A pinch on a trackpad comes as a wheel with ctrl held, and
+    // isn't a scroll.
+    canvas.addEventListener('wheel', (e) => {
+      if (e.ctrlKey) return;
+      const d = e.deltaMode === 0 ? e.deltaY : e.deltaY * WHEEL_STEP;
+      if (Math.sign(d) !== Math.sign(wheelPx)) wheelPx = 0;
+      wheelPx += d;
+    }, { passive: true });
   }
 
   const livePads = () => pickPads(typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : []);
@@ -164,6 +194,16 @@ export function createInput(opts: InputOptions = {}): InputState {
       latch.clear();
       clickNow = clickLatch;
       clickLatch = null;
+      movedNow = moveLatch;
+      moveLatch = false;
+      wheelNow = Math.trunc(wheelPx / WHEEL_STEP);
+      wheelPx -= wheelNow * WHEEL_STEP;
+      // Last tick's scenes said whether the mouse was over something clickable.
+      if (canvas && hand !== handShown) {
+        handShown = hand;
+        canvas.style.cursor = hand ? 'pointer' : '';
+      }
+      hand = false;
     },
     held: (a) => now.has(a),
     pressed: (a) => pressedNow.has(a),
@@ -178,8 +218,11 @@ export function createInput(opts: InputOptions = {}): InputState {
       return { x, y };
     },
     device: () => device,
-    pointer: () => at,
+    hover: () => at,
+    moved: () => movedNow,
+    wheel: () => wheelNow,
     clicked: () => clickNow,
+    point() { hand = true; },
     notice() {
       const m = message;
       message = null;

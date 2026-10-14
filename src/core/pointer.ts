@@ -15,3 +15,16 @@ export function clientToGame(clientX: number, clientY: number, box: ClientBox): 
   if (x < 0 || y < 0 || x >= SCREEN_W || y >= SCREEN_H) return null;
   return { x, y };
 }
+
+/** A box in game px. */
+export interface Rect { x: number; y: number; w: number; h: number }
+
+export function inRect(p: Vec2, r: Rect): boolean {
+  return p.x >= r.x && p.y >= r.y && p.x < r.x + r.w && p.y < r.y + r.h;
+}
+
+/** The index of the first box that holds the point, or -1. A missing point or box never matches. */
+export function hitIndex(boxes: readonly (Rect | null | undefined)[], p: Vec2 | null): number {
+  if (!p) return -1;
+  return boxes.findIndex((r) => !!r && inRect(p, r));
+}

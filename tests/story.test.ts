@@ -246,7 +246,15 @@ test('the prologue scene runs its timeline in order and calls onDone once', asyn
     const scene = story.createPrologueScene({ onDone() { done++; } });
     assert.equal(scene.opaque, true);
     let press = false;
-    const g = { input: { pressed: (a: string) => press && a === 'confirm', offer() { /* no touch screen here */ } }, settings: { reduceFlashing: false } };
+    const g = {
+      input: {
+        pressed: (a: string) => press && a === 'confirm',
+        offer() { /* no touch screen here */ },
+        // And no mouse.
+        hover: () => null, moved: () => false, clicked: () => null, point() { /* no cursor */ },
+      },
+      settings: { reduceFlashing: false },
+    };
     scene.enter?.(g as never);
     let frames = 0;
     while (done === 0 && frames < 20000) {

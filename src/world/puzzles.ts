@@ -1,15 +1,13 @@
 // Puzzle hints. The hint shows the moment someone tries a puzzle with the wrong hero: swings or fires at its prop, or
-// at the gate or door it opens, or pushes against it. That is the main rule. As a backstop for a party that is stuck
-// and tries nothing, a puzzle also starts counting once its arrival beat has finished, time spent near the prop without
-// solving it adds up, and at 30 seconds the hint shows anyway. Pure logic with no DOM, so Node can run it. The play
-// scene feeds it the director, the props and the hero every tick, and the sim's `poked` events as they come.
+// at the gate or door it opens, or pushes against it. For a party that is stuck and tries nothing, a puzzle also
+// starts counting once its arrival beat has finished, time spent near the prop without solving it adds up, and at
+// 5 seconds the hint shows anyway. Pure logic with no DOM, so Node can run it. The play scene feeds it the director,
+// the props and the hero every tick, and the sim's `poked` events as they come.
 import type { HeroId, PropView, Vec2 } from '../core/types.ts';
 import type { PuzzleDef } from './types.ts';
 
-/** 30 seconds at the sim's fixed 60 Hz. */
-export const HINT_AFTER = 30 * 60;
-/** The only words a hint ever shows. It says where to look, never which hero or which key. */
-export const HINT_NUDGE = 'TRY CHANGING CHARACTERS';
+/** 5 seconds at the sim's fixed 60 Hz. Short, since with skip story on the hint is the only explanation. */
+export const HINT_AFTER = 5 * 60;
 /** The hero counts as "at" the puzzle within this many px of the prop's center, about a screen's reach. */
 export const NEAR_PX = 150;
 
@@ -32,7 +30,7 @@ export interface PuzzleTracker {
   poke(propId: string, hero: HeroId): void;
   /** Forget all progress, for a retry or a load. */
   reset(): void;
-  /** The puzzle to give a hint for now: unsolved, and either tried with the wrong hero or 30 seconds spent near it. */
+  /** The puzzle to give a hint for now: unsolved, and either tried with the wrong hero or 5 seconds spent near it. */
   highlight(): PuzzleDef | null;
   /** The prop the party tried for this puzzle, when the hint came from an attempt: the door or gate, say. Else null. */
   triedProp(def: PuzzleDef): string | null;
@@ -40,6 +38,9 @@ export interface PuzzleTracker {
 
 /** Same test the play scene uses to carry a prop across a retry. */
 export const isSolved = (p: PropView): boolean => p.state === 'open' || p.state === 'lit';
+
+/** The hero is at the puzzle: the clock counts, and the play scene shows the hint subtitle. */
+export const isNear = (p: PropView, hero: Vec2): boolean => Math.hypot(hero.x - (p.x + p.w / 2), hero.y - (p.y + p.h / 2)) <= NEAR_PX;
 
 export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
   /** Frames each puzzle has been armed, unsolved and near. Keyed by puzzle id. */
@@ -55,8 +56,7 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
         const prop = s.props.find((p) => p.id === d.prop);
         if (!prop || isSolved(prop) || s.busy || !s.hasFired(d.beat)) continue;
         live.set(d.id, d);
-        const near = Math.hypot(s.hero.x - (prop.x + prop.w / 2), s.hero.y - (prop.y + prop.h / 2)) <= NEAR_PX;
-        if (near) spent.set(d.id, (spent.get(d.id) ?? 0) + 1);
+        if (isNear(prop, s.hero)) spent.set(d.id, (spent.get(d.id) ?? 0) + 1);
       }
     },
     poke(propId, hero) {

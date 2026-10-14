@@ -318,7 +318,7 @@ export type BarkEvent = 'swapIn' | 'levelUp' | 'ko' | 'lowHp' | 'special' | 'kil
 // ---------------------------------------------------------------- gfx vocabulary
 export type IconId =
   | 'bulbRed' | 'bulbYellow' | 'bulbGreen' | 'bulbBlue' | 'bulbOff'
-  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'heart' | 'mpGem';
+  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'cursorDown' | 'cursorUp' | 'heart' | 'mpGem';
 export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 

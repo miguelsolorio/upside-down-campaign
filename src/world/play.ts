@@ -3,7 +3,7 @@
 // the pools of light at night, the HUD and the dialogue. Retry rebuilds the sim from the last lit checkpoint.
 import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, DevHooks, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
-import { TILE } from '../core/config.ts';
+import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP } from '../core/config.ts';
 import { labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
@@ -20,9 +20,9 @@ import { slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
 import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
-import { HINT_NUDGE, createPuzzleTracker } from './puzzles.ts';
+import { createPuzzleTracker, isNear } from './puzzles.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleHighlight, drawWorld } from './render.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -40,6 +40,10 @@ const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
 /** Props that stay open across a retry or a load. */
+/** The prop is inside the camera's view, so a caret over it can be seen. */
+const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
+  p.x + p.w > cam.x && p.x < cam.x + SCREEN_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
+
 const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera']);
 
 interface Checkpoint { x: number; y: number; state: DirectorState }
@@ -57,7 +61,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const deferred: (() => void)[] = [];
   /** Level-up effects playing around the heroes. They never stop the game. */
   const levelFx = createLevelFx();
-  /** Counts the time spent near each unsolved puzzle, to know when to highlight it. */
+  /** Counts the time spent near each unsolved puzzle, to know when to point at it. */
   const puzzles = createPuzzleTracker(stage.puzzles);
   let game!: Game;
   let sim!: Sim;
@@ -356,19 +360,19 @@ export function createPlayScene(opts: PlayOptions): Scene {
       drawWorld(ctx, stage, view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
       drawFlash(ctx, view);
       drawLevelFx(ctx, levelFx.list(), view, cam);
+      // While the party is at a puzzle it's stuck on, the caret points at the prop and a subtitle says who to try.
       const stuck = puzzles.highlight();
       const stuckProp = stuck && view.props.find((p) => p.id === stuck.prop);
-      // Say where to look. Only nudge toward another hero if the one who can solve it is not already out front.
-      const leading = view.hud.party.find((m) => m.active)?.id;
-      const nudge = stuck && stuck.hero !== leading ? HINT_NUDGE : undefined;
-      // When the hint comes from trying a gate or door, the words go over that gate or door, where the party is looking,
-      // and the puzzle's own prop (the sensor, the lantern) gets the brackets alone.
+      // A hint from trying a gate or door is shown where the party stands, which can be far from the puzzle's own prop
+      // (the sensor, the lantern): the subtitle shows near either one, and the caret goes on the puzzle's prop when it
+      // is in view, else on the gate or door that was tried.
       const triedId = stuck ? puzzles.triedProp(stuck) : null;
-      const triedProp = triedId && triedId !== stuck?.prop ? view.props.find((p) => p.id === triedId) : undefined;
-      if (stuck && stuckProp) {
-        if (triedProp) { drawPuzzleHighlight(ctx, triedProp, cam, g.frame, nudge); drawPuzzleHighlight(ctx, stuckProp, cam, g.frame); }
-        else drawPuzzleHighlight(ctx, stuckProp, cam, g.frame, nudge);
-      }
+      const triedProp = triedId ? view.props.find((p) => p.id === triedId) : undefined;
+      const hero = sim.heroPos();
+      const atHint = stuckProp && (isNear(stuckProp, hero) || (triedProp && isNear(triedProp, hero)));
+      const caretOn = stuckProp && (triedProp && !inView(stuckProp, cam) ? triedProp : stuckProp);
+      const hint = stuck && caretOn && atHint ? { prop: caretOn, text: stuck.hint } : null;
+      if (hint) drawPuzzleCaret(ctx, hint.prop, cam, g.frame);
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
       const ptr = g.input.pointer();
@@ -380,7 +384,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
-      drawControlsCorner(ctx, hintFade);
+      // The subtitle sits where the corner controls do, so it replaces them while it shows.
+      if (hint) drawSubtitle(ctx, hint.text);
+      else drawControlsCorner(ctx, hintFade);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);
     },

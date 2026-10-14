@@ -24,11 +24,18 @@ export const BULB_COLORS: Record<string, Record<string, ColorName>> = {
   bulbOff: { g: 'grey2', s: 'grey2', c: 'grey1', h: 'grey2', d: 'night' },
 };
 
+const CURSOR_ROWS = ['yy......', 'yyyy....', 'yyyyyy..', 'yyyyyyy.', 'yyyyyy..', 'yyyy....', 'yy......', '........'];
+/** Rows and columns swapped, which turns the right-pointing menu cursor to point down. */
+const turnDown = (rows: string[]): string[] => (rows[0] as string).split('').map((_, c) => rows.map((r) => r[c]).join(''));
+
 export const ICON_ART: Record<string, IconArt> = {
   eggo: { rows: EGGO.rows, map: EGGO.map },
   coke: { rows: COKE.rows, map: COKE.map, ox: 1 },
   arrow: { rows: ['........', '........', '.######.', '..####..', '...##...', '........', '........', '........'], map: { '#': 'white' } },
-  cursor: { rows: ['yy......', 'yyyy....', 'yyyyyy..', 'yyyyyyy.', 'yyyyyy..', 'yyyy....', 'yy......', '........'], map: { y: 'yellow' } },
+  cursor: { rows: CURSOR_ROWS, map: { y: 'yellow' } },
+  /** The same caret pointing down over a puzzle prop in the world, or up from under it when there's no room above. */
+  cursorDown: { rows: turnDown(CURSOR_ROWS), map: { y: 'yellow' } },
+  cursorUp: { rows: turnDown(CURSOR_ROWS).reverse(), map: { y: 'yellow' } },
   heart: {
     rows: ['........', '.rr.rr..', 'rhrrrrr.', 'rrrrrrd.', '.rrrrd..', '..rrd...', '...r....', '........'],
     map: { r: 'red', h: 'pink', d: 'blood1' },

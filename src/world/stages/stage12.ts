@@ -98,9 +98,9 @@ const BEATS: Beat[] = [
 
 // ---------------------------------------------------------------- puzzles
 const PUZZLES: PuzzleDef[] = [
-  { id: 'burn', beat: 'burn_hint', prop: 'sensor1', hero: 'dustin', blocks: ['door1'] },
-  { id: 'relay', beat: 'relay_hint', prop: 'relay1', hero: 'lucas', blocks: ['door2'] },
-  { id: 'crate', beat: 'crate_hint', prop: 'crate1', hero: 'eleven' },
+  { id: 'burn', beat: 'burn_hint', prop: 'sensor1', hero: 'dustin', blocks: ['door1'], hint: 'MAYBE DUSTIN SHOULD TRY HIS HAIRSPRAY' },
+  { id: 'relay', beat: 'relay_hint', prop: 'relay1', hero: 'lucas', blocks: ['door2'], hint: 'MAYBE LUCAS SHOULD TRY HIS SLINGSHOT' },
+  { id: 'crate', beat: 'crate_hint', prop: 'crate1', hero: 'eleven', hint: 'MAYBE ELEVEN SHOULD TRY HER SHOVE' },
 ];
 
 // ---------------------------------------------------------------- bot

@@ -5,7 +5,7 @@ import { createSim } from '../src/combat/index.ts';
 import { STAGE_11 } from '../src/world/stages/stage11.ts';
 import { STAGE_12 } from '../src/world/stages/stage12.ts';
 import { simOptions, stageGrid } from '../src/world/options.ts';
-import { createPuzzleTracker } from '../src/world/puzzles.ts';
+import { HINT_AFTER, createPuzzleTracker } from '../src/world/puzzles.ts';
 import type { StageData } from '../src/world/types.ts';
 import { idle } from './stage-helpers.ts';
 
@@ -67,9 +67,10 @@ test('Level 1, the log: Mike swinging at it gets the hint, and Eleven pushing it
   assert.deepEqual(eleven.opened, ['log1'], 'her push does');
 });
 
-test('Level 1: nothing is hinted just for being near, with nobody trying anything', () => {
-  assert.equal(attempt(STAGE_11, { hero: 'mike', start: gate1, input: () => ({}), frames: 600 }).puzzle, null);
-  assert.equal(attempt(STAGE_11, { hero: 'mike', start: log1, input: () => ({}), frames: 600 }).puzzle, null);
+test('Level 1: standing at the log with nobody trying anything hints it at five seconds, not before', () => {
+  assert.equal(attempt(STAGE_11, { hero: 'mike', start: log1, input: () => ({}), frames: HINT_AFTER - 2 }).puzzle, null);
+  const r = attempt(STAGE_11, { hero: 'mike', start: log1, input: () => ({}), frames: HINT_AFTER + 2 });
+  assert.deepEqual([r.puzzle, r.tried], ['log', null], 'the clock hint has no tried prop');
 });
 
 // ---------------------------------------------------------------- Level 2

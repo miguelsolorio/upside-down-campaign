@@ -8,9 +8,9 @@ import { isSolidTile } from '../core/tiles.ts';
 import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
-import { box, clipped, dither } from '../ui/kit.ts';
+import { box, clipped } from '../ui/kit.ts';
 import { clamp01 } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawStage, drawText, paintGlow, textWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -24,8 +24,12 @@ type Ctx = CanvasRenderingContext2D;
 const HERO_POOL_R = 0;
 /** Stage lamps paint a pool this much smaller than the radius their data gives. */
 const LAMP_POOL = 0.85;
-/** How far the puzzle brackets sit off the prop at each step of their breathing, 8 frames a step. */
-const BREATH = [0, 1, 2, 3, 2, 1];
+/** How far the puzzle caret lifts off the prop at each step of its bob, 8 frames a step. */
+const BOB = [0, 1, 2, 1];
+/** Rows the down caret needs over a prop: 7 of caret, a 2 px gap and the full bob. */
+const CARET_ROOM = 7 + 2 + 2;
+/** Top of the subtitle text, low on the screen like a film subtitle. */
+const SUBTITLE_Y = SCREEN_H - 16;
 
 export interface WorldOpts {
   /** Draw the foot and hurt boxes (dev panel). */
@@ -200,22 +204,27 @@ export function drawCallout(ctx: Ctx, text: string, wx: number, wy: number, cam:
   lines.forEach((l, i) => drawText(ctx, l, x, y + i * 9, color));
 }
 
-/** Corner brackets that breathe in and out and a light dither over the prop: where to look when the party is stuck.
- * An optional label sits above it. Holds still when Reduce flashing is on. Draw it after the world so nothing covers it. */
-export function drawPuzzleHighlight(ctx: Ctx, r: { x: number; y: number; w: number; h: number }, cam: Camera, t: number, label?: string): void {
-  const gap = settings.reduceFlashing ? 2 : 1 + (BREATH[(t >> 3) % BREATH.length] as number);
-  const x0 = Math.round(r.x - cam.x) - gap, y0 = Math.round(r.y - cam.y + VIEW_TOP) - gap;
-  const w = r.w + gap * 2, h = r.h + gap * 2;
-  if (x0 + w < 0 || x0 > SCREEN_W || y0 + h < VIEW_TOP || y0 > SCREEN_H) return;
-  clipped(ctx, 0, VIEW_TOP, SCREEN_W, SCREEN_H - VIEW_TOP, () => {
-    dither(ctx, x0, y0, w, h, 'yellow', 4);
-    const arm = Math.min(6, w >> 1, h >> 1);
-    for (const [cx, cy, dx, dy] of [[x0, y0, 1, 1], [x0 + w, y0, -1, 1], [x0, y0 + h, 1, -1], [x0 + w, y0 + h, -1, -1]] as const) {
-      box(ctx, dx > 0 ? cx : cx - arm, dy > 0 ? cy : cy - 2, arm, 2, 'yellow');
-      box(ctx, dx > 0 ? cx : cx - 2, dy > 0 ? cy : cy - arm, 2, arm, 'yellow');
-    }
-  });
-  if (label) drawCallout(ctx, label, r.x + r.w / 2, r.y - gap - 1, cam, 'yellow');
+/** The title screen's yellow caret, turned to point down at the prop and bobbing over it: where to look when the party
+ * is stuck. A prop at the top of the view has no room above it, so the caret sits under it and points up. It stays on
+ * screen either way, so a prop just out of view still gets a caret at the edge facing it. Holds still when Reduce
+ * flashing is on. Draw it after the world so nothing covers it. */
+export function drawPuzzleCaret(ctx: Ctx, r: { x: number; y: number; w: number; h: number }, cam: Camera, t: number): void {
+  const bob = settings.reduceFlashing ? 0 : BOB[(t >> 3) % BOB.length] as number;
+  const top = Math.round(r.y - cam.y + VIEW_TOP), bottom = top + r.h;
+  const up = top - CARET_ROOM < VIEW_TOP;
+  // The tip is the caret's fourth column. It is the seventh row of the down caret and the second row of the up one.
+  const x = Math.max(1, Math.min(SCREEN_W - 8, Math.round(r.x + r.w / 2 - cam.x) - 3));
+  const y = up ? Math.max(VIEW_TOP + 1, bottom + 1 + bob) : Math.min(SUBTITLE_Y - 12, top - 9 - bob);
+  drawIcon(ctx, up ? 'cursorUp' : 'cursorDown', x, y, t);
+}
+
+/** One line centered low on the screen on a dark strip, like a film subtitle. It stays put while the camera moves. */
+export function drawSubtitle(ctx: Ctx, text: string): void {
+  const w = textWidth(text);
+  const x = Math.round((SCREEN_W - w) / 2);
+  ctx.fillStyle = PAL.ink;
+  ctx.fillRect(x - 4, SUBTITLE_Y - 3, w + 8, 13);
+  drawText(ctx, text, x, SUBTITLE_Y, 'white');
 }
 
 /** The level-up effect around each hero who just gained a level: a ring at the feet, sparkles circling up and, for a

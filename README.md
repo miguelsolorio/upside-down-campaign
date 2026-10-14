@@ -98,8 +98,6 @@ Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full 
 
 ## Social cards and app icon
 
-<img src="public/icons/icon-192.png" width="96" height="96" alt="The app icon: a crimson d20 on a blue glow, with pale blue sparkles">
-
 The link preview and the images in this README come from the game's own sprites, portraits, logo, tiles, effects and HUD. The app icon is the game's d20, in crimson on a blue glow. To redraw them all, run the dev server, open http://127.0.0.1:5173/social.html and press Save all. The cards land in `public/social`, the icon in `public/icons` and `public/favicon.ico`, and the build copies them as they are.
 
 | File | Size | Used for |

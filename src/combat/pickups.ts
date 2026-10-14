@@ -20,7 +20,8 @@ function collect(s: S, it: Item): void {
     }
     const gain = Math.min(t.st.hp - t.hp, Math.round(t.st.hp * EGGO_HEAL));
     t.hp += gain;
-    if (gain > 0) floater(s, `+${gain}`, h.x, h.y - 18, 'leaf');
+    // Regen leaves hp fractional, so the room left is too. The bar fills exactly; only the label rounds.
+    if (Math.round(gain) > 0) floater(s, `+${Math.round(gain)}`, h.x, h.y - 18, 'leaf');
     addFx(s, 'heal', h.x, h.y - 6, h.dir, 0, 24, 14, 14);
     sfx(s, 'heal');
   } else if (it.kind === 'coke') {
@@ -30,7 +31,7 @@ function collect(s: S, it: Item): void {
     }
     const gain = Math.min(t.st.mp - t.mp, Math.round(t.st.mp * COKE_MP));
     t.mp += gain;
-    if (gain > 0) floater(s, `+${gain}`, h.x, h.y - 18, 'cyan');
+    if (Math.round(gain) > 0) floater(s, `+${Math.round(gain)}`, h.x, h.y - 18, 'cyan');
     addFx(s, 'heal', h.x, h.y - 6, h.dir, 0, 24, 14, 14);
     sfx(s, 'heal');
   } else {

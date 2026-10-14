@@ -19,7 +19,7 @@ You also asked for level one first, the work split across sub-agents, and attent
 | Assets | None. Pixel art and music are generated in code | Same as your runtime score. Nothing to download or license |
 | Scope | The full design is five chapters (one per season), 16 stages, 11 heroes, about an hour. This pass builds Level 1 only | You asked for feedback before the rest |
 | Frame | Mike runs one last D&D campaign. Dice drive crits, level-ups and the final boss | It's the show's own metaphor. Demogorgon, Mind Flayer and Vecna are all D&D monsters |
-| IP | Fan tribute. Original code, art, music and lines. No show audio, lyrics or actor likenesses | The title screen says so |
+| IP | Fan tribute. Original code, art, music and lines. No show audio, lyrics or actor likenesses | The README says so |
 | Folder name | Reading `stranger-ninjas` as Stranger Things | Tell me if the ninjas were on purpose |
 
 ## This pass: Level 1 only
@@ -199,7 +199,7 @@ Jingles and stingers: level-up, victory, game over, recruit, item, dice roll, cu
 - Upside Down: palette swap to blue-black and vein red, palette cycling on the veins, drifting spores. Hawkins stays warm: sodium streetlights over teal night.
 - Night stages (Level 1 is one) repaint their tiles in a night palette and paint a pool of light around each lamp, lit window and string of bulbs. Daytime stages use the normal art with nothing over it. Christmas lights and streetlights flicker faster as danger closes in.
 - HUD: HP is a string of Christmas bulbs (one per 10 HP), MP is a bar, XP a thin line, and the party meter is a d20 that fills and glows when ready. Bench heroes show a face and a pip bar.
-- Title: red pixel logo with a flicker, Joyce's alphabet wall lighting R-U-N, "Fan tribute. Not affiliated with Netflix."
+- Title: red pixel logo with a flicker over the party at the edge of Mirkwood, the Upside Down glowing behind the trees. PRESS START (or CONTINUE and NEW GAME) and OPTIONS are menu rows, with no key hints on screen. START sends the party walking into the woods.
 - A hand-drawn 5×7 caps font. Dialogue boxes have the portrait on the left, three lines of 32 characters and typewriter text with the hero's blip.
 - Settings: music and effects volume, difficulty, scanlines, screen shake, reduce flashing.
 

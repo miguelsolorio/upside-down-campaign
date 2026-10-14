@@ -52,7 +52,7 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 
 Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
 
-**Changing keys.** The table above is the defaults. Open CONTROLS from the options (`P` on the title) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK, SPECIAL and DASH always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the title, the HUD's hero numbers, the skip prompt and the tutorial lines. The gamepad layout is listed there too but can't be changed yet.
+**Changing keys.** The table above is the defaults. Open CONTROLS from the options (the OPTIONS row on the title, or `P`) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK, SPECIAL and DASH always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the HUD's hero numbers, the skip prompt and the tutorial lines. The title shows no key hints at all. The gamepad layout is listed there too but can't be changed yet.
 
 **Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `Tab` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. While it's on, a short controls reminder shows for the first few seconds so you aren't guessing. Every script still does what it does, so Eleven still joins and the gate still opens.
 
@@ -82,7 +82,6 @@ Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full 
 | `?bot=1` | A bot plays the level by itself |
 | `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport |
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
-| `?title=1` to `?title=5` | Show one of the five title screen variants with no controls on it. `title-variations.html` shows all five side by side |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
 | `?mute=1`, `?god=1`, `?level=3`, `?stage=1.1`, `?seed=N` | Self-explanatory |

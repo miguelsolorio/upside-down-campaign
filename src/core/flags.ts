@@ -1,6 +1,6 @@
 // URL flags. ?dev=1 opens the dev panel, ?bot=1 plays by itself, ?sheet=1 shows the sprite sheet,
 // ?audio=1 shows the audio lab, ?skip=1 jumps past the title and prologue, ?stage=1.1 picks the stage,
-// ?time=day or ?time=night draws the stage in that light whatever the stage says. ?title=1 to 5 shows a title variant.
+// ?time=day or ?time=night draws the stage in that light whatever the stage says.
 import type { TimeOfDay } from './types.ts';
 
 export interface Flags {
@@ -13,8 +13,6 @@ export interface Flags {
   skip: boolean;
   /** ?rush=1: skip the title, the prologue, the chapter card and every dialogue box. */
   rush: boolean;
-  /** From ?title=N: which title screen variant to show. 0 is the original. */
-  title: number;
   stage: string;
   /** From ?time=day or ?time=night. Null means the stage decides. */
   time: TimeOfDay | null;
@@ -37,7 +35,6 @@ function parse(): Flags {
     god: on('god'),
     skip: on('skip') || on('rush'),
     rush: on('rush'),
-    title: Number(q.get('title')) || 0,
     stage: q.get('stage') ?? '1.1',
     time: q.get('time') === 'day' || q.get('time') === 'night' ? (q.get('time') as TimeOfDay) : null,
     party: q.get('party')?.split(',').filter(Boolean) ?? null,

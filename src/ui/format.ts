@@ -106,6 +106,37 @@ export function countUp(target: number, t: number, from: number, dur: number): n
   return Math.round(target * clamp01((t - from) / dur));
 }
 
+// ---------------------------------------------------------------- the foes row on the results screen
+const FOE_NAMES: Record<string, string> = {
+  agent: 'AGENTS', rat: 'RATS', guard: 'GUARDS', warden: 'WARDEN', demogorgon: 'DEMOGORGON', demodog: 'DEMODOGS', vine: 'VINES', pod: 'PODS',
+};
+/** What the foes row calls a kind. A kind it doesn't know gets an S. */
+export const foeName = (kind: string): string => FOE_NAMES[kind] ?? `${kind.toUpperCase()}S`;
+
+/**
+ * The foes row as lines of text, each at most `maxChars` wide. Entries read "AGENTS x6" and sit two spaces apart; a
+ * line fills before the next starts. The layout comes from the final counts, so it never reflows while a count climbs,
+ * and `shown` maps a final count to the one on screen. If the mix needs more than `maxLines`, the row falls back to one
+ * "TOTAL x37" line. No kinds gives no lines.
+ */
+export function foeLines(kinds: [string, number][], maxChars: number, maxLines = 3, shown: (n: number) => number = (n) => n): string[] {
+  const lines: string[] = [];
+  const finals: string[] = [];
+  for (const [kind, n] of kinds) {
+    const entry = (c: number): string => `${foeName(kind)} x${c}`;
+    const last = finals.length - 1;
+    if (last >= 0 && (finals[last] as string).length + 2 + entry(n).length <= maxChars) {
+      finals[last] += `  ${entry(n)}`;
+      lines[last] += `  ${entry(shown(n))}`;
+    } else {
+      finals.push(entry(n));
+      lines.push(entry(shown(n)));
+    }
+  }
+  if (lines.length <= maxLines) return lines;
+  return [`TOTAL x${shown(kinds.reduce((s, [, n]) => s + n, 0))}`];
+}
+
 // ---------------------------------------------------------------- typewriter
 /** How many characters are showing after `frames` frames of typing. */
 export function typeCount(frames: number, total: number, cps = 30, fps = 60): number {

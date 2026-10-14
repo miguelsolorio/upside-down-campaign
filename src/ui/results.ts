@@ -4,11 +4,13 @@ import type { HeroSnapshot, RunStats } from '../core/types.ts';
 import { CHAR_NAMES, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
 import { drawIcon, drawPanel, drawPortrait, drawText, textWidth } from '../gfx/index.ts';
-import { countUp, formatTime } from './format.ts';
+import { countUp, foeLines, formatTime } from './format.ts';
 import { bigText, blinkOn, box } from './kit.ts';
 import type { Ctx } from './kit.ts';
 
-const KIND_LABEL: Record<string, string> = { agent: 'AGENTS', rat: 'RATS' };
+/** The foes text starts 8 px right of its label and ends at the panel's value edge, so it holds this many characters a line. */
+const FOE_CHARS = 26;
+const FOE_LINE = 9;
 /** Row i appears at ROW_AT + i * ROW_GAP and its number counts up over COUNT frames. */
 const ROW_AT = 18;
 const ROW_GAP = 14;
@@ -27,14 +29,18 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
   const kinds = Object.entries(stats.killsByKind).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
   const gained = (id: string): number => stats.levelUps.filter((u) => u.hero === id).reduce((n, u) => n + (u.to - u.from), 0);
   const at = (row: number): number => ROW_AT + row * ROW_GAP;
+  // A long mix of foes wraps onto more lines; everything under that row, and the panel, moves down to make room.
+  const foeRows = Math.max(1, foeLines(kinds, FOE_CHARS).length);
+  const extra = (foeRows - 1) * FOE_LINE;
 
-  function row(ctx: Ctx, i: number, label: string, value: string, color: 'white' | 'leaf' | 'yellow', icon = false): void {
+  function row(ctx: Ctx, i: number, label: string, value: string | string[], color: 'white' | 'leaf' | 'yellow', icon = false): void {
     if (t < at(i)) return;
-    const y = 54 + i * 11;
+    const y = 54 + i * 11 + (i > 1 ? extra : 0);
+    const lines = typeof value === 'string' ? [value] : value;
     drawText(ctx, label, 34, y, 'mist');
-    drawText(ctx, value, 222, y, color, { align: 'right' });
+    lines.forEach((line, k) => drawText(ctx, line, 222, y + k * FOE_LINE, color, { align: 'right' }));
     // The coin is 7 px, the same height as the text, so it sits level with it.
-    if (icon) drawIcon(ctx, 'quarter', 222 - textWidth(value) - 9, y, t);
+    if (icon) drawIcon(ctx, 'quarter', 222 - textWidth(lines[0] as string) - 9, y, t);
   }
 
   return {
@@ -53,11 +59,11 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
       box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');
       bigText(ctx, final ? `END OF LEVEL ${level}` : `LEVEL ${level} CLEAR`, 128, 12, 'yellow', 2, 'center', true);
       if (final) drawText(ctx, 'This is a feedback build. More soon.', 128, 32, 'cream', { align: 'center' });
-      drawPanel(ctx, 24, 46, 208, 70, 'menu');
+      drawPanel(ctx, 24, 46, 208, 70 + extra, 'menu');
 
       row(ctx, 0, 'TIME', formatTime(countUp(stats.frames, t, at(0), COUNT + 10)), 'white');
-      const foes = kinds.map(([k, n]) => `${KIND_LABEL[k] ?? `${k.toUpperCase()}S`} x${countUp(n, t, at(1), COUNT)}`).join('  ');
-      row(ctx, 1, 'FOES', foes || 'NONE', 'white');
+      const foes = foeLines(kinds, FOE_CHARS, 3, (n) => countUp(n, t, at(1), COUNT));
+      row(ctx, 1, 'FOES', foes.length ? foes : 'NONE', 'white');
       row(ctx, 2, 'XP EARNED', `+${countUp(stats.xpEarned, t, at(2), COUNT)}`, 'leaf');
       row(ctx, 3, 'QUARTERS', `x${countUp(stats.quarters, t, at(3), COUNT)}`, 'white', true);
       row(ctx, 4, 'LEVEL UPS', String(stats.levelUps.length), stats.levelUps.length ? 'yellow' : 'white');
@@ -67,13 +73,13 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
         const x0 = Math.round((SCREEN_W - party.length * cell) / 2);
         party.forEach((p, i) => {
           const x = x0 + i * cell, mid = x + cell / 2;
-          drawPortrait(ctx, p.id, p.hp <= 0 ? 'hurt' : 'happy', mid - 12, 126);
-          drawText(ctx, CHAR_NAMES[p.id], mid, 154, 'white', { align: 'center' });
+          drawPortrait(ctx, p.id, p.hp <= 0 ? 'hurt' : 'happy', mid - 12, 126 + extra);
+          drawText(ctx, CHAR_NAMES[p.id], mid, 154 + extra, 'white', { align: 'center' });
           const up = gained(p.id);
           const lv = `LV${p.level}`;
           const x1 = mid - ((lv.length + (up ? 3 : 0)) * 6) / 2;
-          drawText(ctx, lv, x1, 163, 'yellow');
-          if (up) drawText(ctx, `+${up}`, x1 + lv.length * 6 + 6, 163, 'leaf');
+          drawText(ctx, lv, x1, 163 + extra, 'yellow');
+          if (up) drawText(ctx, `+${up}`, x1 + lv.length * 6 + 6, 163 + extra, 'leaf');
         });
       }
 

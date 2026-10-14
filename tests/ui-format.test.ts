@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpTone, isLowHp,
+  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, foeLines, foeName, formatTime, hpTone, isLowHp,
   MAX_BULBS, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
   XP_NOTCHES,
 } from '../src/ui/format.ts';
@@ -220,4 +220,43 @@ test('settings steps stay in range', () => {
   assert.equal(cycleShake(0.5, 1), 1);
   assert.equal(cycleShake(0.4, 1), 1);
   assert.deepEqual([0, 0.5, 1].map(shakeLabel), ['OFF', 'HALF', 'FULL']);
+});
+
+test('the foes row wraps a long mix and never runs past the panel', () => {
+  const fit = 26;
+  // Stage 1.3's mix used to draw as one 32 character line.
+  assert.deepEqual(foeLines([['agent', 6], ['rat', 6], ['demogorgon', 1]], fit), ['AGENTS x6  RATS x6', 'DEMOGORGON x1']);
+  assert.deepEqual(foeLines([['rat', 2]], fit), ['RATS x2']);
+  assert.deepEqual(foeLines([], fit), []);
+  // Stage 2.1 adds demodogs, vines and pods.
+  const long = foeLines([['agent', 12], ['demodog', 14], ['vine', 9], ['pod', 8], ['demogorgon', 1]], fit);
+  assert.ok(long.length > 1 && long.length <= 3);
+  for (const line of long) assert.ok(line.length <= fit, `"${line}" is ${line.length} wide`);
+  assert.equal(long.join(' ').split('x').length - 1, 5, 'all five kinds still show');
+});
+
+test('the foes row holds for any mix of kinds and counts, and falls back to a total when it needs too many lines', () => {
+  const kinds = ['agent', 'rat', 'guard', 'warden', 'demogorgon', 'demodog', 'vine', 'pod'];
+  for (let size = 1; size <= kinds.length; size++) {
+    for (const n of [1, 9, 10, 99]) {
+      const mix = kinds.slice(0, size).map((k): [string, number] => [k, n]);
+      const lines = foeLines(mix, 26);
+      assert.ok(lines.length >= 1 && lines.length <= 3, `${size} kinds at ${n}: ${lines.length} lines`);
+      for (const line of lines) assert.ok(line.length <= 26, `"${line}" is ${line.length} wide`);
+    }
+  }
+  assert.deepEqual(foeLines(kinds.map((k): [string, number] => [k, 99]), 26), ['TOTAL x792']);
+  assert.deepEqual(foeLines([['agent', 6], ['rat', 6]], 8, 1), ['TOTAL x12']);
+});
+
+test('the foes row lays out from the final counts, so a count that climbs never reflows', () => {
+  const mix: [string, number][] = [['agent', 12], ['rat', 14], ['demodog', 9], ['vine', 8]];
+  const final = foeLines(mix, 26);
+  for (const c of [0, 1, 5, 9, 12]) {
+    const part = foeLines(mix, 26, 3, (n) => Math.min(n, c));
+    assert.equal(part.length, final.length);
+  }
+  assert.deepEqual(foeLines([['agent', 6], ['rat', 6]], 26, 3, () => 0), ['AGENTS x0  RATS x0']);
+  assert.equal(foeName('demodog'), 'DEMODOGS');
+  assert.equal(foeName('mystery'), 'MYSTERYS');
 });

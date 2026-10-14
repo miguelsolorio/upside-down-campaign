@@ -515,6 +515,29 @@ test('pickups: eggo heals 40 percent, coke restores 50 percent MP, quarters coun
   assert.ok(mike.mp >= 10 && mike.mp < 13, `mp ${mike.mp}`);
 });
 
+test('pickups: heal and MP floaters are whole numbers even when regen left the stat fractional', () => {
+  const { sim, s } = makeWhite({
+    party: [{ id: 'mike' }],
+    spawns: [
+      { kind: 'item', id: 'e', item: 'eggo', tx: 6, ty: 8 },
+      { kind: 'item', id: 'c', item: 'coke', tx: 7, ty: 8 },
+    ],
+  });
+  const mike = s.heroes[0];
+  assert.ok(mike);
+  // Room left for the eggo and the coke is a long decimal, so the clamp to full is what sets the gain.
+  mike.hp = mike.st.hp - 7.123456789;
+  mike.mp = mike.st.mp - 3.987654321;
+  const texts = new Set<string>();
+  for (let f = 0; f < 120; f++) {
+    sim.step(inp({ mx: 1 }));
+    for (const fl of sim.view().floaters) texts.add(fl.text);
+  }
+  const gains = [...texts].filter((t) => t.startsWith('+'));
+  assert.equal(gains.length, 2, `heal and MP floaters: ${[...texts].join(', ')}`);
+  for (const t of gains) assert.match(t, /^\+\d+$/);
+});
+
 test('pickups: a full-HP hero does not waste an eggo, the most hurt bench hero eats it', () => {
   const { sim, s } = makeWhite({ spawns: [{ kind: 'item', id: 'e', item: 'eggo', tx: 5, ty: 8 }] });
   const lucas = s.heroes[2];

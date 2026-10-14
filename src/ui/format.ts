@@ -40,6 +40,13 @@ export function hpTone(hp: number, hpMax: number): 'leaf' | 'yellow' | 'hot' {
   return r > 0.5 ? 'leaf' : r > LOW_HP ? 'yellow' : 'hot';
 }
 
+/** The color an HP bar shows on frame t: its tone, except that low HP blinks to a dark red. The HUD and the bars over the
+ * heroes both ask here, so they blink in step. */
+export function hpBarColor(hp: number, hpMax: number, t: number, reduceFlashing: boolean): 'leaf' | 'yellow' | 'hot' | 'blood1' {
+  if (isLowHp(hp, hpMax) && bulbDark(t, 0, true, reduceFlashing)) return 'blood1';
+  return hpTone(hp, hpMax);
+}
+
 /** How full quarter i (0..3, from the bottom) of the bench bar is, 0..1. */
 export function quarterFill(hp: number, hpMax: number, i: number): number {
   return hpMax > 0 ? clamp01((hp / hpMax) * 4 - i) : 0;

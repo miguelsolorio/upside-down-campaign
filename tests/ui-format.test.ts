@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpTone, isLowHp,
+  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpBarColor, hpTone, isLowHp,
   MAX_BULBS, clickSegments, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
   XP_NOTCHES,
 } from '../src/ui/format.ts';
@@ -52,6 +52,20 @@ test('the HP bar is green above half, yellow above 30%, and red from 30% down, w
   assert.equal(hpTone(0, 48), 'hot');
   assert.equal(hpTone(5, 0), 'hot');
   for (let hp = 0; hp <= 48; hp++) assert.equal(hpTone(hp, 48) === 'hot' && hp > 0, isLowHp(hp, 48), `hp ${hp}`);
+});
+
+test('the bar over a hero takes the HUD color, and blinks to dark red only where the HUD does', () => {
+  assert.equal(hpBarColor(48, 48, 0, false), 'leaf');
+  assert.equal(hpBarColor(20, 48, 0, false), 'yellow');
+  let dark = 0;
+  for (let t = 0; t < 600; t++) {
+    const c = hpBarColor(10, 48, t, false);
+    assert.equal(c, bulbDark(t, 0, true, false) ? 'blood1' : 'hot', `t ${t}`);
+    if (c === 'blood1') dark++;
+    assert.equal(hpBarColor(10, 48, t, true), 'hot', 'never dark when flashing is reduced');
+    assert.equal(hpBarColor(40, 48, t, false), 'leaf', 'a healthy bar does not blink');
+  }
+  assert.ok(dark > 60 && dark < 180, `${dark} of 600 frames dark`);
 });
 
 test('bench quarters fill from the bottom, and any HP at all lights part of the first', () => {

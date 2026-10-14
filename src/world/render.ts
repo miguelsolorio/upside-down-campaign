@@ -9,8 +9,8 @@ import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
-import { clamp01 } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawIcon, drawItem, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { clamp01, hpBarColor } from '../ui/format.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -143,6 +143,10 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   for (const e of order) {
     if (e.prop) drawProp(ctx, e.prop, night);
     else if (e.actor) drawActor(ctx, e.actor);
+  }
+  // The heroes' HP bars go over everything that stands, so an enemy in front of a hero never hides his.
+  for (const a of view.actors) {
+    if (a.kind === 'hero' && a.bar) drawHeroBar(ctx, a, hpBarColor(a.bar.hp, a.bar.hpMax, t, settings.reduceFlashing));
   }
   if (o.figure) { drawFigure(ctx, o.figure.x, o.figure.y, t, false); drawFigure(ctx, o.figure.x, o.figure.y, t, true); }
   for (const f of view.fx) drawFx(ctx, f);

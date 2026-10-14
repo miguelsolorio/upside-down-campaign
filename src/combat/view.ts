@@ -23,7 +23,7 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
     kind: 'hero', id: h.id, x: h.x, y: h.y, dir: h.dir, anim: h.anim, t: h.animT, flash: h.flash,
     blink: active && h.blink && h.invuln > 0 && ((s.frame >> 1) & 1) === 0,
     strained: h.id === 'eleven' && h.mp < h.st.mp * 0.25,
-    tint: s.inspire > 0 ? 'yellow' : null, alert: false, z: h.z, bar: null,
+    tint: s.inspire > 0 ? 'yellow' : null, alert: false, z: h.z, bar: { hp: Math.max(1, Math.ceil(h.hp)), hpMax: h.st.hp },
   };
 }
 

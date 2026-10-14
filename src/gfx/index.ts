@@ -14,7 +14,7 @@ import { warmUi } from './ui.ts';
 export type { BakedStage, Spot } from './tiles.ts';
 export { drawText, textWidth, drawTinyText, tinyWidth, TINY_H } from './font.ts';
 export { bakeStage, drawStage } from './tiles.ts';
-export { drawActor } from './actors.ts';
+export { drawActor, drawHeroBar } from './actors.ts';
 export { drawFx } from './fx.ts';
 export { drawItem, drawProp } from './props.ts';
 export { drawCamCone, drawHazard } from './overlays.ts';

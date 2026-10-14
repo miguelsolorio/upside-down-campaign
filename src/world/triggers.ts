@@ -12,6 +12,8 @@ export interface DirectorEnv {
   scare(done: () => void): void;
   /** Opens a prop: sim.openProp plus its sound. */
   open(prop: string): void;
+  /** The klaxon: its sound and, if the stage draws one, the red pulse. Optional so a stand-in env can leave it out. */
+  alarm?(): void;
   jingle(id: JingleId): void;
   /** The level-clear beat reached its last step. */
   finish(): void;
@@ -89,6 +91,7 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
     switch (s.t) {
       case 'say': wait((done) => env.say(s.script, done)); break;
       case 'scare': wait((done) => env.scare(done)); break;
+      case 'alarm': env.alarm?.(); break;
       case 'wake': wake(s.group); break;
       case 'waves': { const first = waves[0]; if (first !== undefined) wake(first); break; }
       case 'recruit': {

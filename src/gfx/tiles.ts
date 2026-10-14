@@ -96,6 +96,21 @@ export function drawStage(ctx: Ctx, stage: BakedStage, camX: number, camY: numbe
 // ---------------------------------------------------------------- single tiles, for the sheet
 const sampleCache = new Map<string, HTMLCanvasElement>();
 
+/** Neighbours that show a lab tile at its best: v 0 sits in a run, v 1 at an end, v 2 beside a wall. */
+function labNear(name: TileName, v: number, near: Near): Near {
+  switch (name) {
+    case 'labfloor': case 'labfloor2': return v === 0 ? { n: name, e: name, s: name, w: name } : v === 1 ? { n: 'labwall', e: name, s: name, w: name } : { n: 'labwall', e: name, s: name, w: 'labcap' };
+    case 'hazard': return v === 2 ? { n: 'labwall', e: name, s: name, w: name } : { n: name, e: name, s: name, w: name };
+    case 'vent': return { n: v === 1 ? 'labwall' : 'labfloor', e: 'labfloor', s: 'labfloor', w: 'labfloor' };
+    case 'labwall': return v === 0 ? { n: 'labcap', e: name, s: 'labfloor', w: name } : v === 1 ? { n: 'labcap', e: 'labfloor', s: 'labfloor', w: name } : { n: 'labcap', e: name, s: 'labfloor', w: 'labfloor' };
+    case 'labcap': return v === 0 ? { n: name, e: name, s: 'labwall', w: name } : v === 1 ? { n: 'labfloor', e: 'labfloor', s: 'labwall', w: name } : { n: 'labfloor', e: name, s: 'labfloor', w: 'labfloor' };
+    case 'pipe': return v === 1 ? { n: name, e: 'labwall', s: name, w: 'labwall' } : { n: 'labcap', e: name, s: 'labfloor', w: name };
+    case 'glass': return v === 0 ? { n: 'labcap', e: name, s: 'labfloor', w: name } : v === 1 ? { n: 'labcap', e: 'labwall', s: 'labfloor', w: 'labwall' } : { n: 'labcap', e: 'labwall', s: 'labfloor', w: name };
+    case 'cage': return { n: 'labwall', e: v === 1 ? 'cage' : 'labfloor', s: 'labfloor', w: 'labfloor' };
+    default: return near;
+  }
+}
+
 /** One tile on its own: v picks the position hash (so different variants), t drives water. */
 export function tileSample(name: TileName, v: number, t = 0): HTMLCanvasElement {
   const frame = ((t / WATER_TICKS) | 0) & 3;
@@ -109,6 +124,7 @@ export function tileSample(name: TileName, v: number, t = 0): HTMLCanvasElement 
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
+  near = labNear(name, v, near);
   if (name === 'creek' || name === 'shallows') {
     const banks = v === 0 ? 0 : v === 1 ? 1 : 10;
     c = waterTile(name === 'creek', v, frame, banks).toCanvas();

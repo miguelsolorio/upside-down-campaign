@@ -67,7 +67,7 @@ export interface FxView {
 export type ItemKind = 'eggo' | 'coke' | 'quarter';
 export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
 
-export type PropKind = 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate';
+export type PropKind = 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console';
 export type PropState = 'closed' | 'open' | 'lit' | 'off';
 export interface PropView {
   id: string; kind: PropKind;
@@ -130,7 +130,7 @@ export type SfxId =
   | 'rock' | 'rockHit' | 'dart' | 'push' | 'beam' | 'flame' | 'shield' | 'lure' | 'candyPop'
   | 'dash' | 'swap' | 'burst' | 'pickup' | 'heal' | 'noMp' | 'nosebleed'
   | 'select' | 'confirm' | 'cancel' | 'pause' | 'dialogOpen'
-  | 'gateOpen' | 'targetHit' | 'logPush' | 'lights' | 'flicker' | 'growl'
+  | 'gateOpen' | 'targetHit' | 'logPush' | 'lights' | 'flicker' | 'growl' | 'klaxon'
   | 'roll' | 'rollLand' | 'natTwenty' | 'alert' | 'step';
 
 export interface LevelUpInfo {
@@ -257,7 +257,7 @@ export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 
 // ---------------------------------------------------------------- audio vocabulary
-export type TrackId = 'static' | 'mirkwood';
+export type TrackId = 'static' | 'mirkwood' | 'lab';
 export type JingleId = 'levelUp' | 'recruit' | 'clear' | 'gameOver' | 'item' | 'dice';
 export type StingerId = 'scare' | HeroId;
 export interface AudioMetrics {

@@ -3,64 +3,15 @@ import assert from 'node:assert/strict';
 import { TILES } from '../src/core/tiles.ts';
 import { ENEMY_DEFS } from '../src/enemies/defs.ts';
 import { createSim } from '../src/combat/index.ts';
-import { createBot } from '../src/combat/bot.ts';
 import { STAGE_11 as S } from '../src/world/stages/stage11.ts';
-import { simOptions, stageGrid } from '../src/world/options.ts';
+import { simOptions } from '../src/world/options.ts';
 import { createDirector } from '../src/world/triggers.ts';
-import type { DirectorEnv } from '../src/world/triggers.ts';
-import type { Beat, TileRect } from '../src/world/types.ts';
-import type { Sim, SimEvent, SimInput, SimSpawn } from '../src/core/types.ts';
+import type { TileRect } from '../src/world/types.ts';
+import type { SimEvent } from '../src/core/types.ts';
+import { fakeEnv, idle, playStage as runStage, rectTiles, runUntil, stageKit, tileOf } from './stage-helpers.ts';
+import type { Run } from './stage-helpers.ts';
 
-const grid = stageGrid(S);
-const idx = (tx: number, ty: number): number => ty * grid.w + tx;
-const tileOf = (x: number, y: number): [number, number] => [Math.floor(x / 16), Math.floor((y - 4) / 16)];
-const SOLID_KINDS = new Set(['log', 'gate', 'van', 'crate', 'floodlight']);
-
-type Enemy = Extract<SimSpawn, { kind: 'enemy' }>;
-type Prop = Extract<SimSpawn, { kind: 'prop' }>;
-const enemies = S.spawns.filter((s): s is Enemy => s.kind === 'enemy');
-const items = S.spawns.filter((s) => s.kind === 'item') as Extract<SimSpawn, { kind: 'item' }>[];
-const props = S.spawns.filter((s): s is Prop => s.kind === 'prop');
-const npcs = S.spawns.filter((s) => s.kind === 'npc') as Extract<SimSpawn, { kind: 'npc' }>[];
-const [startTx, startTy] = tileOf(S.start.x, S.start.y);
-
-/** Solid tiles plus the footprint of every solid prop that is not open yet. */
-function blocked(open: Set<string>): Uint8Array {
-  const b = new Uint8Array(grid.solid);
-  for (const p of props) {
-    if (open.has(p.id) || !(p.solid ?? SOLID_KINDS.has(p.prop))) continue;
-    const w = p.w ?? (p.prop === 'van' ? 48 : 16), h = p.h ?? (p.prop === 'van' ? 32 : 16);
-    for (let y = p.ty; y < p.ty + Math.ceil(h / 16); y++) for (let x = p.tx; x < p.tx + Math.ceil(w / 16); x++) b[idx(x, y)] = 1;
-  }
-  return b;
-}
-
-/** Four-way flood fill from the start tile. */
-function flood(open: Set<string>, from: [number, number] = [startTx, startTy]): Uint8Array {
-  const b = blocked(open);
-  const seen = new Uint8Array(grid.w * grid.h);
-  const stack = [idx(from[0], from[1])];
-  seen[stack[0] as number] = 1;
-  while (stack.length > 0) {
-    const i = stack.pop() as number;
-    const x = i % grid.w, y = (i / grid.w) | 0;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= grid.w || ny >= grid.h) continue;
-      const j = idx(nx, ny);
-      if (seen[j] || b[j]) continue;
-      seen[j] = 1;
-      stack.push(j);
-    }
-  }
-  return seen;
-}
-
-const rectTiles = (r: TileRect): [number, number][] => {
-  const out: [number, number][] = [];
-  for (let y = r.ty; y < r.ty + r.h; y++) for (let x = r.tx; x < r.tx + r.w; x++) out.push([x, y]);
-  return out;
-};
+const { grid, idx, enemies, items, props, npcs, flood, startTx, startTy } = stageKit(S);
 
 // ---------------------------------------------------------------- the map
 test('stage 1.1: the map is 48 by 40 and uses only legend characters', () => {
@@ -201,26 +152,6 @@ test('stage 1.1: every beat has a trigger, a real script id, and something to fi
   assert.equal(S.time, 'night', 'Mirkwood is a night stage');
 });
 
-// A scripted sim stand-in: it only has to answer the director.
-function fakeEnv(alive: Record<string, number>): { env: DirectorEnv; log: string[] } {
-  const log: string[] = [];
-  const sim = {
-    enemiesAlive: (g?: string) => (g === undefined ? 0 : alive[g] ?? 0),
-    spawnGroup: (g: string) => { log.push(`wake ${g}`); },
-    recruit: (id: string) => { log.push(`recruit ${id}`); },
-    party: () => [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }],
-  } as unknown as Sim;
-  const env: DirectorEnv = {
-    sim: () => sim,
-    say: (id, done) => { log.push(`say ${id}`); done(); },
-    scare: (done) => { log.push('scare'); done(); },
-    open: (id) => { log.push(`open ${id}`); },
-    jingle: (id) => { log.push(`jingle ${id}`); },
-    finish: () => { log.push('finish'); },
-  };
-  return { env, log };
-}
-
 test('director: rect beats fire once, chained beats follow, waves chain to the level clear', () => {
   const { env, log } = fakeEnv({ rats1: 4, ambush1: 3, ambush2: 3, ambush3: 3 });
   const d = createDirector(S.beats, S.waves, env);
@@ -276,13 +207,7 @@ test('director: a retry that skipped the dead still reaches the next wave and th
 });
 
 // ---------------------------------------------------------------- the puzzles, in the real sim
-const idle: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, dashPressed: false, swapDelta: 0, swapTo: -1, burstPressed: false };
 const propsOnly = S.spawns.filter((s) => s.kind === 'prop');
-
-function runUntil(sim: Sim, frames: number, input: (f: number) => SimInput, stop: (e: SimEvent) => boolean): SimEvent | null {
-  for (let f = 0; f < frames; f++) for (const e of sim.step(input(f))) if (stop(e)) return e;
-  return null;
-}
 
 test('puzzles: Lucas can hit the lantern across the creek from the south bank, and the gate stops stray shots', () => {
   // Walk north into the fence to face the lantern, then fire. The run has props only, so no patrol interrupts it.
@@ -305,31 +230,7 @@ test('puzzles: Eleven pushes the log out of the trail, and nobody else can', () 
 });
 
 // ---------------------------------------------------------------- a whole run
-interface Run { done: boolean; allDown: boolean; frames: number; levels: number[]; xp: number; kos: number; said: string[] }
-
-function playStage(seed: number): Run {
-  const sim = createSim(simOptions(S, grid, { party: [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }], seed }));
-  const bot = createBot({ grid, waypoints: S.waypoints });
-  const said: string[] = [];
-  const dir = createDirector(S.beats, S.waves, {
-    sim: () => sim,
-    say: (id, done) => { said.push(id); done(); },
-    scare: (done) => done(),
-    open: (id) => sim.openProp(id),
-    jingle: () => undefined,
-    finish: () => undefined,
-  });
-  let allDown = false, f = 0;
-  for (; f < 30000 && !dir.finished() && !allDown; f++) {
-    const ev = sim.step(bot.next(sim));
-    dir.events(ev);
-    if (ev.some((e) => e.t === 'allDown')) allDown = true;
-    const [tx, ty] = tileOf(sim.heroPos().x, sim.heroPos().y);
-    dir.tick(tx, ty);
-  }
-  const st = sim.stats();
-  return { done: dir.finished(), allDown, frames: f, levels: sim.party().map((p) => p.level), xp: st.xpEarned, kos: st.kos, said };
-}
+const playStage = (seed: number): Run => runStage(S, seed, [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }]);
 
 test('headless run: the bot walks the whole stage, the beats fire in order, and the lead ends at Lv 3', () => {
   for (const seed of [1, 2, 3, 4]) {

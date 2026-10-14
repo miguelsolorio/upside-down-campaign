@@ -1,9 +1,10 @@
-// Ground and water tiles. Every static tile is generated from its position hash, so no two are alike.
+// Ground and water tiles (the lab floors are in tile_lab.ts). Every static tile is generated from its position hash, so no two are alike.
 import type { TileName } from '../core/tiles.ts';
 import { createRng } from '../core/rng.ts';
 import { hash2 } from './canvas.ts';
 import { Px } from './px.ts';
 import type { ColorName } from './palette.ts';
+import { labGround } from './tile_lab.ts';
 
 type Rnd = () => number;
 
@@ -139,6 +140,11 @@ export function groundTile(name: TileName, c: TileCtx): Px | null {
       px.fill('grey2').scatter(r, 'grey1', 12).scatter(r, 'grey3', 14);
       for (let i = 0; i < 5; i++) { const x = 1 + Math.floor(r() * 13), y = Math.floor(r() * 15); px.set(x, y, 'mist'); px.set(x + 1, y, 'grey3'); px.set(x, y + 1, 'grey1'); }
       return px;
+    case 'labfloor':
+    case 'labfloor2':
+    case 'hazard':
+    case 'vent':
+      return labGround(name, c, r);
     default:
       return null;
   }

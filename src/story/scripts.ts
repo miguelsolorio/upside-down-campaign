@@ -4,6 +4,7 @@
 // They name keys as {tokens} (see keyText in core/bindings.ts), so they follow a rebind and read as button names on a controller.
 import type { DialogueLine, DialogueScript, Expr, Speaker } from '../core/types.ts';
 import { PROLOGUE } from './prologue_script.ts';
+import { L2_SCRIPTS } from './scripts_l2.ts';
 
 function line(who: Speaker, text: string, expr?: Expr): DialogueLine {
   return expr ? { who, text, expr } : { who, text };
@@ -145,6 +146,7 @@ const L1_CLEAR = script('l1_clear', [
 const ALL: DialogueScript[] = [
   PROLOGUE, L1_START, L1_TUT_ATTACK, L1_TUT_SPECIAL, L1_TUT_SWAP, L1_AGENTS, L1_GATE_HINT, L1_GATE_OPEN, L1_SCARE,
   L1_ELEVEN_MEET, L1_ELEVEN_JOIN, L1_PUSH_HINT, L1_LOG_CLEARED, L1_AMBUSH_START, L1_AMBUSH_CLEAR, L1_CLEAR,
+  ...L2_SCRIPTS,
 ];
 
 export const SCRIPTS: Record<string, DialogueScript> = Object.fromEntries(ALL.map((s) => [s.id, s]));

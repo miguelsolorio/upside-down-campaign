@@ -17,6 +17,10 @@ const REQUIRED = [
   'prologue', 'l1_start', 'l1_tut_attack', 'l1_tut_special', 'l1_tut_swap', 'l1_agents', 'l1_gate_hint', 'l1_gate_open',
   'l1_scare', 'l1_eleven_meet', 'l1_eleven_join', 'l1_push_hint', 'l1_log_cleared', 'l1_ambush_start', 'l1_ambush_clear', 'l1_clear',
 ];
+const REQUIRED_L2 = [
+  'l2_start', 'l2_agents', 'l2_burn_hint', 'l2_burn_done', 'l2_cages', 'l2_scare', 'l2_shoot_hint', 'l2_relay_done',
+  'l2_push_hint', 'l2_crate_cleared', 'l2_lockdown_start', 'l2_lockdown_clear', 'l2_clear',
+];
 const SPEAKERS: Speaker[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'dm', 'narrator'];
 const EXPRS: Expr[] = ['neutral', 'happy', 'worried', 'determined', 'hurt', 'shocked'];
 const HEROES: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
@@ -32,16 +36,29 @@ const prose = (s: string): string => s.replace(/1 to 4/g, '').replace(/with [34]
 
 const scripts = Object.values(SCRIPTS);
 const allLines = scripts.flatMap((s) => s.lines.map((l, i) => ({ id: s.id, i, ...l })));
+const SCRIPT_LINES_L2 = allLines.filter((l) => l.id.startsWith('l2_'));
 
-test('every script id from the level doc exists', () => {
-  const doc = readFileSync(new URL('../docs/level-1.md', import.meta.url), 'utf8');
+/** The ids a level doc promises: the "Scripts Story writes" line, and the script column of the beat table. */
+function docIds(file: string, prefix: string): { fromList: string[]; fromTable: string[] } {
+  const doc = readFileSync(new URL(`../docs/${file}`, import.meta.url), 'utf8');
   const listed = /Scripts Story writes:\s*(.+)/.exec(doc)?.[1] ?? '';
   const fromList = [...listed.matchAll(/`([a-z0-9_]+)`/g)].map((m) => m[1] as string);
   const fromTable = doc.split('\n').filter((r) => /^\|\s*`/.test(r))
-    .flatMap((r) => [...(r.split('|')[3] ?? '').matchAll(/`(l1_[a-z0-9_]+)`/g)].map((m) => m[1] as string));
-  assert.ok(fromList.length >= 16, 'the "Scripts Story writes" line should list sixteen ids');
-  assert.ok(fromTable.length >= 13, 'the beat table should name the l1 scripts');
-  for (const id of [...REQUIRED, ...fromList, ...fromTable]) assert.ok(SCRIPTS[id], `missing script ${id}`);
+    .flatMap((r) => [...(r.split('|')[3] ?? '').matchAll(new RegExp(`\`(${prefix}[a-z0-9_]+)\``, 'g'))].map((m) => m[1] as string));
+  return { fromList, fromTable };
+}
+
+test('every script id from the level docs exists', () => {
+  const one = docIds('level-1.md', 'l1_');
+  assert.ok(one.fromList.length >= 16, 'the "Scripts Story writes" line should list sixteen ids');
+  assert.ok(one.fromTable.length >= 13, 'the beat table should name the l1 scripts');
+  for (const id of [...REQUIRED, ...one.fromList, ...one.fromTable]) assert.ok(SCRIPTS[id], `missing script ${id}`);
+  const two = docIds('level-2.md', 'l2_');
+  assert.equal(two.fromList.length, 13, 'the level 2 "Scripts Story writes" line lists thirteen ids');
+  assert.equal(two.fromTable.length, 13, 'the level 2 beat table names thirteen scripts');
+  for (const id of [...REQUIRED_L2, ...two.fromList, ...two.fromTable]) assert.ok(SCRIPTS[id], `missing script ${id}`);
+  assert.deepEqual([...two.fromList].sort(), [...REQUIRED_L2].sort(), 'the doc and the test agree on the thirteen');
+  assert.deepEqual(Object.keys(SCRIPTS).filter((k) => k.startsWith('l2_')).sort(), [...REQUIRED_L2].sort(), 'no stray l2 scripts');
 });
 
 test('script keys match ids and sizes are sane', () => {
@@ -84,6 +101,11 @@ test('a controller player is never told to press a key', () => {
     assert.match(text('l1_start'), /stick or D-pad/);
     assert.match(text('l1_gate_hint'), /with LB or RB/);
     assert.match(text('l1_push_hint'), /with LB or RB/);
+    for (const id of ['l2_burn_hint', 'l2_shoot_hint', 'l2_push_hint']) assert.match(text(id), /with LB or RB/, `${id} names the bumpers`);
+    assert.match(text('l2_burn_hint'), /\bX\b/, 'the burn hint names the special button');
+    assert.match(text('l2_shoot_hint'), /\bA\b/, 'the shoot hint names the attack button');
+    assert.match(text('l2_lockdown_start'), /\bY\b/, 'the lockdown names the burst button');
+    assert.match(text('l2_start'), /\bto light them\b/);
   } finally {
     setPromptDevice('keyboard');
   }
@@ -125,6 +147,18 @@ test('tutorial scripts teach the real keys', () => {
   assert.match(text('l1_push_hint'), /with 4, Q or E/);
 });
 
+test('level 2 puzzle scripts name the hero slot and the key, like the puzzle tips do', () => {
+  const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
+  assert.match(text('l2_burn_hint'), /with 2, Q or E/);
+  assert.match(text('l2_burn_hint'), /\bK\b/);
+  assert.match(text('l2_shoot_hint'), /with 3, Q or E/);
+  assert.match(text('l2_shoot_hint'), /\bJ\b/);
+  assert.match(text('l2_push_hint'), /with 4, Q or E/);
+  assert.match(text('l2_push_hint'), /\bJ\b/);
+  assert.match(text('l2_start'), /\bSPACE\b/);
+  assert.match(text('l2_lockdown_start'), /\bU\b/);
+});
+
 test('each script is voiced by the people who should be in it', () => {
   const who = (id: string): Set<Speaker> => new Set((SCRIPTS[id]?.lines ?? []).map((l) => l.who));
   for (const s of ['joyce', 'mike', 'dustin'] as Speaker[]) assert.ok(who('l1_start').has(s), `l1_start needs ${s}`);
@@ -135,10 +169,25 @@ test('each script is voiced by the people who should be in it', () => {
   assert.ok(who('l1_gate_hint').has('lucas'));
   assert.ok(who('l1_eleven_meet').has('eleven') && who('l1_eleven_join').has('eleven'));
   assert.ok(!who('l1_start').has('eleven'), 'Eleven has not joined yet');
+  // Level 2: the same four kids, and the hint belongs to whoever solves the puzzle or explains it.
+  for (const s of ['mike', 'dustin', 'lucas', 'eleven'] as Speaker[]) assert.ok(who('l2_start').has(s), `l2_start needs ${s}`);
+  assert.ok(who('l2_agents').has('lucas'));
+  assert.ok(who('l2_burn_hint').has('dustin') && who('l2_burn_done').has('dustin'));
+  assert.ok(who('l2_shoot_hint').has('lucas') && who('l2_relay_done').has('lucas'));
+  assert.ok(who('l2_push_hint').has('dustin') && who('l2_push_hint').has('eleven') && who('l2_crate_cleared').has('eleven'));
+  assert.ok(who('l2_scare').has('eleven') && who('l2_cages').has('eleven'));
+  for (const l of SCRIPT_LINES_L2) assert.ok(l.who !== 'will' && l.who !== 'joyce', `${l.id}[${l.i}]: Will and Joyce are not in the Lab`);
 });
 
-test('Eleven speaks one or two words in every Level 1 script', () => {
+test('Eleven speaks one or two words in every script', () => {
   for (const l of allLines) if (l.who === 'eleven') assert.ok(words(l.text) <= 2, `${l.id}[${l.i}]: ${l.text}`);
+  assert.ok(SCRIPT_LINES_L2.filter((l) => l.who === 'eleven').length >= 8, 'Eleven has lines in level 2');
+});
+
+test('level 2 ends on a hook for the school and starts at the dock', () => {
+  const last = SCRIPTS.l2_clear?.lines.map((l) => l.text).join(' ') ?? '';
+  assert.match(last, /school/i, 'the last script points at stage 1.3');
+  assert.match(SCRIPTS.l2_start?.lines[0]?.text ?? '', /dock/i, 'the first script is at the loading dock');
 });
 
 test('prologue: about fifteen lines, four parts, ends on a roll request and a fade', () => {

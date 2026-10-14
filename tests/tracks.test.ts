@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TRACKS, TRACK_IDS } from '../src/audio/tracks/index.ts';
-import { compile, findOverlaps, maxVoices, noteTiming } from '../src/audio/tracks/compile.ts';
+import {
+  barAt, barLengths, barSeconds, barStartSeconds, barStartSteps, compile, findOverlaps, maxVoices, noteTiming,
+} from '../src/audio/tracks/compile.ts';
 import {
   MODES, STEPS_PER_BAR, chord, grid, inScale, invert, makeScale, note, pitchClass, snap,
 } from '../src/audio/tracks/theory.ts';
@@ -9,9 +11,15 @@ import { D_PHRYGIAN, MOTIF, MOTIF_AXIS, MOTIF_PITCHES, motifUpsideDown } from '.
 import { JINGLES, SCARE_PITCHES, STINGERS } from '../src/audio/tracks/jingles.ts';
 import { envLevel, evalCoefs, lfsrBits, lfsrPeriod, pulseCoefs, triCoefs } from '../src/audio/dsp.ts';
 import { encodeWav } from '../src/audio/wav.ts';
+import { SFX } from '../src/audio/sfx.ts';
 import type { ModeName, PitchedChannel } from '../src/audio/tracks/types.ts';
 
 const MAX_VOICES = 5;
+
+/** Steps in a bar of a track: its barSteps, or sixteen. */
+function stepsIn(id: keyof typeof TRACKS, bar: number): number {
+  return barLengths(TRACKS[id])[bar];
+}
 
 test('every track declares tempo, key, length and layers', () => {
   for (const id of TRACK_IDS) {
@@ -22,6 +30,10 @@ test('every track declares tempo, key, length and layers', () => {
     assert.match(t.tonic, /^[A-G][#b]?$/, `${id} tonic`);
     assert.ok(t.mode in MODES, `${id} mode`);
     assert.ok(Number.isInteger(t.bars) && t.bars > 0, `${id} bars`);
+    if (t.barSteps) {
+      assert.equal(t.barSteps.length, t.bars, `${id} barSteps has one entry per bar`);
+      for (const n of t.barSteps) assert.ok(Number.isInteger(n) && n >= 4 && n <= 32, `${id} barSteps ${n}`);
+    }
     assert.ok(t.layers.includes('base'), `${id} has a base layer`);
     assert.equal(t.harmony.length, t.bars, `${id} harmony has one chord per bar`);
     for (const sym of t.harmony) assert.doesNotThrow(() => chord(sym), `${id} chord ${sym}`);
@@ -64,7 +76,7 @@ test('every note is in the scale or a listed chromatic exception', () => {
 test('slots match their waves and events are well formed', () => {
   for (const id of TRACK_IDS) {
     const t = TRACKS[id];
-    const loop = t.bars * STEPS_PER_BAR;
+    const loop = compile(t).loop;
     for (const c of t.channels) {
       if (c.slot === 'noi') continue;
       const p = c as PitchedChannel;
@@ -73,7 +85,7 @@ test('slots match their waves and events are well formed', () => {
       assert.ok(p.inst.gate > 0 && p.inst.gate <= 1, `${id} ${p.slot} gate`);
     }
     for (const n of compile(t).notes) {
-      assert.ok(n.step >= 0 && n.step < STEPS_PER_BAR, `${id} step ${n.step}`);
+      assert.ok(n.step >= 0 && n.step < stepsIn(id, n.bar), `${id} bar ${n.bar + 1} step ${n.step}`);
       assert.ok(n.vel > 0 && n.vel <= 1, `${id} vel ${n.vel}`);
       if (n.drum) continue;
       assert.ok(Number.isInteger(n.midi) && n.midi >= 24 && n.midi <= 108, `${id} midi ${n.midi}`);
@@ -140,6 +152,119 @@ test('Mirkwood: the combat layer has its own drums, bass and stabs', () => {
   // Eighth-note bass: eight notes in an ordinary bar.
   const bass = t.channels.find((c) => c.slot === 'p2') as PitchedChannel;
   assert.equal(bass.bars[0].length, 8);
+});
+
+test('bar lengths default to sixteen, so Static and Mirkwood are unchanged', () => {
+  for (const id of ['static', 'mirkwood'] as const) {
+    const t = TRACKS[id];
+    assert.equal(t.barSteps, undefined, `${id} sets no barSteps`);
+    assert.deepEqual([...barLengths(t)], Array.from({ length: t.bars }, () => STEPS_PER_BAR));
+    const c = compile(t);
+    assert.equal(c.loop, t.bars * STEPS_PER_BAR);
+    assert.equal(barSeconds(t), c.stepSec * STEPS_PER_BAR);
+    for (let bar = 0; bar < t.bars * 2 + 3; bar++) {
+      assert.equal(barStartSteps(t, bar), bar * STEPS_PER_BAR, `${id} bar ${bar} start`);
+      assert.equal(barStartSeconds(t, bar), bar * barSeconds(t), `${id} bar ${bar} time`);
+      assert.equal(barAt(t, bar * barSeconds(t) + 0.01), bar % t.bars, `${id} bar ${bar} lookup`);
+    }
+  }
+});
+
+test('Lab: E minor, 104 bpm, and every fourth bar is 7/8', () => {
+  const t = TRACKS.lab;
+  assert.equal(t.id, 'lab');
+  assert.equal(t.title, 'The Lab');
+  assert.deepEqual([t.bpm, t.tonic, t.mode, t.bars], [104, 'E', 'minor', 32]);
+  assert.notEqual(t.bpm, 84);
+  assert.deepEqual([...t.layers], ['base', 'combat']);
+  const steps = barLengths(t);
+  assert.equal(steps.length, 32);
+  steps.forEach((n, bar) => assert.equal(n, (bar + 1) % 4 === 0 ? 14 : 16, `bar ${bar + 1} has ${n} steps`));
+  assert.equal(compile(t).loop, 24 * 16 + 8 * 14);
+  // A 7/8 bar is seven eighths: seven sixteenth-pairs long, a step shorter than half a beat.
+  assert.ok(Math.abs(barSeconds(t, 3) - (7 / 2) * (60 / 104)) < 1e-12);
+  assert.ok(Math.abs(barSeconds(t, 0) - 4 * (60 / 104)) < 1e-12);
+  // Bar starts add up, the loop wraps, and a time inside a bar finds that bar.
+  let at = 0;
+  for (let bar = 0; bar < 70; bar++) {
+    assert.equal(barStartSteps(t, bar), (Math.floor(bar / 32) * 496) + compile(t).starts[bar % 32], `bar ${bar}`);
+    const mid = barStartSeconds(t, bar) + barSeconds(t, bar) / 2;
+    assert.equal(barAt(t, mid), bar % 32, `bar ${bar} lookup`);
+    assert.ok(Math.abs(barStartSeconds(t, bar) - at) < 1e-9, `bar ${bar} start`);
+    at += barSeconds(t, bar);
+  }
+});
+
+test('Lab: every event stays inside its bar and the loop closes on the 7/8 bar', () => {
+  const t = TRACKS.lab;
+  const c = compile(t);
+  assert.deepEqual(findOverlaps(t), []);
+  for (const n of c.notes) {
+    assert.ok(n.step < stepsIn('lab', n.bar), `bar ${n.bar + 1} step ${n.step} is past the bar end`);
+  }
+  // The last bar is a 7/8 bar, and nothing in it rings past the loop end.
+  assert.equal(stepsIn('lab', 31), 14);
+  const lastEnd = Math.max(...c.notes.filter((n) => n.bar === 31).map((n) => n.step + (n.drum ? 0 : n.gate / (n.inst?.gate ?? 1))));
+  assert.ok(lastEnd <= 14 + 1e-9, `last bar ends at step ${lastEnd}`);
+  // B major closes it: D sharp, the leading tone, is the one exception to E minor, and it is used in that bar.
+  assert.equal(t.harmony[31], 'B');
+  assert.deepEqual([...t.chromatic], [3]);
+  assert.ok(c.notes.some((n) => n.bar === 31 && !n.drum && n.midi % 12 === 3), 'D sharp sounds in the last bar');
+});
+
+test('Lab: the klaxon is a two-note alternating pulse that enters after bar four', () => {
+  const t = TRACKS.lab;
+  const klaxon = t.channels.find((ch) => ch.slot === 'p3') as PitchedChannel;
+  assert.equal(klaxon.layer, 'base');
+  for (let b = 0; b < 4; b++) assert.equal(klaxon.bars[b].length, 0, `bar ${b + 1} is silent`);
+  assert.ok(klaxon.bars[4].length >= 4, 'it enters in bar five');
+  const tritones = new Set<number>();
+  klaxon.bars.forEach((evs, bar) => {
+    if (evs.length === 0) return;
+    const pitches = new Set(evs.map((e) => e.midi));
+    assert.equal(pitches.size, 2, `bar ${bar + 1} alternates two notes`);
+    evs.forEach((e, i) => { if (i > 0) assert.notEqual(e.midi, evs[i - 1].midi, `bar ${bar + 1} alternates`); });
+    const [lo, hi] = [...pitches].sort((a, b) => a - b);
+    const gap = hi - lo;
+    assert.ok(gap === 3 || gap === 6, `bar ${bar + 1} spans ${gap} semitones`);
+    if (gap === 6) tritones.add(bar);
+  });
+  assert.ok(tritones.size > 0, 'at least one bar uses the tritone');
+});
+
+test('Lab: the combat layer adds a driving bass, drums and more stabs', () => {
+  const t = TRACKS.lab;
+  const c = compile(t);
+  const slots = (layer: string): string[] => t.channels.filter((ch) => ch.layer === layer).map((ch) => ch.slot).sort();
+  assert.deepEqual(slots('base'), ['noi', 'p1', 'p3', 'tri']);
+  assert.deepEqual(slots('combat'), ['noi', 'p1', 'p2']);
+  for (const d of ['kick', 'snare', 'hat']) assert.ok(c.notes.some((n) => n.layer === 'combat' && n.drum === d), d);
+  const count = (layer: string, slot: string, bar: number): number => c.byBar[bar].filter((n) => n.layer === layer && n.slot === slot).length;
+  for (let bar = 0; bar < t.bars; bar++) {
+    assert.ok(count('combat', 'p1', bar) > count('base', 'p1', bar), `bar ${bar + 1} has more stabs in combat`);
+    // Seven eighths in a 7/8 bar, eight in a 4/4 bar.
+    assert.equal(count('combat', 'p2', bar), stepsIn('lab', bar) / 2, `bar ${bar + 1} bass`);
+  }
+  // Kick and open hat ring 0.15 s but a step is shorter, so no hit sits on the step after one.
+  const stepSec = c.stepSec;
+  assert.ok(stepSec < 0.15);
+  const hits = c.notes.filter((n) => n.slot === 'noi').sort((a, b) => a.abs - b.abs);
+  hits.forEach((h, i) => {
+    if (h.drum !== 'kick' && h.drum !== 'ohat') return;
+    const next = hits[i + 1] ?? hits[0];
+    const dist = (next.abs - h.abs + c.loop) % c.loop;
+    assert.ok(dist * stepSec >= 0.15 - 1e-9, `${h.drum} at bar ${h.bar + 1} step ${h.step} is followed too soon`);
+  });
+});
+
+test('the klaxon effect is a two-tone siren of about a second and a bit', () => {
+  const r = SFX.klaxon;
+  const ends = r.parts.map((p) => p.at + p.d);
+  assert.ok(Math.max(...ends) >= 1.1 && Math.max(...ends) <= 1.3, `length ${Math.max(...ends)}`);
+  const pulses = r.parts.filter((p) => p.k === 't' && p.w === 'p50').map((p) => (p as { f: number }).f);
+  assert.equal(new Set(pulses).size, 2, 'two pitches');
+  assert.equal(pulses.length, 4);
+  assert.equal(r.j, 0, 'a siren holds its pitch');
 });
 
 // ---------------------------------------------------------------- invert

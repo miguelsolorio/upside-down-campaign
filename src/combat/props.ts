@@ -38,11 +38,11 @@ export function openPropById(s: S, id: string): void {
   const p = s.props.find((q) => q.id === id);
   if (!p || p.state === 'open') return;
   if (p.kind === 'log' || isPushable(p)) { clearProp(s, p); return; }
-  if (p.kind === 'target') { lightTarget(s, p); return; }
+  if (p.kind === 'target' || p.kind === 'console') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
   p.t = 0;
-  if (p.kind === 'gate') sfx(s, 'gateOpen');
+  if (p.kind === 'gate' || p.kind === 'door') sfx(s, 'gateOpen');
 }
 
 export function updateProps(s: S): void {

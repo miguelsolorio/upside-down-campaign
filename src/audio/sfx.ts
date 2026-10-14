@@ -49,6 +49,17 @@ const R = (parts: Part[], j = 0.04): Recipe => ({ j, parts });
 const RATTLE = [0, 0.05, 0.1, 0.17, 0.25, 0.34, 0.45].map((at, i) =>
   N(7, 6000 + i * 700, 0.03, 0.5 - i * 0.03, { at, f: bp(1800 + i * 300, undefined, 2.5) }));
 
+// Pulses of 0.3 s: E5, B flat 4, E5, B flat 4. Each sags a little, so it wails.
+const KLAXON = [0, 1, 2, 3].flatMap((i) => {
+  const f = i % 2 === 0 ? 659 : 466;
+  const held = i < 3;
+  const d = held ? 0.27 : 0.3;
+  return [
+    T('p50', f, d, 0.26, { at: i * 0.3, hold: held, f2: f * 0.97 }),
+    T('tri', f / 2, d, 0.24, { at: i * 0.3, hold: held, f2: (f / 2) * 0.97 }),
+  ];
+});
+
 export const SFX: Record<SfxId, Recipe> = {
   // combat
   swing: R([N(15, 44100, 0.12, 0.7, { f: bp(500, 3000, 1.1), rise: 0.05 })]),
@@ -129,6 +140,10 @@ export const SFX: Record<SfxId, Recipe> = {
     T('p25', 70, 0.65, 0.38, { f2: 45, hold: true, vib: { rate: 22, cents: 500, delay: 0 } }),
     N(7, 9000, 0.6, 0.6, { f: lp(700), rise: 0.15 }), T('p50', 140, 0.6, 0.12, { f2: 80 }),
   ]),
+  // The lockdown siren: two tones a tritone apart, high then low, four pulses over about 1.2 s. A pulse wave
+  // carries the pitch and a triangle an octave down gives it body, so it reads without biting. The last
+  // tone is not held, so the siren dies away instead of cutting off.
+  klaxon: R(KLAXON, 0),
   // the d20
   roll: R(RATTLE),
   rollLand: R([T('tri', 880, 0.12, 0.32, { f2: 1175 }), N(7, 14000, 0.02, 0.5, { f: hp(2000) })]),
@@ -150,7 +165,7 @@ const LEVEL: Record<SfxId, number> = {
   rock: 0.82, rockHit: 0.52, dart: 1.1, push: 0.88, beam: 0.57, flame: 0.5, shield: 0.72, lure: 1, candyPop: 0.25,
   dash: 0.45, swap: 0.94, burst: 0.67, pickup: 0.96, heal: 0.81, noMp: 0.65, nosebleed: 1,
   select: 1.1, confirm: 0.8, cancel: 0.7, pause: 1.17, dialogOpen: 1,
-  gateOpen: 1, targetHit: 1, logPush: 0.41, lights: 1.22, flicker: 0.3, growl: 0.44,
+  gateOpen: 1, targetHit: 1, logPush: 0.41, lights: 1.22, flicker: 0.3, growl: 0.44, klaxon: 0.7,
   roll: 0.89, rollLand: 0.47, natTwenty: 0.95, alert: 0.47, step: 0.8,
 };
 

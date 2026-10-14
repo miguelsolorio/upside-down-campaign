@@ -3,6 +3,7 @@ import type { TrackId } from '../../core/types.ts';
 import type { Track } from './types.ts';
 import { STATIC } from './static.ts';
 import { MIRKWOOD } from './mirkwood.ts';
+import { LAB } from './lab.ts';
 
-export const TRACKS: Record<TrackId, Track> = { static: STATIC, mirkwood: MIRKWOOD };
-export const TRACK_IDS: TrackId[] = ['static', 'mirkwood'];
+export const TRACKS: Record<TrackId, Track> = { static: STATIC, mirkwood: MIRKWOOD, lab: LAB };
+export const TRACK_IDS: TrackId[] = ['static', 'mirkwood', 'lab'];

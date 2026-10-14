@@ -8,7 +8,7 @@ import type { Rig } from './rig.ts';
 import { startLive } from './sequencer.ts';
 import type { Driver } from './sequencer.ts';
 import { TRACKS } from './tracks/index.ts';
-import { barSeconds } from './tracks/compile.ts';
+import { barAt } from './tracks/compile.ts';
 
 interface Playing {
   id: TrackId;
@@ -47,8 +47,7 @@ export function position(): { id: TrackId; bar: number; bars: number } | null {
   const g = liveGraph();
   if (!playing || !g) return null;
   const track = TRACKS[playing.id];
-  const bar = Math.floor((g.ctx.currentTime - playing.driver.startAt) / barSeconds(track));
-  return { id: playing.id, bar: ((bar % track.bars) + track.bars) % track.bars, bars: track.bars };
+  return { id: playing.id, bar: barAt(track, g.ctx.currentTime - playing.driver.startAt), bars: track.bars };
 }
 
 /** Starts, switches or stops the music so it matches what was asked for. Safe to call at any time. */

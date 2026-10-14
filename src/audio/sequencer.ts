@@ -1,7 +1,7 @@
 // The bar-based sequencer. scheduleBar puts one bar of a track on the clock, so the same code runs live
 // (a lookahead timer, one bar at a time) and offline (every bar up front).
 import type { LayerId, Track } from './tracks/types.ts';
-import { barSeconds, compile, noteTiming } from './tracks/compile.ts';
+import { barSeconds, barStartSeconds, barStartSteps, compile, noteTiming } from './tracks/compile.ts';
 import { midiToHz } from './dsp.ts';
 import { drum, tone } from './synth.ts';
 import type { Routes } from './rig.ts';
@@ -36,7 +36,7 @@ export function scheduleBar(
     const t = t0 + n.step * c.stepSec;
     if (n.drum) {
       // A drum rings for its own length. The compiler guarantees the next hit on the slot starts after that.
-      started.push(...drum(ctx, target, n.drum, t, n.vel, barIndex * 16 + n.step));
+      started.push(...drum(ctx, target, n.drum, t, n.vel, barStartSteps(track, barIndex) + n.step));
     } else if (n.inst) {
       const inst = n.inst;
       const send = n.layer === 'base' ? routes.sendBase : routes.sendCombat;
@@ -67,8 +67,9 @@ export function scheduleOffline(
   layers: Routes | readonly LayerId[],
   t0 = 0,
 ): void {
-  const barSec = barSeconds(track);
-  for (let bar = 0; bar * barSec < seconds; bar++) scheduleBar(ctx, dest, track, bar, t0 + bar * barSec, layers);
+  for (let bar = 0; barStartSeconds(track, bar) < seconds; bar++) {
+    scheduleBar(ctx, dest, track, bar, t0 + barStartSeconds(track, bar), layers);
+  }
 }
 
 export interface Driver {
@@ -90,7 +91,6 @@ export function startLive(
   startAt: number,
   onSources?: (sources: AudioScheduledSourceNode[]) => void,
 ): Driver {
-  const barSec = barSeconds(track);
   let bar = 0;
   let next = startAt;
   let zero = startAt;
@@ -98,11 +98,13 @@ export function startLive(
     while (next < ctx.currentTime + LOOKAHEAD) {
       if (next < ctx.currentTime) {
         next = ctx.currentTime + 0.02;
-        zero = next - bar * barSec;
+        zero = next - barStartSeconds(track, bar);
       }
-      onSources?.(scheduleBar(ctx, dest, track, bar, next, routes));
+      // Schedule first: with no callback, an optional call would skip its arguments and play nothing.
+      const sources = scheduleBar(ctx, dest, track, bar, next, routes);
+      onSources?.(sources);
+      next += barSeconds(track, bar);
       bar++;
-      next += barSec;
     }
   };
   tick();

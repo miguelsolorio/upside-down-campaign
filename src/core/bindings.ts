@@ -318,7 +318,7 @@ export function levelHintLines(max = 42): string[] {
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.
 // A controller player gets button names instead, and the lines that mention picking a hero by number drop that part.
 const swapOr = (): string => `${labelOf('swapPrev')} or ${labelOf('swapNext')}`;
-const swapTo = (n: 3 | 4): string => (onPad() ? swapOr() : `${labelOf(`swap${n}`)}, ${swapOr()}`);
+const swapTo = (n: 2 | 3 | 4): string => (onPad() ? swapOr() : `${labelOf(`swap${n}`)}, ${swapOr()}`);
 const TOKENS: Record<string, () => string> = {
   move: () => {
     if (onPad()) return 'the stick or D-pad';
@@ -334,9 +334,11 @@ const TOKENS: Record<string, () => string> = {
   swap: () => `${labelOf('swapPrev')} and ${labelOf('swapNext')}`,
   swapOr,
   pick: () => { const p = pickLabels(); return p.join('') === '1234' ? '1 to 4' : p.join(', '); },
+  pick2: () => labelOf('swap2'),
   pick3: () => labelOf('swap3'),
   pick4: () => labelOf('swap4'),
   /** "3, Q or E" on a keyboard, "LB or RB" on a controller. */
+  swapTo2: () => swapTo(2),
   swapTo3: () => swapTo(3),
   swapTo4: () => swapTo(4),
   /** A whole closing sentence, so a controller line can leave it out. Starts with a space. */

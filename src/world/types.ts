@@ -4,7 +4,7 @@ import type { BotWaypoint } from '../combat/bot.ts';
 import type { SaveData } from '../core/save.ts';
 
 export interface PlayOptions {
-  /** "1.1" for now. */
+  /** A stage id from `STAGE_ORDER` in core/campaign.ts, such as "1.1" or "1.2". */
   stageId: string;
   /** Draw the stage in this light instead of the one its data says (the ?time= flag). */
   time?: TimeOfDay;
@@ -28,6 +28,8 @@ export type BeatStep =
   /** Wakes the first ambush wave that still has enemies. Later waves follow each groupCleared. */
   | { t: 'waves' }
   | { t: 'scare' }
+  /** The klaxon sounds. It does not wait for anything. */
+  | { t: 'alarm' }
   | { t: 'recruit'; hero: HeroId }
   | { t: 'open'; prop: string }
   | { t: 'finish' };

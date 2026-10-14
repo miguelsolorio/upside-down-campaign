@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { flags } from '../src/core/flags.ts';
 import { clearSave, hasSave, loadSave, parseSave, savingAllowed, writeSave } from '../src/core/save.ts';
 import type { SaveData } from '../src/core/save.ts';
+import { seedsFrom } from '../src/core/campaign.ts';
+import type { HeroSnapshot } from '../src/core/types.ts';
+import { STAGE_12 } from '../src/world/stages/stage12.ts';
 
 /** A stand-in for localStorage. */
 function stubStorage(): Map<string, string> {
@@ -33,6 +36,62 @@ const SAVE: SaveData = {
 
 let store: Map<string, string>;
 beforeEach(() => { store = stubStorage(); });
+
+/** Stage 1.2 saves use the real ids from the stage data, so a renamed prop or spawn fails here. */
+const SPAWN_IDS = new Set(STAGE_12.spawns.map((s) => s.id));
+const SAVE_12: SaveData = {
+  v: 1,
+  stage: '1.2',
+  party: [
+    { id: 'mike', level: 4, xp: 20, bonus: { atk: 3, def: 1 } },
+    { id: 'dustin', level: 3, xp: 30, bonus: { mp: 2 } },
+    { id: 'lucas', level: 3, xp: 12, bonus: { spd: 1 } },
+    { id: 'eleven', level: 3, xp: 4, bonus: { hp: 2, mp: 1 } },
+  ],
+  checkpoint: {
+    x: STAGE_12.checkpoints[1]?.x ?? 0,
+    y: STAGE_12.checkpoints[1]?.y ?? 0,
+    state: {
+      fired: ['start', 'agents1', 'burn_hint', 'door1_open', 'agents2', 'cages', 'scare', 'relay_hint', 'door2_open'],
+      cleared: ['agents1', 'agents2', 'rats1'],
+    },
+  },
+  killed: ['agents1_a', 'agents1_b', 'agents2_a', 'agents2_b', 'rats1_a', 'rats1_b', 'rats1_c', 'rats1_d', 'rats1_e', 'rats1_f'],
+  openProps: ['lights_dock', 'sensor1', 'door1', 'relay1', 'door2', 'lights_hall'],
+};
+
+test('a stage 1.2 save comes back the way it went in, and every id in it is real', () => {
+  const groups = new Set(STAGE_12.spawns.flatMap((s) => (s.kind === 'enemy' ? [s.group] : [])));
+  for (const id of [...SAVE_12.killed, ...SAVE_12.openProps]) assert.ok(SPAWN_IDS.has(id), `${id} is a spawn in stage 1.2`);
+  for (const id of SAVE_12.checkpoint.state.fired) assert.ok(STAGE_12.beats.some((b) => b.id === id), `${id} is a beat of stage 1.2`);
+  for (const id of SAVE_12.checkpoint.state.cleared) assert.ok(groups.has(id), `${id} is an enemy group of stage 1.2`);
+  assert.ok(STAGE_12.checkpoints.some((c) => c.x === SAVE_12.checkpoint.x && c.y === SAVE_12.checkpoint.y), 'the checkpoint is one of the two lights');
+  writeSave(SAVE_12);
+  assert.deepEqual(loadSave(), SAVE_12);
+  assert.equal(loadSave()?.stage, '1.2');
+});
+
+test('the entry save for stage 1.2 carries the party out of stage 1.1 and begins at the start', () => {
+  // What stage 1.1 hands over: levels, XP and the d20 bonus carry. Health does not.
+  const cleared: HeroSnapshot[] = [
+    { id: 'mike', level: 3, xp: 68, hp: 20, hpMax: 62, bonus: { atk: 2 } },
+    { id: 'dustin', level: 2, xp: 40, hp: 1, hpMax: 40, bonus: { mp: 1 } },
+    { id: 'lucas', level: 2, xp: 41, hp: 33, hpMax: 40, bonus: { spd: 1 } },
+    { id: 'eleven', level: 2, xp: 30, hp: 0, hpMax: 36, bonus: { def: 1 } },
+  ];
+  const seeds = seedsFrom(cleared);
+  assert.deepEqual(seeds.map((s) => s.id), ['mike', 'dustin', 'lucas', 'eleven'], 'party order is kept');
+  assert.ok(seeds.every((s) => !('hp' in s) && !('hpMax' in s)), 'health is not carried');
+  assert.deepEqual(seeds[0], { id: 'mike', level: 3, xp: 68, bonus: { atk: 2 } });
+  const entry: SaveData = {
+    v: 1, stage: '1.2', party: seeds,
+    checkpoint: { x: STAGE_12.start.x, y: STAGE_12.start.y, state: { fired: [], cleared: [] } },
+    killed: [], openProps: [],
+  };
+  writeSave(entry);
+  assert.deepEqual(loadSave(), entry);
+  assert.equal(parseSave({ ...entry, stage: 12 }), null, 'the stage is still a string');
+});
 
 test('no save reads as null', () => {
   assert.equal(loadSave(), null);

@@ -3,5 +3,5 @@
 // getStage and the stage data live in stage.ts and stages/; the beat director is in triggers.ts.
 export type { PlayOptions } from './types.ts';
 export { createPlayScene } from './play.ts';
-export { getStage } from './stage.ts';
+export { getStage, stageName, stageStart } from './stage.ts';
 export type { Stage } from './stage.ts';

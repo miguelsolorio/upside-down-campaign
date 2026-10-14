@@ -12,6 +12,7 @@ import { drawProp, drawItem } from './props.ts';
 import { drawFx } from './fx.ts';
 import { drawPanel } from './ui.ts';
 import { PAL } from './palette.ts';
+import { drawLabContext, drawLabStage } from './sheet_lab.ts';
 
 export interface Page { title: string; subs: number; draw(ctx: Ctx, t: number, sub: number): void }
 
@@ -85,17 +86,27 @@ const flags: Page = {
   },
 };
 
+const LAB_TILES = ['labfloor', 'labfloor2', 'hazard', 'vent', 'labwall', 'labcap', 'pipe', 'glass', 'cage'];
+const OUTDOOR_TILES = TILE_NAMES.filter((n) => !LAB_TILES.includes(n));
+
+// Two pages: the outdoor tiles (sub 0), then the lab tiles with a strip showing them beside their neighbours (sub 1).
 const tiles: Page = {
   title: 'TILES',
-  subs: 1,
-  draw(ctx, t) {
+  subs: 2,
+  draw(ctx, t, sub) {
     ctx.fillStyle = PAL.night;
     ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
-    TILE_NAMES.forEach((n, i) => {
+    const names = sub === 0 ? OUTDOOR_TILES : TILE_NAMES.filter((n) => LAB_TILES.includes(n));
+    names.forEach((n, i) => {
       const cx = (i % 4) * 64, cy = 2 + ((i / 4) | 0) * 31;
       for (let v = 0; v < 3; v++) ctx.drawImage(tileSample(n, v, t), cx + v * 16, cy);
       drawText(ctx, n.toUpperCase().slice(0, 10), cx + 1, cy + 18, 'bone');
     });
+    if (sub === 1) {
+      drawText(ctx, 'LAB TILES AND THEIR NEIGHBOURS', 4, 92, 'mist');
+      drawLabContext(ctx, 104, t);
+      drawText(ctx, 'UP DOWN', 4, 204, 'slate');
+    }
   },
 };
 
@@ -119,8 +130,15 @@ let bakedNight: BakedStage | null = null;
 
 const stage: Page = {
   title: 'STAGE',
-  subs: 2,
+  subs: 3,
   draw(ctx, t, sub) {
+    if (sub === 2) {
+      drawLabStage(ctx, t, view);
+      drawPanel(ctx, 0, 0, SCREEN_W, VIEW_TOP, 'hud');
+      drawText(ctx, 'LAB IN DAYLIGHT', 6, 6, 'white');
+      drawText(ctx, 'UP DOWN', 200, 6, 'slate');
+      return;
+    }
     const night = sub === 1;
     baked ??= bakeStage(STAGE);
     bakedNight ??= bakeStage(STAGE, true);

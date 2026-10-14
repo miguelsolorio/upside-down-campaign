@@ -16,7 +16,9 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console']);
+/** Props a hit lights instead of opens: they stay solid and read 'lit' once solved. */
+const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console']);
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
 function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
@@ -83,8 +85,8 @@ export function createState(opts: SimOptions): S {
       let solid = sp.solid ?? SOLID_BY_DEFAULT.has(sp.prop);
       let state: PropState = sp.state ?? DEFAULT_STATE[sp.prop] ?? 'closed';
       if (open.has(sp.id)) {
-        state = sp.prop === 'target' ? 'lit' : 'open';
-        if (sp.prop !== 'target') solid = false;
+        state = LIT_WHEN_SOLVED.has(sp.prop) ? 'lit' : 'open';
+        if (!LIT_WHEN_SOLVED.has(sp.prop)) solid = false;
       }
       const hitBy: Utility | undefined = sp.hitBy ?? (sp.prop === 'target' ? 'shoot' : undefined);
       const pushBy: Utility | undefined = sp.pushBy ?? (sp.prop === 'log' ? 'push' : undefined);

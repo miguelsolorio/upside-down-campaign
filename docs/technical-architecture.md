@@ -1,6 +1,6 @@
 # Technical architecture
 
-Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each folder's `index.ts` is the public API of that module (stubs until the owner replaces them). The design lives in `docs/game-design.md`. Level 1 lives in `docs/level-1.md`.
+Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each folder's `index.ts` is the public API of that module (stubs until the owner replaces them). The design lives in `docs/game-design.md`. Level 1 lives in `docs/level-1.md` and Level 2 (stage 1.2, Hawkins Lab) in `docs/level-2.md`. The stage order and what carries between stages is `src/core/campaign.ts`.
 
 ## Rules
 
@@ -17,7 +17,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 - Tests: `node --test tests/<file>.test.ts`, or `node --test tests/*.test.ts` for all. Node strips the types itself.
 - The dev server is already running at http://127.0.0.1:5173 (Vite, hot reload). Don't start another. `npm install` doesn't work in this sandbox.
 - Browser pane: open your own tab with `tabs_create` and pass its `tabId` on every call. Close it when done. Screenshots at scale 0.5, no more than three. Prefer `javascript_tool` and console reads. `window.__ud` exposes `{ g, audio }`.
-- URL flags: `?sheet=1` sprite sheet, `?audio=1` audio lab, `?skip=1` skip title and prologue, `?dev=1` dev panel, `?bot=1` bot, `?stage=1.1`, `?time=day` or `?time=night`, `?mute=1`, `?god=1`, `?level=3`.
+- URL flags: `?sheet=1` sprite sheet, `?audio=1` audio lab, `?skip=1` skip title and prologue, `?dev=1` dev panel, `?bot=1` bot, `?stage=1.1` or `?stage=1.2`, `?time=day` or `?time=night`, `?mute=1`, `?god=1`, `?level=3`.
 
 ## Ownership
 

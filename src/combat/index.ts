@@ -5,10 +5,12 @@
 // - 60 Hz. step() returns the events of that tick. Calls made between ticks (recruit, spawnGroup, openProp,
 //   healParty, dev.*) queue their events and sounds, and the next step() returns them.
 // - Tile spawns put an actor's feet at x = tx * 16 + 8, y = ty * 16 + 12. A prop's tx, ty is its top-left tile,
-//   w and h are in px (default 16 by 16, van 48 by 32). Solid by default: log, gate, van, crate, floodlight.
+//   w and h are in px (default 16 by 16, van 48 by 32). Solid by default: log, gate, van, crate, floodlight, door, console.
 //   Props start 'closed', lights and floodlights start 'off'. A log defaults to pushBy 'push', a target to hitBy 'shoot'.
-// - skipSpawns drops enemies, items and npcs by id. openProps opens gates and logs and lights targets.
-//   openProp(id) clears a log, opens a gate, lights a target, and switches lights and floodlights on (state 'open').
+//   A console has no default: its spawn names hitBy ('burn' for Dustin's spray, 'shoot' for Lucas). A crate needs pushBy 'push'.
+// - skipSpawns drops enemies, items and npcs by id. openProps opens gates, doors and logs and lights targets and consoles.
+//   openProp(id) clears a log or crate, opens a gate or door, lights a target or console, and switches lights and
+//   floodlights on (state 'open').
 // - xp (PartySeed, HeroSnapshot, PartyHud) is the XP carried toward the next level, not a running total.
 //   party() snapshots also carry the d20 bonus as an extra `bonus` field. Pass them back as PartySeeds to keep stats.
 // - Hero shots fly over terrain (the creek is solid) but stop at solid props. Enemy darts stop at trees and walls.

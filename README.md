@@ -1,6 +1,6 @@
 # Stranger Things 8-bit: The Upside Down Campaign
 
-An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement, and you play it: a party of four, real-time fights, a d20 behind every level-up. This build is Level 1 only (the basement prologue and the Mirkwood stage). It's here for feedback before the rest gets built.
+An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement, and you play it: a party of four, real-time fights, a d20 behind every level-up. This build is Levels 1 and 2 (the basement prologue, the Mirkwood stage and Hawkins Lab). It's here for feedback before the rest gets built.
 
 Not affiliated with Netflix. The code, art, music and lines are original. Every sprite and every note is generated in code, so there are no asset files.
 
@@ -82,9 +82,10 @@ Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full 
 | `?bot=1` | A bot plays the level by itself |
 | `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport |
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
-| `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage |
+| `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?mute=1`, `?god=1`, `?level=3`, `?stage=1.1`, `?seed=N` | Self-explanatory |
+| `?stage=1.2` | Jump to a stage (`1.1` or `1.2`) with the party a normal run brings: three kids for Mirkwood, all four at Lv 3 for the Lab |
+| `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
 ## Layout
 
@@ -96,12 +97,12 @@ src/combat      the simulation, enemy AI, the bot
 src/heroes      hero stats, abilities, growth
 src/enemies     enemy stats and behavior
 src/progression XP curve, the d20 level-up
-src/world       stage 1.1 and the play scene
+src/world       stages 1.1 and 1.2 and the play scene
 src/ui          HUD, dialogue, title, menus, level-up screen
 src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy
-docs            game design, architecture, Level 1 spec, screenshots
+docs            game design, architecture, Level 1 and Level 2 specs, screenshots
 music           rendered WAVs of the tracks
 ```
 
-The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the Level 1 spec in `docs/level-1.md`.
+The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.

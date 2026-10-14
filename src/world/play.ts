@@ -5,6 +5,7 @@ import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, DevHooks, HeroId, LevelUpInfo, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { labelOf } from '../core/bindings.ts';
+import { STAGE_ORDER } from '../core/campaign.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
@@ -35,7 +36,7 @@ const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
 /** Props that stay open across a retry or a load. */
-const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights']);
+const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate']);
 
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
@@ -102,9 +103,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
     scare(done) { scare = { t: 0, done }; },
     open(prop) {
       // The sim queues its own gate sound for the next step. The dialogue holds the sim, so play it now and drop the copy.
-      if (view.props.some((p) => p.id === prop && p.kind === 'gate')) { audio.sfx('gateOpen'); swallow.add('gateOpen'); }
+      if (view.props.some((p) => p.id === prop && (p.kind === 'gate' || p.kind === 'door'))) { audio.sfx('gateOpen'); swallow.add('gateOpen'); }
       sim.openProp(prop);
     },
+    alarm() { audio.sfx('klaxon'); },
     jingle: (id) => audio.jingle(id),
     finish() { audio.jingle('clear'); clearT = 0; },
   };
@@ -358,7 +360,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
-      if (skipsDialogue() && hintT < HINT_FRAMES) drawControlsHint(ctx, hintT, HINT_FRAMES);
+      // The controls strip is for a player's first minute, so only the first stage shows it.
+      if (skipsDialogue() && hintT < HINT_FRAMES && stage.id === STAGE_ORDER[0]) drawControlsHint(ctx, hintT, HINT_FRAMES);
       const tip = skipsDialogue() ? puzzles.tip() : null;
       if (tip) drawPuzzleTip(ctx, tip.tip);
       dialog.draw(ctx);

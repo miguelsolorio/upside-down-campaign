@@ -1,4 +1,4 @@
-// The results screen: time, kills, XP, quarters, level-ups and the party's levels. `final` ends Level 1 with the feedback note.
+// The results screen: time, kills, XP, quarters, level-ups and the party's levels. `final` ends the build with the feedback note.
 import type { Scene } from '../core/scene.ts';
 import type { HeroSnapshot, RunStats } from '../core/types.ts';
 import { CHAR_NAMES, SCREEN_H, SCREEN_W } from '../core/config.ts';
@@ -18,9 +18,10 @@ const FOOT_AT = PARTY_AT + 24;
 /** Confirm waits this long after everything is showing. */
 const READY = FOOT_AT + 12;
 
-export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; final?: boolean; onContinue(): void }): Scene {
+export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; level?: number; final?: boolean; onContinue(): void }): Scene {
   const { stats, party } = opts;
   const final = !!opts.final;
+  const level = opts.level ?? 1;
   let t = 0;
   let finished = false;
   const kinds = Object.entries(stats.killsByKind).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
@@ -49,7 +50,7 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
     },
     draw(ctx) {
       box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');
-      bigText(ctx, final ? 'END OF LEVEL 1' : 'LEVEL CLEAR', 128, 12, 'yellow', 2, 'center', true);
+      bigText(ctx, final ? `END OF LEVEL ${level}` : `LEVEL ${level} CLEAR`, 128, 12, 'yellow', 2, 'center', true);
       if (final) drawText(ctx, 'This is a feedback build. More soon.', 128, 32, 'cream', { align: 'center' });
       drawPanel(ctx, 24, 46, 208, 70, 'menu');
 

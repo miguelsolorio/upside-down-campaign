@@ -51,6 +51,11 @@ export interface Track {
   chromatic: readonly number[];
   /** Loop length in bars. Every channel has exactly this many bars. */
   bars: number;
+  /**
+   * Sixteenth steps in each bar, one entry per bar. Leave it out and every bar has sixteen. A 7/8 bar has
+   * fourteen. Events in a bar start before its last step; a note may still ring across the bar line.
+   */
+  barSteps?: readonly number[];
   layers: readonly LayerId[];
   /** One chord symbol per bar. Drives the arp and bass helpers and the loop-closure test. */
   harmony: readonly string[];

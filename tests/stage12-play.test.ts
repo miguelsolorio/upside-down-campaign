@@ -30,6 +30,9 @@ const solo = (id: HeroId, tx: number, ty: number) =>
 /** Walk toward (mx, my) for 20 frames to face that way, then ease off and press `key` once. */
 const facing = (mx: number, my: number, key: Partial<SimInput>) => (f: number): SimInput =>
   (f < 20 ? { ...idle, mx, my } : f === 20 ? { ...idle, mx: mx * 0.2, my: my * 0.2, ...key } : idle);
+/** Turn toward (mx, my) while barely moving, a few px at most, then press `key` once: the swing starts where he stands. */
+const turning = (mx: number, my: number, key: Partial<SimInput>) => (f: number): SimInput =>
+  (f < 12 ? { ...idle, mx: mx * 0.2, my: my * 0.2 } : f === 12 ? { ...idle, mx: mx * 0.2, my: my * 0.2, ...key } : idle);
 const hit = (e: SimEvent, kind: 'targetHit' | 'propCleared', id: string): boolean => e.t === kind && e.propId === id;
 const walk = (sim: ReturnType<typeof solo>, frames: number, mx: number, my: number): { x: number; y: number } => {
   for (let f = 0; f < frames; f++) sim.step({ ...idle, mx, my });
@@ -53,17 +56,19 @@ test('gates: closed, door1, door2 and crate1 stop a hero in the sim, and open th
   assert.ok(walk(solo('mike', 23, 18), 150, 0, -1).y >= 16 * 16 + 24, 'the glass holds a hero out of the chamber');
 });
 
-test('puzzles: only Dustin lights sensor1, and only from close up', () => {
+test('puzzles: Dustin burns sensor1 from a few tiles back, and anyone else has to stand at it and smash it', () => {
   const s = prop('sensor1');
   const burn = (id: HeroId, tx: number, ty: number, key: Partial<SimInput> = { specialPressed: true }): boolean =>
     runUntil(solo(id, tx, ty), 90, facing(0, -1, key), (e) => hit(e, 'targetHit', 'sensor1')) !== null;
+  const swing = (id: HeroId, ty: number, key: Partial<SimInput> = { attackPressed: true }): boolean =>
+    runUntil(solo(id, s.tx, ty), 90, turning(0, -1, key), (e) => hit(e, 'targetHit', 'sensor1')) !== null;
   for (const [dx, dy] of [[0, 1], [0, 2], [0, 3], [-1, 3], [1, 3]]) assert.ok(burn('dustin', s.tx + dx!, s.ty + dy!), `Farrah spray from ${dx},${dy} below lights it`);
   assert.ok(!burn('dustin', s.tx, s.ty + 6), 'six tiles back it falls short');
-  assert.ok(!burn('dustin', s.tx, s.ty + 1, { attackPressed: true }), 'the candy lure does not light it');
-  for (const id of ['mike', 'lucas', 'eleven'] as HeroId[]) {
-    assert.ok(!burn(id, s.tx, s.ty + 1), `${id}'s special does not light it`);
-    assert.ok(!burn(id, s.tx, s.ty + 1, { attackPressed: true }), `${id}'s basic does not light it`);
+  for (const id of ['mike', 'dustin', 'lucas', 'eleven'] as HeroId[]) {
+    assert.ok(swing(id, s.ty + 1), `${id}'s basic right under it smashes it`);
+    assert.ok(!swing(id, s.ty + 2), `${id}'s basic from a tile further back does not`);
   }
+  for (const id of ['mike', 'lucas', 'eleven'] as HeroId[]) assert.ok(!swing(id, s.ty + 1, { specialPressed: true }), `${id}'s special does not light it`);
 });
 
 test('puzzles: Lucas hits relay1 through the glass from the corridor, and nobody else can', () => {
@@ -79,8 +84,8 @@ test('puzzles: Lucas hits relay1 through the glass from the corridor, and nobody
     assert.ok(!shoot(id, r.tx, 18, 0, -1, { specialPressed: true }), `${id}'s special does not light the relay`);
   }
   const s = prop('sensor1');
-  const rock = runUntil(solo('lucas', s.tx, s.ty + 1), 120, facing(0, -1, { attackPressed: true }), (e) => hit(e, 'targetHit', 'sensor1'));
-  assert.equal(rock, null, 'a rocket does not light the sensor: it wants fire');
+  const rock = runUntil(solo('lucas', s.tx, s.ty + 3), 120, turning(0, -1, { attackPressed: true }), (e) => hit(e, 'targetHit', 'sensor1'));
+  assert.equal(rock, null, 'a rocket from a step back does not light the sensor: it wants fire, or a hero right at it');
 });
 
 test('puzzles: Eleven shoves crate1 aside from the west, and nobody else can', () => {
@@ -108,6 +113,17 @@ test('cameras: each one spots a hero who walks under it, and Lucas shoots it out
     assert.ok(shot, `a rocket from ${spot.tx},${spot.ty} knocks out ${c.id}`);
     assert.ok(!spotted, `${c.id} never saw Lucas at ${spot.tx},${spot.ty}`);
     assert.equal(sim.view().props.find((p) => p.id === c.id)?.cam?.live, false, `${c.id} is off for good`);
+  }
+});
+
+test('cameras: any hero standing right under one smashes it with a basic attack, and a tile further back is too far', () => {
+  for (const c of CAMS) {
+    // The side of the wall the camera looks out of: below it when it sweeps downward.
+    const side = c.cam!.from < 180 ? 1 : -1;
+    const swing = (id: HeroId, ty: number): boolean =>
+      runUntil(solo(id, c.tx, ty), 90, turning(0, -side, { attackPressed: true }), (e) => hit(e, 'targetHit', c.id)) !== null;
+    for (const id of ['mike', 'dustin', 'lucas', 'eleven'] as HeroId[]) assert.ok(swing(id, c.ty + side), `${id} smashes ${c.id}`);
+    for (const id of ['mike', 'eleven'] as HeroId[]) assert.ok(!swing(id, c.ty + 2 * side), `${id} a tile further from ${c.id} is too far`);
   }
 });
 

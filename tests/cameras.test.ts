@@ -159,6 +159,33 @@ test('camera: only a shot lights it: a Push, a spray or a bat swing at it does n
   }
 });
 
+test('camera: marked smash, a bat swing, a Push or a candy lure from right under it lights it too', () => {
+  for (const id of ['mike', 'eleven', 'dustin'] as const) {
+    const r = makeWhite({ party: [{ id, level: 3 }], start: { x: tc(12), y: tf(3) + 4 }, spawns: [cam('cam1', 12, 2, { from: 90, to: 90, period: 100, range: 5, half: 5 }, { smash: true })] });
+    run(r.sim, 2, inp({ my: -0.3 }));
+    const ev = run(r.sim, 10, inp({ attackPressed: true, my: -0.2 }));
+    assert.equal(camView(r.sim).state, 'lit', id);
+    assert.deepEqual(ofType(ev, 'targetHit').map((e) => e.propId), ['cam1'], id);
+    assert.equal(ofType(ev, 'poked').length, 0, `${id}: the swing that smashed it is not also a try at it`);
+  }
+});
+
+test('camera: marked smash, a swing from a tile back, one facing away or a special does nothing', () => {
+  const smashable = (y: number) => makeWhite({ party: [{ id: 'mike', level: 3 }], start: { x: tc(12), y }, spawns: [cam('cam1', 12, 2, { from: 90, to: 90, period: 100, range: 5, half: 5 }, { smash: true })] });
+  const back = smashable(tf(4) + 4);
+  run(back.sim, 2, inp({ my: -0.3 }));
+  run(back.sim, 10, inp({ attackPressed: true, my: -0.2 }));
+  assert.notEqual(camView(back.sim).state, 'lit', 'a tile back');
+  const away = smashable(tf(3) + 4);
+  run(away.sim, 2, inp({ my: 0.3 }));
+  run(away.sim, 10, inp({ attackPressed: true, my: 0.2 }));
+  assert.notEqual(camView(away.sim).state, 'lit', 'facing away');
+  const special = makeWhite({ party: [{ id: 'eleven', level: 3 }], start: { x: tc(12), y: tf(3) + 4 }, spawns: [cam('cam1', 12, 2, { from: 90, to: 90, period: 100, range: 5, half: 5 }, { smash: true })] });
+  run(special.sim, 2, inp({ my: -0.3 }));
+  run(special.sim, 10, inp({ specialPressed: true, my: -0.2 }));
+  assert.notEqual(camView(special.sim).state, 'lit', 'a Mind Blast');
+});
+
 test('camera: a retry from a checkpoint after it was shot keeps it lit, and nothing wakes it', () => {
   const r = rig({ openProps: ['cam1'] });
   const v = camView(r.sim);

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Social Cards</title>
-<meta name="description" content="The link preview images for the game, drawn with the game's own sprites, logo and tiles. Save writes them to public/social.">
+<meta name="description" content="The link preview images and the app icon, drawn with the game's own art. Save all writes them to public.">
 <style>
   :root {
     color-scheme: dark;
@@ -43,7 +43,7 @@
     <p class="kicker">Link previews</p>
     <h1>Social cards</h1>
     <p>Each card is drawn at the game's own pixel size with its sprites, logo and Mirkwood tiles, then scaled up by a whole number so every pixel stays square.</p>
-    <p>Save all writes the PNGs to <code>public/social</code>, and <code>index.html</code> points at <code>og.png</code>.</p>
+    <p>Save all writes the PNGs to <code>public/social</code> and the app icon to <code>public/icons</code> and <code>public/favicon.ico</code>. <code>index.html</code> points at all of them.</p>
     <div class="bar">
       <button class="btn primary" id="save-all" type="button">Save all</button>
       <span class="status" id="status" role="status"></span>
@@ -67,6 +67,7 @@ import { drawControlsCorner, drawWorld } from '/src/world/render.ts';
 import { createSim } from '/src/combat/index.ts';
 import { drawHud } from '/src/ui/hud.ts';
 import { MIDDLE_END } from '/src/ui/hudlayout.ts';
+import { drawDie } from '/src/ui/die.ts';
 
 // Steady logo, steady lights: the same pixels every time the page loads.
 settings.reduceFlashing = true;
@@ -332,6 +333,237 @@ const CARDS = [
   },
 ];
 
+// ---------------------------------------------------------------- app icon
+// The app icon is a crimson d20 on a cool blue glow, C2 below. The other five takes on the die stay on the page for
+// comparison. drawDie rasterizes the die at any radius, so the 16, 32 and 64 px versions are each drawn clean at their
+// own size, not scaled down. The favicon is the die alone on a transparent background. The home screen icon puts it
+// on a plate.
+
+/** The plate behind the home screen icon: rings of light stepping out from a point, then the base color. */
+function plate(ctx, n, rings, base, cx = 0.5, cy = 0.5) {
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const d = Math.hypot((x + 0.5) / n - cx, (y + 0.5) / n - cy);
+      const ring = rings.find(([r]) => d < r);
+      box(ctx, x, y, 1, 1, ring ? ring[1] : base);
+    }
+  }
+}
+
+/** Spores: single pixels drifting up through the plate, the Upside Down's snow. Kept off the middle. */
+function specks(ctx, n, count, seed, colors = ['pink', 'rose', 'hot']) {
+  for (let i = 0; i < count; i++) {
+    const x = hash2(i, 1, seed) % n, y = hash2(i, 2, seed) % n;
+    if (Math.hypot(x - n / 2, y - n / 2) < n * 0.34) continue;
+    box(ctx, x, y, 1, 1, colors[i % colors.length]);
+  }
+}
+
+/** A crit's sparkles: four point stars off the corners. */
+function sparkles(ctx, n, color = 'yellow') {
+  for (const [u, v, k] of [[0.17, 0.2, 2], [0.84, 0.16, 1], [0.86, 0.8, 2], [0.14, 0.84, 1]]) {
+    const x = Math.round(u * n), y = Math.round(v * n), a = Math.max(1, Math.round(k * n / 40));
+    box(ctx, x - a, y, a * 2 + 1, 1, color);
+    box(ctx, x, y - a, 1, a * 2 + 1, color);
+    box(ctx, x, y, 1, 1, 'white');
+  }
+}
+
+/** C1's plate: rings of red, and gold sparkles. */
+function plateRed(ctx, n) {
+  plate(ctx, n, [[0.3, 'red'], [0.37, 'blood1'], [0.45, 'blood0']], 'ink', 0.5, 0.5);
+  sparkles(ctx, n);
+}
+
+// ---------------------------------------------------------------- C, six ways
+const WHITE_DIE = { center: 'white', top: 'bone', side: 'grey3', low: 'grey2', line: 'grey2', edge: 'ink' };
+const dieGlyph = (scheme) => (ctx, x0, y0, m) => drawDie(ctx, x0 + m / 2, y0 + m / 2, Math.floor(m / 2) - 1, { scheme });
+
+/** C5's plate: flat red, and the die's silhouette dropped down and to the right as a hard shadow. */
+function plateFlat(ctx, n) {
+  box(ctx, 0, 0, n, n, 'red');
+  const m = Math.round(n * 0.74), o = Math.floor((n - m) / 2), d = Math.max(1, Math.round(n / 24));
+  const dark = { center: 'blood1', top: 'blood1', side: 'blood1', low: 'blood1', line: 'blood1', edge: 'blood1' };
+  drawDie(ctx, o + m / 2 + d, o + m / 2 + d, Math.floor(m / 2) - 1, { scheme: dark });
+}
+
+/** C6: where the die sits above the horizon and how deep its reflection runs, in an m by m square. */
+function layoutDieUD(m) {
+  const r = Math.floor(m * 0.3);
+  const cy = Math.round(m * 0.06) + r + 1;
+  return { r, cy, horizon: cy + r + 1, deep: Math.round(r * 1.2) };
+}
+
+/** C6: the die over a red horizon, and under it the die again, upside down, dark red, every other row. */
+function glyphDieUD(ctx, x0, y0, m) {
+  if (m < 24) { dieGlyph(WHITE_DIE)(ctx, x0, y0, m); return; }
+  const { r, cy, horizon, deep } = layoutDieUD(m);
+  drawDie(ctx, x0 + m / 2, y0 + cy, r, { scheme: WHITE_DIE });
+  box(ctx, x0 + Math.round(m / 2 - r * 1.1), y0 + horizon, Math.round(r * 2.2), 1, 'hot');
+  const ghost = makeCanvas(m, m);
+  drawDie(ghost.getContext('2d'), m / 2, cy, r, { scheme: { center: 'red', top: 'blood1', side: 'blood1', low: 'blood0', line: 'blood0', edge: 'blood0' } });
+  for (let k = 0; k < deep; k += 2) {
+    const shift = (k >> 1) % 2 === 0 ? 0 : 1;
+    ctx.drawImage(ghost, 0, cy + r - 1 - k, m, 1, x0 + shift, y0 + horizon + 1 + k, m, 1);
+  }
+}
+
+function plateDieUD(ctx, n) {
+  const m = Math.round(n * 0.74), o = Math.floor((n - m) / 2);
+  const L = layoutDieUD(m), hz = o + L.horizon, cy = (o + L.cy) / n;
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const v = (y + 0.5) / n;
+      const d = Math.hypot((x + 0.5) / n - 0.5, (v - (y < hz ? cy : hz / n)) * 1.4);
+      box(ctx, x, y, 1, 1, y < hz ? (d < 0.32 ? 'blood0' : 'ink') : d < 0.3 ? 'shadow' : 'night');
+    }
+  }
+  for (let i = 0; i < 26; i++) {
+    const x = hash2(i, 1, 5) % n, y = hz + 2 + (hash2(i, 2, 5) % Math.max(1, n - hz - 3));
+    box(ctx, x, y, 1, 1, ['pink', 'rose', 'hot'][i % 3]);
+  }
+}
+
+const DICE = [
+  { id: 'C1', name: 'Current', note: 'White die, red glow, gold sparkles', glyph: dieGlyph(WHITE_DIE), plate: plateRed },
+  {
+    id: 'C2', name: 'Crimson', note: 'A red die on cool blue',
+    glyph: dieGlyph({ center: 'pink', top: 'hot', side: 'red', low: 'blood1', line: 'blood0', edge: 'ink' }),
+    plate: (ctx, n) => { plate(ctx, n, [[0.3, 'dusk'], [0.38, 'shadow'], [0.46, 'night']], 'ink'); sparkles(ctx, n, 'sky'); },
+  },
+  {
+    id: 'C3', name: 'Gold crit', note: 'The level-up gold, on purple',
+    glyph: dieGlyph({ center: 'cream', top: 'yellow', side: 'amber', low: 'orange', line: 'soil2', edge: 'ink' }),
+    plate: (ctx, n) => { plate(ctx, n, [[0.3, 'purple'], [0.38, 'purple0'], [0.46, 'shadow']], 'night'); sparkles(ctx, n, 'pink'); },
+  },
+  {
+    id: 'C4', name: 'Neon', note: 'A dark die with red neon edges',
+    glyph: dieGlyph({ center: 'shadow', top: 'night', side: 'ink', low: 'ink', line: 'red', edge: 'hot' }),
+    plate: (ctx, n) => { plate(ctx, n, [[0.3, 'blood1'], [0.4, 'blood0']], 'ink'); specks(ctx, n, 24, 7); },
+  },
+  { id: 'C5', name: 'Flat', note: 'White on solid red, hard shadow', glyph: dieGlyph(WHITE_DIE), plate: plateFlat },
+  { id: 'C6', name: 'Upside Down', note: 'The die and its reflection', glyph: glyphDieUD, plate: plateDieUD },
+];
+
+/** The one in use. */
+const APP_ICON = DICE.find((d) => d.id === 'C2');
+
+/** The home screen icon: the plate, and the object at about three quarters of it. */
+function appIcon(icon, n, scale) {
+  const small = makeCanvas(n, n);
+  const ctx = small.getContext('2d');
+  icon.plate(ctx, n);
+  const m = Math.round(n * 0.74);
+  icon.glyph(ctx, Math.floor((n - m) / 2), Math.floor((n - m) / 2), m);
+  return upscale(small, scale);
+}
+
+/** The favicon: the object alone, on a transparent background. */
+function favicon(icon, m, scale = 1) {
+  const small = makeCanvas(m, m);
+  icon.glyph(small.getContext('2d'), 0, 0, m);
+  return upscale(small, scale);
+}
+
+function upscale(c, scale) {
+  if (scale === 1) return c;
+  const big = makeCanvas(c.width * scale, c.height * scale);
+  big.getContext('2d').drawImage(c, 0, 0, big.width, big.height);
+  return big;
+}
+
+/** Every option side by side: the 512 px home screen icon with its corners rounded, the 180, the favicon at 32 and 16 on
+ * dark and on light, and a dark and a light tab at 2x, the way a retina screen shows a 16 px tab icon. */
+function iconSheet(list = DICE) {
+  const col = 300, W = col * list.length, H = 700;
+  const c = makeCanvas(W, H);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#10142a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'top';
+  const label = (text, x, y, size, color, weight = 400) => {
+    ctx.fillStyle = color;
+    ctx.font = `${weight} ${size}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.fillText(text, x, y);
+  };
+  const rounded = (img, x, y, s, r) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, s, s, r);
+    ctx.clip();
+    ctx.drawImage(img, x, y, s, s);
+    ctx.restore();
+  };
+  list.forEach((icon, i) => {
+    const x = i * col + 22;
+    label(icon.id, x, 18, 28, '#ffffff', 600);
+    const tx = x + Math.ceil(ctx.measureText(icon.id).width) + 12;
+    label(icon.name, tx, 20, 17, '#ffffff', 600);
+    label(icon.note, tx, 42, 14, '#8190b8');
+    if (icon === APP_ICON) {
+      ctx.strokeStyle = '#ff4a4a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x - 12, 8, col - 20, H - 16, 14);
+      ctx.stroke();
+      label('IN USE', x + 200, 22, 12, '#ff4a4a', 600);
+    }
+    rounded(appIcon(icon, 64, 4), x, 76, 256, 57);
+    rounded(appIcon(icon, 60, 2), x, 352, 120, 27);
+    label('180', x + 48, 478, 12, '#8190b8');
+    for (const [k, bg] of [[0, '#0a0a14'], [1, '#f1f2f5']]) {
+      const sx = x + 140 + k * 60;
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.roundRect(sx, 352, 52, 72, 8);
+      ctx.fill();
+      ctx.drawImage(favicon(icon, 32), sx + 10, 358);
+      ctx.drawImage(favicon(icon, 16), sx + 18, 400);
+    }
+    label('32 and 16', x + 158, 432, 12, '#8190b8');
+    for (const [k, bg, fg] of [[0, '#2a2b30', '#e8e8ec'], [1, '#f1f2f5', '#202124']]) {
+      const ty = 512 + k * 88;
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.roundRect(x, ty, 256, 72, 14);
+      ctx.fill();
+      ctx.drawImage(favicon(icon, 32), x + 20, ty + 20);
+      label('Stranger Things', x + 66, ty + 26, 20, fg);
+    }
+  });
+  return c;
+}
+
+/** The home screen icons under public/icons, for iOS (180) and Android (192 and 512). favicon.ico holds the 16 and 32. */
+const ICON_FILES = [
+  { name: 'icons/apple-touch-icon', make: () => appIcon(APP_ICON, 60, 3) },
+  { name: 'icons/icon-192', make: () => appIcon(APP_ICON, 64, 3) },
+  { name: 'icons/icon-512', make: () => appIcon(APP_ICON, 64, 8) },
+];
+
+/** An .ico holding PNGs, which every current browser reads: a six byte header, a 16 byte entry per image, the images. */
+async function icoFrom(canvases) {
+  const pngs = await Promise.all(canvases.map((c) => new Promise((done) => c.toBlob(async (b) => done(new Uint8Array(await b.arrayBuffer())), 'image/png'))));
+  const head = 6 + 16 * pngs.length;
+  const out = new Uint8Array(head + pngs.reduce((n, p) => n + p.length, 0));
+  const dv = new DataView(out.buffer);
+  dv.setUint16(2, 1, true);
+  dv.setUint16(4, pngs.length, true);
+  let at = head;
+  pngs.forEach((png, i) => {
+    const e = 6 + i * 16, c = canvases[i];
+    out[e] = c.width % 256;
+    out[e + 1] = c.height % 256;
+    dv.setUint16(e + 4, 1, true);
+    dv.setUint16(e + 6, 32, true);
+    dv.setUint32(e + 8, png.length, true);
+    dv.setUint32(e + 12, at, true);
+    out.set(png, at);
+    at += png.length;
+  });
+  return `data:image/x-icon;base64,${btoa(String.fromCharCode(...out))}`;
+}
+
 // ---------------------------------------------------------------- page
 const root = document.getElementById('cards');
 const status = document.getElementById('status');
@@ -348,11 +580,19 @@ function render(card) {
   return big;
 }
 
-async function save(card) {
-  const c = rendered.get(card.id);
-  const res = await fetch(`/__snap?dir=social&name=${card.id}`, { method: 'POST', body: c.toDataURL('image/png') });
-  if (!res.ok) throw new Error(`${card.id}: ${res.status}`);
+async function post(dir, name, dataUrl) {
+  const res = await fetch(`/__snap?dir=${dir}&name=${name}`, { method: 'POST', body: dataUrl });
+  if (!res.ok) throw new Error(`${name}: ${res.status}`);
   return (await res.json()).file;
+}
+
+const save = (card) => post('social', card.id, rendered.get(card.id).toDataURL('image/png'));
+
+async function saveIcons() {
+  const out = [];
+  for (const f of ICON_FILES) out.push(await post('public', f.name, f.make().toDataURL('image/png')));
+  out.push(await post('public', 'favicon.ico', await icoFrom([favicon(APP_ICON, 16), favicon(APP_ICON, 32)])));
+  return out;
 }
 
 for (const card of CARDS) {
@@ -371,13 +611,27 @@ document.getElementById('save-all').addEventListener('click', async () => {
   status.textContent = 'Saving…';
   try {
     for (const card of CARDS) await save(card);
-    status.textContent = `Saved ${CARDS.length} cards to public/social`;
+    await saveIcons();
+    status.textContent = `Saved ${CARDS.length} cards to public/social and the icons to public`;
   } catch (e) {
     status.textContent = `Couldn't save: ${e.message}. Save needs the dev server.`;
   }
 });
 
-Object.assign(window, { __social: { CARDS, render, save, rendered, move, heroDoing } });
+// The app icon, next to the other takes on the die.
+{
+  const sec = document.createElement('section');
+  sec.className = 'card';
+  sec.innerHTML = '<div class="meta"><div><h2>App icon</h2><p>C2, the crimson d20, at 512 and 180, as the favicon at 32 and 16, and in a tab at 2x. The other five are for comparison</p></div><p><code>public/icons</code> and <code>public/favicon.ico</code></p></div><div class="frame"></div>';
+  const sheet = iconSheet(DICE);
+  sheet.setAttribute('role', 'img');
+  sheet.setAttribute('aria-label', 'Six d20 app icons, C1 to C6. C2, the crimson die on a blue glow, is the one in use');
+  sheet.style.imageRendering = 'auto';
+  sec.querySelector('.frame').append(sheet);
+  root.append(sec);
+}
+
+Object.assign(window, { __social: { CARDS, DICE, APP_ICON, ICON_FILES, render, appIcon, favicon, iconSheet, save, saveIcons, rendered, move, heroDoing } });
 </script>
 </body>
 </html>

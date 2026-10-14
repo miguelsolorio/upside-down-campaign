@@ -1,0 +1,12 @@
+{
+  "name": "Stranger Things 8-bit: The Upside Down Campaign",
+  "short_name": "Upside Down",
+  "description": "An 8-bit Stranger Things fan tribute. Not affiliated with Netflix.",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "background_color": "#0a0a14",
+  "theme_color": "#0a0a14"
+}

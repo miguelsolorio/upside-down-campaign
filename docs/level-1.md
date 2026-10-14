@@ -34,11 +34,11 @@ Scripts Story writes: `prologue`, `l1_start`, `l1_tut_attack`, `l1_tut_special`,
 
 ## Puzzle hints
 
-Both puzzles (the lantern behind `gate_lucas`, the log behind `push_gate`) are listed in `puzzles` in `stage11.ts`. Each names its arrival beat, the prop to watch and the hero who solves it. The hints point at things and never print instructions.
+Both puzzles (the lantern behind `gate_lucas`, the log behind `push_gate`) are listed in `puzzles` in `stage11.ts`. Each names its arrival beat, the prop to watch, the hero who solves it and a one-line `hint`. The hints name the hero and what to try, never a key, so they stay true after a rebind.
 
 - **Arrival.** The beat's script says which hero to swap to, with the slot key, and which key to press. Lucas is slot 3 (`{pick3}`) and Eleven is slot 4 (`{pick4}`).
-- **Skip story.** Dialogue is off by default and there is no text strip, so the 30 second highlight below is the only hint.
-- **After 30 seconds.** Once the arrival beat has finished, time spent near the prop without solving it counts up. At 30 seconds (1800 ticks) the prop gets pulsing yellow corner brackets and a dither over it. If the right hero is on the bench, their slot in the HUD pulses too and a callout over the prop reads TRY CHANGING CHARACTERS (`HINT_NUDGE` in `puzzles.ts`). If that hero is already leading, the brackets show with no text. It clears when the prop is `open` or `lit`. Pause, dialogue and walking away stop the clock, and a retry starts it over. Reduce flashing makes the brackets hold still.
+- **Skip story.** Dialogue is off by default, so the hint below is the only explanation the player gets.
+- **After 10 seconds.** Once the arrival beat has finished, time spent near the prop without solving it counts up. At 10 seconds (600 ticks) the title screen's yellow caret bobs over the prop, pointing down. A prop at the top of the view gets it underneath, pointing up, and one just out of view gets it pinned to the screen edge. A subtitle at the bottom of the screen reads the puzzle's hint (MAYBE LUCAS SHOULD TRY HIS SLINGSHOT, MAYBE ELEVEN SHOULD TRY HER SHOVE) and covers the corner controls while it shows. If the right hero is on the bench, their slot in the HUD pulses too. The caret and subtitle show only while the party is near the prop (`NEAR_PX`) and clear when it is `open` or `lit`. Pause, dialogue and walking away stop the clock, and a retry starts it over. Reduce flashing makes the caret hold still.
 - **Code.** `world/puzzles.ts` holds the clock (pure, tested in `tests/puzzles.test.ts`). `play.ts` ticks it and `render.ts` draws it.
 
 ## Spawns and the XP budget

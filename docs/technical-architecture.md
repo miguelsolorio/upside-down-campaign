@@ -57,7 +57,7 @@ Source of truth: the stubs. Quick map.
 - `combat/index.ts`: `createSim`. `combat/bot.ts`: `createBot`.
 - `ui/index.ts`: `drawHud` (the optional fourth argument is a `HudOpts`: the benched hero whose slot pulses for a puzzle hint, the heroes whose level-up effect is lit, the frames since the last swap, the hovered portrait and the input device), `createDialogueBox`, `createTitleScene`, `createChapterCard`, `createResultsScene`, `createPauseScene`, `createGameOverScene`, `mountDevPanel`.
 - `story/index.ts`: `SCRIPTS`, `bark`, `createPrologueScene`.
-- `world/index.ts`: `createPlayScene`. `world/puzzles.ts`: `createPuzzleTracker`, the pure clock behind the puzzle hints, and `HINT_NUDGE`. `world/levelfx.ts`: `createLevelFx`, the pure timing behind the in-world level-up effect. `ui/hudlayout.ts`: `slotRects` and `slotAt`, the portrait rectangles shared by the HUD and click-to-swap. `world/triggers.ts`: `createDirector`, whose `hasFired(beat)` it reads.
+- `world/index.ts`: `createPlayScene`. `world/puzzles.ts`: `createPuzzleTracker`, the pure clock behind the puzzle hints, and `isNear`, which gates the hint caret and subtitle. `world/levelfx.ts`: `createLevelFx`, the pure timing behind the in-world level-up effect. `ui/hudlayout.ts`: `slotRects` and `slotAt`, the portrait rectangles shared by the HUD and click-to-swap. `world/triggers.ts`: `createDirector`, whose `hasFired(beat)` it reads.
 - `flow.ts` glues them: title, prologue, chapter card, play, results.
 
 ## Reports

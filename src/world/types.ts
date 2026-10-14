@@ -43,7 +43,8 @@ export type BeatWhen =
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
 /** A puzzle the player can get stuck on. Its arrival beat explains it; if the prop is still unsolved after
- * HINT_AFTER frames spent near it, the play scene highlights the prop and the hero who solves it. */
+ * HINT_AFTER frames spent near it, the play scene points the yellow caret at the prop, pulses the hero who solves
+ * it and shows the hint as a subtitle. */
 export interface PuzzleDef {
   id: string;
   /** The beat that introduces the puzzle. The hint clock starts once this beat has finished. */
@@ -52,6 +53,8 @@ export interface PuzzleDef {
   prop: string;
   /** The hero whose bench slot pulses with the highlight. */
   hero: HeroId;
+  /** The subtitle line. Names the hero and what to try, never a key, so it stays true after a rebind. One row. */
+  hint: string;
 }
 
 /** Where the party stands again after a retry, once this lights prop has been lit. Feet position in px. */

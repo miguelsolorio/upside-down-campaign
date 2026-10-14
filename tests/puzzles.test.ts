@@ -1,17 +1,18 @@
 // The puzzle hint clock and the Level 1 puzzle data. Pure logic, so Node runs it without a canvas.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { SCREEN_W } from '../src/core/config.ts';
 import { fitsBox, hasEmDash } from '../src/core/text.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { STAGE_11 as S } from '../src/world/stages/stage11.ts';
-import { HINT_AFTER, HINT_NUDGE, NEAR_PX, createPuzzleTracker } from '../src/world/puzzles.ts';
+import { HINT_AFTER, NEAR_PX, createPuzzleTracker, isNear } from '../src/world/puzzles.ts';
 import type { PuzzleTracker } from '../src/world/puzzles.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import type { DirectorEnv } from '../src/world/triggers.ts';
 import type { PuzzleDef } from '../src/world/types.ts';
 import type { PropState, PropView, SimSpawn, Vec2 } from '../src/core/types.ts';
 
-const DEF: PuzzleDef = { id: 'p', beat: 'b', prop: 'rock', hero: 'lucas' };
+const DEF: PuzzleDef = { id: 'p', beat: 'b', prop: 'rock', hero: 'lucas', hint: 'MAYBE LUCAS SHOULD TRY HIS SLINGSHOT' };
 const prop = (state: PropState): PropView => ({ id: 'rock', kind: 'target', x: 100, y: 100, w: 32, h: 16, state, t: 0 });
 const NEAR: Vec2 = { x: 116, y: 108 };
 const FAR: Vec2 = { x: 116 + NEAR_PX + 50, y: 108 };
@@ -27,8 +28,8 @@ function run(tr: PuzzleTracker, frames: number, o: Partial<Setup> = {}): void {
   }
 }
 
-test('thirty seconds is 1800 ticks of the 60 Hz sim', () => {
-  assert.equal(HINT_AFTER, 1800);
+test('ten seconds is 600 ticks of the 60 Hz sim', () => {
+  assert.equal(HINT_AFTER, 600);
 });
 
 test('nothing happens before the arrival beat has fired', () => {
@@ -37,7 +38,7 @@ test('nothing happens before the arrival beat has fired', () => {
   assert.equal(tr.highlight(), null);
 });
 
-test('highlights after thirty seconds near the prop, not a tick sooner', () => {
+test('highlights after ten seconds near the prop, not a tick sooner', () => {
   const tr = createPuzzleTracker([DEF]);
   run(tr, HINT_AFTER - 1);
   assert.equal(tr.highlight(), null);
@@ -67,6 +68,14 @@ test('a solved puzzle is never highlighted, even with a full clock', () => {
   }
 });
 
+test('isNear measures from the prop center, out to NEAR_PX', () => {
+  const p = prop('closed');
+  assert.ok(isNear(p, NEAR));
+  assert.ok(isNear(p, { x: 116 + NEAR_PX, y: 108 }));
+  assert.ok(!isNear(p, { x: 116 + NEAR_PX + 1, y: 108 }));
+  assert.ok(!isNear(p, FAR));
+});
+
 test('a prop that is not in the view is ignored', () => {
   const tr = createPuzzleTracker([DEF]);
   run(tr, HINT_AFTER + 1, { props: [] });
@@ -79,7 +88,7 @@ test('reset forgets the clock', () => {
   tr.reset();
   assert.equal(tr.highlight(), null);
   run(tr, HINT_AFTER - 1);
-  assert.equal(tr.highlight(), null, 'a retry starts the thirty seconds over');
+  assert.equal(tr.highlight(), null, 'a retry starts the ten seconds over');
 });
 
 test('each puzzle keeps its own clock', () => {
@@ -124,11 +133,15 @@ test('Level 1 has the gate and log puzzles, each wired to a real beat, prop and 
   }
 });
 
-test('the hint nudge is vague: it fits one callout row and names no hero, key or action', () => {
-  // drawCallout wraps at 26 columns, so the nudge stays on one line.
-  assert.ok(fitsBox(HINT_NUDGE, 26, 1), `"${HINT_NUDGE}" is ${HINT_NUDGE.length} characters, over one row of 26`);
-  assert.ok(!hasEmDash(HINT_NUDGE), 'no em dash');
-  assert.ok(!/seamless|robust|leverage|unlock|delve/i.test(HINT_NUDGE), 'no banned words');
-  assert.ok(!/\b[0-9]\b/.test(HINT_NUDGE), 'no key digits');
-  assert.ok(!/shoot|push|lucas|eleven|lantern|log/i.test(HINT_NUDGE), 'does not give the answer away');
+test('each hint is one subtitle row that names its hero and no key', () => {
+  // The subtitle is one line of 6 px glyphs on a strip 8 px wider, with a margin on each side of the screen.
+  const cols = Math.floor((SCREEN_W - 16) / 6);
+  for (const p of S.puzzles) {
+    assert.ok(fitsBox(p.hint, cols, 1), `"${p.hint}" is ${p.hint.length} characters, over one row of ${cols}`);
+    assert.equal(p.hint, p.hint.toUpperCase(), `${p.id}: all caps, like the rest of the in-world text`);
+    assert.ok(p.hint.includes(HERO_DEFS[p.hero].name.toUpperCase()), `${p.id}: names ${p.hero}`);
+    assert.ok(!hasEmDash(p.hint), 'no em dash');
+    assert.ok(!/seamless|robust|leverage|unlock|delve/i.test(p.hint), 'no banned words');
+    assert.ok(!/\b[0-9]\b/.test(p.hint), 'no key digits, so a rebind never makes it wrong');
+  }
 });

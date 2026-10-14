@@ -146,8 +146,8 @@ const BEATS: Beat[] = [
 
 // ---------------------------------------------------------------- puzzles
 const PUZZLES: PuzzleDef[] = [
-  { id: 'gate', beat: 'gate_lucas', prop: 'target1', hero: 'lucas' },
-  { id: 'log', beat: 'push_gate', prop: 'log1', hero: 'eleven' },
+  { id: 'gate', beat: 'gate_lucas', prop: 'target1', hero: 'lucas', hint: 'MAYBE LUCAS SHOULD TRY HIS SLINGSHOT' },
+  { id: 'log', beat: 'push_gate', prop: 'log1', hero: 'eleven', hint: 'MAYBE ELEVEN SHOULD TRY HER SHOVE' },
 ];
 
 // ---------------------------------------------------------------- bot

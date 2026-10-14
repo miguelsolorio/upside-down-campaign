@@ -1,8 +1,8 @@
 // Night art. A night stage is not the day art under a dark layer: its tiles are repainted in a night palette and
-// get a few night-only details (rim light on the pines, drifting spores, vines). Each function takes the tile
-// the day painters already made, so the shapes stay the same and only the colors and the extras change. Lights
-// (window and lamp glow, bulbs, amber, yellow, orange, cream, red) are left out of the palette on purpose, so they
-// stay bright. Pure pixel work, no DOM, so Node can run it.
+// get a few night-only details (rim light on the pines, dew, glowing mushrooms and flowers, fireflies). Each
+// function takes the tile the day painters already made, so the shapes stay the same and only the colors and the
+// extras change. Lights (window and lamp glow, bulbs, amber, yellow, orange, cream, red) are left out of the palette
+// on purpose, so they stay bright. Pure pixel work, no DOM, so Node can run it.
 import type { TileName } from '../core/tiles.ts';
 import { createRng } from '../core/rng.ts';
 import { hash2, px32 } from './canvas.ts';
@@ -18,24 +18,26 @@ type Recolor = Partial<Record<ColorName, Rgb>>;
 /** Packed little-endian RGBA, the same form as px32 and the Uint32 view of ImageData. */
 const pack = (c: Rgb): number => ((255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
 
-/** The night color for each material, by the name the day art paints it with. */
+/** The night color for each material, by the name the day art paints it with: deep green woods, plum-grey earth. */
 const NIGHT: Recolor = {
-  pine0: [8, 3, 14], pine1: [18, 6, 26], pine2: [30, 10, 40], pine3: [52, 18, 60], leaf: [104, 44, 96],
-  soil0: [14, 5, 9], soil1: [30, 10, 16], soil2: [54, 20, 28], soil3: [86, 32, 42], sand: [140, 66, 72],
-  grey1: [14, 8, 22], grey2: [34, 22, 52], grey3: [70, 50, 98],
-  night: [12, 6, 24], shadow: [20, 10, 34], dusk: [36, 20, 60], slate: [54, 34, 86], mist: [96, 68, 130], bone: [150, 110, 160], white: [210, 170, 200],
-  teal0: [16, 4, 26], teal1: [44, 12, 60], cyan: [255, 120, 190], sky: [220, 110, 200], blue: [120, 40, 150],
+  pine0: [3, 12, 10], pine1: [6, 26, 22], pine2: [10, 40, 34], pine3: [16, 62, 50], leaf: [40, 120, 90],
+  soil0: [14, 10, 14], soil1: [26, 20, 28], soil2: [42, 34, 46], soil3: [52, 44, 60], sand: [84, 76, 96],
+  grey1: [10, 14, 22], grey2: [28, 36, 54], grey3: [60, 74, 100],
+  night: [8, 12, 26], shadow: [14, 20, 36], dusk: [26, 36, 62], slate: [40, 54, 86], mist: [78, 96, 130], bone: [120, 138, 168], white: [170, 190, 215],
+  teal0: [4, 16, 26], teal1: [10, 46, 66], cyan: [110, 240, 220], sky: [110, 190, 230], blue: [30, 70, 150],
 };
 /** Trees sit darker than the ground around them: the same colors at about half the brightness. */
 const TREE_SCALE: Partial<Record<ColorName, number>> = { pine0: 0.5, pine1: 0.5, pine2: 0.55, pine3: 0.62, leaf: 0.6 };
-/** Flower petals and road paint are not lights, so at night they dim like everything else. */
-const FLOWERS: Recolor = { white: [200, 150, 190], pink: [200, 60, 110], yellow: [200, 120, 80], magenta: [160, 50, 150] };
-const ROAD_PAINT: Recolor = { yellow: [150, 70, 90], amber: [110, 40, 60] };
+/** The flowers glow: bioluminescent petals, not daylight ones. */
+const FLOWERS: Recolor = { white: [120, 255, 230], pink: [255, 120, 210], yellow: [255, 236, 120], magenta: [255, 90, 220] };
+/** Road paint is not a light, so at night it dims like everything else. */
+const ROAD_PAINT: Recolor = { yellow: [160, 136, 52], amber: [120, 92, 36] };
 
-const RIM: Rgb = [160, 70, 140], RIM_DIM: Rgb = [90, 34, 84];
-const SPORE: Rgb = [255, 150, 210], SPORE_HALO: Rgb = [90, 28, 70];
-const VINE: Rgb = [74, 10, 30], VINE_RED: Rgb = [128, 20, 44];
-const GLINT: Rgb = [255, 180, 225];
+const RIM: Rgb = [60, 170, 140], RIM_DIM: Rgb = [30, 90, 80];
+const DEW: Rgb = [130, 255, 220];
+const CAP: Rgb = [90, 240, 210], CAP_HALO: Rgb = [20, 90, 80], STEM: Rgb = [40, 56, 70];
+const FIREFLY: Rgb = [255, 235, 110], FIREFLY_HALO: Rgb = [88, 84, 28];
+const GLINT: Rgb = [200, 255, 240];
 
 function mapOf(...layers: Recolor[]): Map<number, number> {
   const m = new Map<number, number>();
@@ -51,6 +53,9 @@ const TREE_MAP = (() => {
   for (const [name, f] of Object.entries(TREE_SCALE)) dark[name as ColorName] = scale(NIGHT[name as ColorName] as Rgb, f as number);
   return mapOf(NIGHT, dark);
 })();
+/** The day colors of flower petals, and of the grass around them. */
+const PETALS = new Set((['white', 'pink', 'yellow', 'magenta'] as ColorName[]).map((n) => px32(n)));
+const GRASS = new Set((['pine0', 'pine1', 'pine2', 'pine3'] as ColorName[]).map((n) => px32(n)));
 
 function remap(d: Uint32Array, map: Map<number, number>): void {
   for (let i = 0; i < d.length; i++) { const m = map.get(d[i] as number); if (m !== undefined) d[i] = m; }
@@ -65,9 +70,8 @@ function glowDot(d: Uint32Array, x: number, y: number, core: number, halo: numbe
 }
 
 const GROUND = new Set<TileName>(['grass', 'grass2']);
-const PATH = new Set<TileName>(['trail', 'dirt', 'gravel']);
 
-/** The new art painted into a night tile: rim light on the treeline, spores on the ground, vines on the grass. */
+/** The new art painted into a night tile: rim light on the treeline, dew, fireflies and glowing mushrooms on the grass. */
 function detail(d: Uint32Array, name: TileName, c: TileCtx, canopy: Uint8Array | null): void {
   const r = createRng(hash2(c.tx, c.ty, 901));
   const rnd = (lo: number, hi: number): number => lo + Math.floor(r() * (hi - lo + 1));
@@ -84,19 +88,27 @@ function detail(d: Uint32Array, name: TileName, c: TileCtx, canopy: Uint8Array |
       }
     }
   }
-  const grass = GROUND.has(name), path = PATH.has(name);
-  if ((grass || path) && hash2(c.tx, c.ty, 47) % 5 === 0) {
-    glowDot(d, rnd(3, 12), rnd(3, 12), pack(SPORE), pack(SPORE_HALO));
-    if (r() < 0.5) put(d, rnd(1, 14), rnd(1, 14), pack(SPORE));
+  if (!GROUND.has(name)) return;
+  // The three passes below share one random stream, so the order matters: dew, then a firefly, then a mushroom.
+  if (hash2(c.tx, c.ty, 31) % 100 < 30) for (let i = 0; i < 2; i++) put(d, rnd(1, 14), rnd(1, 14), pack(DEW));
+  if (hash2(c.tx, c.ty, 41) % 9 === 0) glowDot(d, rnd(3, 12), rnd(3, 12), pack(FIREFLY), pack(FIREFLY_HALO));
+  if (hash2(c.tx, c.ty, 43) % 11 === 0) {
+    const x = rnd(3, 10), y = rnd(4, 11), cap = pack(CAP);
+    for (const [dx, dy] of [[-1, 0], [3, 0], [0, -1], [2, -1], [1, -2]] as [number, number][]) put(d, x + dx, y + dy, pack(CAP_HALO));
+    put(d, x, y, cap); put(d, x + 1, y, cap); put(d, x + 2, y, cap); put(d, x + 1, y - 1, cap);
+    put(d, x + 1, y + 1, pack(STEM));
   }
-  if (grass && hash2(c.tx, c.ty, 53) % 8 === 0) {
-    let x = rnd(0, 15), y = rnd(0, 15);
-    const dir = r() < 0.5 ? 1 : -1;
-    for (let i = 0; i < 11; i++) {
-      put(d, x, y, pack(i % 4 === 3 ? VINE_RED : VINE));
-      x += dir * (r() < 0.7 ? 1 : 0);
-      y += r() < 0.5 ? 1 : -1;
-      if (i % 5 === 2) put(d, x, y - 1, pack(VINE));
+}
+
+/** A dim halo on the grass around every petal of a flower tile, so the blossoms look lit. */
+function petalGlow(out: Uint32Array, day: Uint32Array): void {
+  const halo = pack(CAP_HALO);
+  for (let i = 0; i < 256; i++) {
+    if (!PETALS.has(day[i] as number)) continue;
+    const x = i % 16, y = (i / 16) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as [number, number][]) {
+      const xx = x + dx, yy = y + dy;
+      if (xx >= 0 && yy >= 0 && xx < 16 && yy < 16 && GRASS.has(day[yy * 16 + xx] as number)) out[yy * 16 + xx] = halo;
     }
   }
 }
@@ -116,6 +128,7 @@ export function nightTile(day: Px, name: TileName, c: TileCtx): Px {
   } else {
     remap(out.d, name === 'roadline' ? ROAD_MAP : name === 'flowers' ? FLOWER_MAP : NIGHT_MAP);
   }
+  if (name === 'flowers') petalGlow(out.d, day.d);
   detail(out.d, name, c, canopy);
   return out;
 }

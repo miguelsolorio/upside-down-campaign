@@ -43,7 +43,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 ## Time of day
 
 - A stage is `day` or `night` (`StageData.time`, overridable with `?time=` in the URL). There is no darkness layer in either.
-- Day draws the normal art. Night draws the night art: `bakeStage(rows, true)` repaints each tile through `gfx/night.ts` (a night palette, a darker tree palette, rim light on the treeline, spores, vines, moon glints on the water) and `drawProp(..., true)` repaints props the same way. Lights (lamp glass, lit windows, bulbs) are not in the night palette, so they stay bright.
+- Day draws the normal art. Night draws the night art: `bakeStage(rows, true)` repaints each tile through `gfx/night.ts` (a night palette, a darker tree palette, rim light on the treeline, dew, fireflies, glowing mushrooms and flowers, moon glints on the water) and `drawProp(..., true)` repaints props the same way. Lights (lamp glass, lit windows, bulbs) are not in the night palette, so they stay bright.
 - Light at night is a pool painted around each lamp, lit window, string of bulbs, floodlight and the lantern (`gfx/glow.ts`, `paintGlow`). `drawWorld` paints the pools after the tiles and before the sprites, so heroes and enemies are never tinted. The scare stutters them by scaling their level.
 - `HERO_POOL_R` in `world/render.ts` gives the active hero a pool of their own. It is 0 now.
 

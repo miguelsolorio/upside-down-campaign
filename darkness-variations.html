@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Night Tileset Variations</title>
-<meta name="description" content="Five night versions of the Level 1 environment art, next to the retired darkness overlay. D is the one now in the game.">
+<meta name="description" content="Five night versions of the Level 1 environment art, next to the retired darkness overlay. C is the one now in the game.">
 <style>
   :root {
     color-scheme: dark;
@@ -55,7 +55,7 @@
   <p class="kicker">Level 1 night look, the tileset round</p>
   <h1>Night tileset variations</h1>
   <p>Five night versions of the Level 1 map, each with its tiles redrawn: a night palette per material, plus night-only details painted in, such as moon rim light on the pines, dew, glowing plants, spores and moon glints on the water. There is no darkness layer. The only lighting is a small painted warm pool around windows, lamps and bulbs.</p>
-  <p class="muted"><b>D, Creeping spores,</b> is the one that shipped, and it is what the game draws now. The dashed card is how the game looked before: daytime art under the retired darkness overlay, drawn here with a copy of that old code. Heroes, enemies and pickups keep their normal art in every card.</p>
+  <p class="muted"><b>C, Glow forest,</b> is the one that shipped, and it is what the game draws now. The dashed card is how the game looked before: daytime art under the retired darkness overlay, drawn here with a copy of that old code. Heroes, enemies and pickups keep their normal art in every card.</p>
 </header>
 
 <div class="bar">
@@ -156,7 +156,7 @@ const STYLES = [
     rim: 'all', dew: 25,
   },
   {
-    id: 'C', name: 'Glow forest',
+    id: 'C', name: 'Glow forest', shipped: true,
     blurb: 'Deep green night with bioluminescent mushrooms, glowing flowers and fireflies, so the woods light themselves.',
     map: {
       pine0: [3, 12, 10], pine1: [6, 26, 22], pine2: [10, 40, 34], pine3: [16, 62, 50], leaf: [40, 120, 90],
@@ -173,7 +173,7 @@ const STYLES = [
     rim: 'top-left', dew: 30, mushroom: 11, firefly: 9, glowFlowers: true,
   },
   {
-    id: 'D', name: 'Creeping spores', shipped: true,
+    id: 'D', name: 'Creeping spores',
     blurb: 'Purple-red night with drifting spores and dark vines crawling over the ground. The Upside Down leaking through.',
     map: {
       pine0: [8, 3, 14], pine1: [18, 6, 26], pine2: [30, 10, 40], pine3: [52, 18, 60], leaf: [104, 44, 96],

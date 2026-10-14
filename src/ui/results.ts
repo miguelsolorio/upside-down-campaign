@@ -84,7 +84,7 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
       }
 
       if (t >= FOOT_AT && blinkOn(t, 60, 42)) {
-        const label = final ? 'BACK TO TITLE' : 'CONTINUE';
+        const label = final ? 'TO THE MAP' : 'CONTINUE';
         drawIcon(ctx, 'arrow', 128 - textWidth(label) / 2 - 12, 196, t);
         drawText(ctx, label, 128, 197, 'white', { align: 'center' });
       }

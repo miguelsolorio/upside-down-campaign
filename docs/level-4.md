@@ -14,7 +14,7 @@ One stage, five to eight minutes, and the start of chapter 2 (Halloween 1984). E
 - Light: `time: 'day'`. No pools.
 - Music: `hawkins`.
 - Party: Mike (active), Dustin, Lucas, Will. The carry rule (`partyFor` in `core/campaign.ts`) drops Eleven and brings Will in at the others' average level minus one. `?stage=2.1` starts them at Lv 5, 5, 4, 3. There's no recruit beat.
-- `enemyMult: 1.15`.
+- `enemyMult: 3.15` (see "Result").
 
 ## Rooms
 
@@ -124,3 +124,22 @@ The bot opens `vines1`, `gate1` and `hidden1` by flag. The ambush is real.
 
 - `hawkins`: F major, 112 bpm, the motif in major, warm and a little wistful. Base and combat layers. It's also the map screen's track.
 - Will's tag-in stinger (the stand-in in `audio/tracks/jingles.ts` goes) and the `reveal` effect.
+
+## Result
+
+Measured with `node scripts/measure-stage.ts 2.1` at `enemyMult` 3.15. Here "boss" in the script's output is the ambush.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 17 | 92, none stuck (300 clean) | 14 of 20 (68 of 100) | 20 | 5 |
+| Damage taken | 211 | | | | |
+| KOs | 1.05 | | | | |
+| Lowest party HP | 41% | | | | |
+| Time | 101 s | | | | |
+
+Stage XP is 166. In the browser the bot clears 2.1 in 1:45 for 157 XP.
+
+- **The factor is high.** At the spec's 1.15 the bot took 15 damage and finished in 79 s. The enemy base numbers were set for a chapter 1 party, and the party arrives at Lv 5. A later pass should give chapter 2 enemies their own numbers in `enemies/defs.ts` and bring the factor back near 1.
+- **Demodogs replaced rats.** The barn and street rats were traded for demodogs, so the stage has 13 demodogs and three rats: a pack of three at the barn, then waves of 3, 3 and 4.
+- **The route is longer.** The pumpkin rows zigzag.
+- **Eleven is named once,** by Mike, and never explained.

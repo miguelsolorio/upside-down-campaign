@@ -169,4 +169,6 @@ export const STINGERS: Record<StingerId, Cue> = {
     [{ at: 0.15, dur: 0.6, vol: 0.12, mode: 15, clock: 30000, filter: 'bandpass', freq: 2000, freqEnd: 5000, q: 2, rise: 0.4 }],
     3,
   ),
+  // Will: a stand-in until Audio writes his. Two soft triangle notes.
+  will: cue(line(100, 'tri', 0.28, [[0, 0.3, 'A4'], [0.3, 0.9, 'E5']], { vib: true }), [], 3),
 };

@@ -86,7 +86,7 @@ export const EXPR: Record<Expr, Part[]> = {
 };
 
 // ---------------------------------------------------------------- characters
-export const PORTRAITS: Record<CharId, PortraitSpec> = {
+const BASE_PORTRAITS = {
   mike: {
     bg: 'teal0', shirt: 'stripes',
     pal: { s: 'skin0', d: 'skin1', h: 'soil1', i: 'soil2', j: 'soil0', a: 'red', b: 'dusk', c: 'red' },
@@ -220,4 +220,7 @@ export const PORTRAITS: Record<CharId, PortraitSpec> = {
     ] }],
     trim: [],
   },
-};
+} satisfies Record<Exclude<CharId, 'max'>, PortraitSpec>;
+
+// Max borrows Will's portrait until Art draws hers (docs/level-4.md).
+export const PORTRAITS: Record<CharId, PortraitSpec> = { ...BASE_PORTRAITS, max: BASE_PORTRAITS.will };

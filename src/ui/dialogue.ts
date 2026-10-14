@@ -21,7 +21,7 @@ export interface DialogueBox {
 }
 
 const TAG_COLOR: Record<Speaker, ColorName> = {
-  mike: 'sky', dustin: 'amber', lucas: 'leaf', eleven: 'pink', will: 'cream', joyce: 'rose', dm: 'yellow', narrator: 'mist',
+  mike: 'sky', dustin: 'amber', lucas: 'leaf', eleven: 'pink', will: 'cream', joyce: 'rose', max: 'red', dm: 'yellow', narrator: 'mist',
 };
 const PANEL = { x: 8, y: 176, w: 240, h: 40 };
 /** Frames at the start of a line where confirm is ignored, so the press that opened it cannot skip it. */

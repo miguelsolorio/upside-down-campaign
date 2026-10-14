@@ -2,8 +2,9 @@
 // which leads to the next stage with the party carried over, or back to the title after the last one.
 import type { Game } from './core/scene.ts';
 import type { PartySeed } from './core/types.ts';
-import { STAGE_ORDER, defaultParty, levelNumber, nextStage, seedsFrom } from './core/campaign.ts';
+import { CHAPTERS, STAGE_ORDER, chapterOf, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
 import { flags } from './core/flags.ts';
+import { clearProgress, loadProgress, recordClear, writeProgress } from './core/progress.ts';
 import { clearSave, loadSave, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
 import { skipsDialogue } from './core/settings.ts';
@@ -32,14 +33,17 @@ export function startGame(g: Game): void {
       const save = mode === 'continue' ? loadSave() : null;
       if (save) { toPlay(save.stage, save.party, save); return; }
       clearSave();
+      clearProgress();
       if (skipsDialogue()) toPlay(jump, defaultParty(jump)); else toPrologue();
     },
   }));
   const toPrologue = (): void => g.scenes.go(createPrologueScene({ onDone: toCard }));
   const toCard = (): void =>
     g.scenes.go(createChapterCard({ title: 'Chapter one', subtitle: 'The vanishing', onDone: () => toPlay(jump, defaultParty(jump)) }));
-  /** A later stage opens on its own card, unless the story is skipped. */
+  /** A later stage opens on its own card, unless the story is skipped. The first stage of a chapter always shows the chapter. */
   const toStage = (id: string, party: PartySeed[]): void => {
+    const chapter = CHAPTERS[chapterOf(id)];
+    if (opensChapter(id) && chapter) { g.scenes.go(createChapterCard({ ...chapter, onDone: () => toPlay(id, party) })); return; }
     if (skipsDialogue()) { toPlay(id, party); return; }
     g.scenes.go(createChapterCard({ title: `Level ${WORDS[levelNumber(id)] ?? levelNumber(id)}`, subtitle: stageName(id), onDone: () => toPlay(id, party) }));
   };
@@ -53,8 +57,12 @@ export function startGame(g: Game): void {
       party,
       resume,
       onClear: ({ stats, party: after }) => {
+        // Progress keeps every hero met so far. The next stage's party comes from it: in chapter 2 Eleven is gone and
+        // Will joins at the others' average level minus one.
+        const progress = recordClear(loadProgress(), id, after);
+        writeProgress(progress);
         const next = nextStage(id);
-        const carried = seedsFrom(after);
+        const carried = next ? partyFor(next, progress.heroes) : [];
         // The next stage's door is the new save point. After the last stage there is nothing left to continue.
         if (next) writeSave(entrySave(next, carried)); else clearSave();
         g.scenes.go(createResultsScene({

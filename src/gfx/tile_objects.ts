@@ -273,6 +273,18 @@ function mailbox(c: TileCtx): Px {
   return px;
 }
 
+// Flat stand-ins for the school (1.3) and the patch and arcade (2.1) tiles until Art paints them: a fill and a frame.
+const PLACEHOLDER: Partial<Record<TileName, [ColorName, ColorName]>> = {
+  schoolfloor: ['grey2', 'grey3'], checker: ['bone', 'grey2'], gymfloor: ['amber', 'soil1'], schoolwall: ['grey1', 'ink'],
+  schoolcap: ['ink', 'grey1'], lockerwall: ['teal0', 'ink'], desk: ['soil1', 'soil0'], chalkboard: ['leaf', 'ink'],
+  trophy: ['yellow', 'soil0'], table: ['grey3', 'grey1'], counter: ['grey1', 'ink'], bleachers: ['soil1', 'soil0'],
+  brick: ['red', 'soil0'], arcadecarpet: ['dusk', 'magenta'], arcadewall: ['ink', 'magenta'], sidewalk: ['grey3', 'grey2'],
+  storefront: ['grey1', 'cyan'], furrow: ['soil1', 'soil0'], pumpkin: ['amber', 'soil0'], rotpumpkin: ['soil0', 'ink'],
+  haybale: ['yellow', 'soil1'], barnwall: ['red', 'soil0'], barnroof: ['soil0', 'ink'], corn: ['leaf', 'soil1'],
+  rot: ['soil0', 'ink'], hole: ['ink', 'soil0'],
+};
+const placeholder = ([fill, edge]: [ColorName, ColorName]): Px => new Px(16).rect(0, 0, 16, 16, fill).frame(0, 0, 16, 16, edge);
+
 export function objectTile(name: TileName, c: TileCtx): Px | null {
   switch (name) {
     case 'pine': return pine(c);
@@ -302,7 +314,7 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
     case 'mass':
     case 'wallsign':
       return lab2Object(name, c, rngFor(c, name), under);
-    default: return null;
+    default: return PLACEHOLDER[name] ? placeholder(PLACEHOLDER[name] as [ColorName, ColorName]) : null;
   }
 }
 

@@ -12,7 +12,13 @@ export type TileName =
   | 'labfloor' | 'labfloor2' | 'hazard' | 'labwall' | 'labcap' | 'vent' | 'pipe' | 'glass' | 'cage'
   // Lab dressing, so each room has its own look. Floors, cables, drains, stains and creeping vines are walkable.
   | 'locker' | 'bench' | 'cabinet' | 'shelf' | 'cable' | 'drain' | 'stain' | 'vines' | 'mass'
-  | 'tilegreen' | 'carpet' | 'wallsign' | 'plate';
+  | 'tilegreen' | 'carpet' | 'wallsign' | 'plate'
+  // Hawkins Middle School (stage 1.3, night).
+  | 'schoolfloor' | 'checker' | 'gymfloor' | 'schoolwall' | 'schoolcap' | 'lockerwall' | 'desk' | 'chalkboard'
+  | 'trophy' | 'table' | 'counter' | 'bleachers' | 'brick'
+  // The Palace Arcade, Main Street and Merrill's pumpkin patch (stage 2.1, day).
+  | 'arcadecarpet' | 'arcadewall' | 'sidewalk' | 'storefront' | 'furrow' | 'pumpkin' | 'rotpumpkin' | 'haybale'
+  | 'barnwall' | 'barnroof' | 'corn' | 'rot' | 'hole';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -70,6 +76,35 @@ export const TILES: Record<string, TileDef> = {
   'E': { name: 'plate', solid: false },
   // A wall face with a painted sign or number on it. Solid like any wall.
   'Y': { name: 'wallsign', solid: true },
+  // Hawkins Middle School (stage 1.3). Walls are a schoolcap row over a schoolwall row, like the Lab. Lockers,
+  // chalkboards and the trophy case are wall faces. Desks, tables, the counter and the bleachers are furniture.
+  'n': { name: 'schoolfloor', solid: false },
+  'j': { name: 'checker', solid: false },
+  'u': { name: 'gymfloor', solid: false },
+  'J': { name: 'schoolwall', solid: true },
+  'K': { name: 'schoolcap', solid: true },
+  'A': { name: 'lockerwall', solid: true },
+  'P': { name: 'desk', solid: true },
+  'Q': { name: 'chalkboard', solid: true },
+  'R': { name: 'trophy', solid: true },
+  'I': { name: 'table', solid: true },
+  'Z': { name: 'counter', solid: true },
+  '#': { name: 'bleachers', solid: true },
+  '%': { name: 'brick', solid: true },
+  // Stage 2.1: the arcade, Main Street, the pumpkin patch. Furrows, rot and the hole are walkable.
+  '+': { name: 'arcadecarpet', solid: false },
+  '&': { name: 'arcadewall', solid: true },
+  '/': { name: 'sidewalk', solid: false },
+  '@': { name: 'storefront', solid: true },
+  '^': { name: 'furrow', solid: false },
+  '*': { name: 'pumpkin', solid: true },
+  '$': { name: 'rotpumpkin', solid: true },
+  '0': { name: 'haybale', solid: true },
+  '[': { name: 'barnwall', solid: true },
+  ']': { name: 'barnroof', solid: true },
+  '|': { name: 'corn', solid: true },
+  ';': { name: 'rot', solid: false },
+  '<': { name: 'hole', solid: false },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

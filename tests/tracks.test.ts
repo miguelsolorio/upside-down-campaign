@@ -323,7 +323,7 @@ test('the scare is the motif upside down, two to three seconds, with a dissonant
 
 test('every jingle and stinger exists, ducks the music and has a sound', () => {
   assert.deepEqual(Object.keys(JINGLES).sort(), ['clear', 'dice', 'gameOver', 'item', 'levelUp', 'recruit']);
-  assert.deepEqual(Object.keys(STINGERS).sort(), ['dustin', 'eleven', 'lucas', 'mike', 'scare']);
+  assert.deepEqual(Object.keys(STINGERS).sort(), ['dustin', 'eleven', 'lucas', 'mike', 'scare', 'will']);
   for (const [id, c] of [...Object.entries(JINGLES), ...Object.entries(STINGERS)]) {
     assert.ok(c.notes.length + c.hits.length > 0, id);
     assert.ok(c.length > 0.2 && c.length < 6, `${id} length ${c.length}`);

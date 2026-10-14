@@ -60,7 +60,9 @@ const KLAXON = [0, 1, 2, 3].flatMap((i) => {
   ];
 });
 
-export const SFX: Record<SfxId, Recipe> = {
+type NewSfx = 'roar' | 'acid' | 'lunge' | 'petals' | 'chomp' | 'thud' | 'reveal' | 'sizzle';
+
+const BASE_SFX = {
   // combat
   swing: R([N(15, 44100, 0.12, 0.7, { f: bp(500, 3000, 1.1), rise: 0.05 })]),
   hit: R([N(15, 18000, 0.09, 0.9, { f: bp(900, undefined, 0.8) }), T('p25', 220, 0.09, 0.3, { f2: 90 })]),
@@ -206,6 +208,13 @@ export const SFX: Record<SfxId, Recipe> = {
   ], 0.02),
   alert: R([T('p50', 880, 0.05, 0.3, { hold: true }), T('p50', 1320, 0.09, 0.3, { at: 0.05, hold: true })], 0.01),
   step: R([N(7, 5000, 0.025, 0.4, { f: bp(900, undefined, 1.5) })], 0.08),
+} satisfies Record<Exclude<SfxId, NewSfx>, Recipe>;
+
+// Stand-ins for the Level 3 and 4 effects until Audio writes them: each borrows the nearest existing sound.
+export const SFX: Record<SfxId, Recipe> = {
+  ...BASE_SFX,
+  roar: BASE_SFX.growl, acid: BASE_SFX.candyPop, lunge: BASE_SFX.dash, petals: BASE_SFX.flicker,
+  chomp: BASE_SFX.bash, thud: BASE_SFX.slam, reveal: BASE_SFX.lights, sizzle: BASE_SFX.flame,
 };
 
 /**
@@ -220,6 +229,7 @@ const LEVEL: Record<SfxId, number> = {
   gateOpen: 1, targetHit: 1, logPush: 0.41, lights: 1.22, flicker: 0.3, growl: 0.44, klaxon: 0.7,
   zap: 0.43, steam: 0.31, spotted: 0.64, block: 0.55, bash: 0.56, slam: 0.535,
   roll: 0.89, rollLand: 0.47, natTwenty: 0.95, levelUp: 0.9, alert: 0.47, step: 0.8,
+  roar: 0.44, acid: 0.25, lunge: 0.45, petals: 0.3, chomp: 0.56, thud: 0.535, reveal: 1.22, sizzle: 0.5,
 };
 
 /** Plays one effect at context time t. `mul` scales every pitch, so 1.05 is about a semitone sharp. */

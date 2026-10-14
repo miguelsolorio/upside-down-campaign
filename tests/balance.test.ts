@@ -19,6 +19,7 @@ test('time to kill at parity: rats in one to three hits, agents in three to five
     dustin: HERO_DEFS.dustin.basic.power,
     lucas: HERO_DEFS.lucas.basic.power,
     eleven: HERO_DEFS.eleven.basic.power,
+    will: HERO_DEFS.will.basic.power,
   };
   for (const id of HERO_IDS) {
     const atk = HERO_DEFS[id].base.atk;

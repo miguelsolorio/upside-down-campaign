@@ -1,9 +1,13 @@
-// The order of the stages and what carries from one to the next. Pure and DOM-free so Node tests can run it.
-// flow.ts uses it to decide where a cleared stage leads and who walks in.
+// The order of the stages, who plays each one, and what carries from one to the next. Pure and DOM-free so Node
+// tests can run it. flow.ts uses it to decide where a cleared stage leads and who walks in, and the map screen
+// uses it to draw the stages and to build the party for a replay.
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1'];
+
+/** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
+export const STAGES_AHEAD: readonly string[] = ['2.2', '2.3'];
 
 /** The stage after `id`, or null when `id` is the last one (or unknown). */
 export function nextStage(id: string): string | null {
@@ -19,19 +23,86 @@ export function levelNumber(id: string): number {
   return i >= 0 ? i + 1 : 1;
 }
 
-const FRESH: HeroId[] = ['mike', 'dustin', 'lucas'];
-/** What a jump straight to a stage (?stage=1.2) starts with: who has joined by then, at the level a normal run arrives. */
-const ARRIVAL: Record<string, PartySeed[]> = {
-  '1.1': FRESH.map((id) => ({ id })),
-  '1.2': [...FRESH, 'eleven' as const].map((id) => ({ id, level: 3 })),
+/** The chapter a stage belongs to: "2.1" is in chapter 2. */
+export function chapterOf(id: string): number {
+  const n = Number.parseInt(id, 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+/** What the chapter card says. */
+export const CHAPTERS: Record<number, { title: string; subtitle: string }> = {
+  1: { title: 'Chapter one', subtitle: 'The vanishing' },
+  2: { title: 'Chapter two', subtitle: 'The tunnels' },
 };
+
+/** True when `id` is the first stage of its chapter, so entering it shows the chapter card. */
+export function opensChapter(id: string): boolean {
+  const i = STAGE_ORDER.indexOf(id);
+  return i === 0 || (i > 0 && chapterOf(STAGE_ORDER[i - 1] as string) !== chapterOf(id));
+}
+
+/**
+ * Who walks into each stage, in party order (the first is the lead). Eleven joins inside 1.1 with a recruit beat,
+ * so 1.1 starts with three. She is gone after the Demogorgon, and Will is back for chapter 2.
+ */
+const ROSTER: Record<string, HeroId[]> = {
+  '1.1': ['mike', 'dustin', 'lucas'],
+  '1.2': ['mike', 'dustin', 'lucas', 'eleven'],
+  '1.3': ['mike', 'dustin', 'lucas', 'eleven'],
+  '2.1': ['mike', 'dustin', 'lucas', 'will'],
+};
+
+/** What a jump straight to a stage (?stage=1.3) starts with: the roster at the levels a normal run arrives with. */
+const ARRIVAL: Record<string, PartySeed[]> = {
+  '1.1': [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }],
+  '1.2': [{ id: 'mike', level: 3 }, { id: 'dustin', level: 3 }, { id: 'lucas', level: 3 }, { id: 'eleven', level: 3 }],
+  '1.3': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 4 }, { id: 'lucas', level: 4 }, { id: 'eleven', level: 4 }],
+  '2.1': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 5 }, { id: 'lucas', level: 4 }, { id: 'will', level: 3 }],
+};
+
+export function rosterFor(id: string): HeroId[] {
+  return [...(ROSTER[id] ?? (ROSTER['1.1'] as HeroId[]))];
+}
 
 /** The party a stage begins with when nothing is carried over (new game, ?stage=, START OVER on the first stage). */
 export function defaultParty(id: string): PartySeed[] {
-  return (ARRIVAL[id] ?? (ARRIVAL['1.1'] as PartySeed[])).map((s) => ({ ...s }));
+  return (ARRIVAL[id] ?? (ARRIVAL['1.1'] as PartySeed[])).map((s) => ({ ...s, bonus: s.bonus ? { ...s.bonus } : undefined }));
 }
 
-/** A cleared stage's party as the next stage's seeds: levels, XP and d20 bonus carry, health does not. */
+/** A cleared stage's party as seeds: levels, XP and d20 bonus carry, health does not. */
 export function seedsFrom(party: HeroSnapshot[]): PartySeed[] {
   return party.map((p) => ({ id: p.id, level: p.level, xp: p.xp, bonus: p.bonus ? { ...p.bonus } : undefined }));
+}
+
+const ahead = (a: PartySeed, b: PartySeed): boolean =>
+  (a.level ?? 1) > (b.level ?? 1) || ((a.level ?? 1) === (b.level ?? 1) && (a.xp ?? 0) > (b.xp ?? 0));
+
+/**
+ * Every hero the player has met, at their best: `later` replaces an entry in `known` only when it is further along,
+ * so a replay never makes a hero worse. Order follows `known`, then new heroes in the order they appear.
+ */
+export function mergeHeroes(known: PartySeed[], later: PartySeed[]): PartySeed[] {
+  const out = known.map((s) => ({ ...s }));
+  for (const s of later) {
+    const i = out.findIndex((o) => o.id === s.id);
+    if (i < 0) out.push({ ...s });
+    else if (ahead(s, out[i] as PartySeed)) out[i] = { ...s };
+  }
+  return out;
+}
+
+/**
+ * The party for stage `id` built from the heroes met so far. A roster hero nobody has met yet joins at the average
+ * level of the others minus one (at least 1), the plan's recruit rule. With nothing known it is the arrival party.
+ */
+export function partyFor(id: string, known: PartySeed[]): PartySeed[] {
+  const ids = rosterFor(id);
+  const have = ids.map((h) => known.find((k) => k.id === h)).filter((s): s is PartySeed => !!s);
+  if (have.length === 0) return defaultParty(id);
+  const avg = have.reduce((n, s) => n + (s.level ?? 1), 0) / have.length;
+  const join = Math.max(1, Math.floor(avg) - 1);
+  return ids.map((h) => {
+    const k = known.find((s) => s.id === h);
+    return k ? { ...k, bonus: k.bonus ? { ...k.bonus } : undefined } : { id: h, level: join };
+  });
 }

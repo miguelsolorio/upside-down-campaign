@@ -6,7 +6,7 @@ import { STAT_KEYS, emptyStats } from '../src/progression/index.ts';
 import { hasEmDash } from '../src/core/text.ts';
 
 test('the four Level 1 heroes each define basic, special and a Lv 3 talent', () => {
-  assert.deepEqual([...HERO_IDS].sort(), ['dustin', 'eleven', 'lucas', 'mike']);
+  assert.deepEqual([...HERO_IDS].sort(), ['dustin', 'eleven', 'lucas', 'mike', 'will']);
   for (const id of HERO_IDS) {
     const d = HERO_DEFS[id];
     assert.equal(d.id, id);

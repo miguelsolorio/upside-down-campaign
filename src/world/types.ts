@@ -32,6 +32,8 @@ export type BeatStep =
   | { t: 'alarm' }
   | { t: 'recruit'; hero: HeroId }
   | { t: 'open'; prop: string }
+  /** Switches the stage music, such as to `clock` when a boss wakes. It does not wait. */
+  | { t: 'music'; track: TrackId }
   | { t: 'finish' };
 
 /** What fires a beat. Rect beats fire once, the first time the hero's tile enters the rectangle. `needs` holds a
@@ -40,7 +42,9 @@ export type BeatWhen =
   | { rect: TileRect; needs?: string }
   | { cleared: string }
   | { after: string }
-  | { event: 'targetHit' | 'propCleared' | 'spotted'; prop: string };
+  | { event: 'targetHit' | 'propCleared' | 'spotted'; prop: string }
+  /** The boss with this spawn id is pinned (the sim's `pinned` event). */
+  | { event: 'pinned'; spawn: string };
 
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
@@ -51,8 +55,10 @@ export interface PuzzleDef {
   id: string;
   /** The beat that introduces the puzzle. The hint clock starts once this beat has finished. */
   beat: string;
-  /** The prop to point at (and to watch: open or lit means solved). */
+  /** The prop to point at (and to watch: open or lit means solved). For a boss finisher, the boss's spawn id. */
   prop: string;
+  /** True when `prop` is an enemy spawn id (the pinned Demogorgon): the caret follows it and its death solves it. */
+  enemy?: boolean;
   /** The hero who solves it, and the one whose bench slot pulses with the hint. */
   hero: HeroId;
   /** Other props that count as trying this puzzle: the gate or door it opens. Trying `prop` itself counts too. */

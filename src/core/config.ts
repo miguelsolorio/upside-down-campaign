@@ -17,6 +17,14 @@ export let VIEW_W = BASE_W;
 export let VIEW_X = 0;
 /** Left edge of a BASE_W layout centered on the screen. */
 export let FRAME_X = 0;
+/** The HUD strip's height on a 256 px screen: 18 rows of contents and a 2 row border. */
+export const STRIP_H = 20;
+/** On a wider screen the strip gets this much room above and below its contents, and HUD_PAD_X at the sides. */
+export const HUD_PAD_Y = 3;
+export const HUD_PAD_X = 6;
+/** The HUD strip covers the top of the screen. The world is visible below this line. STRIP_H at 256 wide and
+ * STRIP_H + 2 * HUD_PAD_Y on a wider screen. Live, like SCREEN_W. */
+export let VIEW_TOP = STRIP_H;
 
 /** A screen width for a window: whole multiples of 8 between BASE_W and MAX_W. Multiples of 8 keep VIEW_X and
  * FRAME_X on multiples of 4, so every dither lines up with the canvas the same way it does at 256. */
@@ -30,11 +38,10 @@ export function setScreenWidth(w: number): void {
   VIEW_W = Math.min(SCREEN_W, CLEAR_MAX);
   VIEW_X = (SCREEN_W - VIEW_W) / 2;
   FRAME_X = (SCREEN_W - BASE_W) / 2;
+  VIEW_TOP = SCREEN_W > BASE_W ? STRIP_H + HUD_PAD_Y * 2 : STRIP_H;
 }
 export const TILE = 16;
 export const FPS = 60;
-/** The HUD strip covers the top of the screen. The world is visible below this line. */
-export const VIEW_TOP = 20;
 
 export const CHAR_NAMES: Record<CharId, string> = {
   mike: 'Mike',

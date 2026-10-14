@@ -19,9 +19,9 @@ export interface Glow {
   flicker?: number;
 }
 
-const H = SCREEN_H - VIEW_TOP;
-/** One step per pixel of the world view. Sized on first use and again whenever the screen width changes. */
+/** One step per pixel of the world view. Sized on first use and again whenever the screen's size changes. */
 let W = 0;
+let H = 0;
 let step = new Uint8Array(0);
 /** How much brighter each step is: 0 is untouched, 4 is the heart of the pool. */
 const LIFT = [0, 0.3, 0.6, 0.95, 1.35];
@@ -31,8 +31,9 @@ const WARM = [255, 190, 90];
 /** Paints the pools onto what is already on the canvas. level scales every pool, for a stutter or a fade. */
 export function paintGlow(ctx: Ctx, lights: readonly Glow[], t: number, level = 1): void {
   if (lights.length === 0 || level <= 0) return;
-  if (W !== SCREEN_W) {
+  if (W !== SCREEN_W || H !== SCREEN_H - VIEW_TOP) {
     W = SCREEN_W;
+    H = SCREEN_H - VIEW_TOP;
     step = new Uint8Array(W * H);
   } else step.fill(0);
   const N = W * H;

@@ -30,9 +30,10 @@ const BOB = [0, 1, 2, 1];
 const CARET_ROOM = 7 + 2 + 2;
 /** Top of the subtitle text, low on the screen like a film subtitle. */
 const SUBTITLE_Y = SCREEN_H - 16;
-/** Top of the line just under the HUD strip, and of the same line when the boss bar (VIEW_TOP + 1 to + 12) is there. */
-const TOP_LINE_Y = VIEW_TOP + 4;
-const TOP_LINE_BOSS_Y = VIEW_TOP + 15;
+/** How far the line just under the HUD strip sits below it, and the same line when the boss bar (VIEW_TOP + 1 to + 12)
+ * is there. */
+const TOP_LINE_DY = 4;
+const TOP_LINE_BOSS_DY = 15;
 
 export interface WorldOpts {
   /** Draw the foot and hurt boxes (dev panel). */
@@ -237,7 +238,7 @@ export function drawSubtitle(ctx: Ctx, text: string): void {
  * reads on the dark yard and the white Lab walls alike without covering the world. It stays put while the camera moves,
  * and drops under the boss bar while one shows. */
 export function drawTopLine(ctx: Ctx, text: string, color: ColorName, underBoss = false): void {
-  const x = Math.round((SCREEN_W - tinyWidth(text)) / 2), y = underBoss ? TOP_LINE_BOSS_Y : TOP_LINE_Y;
+  const x = Math.round((SCREEN_W - tinyWidth(text)) / 2), y = VIEW_TOP + (underBoss ? TOP_LINE_BOSS_DY : TOP_LINE_DY);
   for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]] as const) drawTinyText(ctx, text, x + dx, y + dy, 'ink');
   drawTinyText(ctx, text, x, y, color);
 }

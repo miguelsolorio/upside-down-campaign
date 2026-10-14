@@ -1,5 +1,5 @@
-// The top strip. Opaque, 20 px tall and as wide as the screen. Left: the active hero. Middle: quarters and Inspiration.
-// Right: the bench and the d20. On a wide screen the contents hug the edges of the clear band, not of the screen.
+// The top strip. Opaque, VIEW_TOP tall and as wide as the screen. Left: the active hero. Middle: quarters and Inspiration.
+// Right: the bench and the d20. On a wide screen the contents sit inside the clear band with room around them.
 // HP is a segmented bar on both sides: flat for the active hero, upright beside each bench face. Same colors, same blink.
 // Everything else beside it is just as quiet: no frames. XP is ten yellow notches under HP, MP is one blue segment per cast.
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
@@ -157,6 +157,9 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   const band = hudBand();
   const lx = leftShift(band);
   const rects = slotRects(hud.party, band);
+  // On a wider screen the strip is taller, and everything in it moves down to sit centered.
+  ctx.save();
+  ctx.translate(0, band.top);
   for (const r of rects) {
     const p = hud.party[r.index];
     if (!p) continue;
@@ -173,5 +176,6 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   drawMiddle(ctx, hud, t);
   ctx.restore();
   drawMeter(ctx, hud, t, METER_X + rightShift(band));
+  ctx.restore();
   if (hud.boss) drawBoss(ctx, hud.boss);
 }

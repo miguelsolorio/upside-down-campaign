@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HUD Progress, Specials and Coins</title>
+<meta name="description" content="Ten designs for level progress, the special's MP and the quarter count, drawn as one system beside the shipped HP bar.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .muted { color: var(--mist); }
+  .rules { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; font: 12px/1.4 var(--mono); color: var(--mist); }
+  .rules b { color: var(--bone); font-weight: 600; }
+
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group > .lbl { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .seg { display: inline-flex; border: 2px solid var(--dusk); }
+  .seg button { border: 0; background: var(--ink); padding: 6px 12px; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .seg button + button { border-left: 2px solid var(--dusk); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--cream); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .scrub { display: inline-flex; align-items: center; gap: 8px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .scrub input { width: 110px; accent-color: var(--amber); }
+  .scrub output { min-width: 4ch; color: var(--bone); }
+
+  h2.sec { margin: 30px 0 4px; font-size: 20px; }
+  .sub { margin: 0 0 14px; color: var(--mist); font-size: 13px; max-width: 90ch; }
+
+  #overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 14px 18px; }
+  .tile { display: block; text-decoration: none; color: inherit; border: 2px solid var(--shadow); background: var(--night); padding: 8px 10px 10px; }
+  .tile:hover { border-color: var(--slate); }
+  .tile .cap { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font: 600 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--bone); }
+  .tile .cap i { font-style: normal; color: var(--ink); background: var(--amber); padding: 2px 6px; }
+  .tile.ref .cap i { background: var(--dusk); color: var(--bone); }
+  .tile.chosen { border-color: var(--amber); }
+  .tile canvas { width: 100%; height: auto; aspect-ratio: 160 / 20; }
+
+  #cards { display: grid; gap: 26px; padding: 8px 0 64px; }
+  .card { border: 2px solid var(--shadow); background: var(--night); padding: 18px 20px 20px; scroll-margin-top: 120px; }
+  .card.ref { border-style: dashed; }
+  .card.chosen { border-color: var(--amber); }
+  .pick { margin-left: auto; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--amber); padding: 5px 8px; }
+  .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
+  .badge { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 18px/1 var(--mono); }
+  .ref .badge { background: var(--dusk); color: var(--bone); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .head h2 { margin: 0; font-size: 20px; }
+  .blurb { margin: 0 0 10px; max-width: 90ch; }
+  .reads { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 22px; margin: 0 0 14px; max-width: 1100px; }
+  .reads div { font-size: 13px; color: var(--mist); }
+  .reads dt { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--cream); margin-bottom: 4px; }
+  .reads dd { margin: 0; }
+  .scroll { overflow-x: auto; padding-bottom: 4px; }
+  .crop { border: 1px solid var(--shadow); width: 960px; height: 120px; }
+  .strip { border: 1px solid var(--shadow); width: 768px; height: 60px; margin-top: 10px; }
+  .label { margin: 10px 0 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  @media (max-width: 760px) { .reads { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">HUD review</p>
+  <h1>Level progress, specials and coins</h1>
+  <p>Ten ways to draw the three things that sit around the HP bar: how far you are to the next level, how much you have left for the special, and how many quarters you are carrying. Each card designs all three together, so they share one look.</p>
+  <p><b>Chosen: 1, Quiet.</b> It is now in the game. Its card here is a redraw made for this sheet, and the first card is the old HUD, redrawn so you can still compare. The HP bar is the shipped one in every card, pixel for pixel. The portrait, name, bench and d20 meter are drawn by the game's own HUD code. Only the level, MP and quarter pieces change from card to card.</p>
+  <ul class="rules">
+    <li><b>Strip:</b> 256 by 20 px, the left panel is x 0 to 158</li>
+    <li><b>Special cost:</b> 5 to 8 MP, so a bar can count casts</li>
+    <li><b>Inspiration:</b> the Nat 20 timer lives in the same column as the quarters</li>
+  </ul>
+</div></header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="group"><span class="lbl" id="heroLbl">Hero</span><div class="seg" id="hero" role="group" aria-labelledby="heroLbl"></div></div>
+    <div class="group"><span class="lbl" id="preLbl">State</span><div class="seg" id="preset" role="group" aria-labelledby="preLbl"></div></div>
+    <label class="scrub">Level <input id="lv" type="range" min="1" max="12" value="5" aria-label="Level"><output id="lvOut">5</output></label>
+    <label class="scrub">XP <input id="xp" type="range" min="0" max="100" value="55" aria-label="XP toward the next level"><output id="xpOut">55%</output></label>
+    <label class="scrub">MP <input id="mp" type="range" min="0" max="100" value="70" aria-label="MP"><output id="mpOut">70%</output></label>
+    <label class="scrub">Quarters <input id="qt" type="range" min="0" max="99" value="12" aria-label="Quarters"><output id="qtOut">12</output></label>
+    <div class="group"><span class="lbl" id="hpLbl">HP</span><div class="seg" id="hpseg" role="group" aria-labelledby="hpLbl"></div></div>
+    <label class="chk"><input id="insp" type="checkbox"> Inspiration</label>
+    <label class="chk"><input id="lvup" type="checkbox"> Level-up flash</label>
+    <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+    <label class="chk"><input id="calm" type="checkbox"> Reduce flashing</label>
+  </div>
+</div>
+
+<main class="wrap">
+  <h2 class="sec">All ten at a glance</h2>
+  <p class="sub">The left panel of the strip, at 3x. Change the hero, level, XP, MP or quarters above and every design follows. Click one to jump to its card.</p>
+  <div id="overview"></div>
+
+  <h2 class="sec">The cards</h2>
+  <p class="sub">Each card shows the left panel at 6x and the whole strip at 3x, so you can see how it sits next to the bench and the d20 meter.</p>
+  <div id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx, drawText, drawTinyText, drawBar, drawBarV, drawIcon, drawPortrait } from '/src/gfx/index.ts';
+import { drawHud } from '/src/ui/hud.ts';
+import { box, outline, clipped } from '/src/ui/kit.ts';
+import { drawDie, DIE_BONE, DIE_GOLD } from '/src/ui/die.ts';
+import { bulbCount, bulbFill, bulbDark, hpTone, isLowHp, clamp01 } from '/src/ui/format.ts';
+import { HERO_DEFS } from '/src/heroes/defs.ts';
+import { slotKeyLabel } from '/src/core/bindings.ts';
+import { settings } from '/src/core/settings.ts';
+import { Px } from '/src/gfx/px.ts';
+import { xpToNext, MAX_LEVEL, INSPIRATION_SECONDS } from '/src/progression/xp.ts';
+import { SCREEN_W, VIEW_TOP } from '/src/core/config.ts';
+
+initGfx();
+
+// ---------------------------------------------------------------- state
+const HEROES = ['mike', 'dustin', 'lucas', 'eleven'];
+const OTHERS = [0.9, 0.6, 0.35, 0.8];
+const HP_STATES = { full: 1, mixed: 0.72, low: 0.2 };
+const st = { hero: 'mike', level: 5, xp: 0.55, mp: 0.7, q: 12, hp: 'mixed', insp: false, up: false, animate: true, calm: false };
+const PRESETS = {
+  shot: { label: 'Your shot', level: 1, xp: 0, mp: 1, q: 1, hp: 'full' },
+  mid: { label: 'Mid game', level: 5, xp: 0.55, mp: 0.7, q: 12, hp: 'mixed' },
+  max: { label: 'Max level', level: 12, xp: 1, mp: 0.3, q: 99, hp: 'full' },
+  dry: { label: 'Dry', level: 3, xp: 0.92, mp: 0.08, q: 0, hp: 'low' },
+};
+
+function party() {
+  const active = HEROES.indexOf(st.hero);
+  return HEROES.map((id, i) => {
+    const d = HERO_DEFS[id];
+    const hpMax = d.base.hp + Math.floor(d.growth.hp * (st.level - 1));
+    const mpMax = d.base.mp + Math.floor(d.growth.mp * (st.level - 1));
+    const r = i === active ? HP_STATES[st.hp] : OTHERS[i];
+    const hp = Math.max(1, Math.round(hpMax * r));
+    const next = xpToNext(st.level);
+    const maxed = st.level >= MAX_LEVEL;
+    return {
+      id, name: d.name, level: st.level, hp, hpMax, mp: Math.round(mpMax * (i === active ? st.mp : 0.7)), mpMax, mpCost: d.special.mp,
+      xp: maxed ? next : Math.round(next * st.xp), xpNext: next, ko: false, active: i === active,
+    };
+  });
+}
+
+/** Everything a design needs, worked out once per frame. */
+function sceneFor(t) {
+  const pty = party();
+  const idx = HEROES.indexOf(st.hero);
+  const p = pty[idx];
+  const cost = HERO_DEFS[p.id].special.mp;
+  const maxed = st.level >= MAX_LEVEL;
+  const hud = { party: pty, burst: 0.6, burstReady: false, quarters: st.q, inspiration: st.insp ? 14 : 0, swapReady: 1, boss: null };
+  return {
+    p, hud, idx, t, calm: st.calm || !st.animate, up: st.up,
+    level: st.level, maxed, xp: maxed ? 1 : clamp01(p.xp / p.xpNext),
+    mp: p.mp, mpMax: p.mpMax, cost, casts: Math.floor(p.mp / cost), castMax: Math.ceil(p.mpMax / cost),
+    afford: p.mp >= cost, q: st.q, insp: hud.inspiration,
+  };
+}
+
+// ---------------------------------------------------------------- drawing kit
+let X; // the context the current design draws into
+const R = (x, y, w, h, c) => box(X, x, y, w, h, c);
+const T = (s, x, y, c = 'white') => drawText(X, s, x, y, c);
+const TT = (s, x, y, c = 'white') => drawTinyText(X, s, x, y, c);
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const cache = new Map();
+const canvasOf = (key, build) => { let c = cache.get(key); if (!c) { c = build().toCanvas(); cache.set(key, c); } return c; };
+const blit = (c, x, y) => X.drawImage(c, Math.round(x), Math.round(y));
+
+/** ASCII art where b is the base tone. b picks a light, mid or dark step by its place on the diagonal, so one drawing shades itself. */
+function shaded(rows, ramp, bias = 2.2) {
+  const H = rows.length, W = rows[0].length, p = new Px(W, H);
+  rows.forEach((row, y) => {
+    for (let x = 0; x < W; x++) {
+      const ch = row[x];
+      if (ch === '.') continue;
+      if (ch === 'b') {
+        const v = (x - (W - 1) / 2) + (y - (H - 1) / 2);
+        p.set(x, y, v <= -bias ? ramp.h : v >= bias ? ramp.d : ramp.b);
+      } else p.set(x, y, ramp[ch]);
+    }
+  });
+  return p;
+}
+
+// Ramps: lit is the color, dim is the same shape unlit, as a flat silhouette so the shape reads at any fill.
+const RAMP = {
+  gold: { h: 'cream', b: 'yellow', d: 'amber', w: 'white' },
+  blue: { h: 'sky', b: 'blue', d: 'dusk', w: 'white' },
+  dull: { h: 'mist', b: 'slate', d: 'dusk', w: 'bone' },
+  dim: { h: 'slate', b: 'slate', d: 'slate', w: 'slate' },
+};
+
+const SHIELD9 = ['bbbbbbbbb', 'bbbbhbbbb', 'bbbhhhbbb', 'bbbbhbbbb', 'bbbbbbbbb', '.bbbbbbb.', '..bbbbb..', '...bbb...', '....b....'];
+const STAR5 = ['..b..', 'bbbbb', '.bbb.', '.b.b.', 'b...b'];
+const GEM9 = ['..hhhhh..', '.hhwhbbd.', 'hhhbbbbbd', '.hhbbbbd.', '..hbbbd..', '...hbd...', '....d....'];
+const GEM5 = ['.hhh.', 'hhwbd', 'hbbbd', '.bbd.', '..d..'];
+const SLOT_LIT = ['..h..', '.hbd.', 'hbbbd', '.bbd.', '..d..'];
+const SLOT_HOLE = ['..d..', '.d.d.', 'd...d', '.d.d.', '..d..'];
+const BULB = ['..s..', '.sss.', '.bhb.', 'bhbbd', 'bbbbd', '.bbd.', '..d..'];
+
+const art = (key, rows, ramp) => canvasOf(key, () => shaded(rows, ramp));
+const shield9 = (k) => art('shield9' + k, SHIELD9, RAMP[k]);
+const star5 = (k) => art('star5' + k, STAR5, RAMP[k]);
+const gem9 = (k) => art('gem9' + k, GEM9, RAMP[k]);
+const gem5 = (k) => art('gem5' + k, GEM5, RAMP[k]);
+const slot = (k) => canvasOf('slot' + k, () => new Px(5, 5).art(SLOT_LIT, { h: RAMP[k].h, b: RAMP[k].b, d: RAMP[k].d }));
+const slotHole = () => canvasOf('slotHole', () => new Px(5, 5).art(SLOT_HOLE, { d: 'dusk' }));
+const bulb = (k) => canvasOf('bulb' + k, () => new Px(5, 7).art(BULB, { s: 'grey2', h: RAMP[k].h, b: RAMP[k].b, d: RAMP[k].d }));
+
+/** A silver coin of n by n px: a lit rim, a bone face, a highlight and a stamped mark. */
+function coin(n) {
+  return canvasOf('coin' + n, () => {
+    const p = new Px(n, n), c = n / 2;
+    const inside = (x, y, r) => (x + 0.5 - c) ** 2 + (y + 0.5 - c) ** 2 <= r * r;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        if (inside(x, y, n / 2)) p.set(x, y, x + y < n - 1 ? 'grey3' : 'grey2');
+        if (inside(x, y, n / 2 - 1.05)) p.set(x, y, 'bone');
+      }
+    }
+    if (n >= 6) p.set(Math.floor(n / 2) - 1, Math.floor(n / 2) - 1, 'white');
+    if (n >= 7) p.rect(Math.floor((n - 1) / 2), Math.floor(n / 2) - 1, 1, Math.max(2, n - 5), 'grey3');
+    if (n >= 9) p.set(Math.floor(n / 2) - 2, Math.floor(n / 2) - 2, 'white');
+    return p;
+  });
+}
+
+/** An icon that fills from the bottom, like the d20 meter: the unlit shape, then the lit one clipped to the filled rows. */
+function gauge(unlit, lit, x, y, frac) {
+  blit(unlit, x, y);
+  const rows = Math.round(lit.height * clamp01(frac));
+  if (rows > 0) clipped(X, x, y + lit.height - rows, lit.width, rows, () => blit(lit, x, y));
+}
+
+/** n equal notches across w px with a 1 px gap, filled in order. Positions are spread so the last notch ends on the edge. */
+function notches(x, y, w, h, n, frac, color, back) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.round((i * (w + 1)) / n), b = Math.round(((i + 1) * (w + 1)) / n) - 1;
+    drawBar(X, x + a, y, b - a, h, clamp01(frac * n - i), color, back);
+  }
+}
+
+/** The MP bar. One segment per cast of the special: a bright segment can be cast now, a dim one is still charging.
+ * When there are too many casts for the width it falls back to a plain bar with a tick at each cast. */
+function mpBar(s, x, y, w, h) {
+  const n = s.castMax, pitch = Math.floor((w + 1) / n);
+  if (pitch >= 3) {
+    for (let i = 0; i < n; i++) {
+      const len = Math.min(s.cost, s.mpMax - i * s.cost);
+      const sw = Math.max(2, Math.round(((pitch - 1) * len) / s.cost));
+      const f = clamp01((s.mp - i * s.cost) / len);
+      drawBar(X, x + i * pitch, y, sw, h, f, f >= 1 && len >= s.cost ? 'blue' : 'slate', 'shadow');
+    }
+    return n * pitch - 1;
+  }
+  drawBar(X, x, y, w, h, s.mp / s.mpMax, s.afford ? 'blue' : 'slate', 'shadow');
+  for (let k = 1; k * s.cost < s.mpMax; k++) R(x + Math.round((w * k * s.cost) / s.mpMax), y, 1, h, 'ink');
+  return w;
+}
+
+/** A plain bar with 1 px ticks, for the narrow columns. */
+function ruler(x, y, w, h, frac, color, back, ticks) {
+  drawBar(X, x, y, w, h, frac, color, back);
+  for (const t of ticks) R(x + Math.round(w * t), y, 1, h, 'ink');
+}
+function rulerV(x, y, w, h, frac, color, back, ticks) {
+  drawBarV(X, x, y, w, h, frac, color, back);
+  for (const t of ticks) R(x, y + h - Math.round(h * t) - 1, w, 1, 'ink');
+}
+
+/** How many lit pips to show for the special, when the row can only hold `cap`. */
+function pips(s, cap) {
+  const n = Math.min(s.castMax, cap);
+  if (s.castMax <= cap) return { n, lit: s.casts, part: s.mp % s.cost > 0 && s.casts < n };
+  const f = (s.mp / s.mpMax) * n;
+  return { n, lit: Math.floor(f + 1e-6), part: f - Math.floor(f + 1e-6) > 0.05 };
+}
+
+// ---------------------------------------------------------------- shared pieces
+const MID = 130;
+
+function hpBar(s) {
+  const p = s.p, n = bulbCount(p.hpMax), pitch = Math.max(6, Math.min(8, Math.floor(100 / n)));
+  const low = isLowHp(p.hp, p.hpMax);
+  const color = low && bulbDark(s.t, 0, true, settings.reduceFlashing) ? 'blood1' : hpTone(p.hp, p.hpMax);
+  R(25, 10, n * pitch - 1, 5, 'ink');
+  for (let i = 0; i < n; i++) drawBar(X, 25 + i * pitch, 10, pitch - 1, 5, bulbFill(p.hp, p.hpMax, i, n), color, 'shadow');
+  return { x: 25, y: 10, w: n * pitch - 1 };
+}
+
+function face(s, frame = true) {
+  const p = s.p, low = isLowHp(p.hp, p.hpMax);
+  if (frame) outline(X, 1, 0, 16, 16, s.up ? 'yellow' : 'amber');
+  clipped(X, 2, 1, 14, 14, () => drawPortrait(X, p.id, low ? 'worried' : 'neutral', -3, -2));
+}
+
+const nameEnd = (s) => 25 + s.p.name.length * 6 - 1;
+const lvX = (s) => 25 + s.p.name.length * 6 + 6;
+const lvText = (s, color, label = `LV${s.level}`) => T(label, lvX(s), 1, s.up ? 'white' : color);
+
+/** The Nat 20 timer, as it ships: a lit d20, the seconds left and a thin line. It sits under the quarters. */
+function inspireShipped(s, y = 9, line = true) {
+  if (s.insp <= 0) return;
+  drawIcon(X, 'd20Glow', MID, y, s.t);
+  T(`${Math.ceil(s.insp)}S`, MID + 10, y + 1, 'yellow');
+  if (!line) return;
+  R(MID, 17, 28, 1, 'dusk');
+  R(MID, 17, Math.max(1, Math.round(28 * clamp01(s.insp / INSPIRATION_SECONDS))), 1, 'yellow');
+}
+
+// ---------------------------------------------------------------- the designs
+const DESIGNS = [];
+const design = (d) => DESIGNS.push(d);
+
+// The HUD as it was before this sheet, redrawn here so the comparison still works now that the game has changed.
+const OLD_GEM = ['........', '..hhhh..', '.hbbbbd.', 'hbbwbbbd', '.dbbbbd.', '..dbbd..', '...dd...', '........'];
+const oldGem = () => canvasOf('oldGem', () => new Px(8, 8).art(OLD_GEM, { h: 'sky', b: 'blue', d: 'dusk', w: 'white' }));
+const oldQuarter = () => canvasOf('oldQuarter', () => new Px(8, 8).ellipse(4, 4, 3.9, 3.9, 'grey2').ellipse(4, 4, 2.9, 2.9, 'bone').set(2, 2, 'white').set(3, 2, 'white').set(2, 3, 'white').rect(4, 4, 2, 2, 'grey3').set(3, 5, 'grey3'));
+
+design({
+  id: 'Before', ref: true, name: 'The old HUD',
+  blurb: 'What the game drew before this sheet. The XP line is one pixel and disappears at 0 XP, and cyan is close to the MP blue. The framed MP bar is the only framed thing in a strip of frameless ones, and the coin looks like neither.',
+  reads: [['Level', 'Yellow LV text and a 1 px cyan line under HP.'], ['Special', 'A gem and a framed blue bar, a fixed 20 px.'], ['Coins', 'A grey quarter and a white count.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    blit(oldGem(), 94, 0);
+    outline(X, 103, 1, 22, 7, 'slate');
+    drawBar(X, 104, 2, 20, 5, s.mpMax > 0 ? s.mp / s.mpMax : 0, 'blue', 'night');
+    R(25, 17, 100, 1, 'dusk');
+    if (s.xp > 0) R(25, 17, Math.max(1, Math.round(100 * s.xp)), 1, 'cyan');
+    blit(oldQuarter(), MID, 1);
+    T('x' + s.q, MID + 10, 2);
+    inspireShipped(s);
+  },
+});
+
+// 1 ------------------------------------------------------------------
+design({
+  id: '1', name: 'Quiet', chosen: true,
+  blurb: 'The same layout as today with nothing framed, so it matches the HP bar. XP becomes ten yellow notches under HP, MP gets one notch per cast, and the coin gets small.',
+  reads: [['Level', 'Ten notches under HP, as wide as the HP bar. Yellow, like the LV text.'], ['Special', 'One notch per cast. Bright means you can cast now, dim is still charging.'], ['Coins', 'A small coin and a white count. Nothing else moves.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    notches(s.hp.x, 16, s.hp.w, 2, 10, s.xp, 'yellow', 'dusk');
+    TT('MP', 94, 2, 'mist');
+    mpBar(s, 103, 2, 24, 5);
+    blit(coin(7), MID, 1);
+    T('x' + s.q, MID + 9, 1);
+    inspireShipped(s);
+  },
+});
+
+// 2 ------------------------------------------------------------------
+design({
+  id: '2', name: 'Gauge gems',
+  blurb: 'Every readout is an icon that fills from the bottom, the way the d20 meter already does. A gold shield for the level, a blue gem for MP, a coin for quarters. No bars at all, so the panel has more air.',
+  reads: [['Level', 'A shield that fills gold as XP grows. LV text stays beside the name.'], ['Special', 'A gem that fills blue. It goes dull when you cannot afford the special.'], ['Coins', 'A larger coin, the same size as the other two icons.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    gauge(shield9('dim'), shield9('gold'), 96, 0, s.xp);
+    gauge(gem9('dim'), gem9(s.afford ? 'blue' : 'dull'), 109, 0, s.mp / s.mpMax);
+    blit(coin(9), MID, 0);
+    T('x' + s.q, MID + 11, 1);
+    inspireShipped(s);
+  },
+});
+
+// 3 ------------------------------------------------------------------
+design({
+  id: '3', name: 'Dashboard',
+  blurb: 'One aligned column on the right. Each row is a small icon and a ruler bar, then the coin row at the bottom. Easy to scan because everything lines up on the same left edge.',
+  reads: [['Level', 'A star row with quarter ticks. LV text stays by the name.'], ['Special', 'A gem row with a tick at every cast.'], ['Coins', 'The last row, in the same column as the bars.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    const x0 = 124;
+    blit(star5('gold'), x0, 0);
+    ruler(x0 + 8, 1, 26, 3, s.xp, 'yellow', 'shadow', [0.25, 0.5, 0.75]);
+    blit(gem5(s.afford ? 'blue' : 'dull'), x0, 6);
+    mpBar(s, x0 + 8, 7, 26, 3);
+    blit(coin(6), x0, 12);
+    T('x' + s.q, x0 + 8, 11);
+    if (s.insp > 0) {
+      drawIcon(X, 'd20Glow', 95, 0, s.t);
+      T(`${Math.ceil(s.insp)}S`, 104, 1, 'yellow');
+    }
+  },
+});
+
+// 4 ------------------------------------------------------------------
+const RING = (() => {
+  const pts = [];
+  for (let x = 9; x <= 16; x++) pts.push([x, 0]);
+  for (let y = 1; y <= 15; y++) pts.push([16, y]);
+  for (let x = 15; x >= 1; x--) pts.push([x, 15]);
+  for (let y = 14; y >= 0; y--) pts.push([1, y]);
+  for (let x = 2; x <= 8; x++) pts.push([x, 0]);
+  return pts;
+})();
+
+design({
+  id: '4', name: 'Portrait ring',
+  blurb: 'XP runs around the active portrait frame, clockwise from the top. The level sits right on the hero, the name row gets quiet, and MP and coins get a matching gem and coin.',
+  reads: [['Level', 'The portrait frame fills gold clockwise. It flashes white on a level-up.'], ['Special', 'A gem and cast notches, in the name row.'], ['Coins', 'A coin and a white count, in the middle.']],
+  draw(s) {
+    face(s, false);
+    const lit = Math.round(RING.length * s.xp);
+    RING.forEach(([x, y], i) => R(x, y, 1, 1, s.up ? 'white' : i < lit ? (i === lit - 1 && lit < RING.length ? 'cream' : 'yellow') : 'soil3'));
+    lvText(s, 'yellow');
+    blit(gem9(s.afford ? 'blue' : 'dull'), 95, 0);
+    mpBar(s, 106, 2, 22, 5);
+    blit(coin(8), MID, 0);
+    T('x' + s.q, MID + 10, 1);
+    inspireShipped(s);
+  },
+  ownFace: true,
+});
+
+// 5 ------------------------------------------------------------------
+function chip(x, y, w, h, frac, back, fill, hi, lo) {
+  R(x, y, w, h, back);
+  const fw = Math.round(w * clamp01(frac));
+  if (fw > 0) { R(x, y, fw, h, fill); R(x, y, fw, 1, hi); R(x, y + h - 1, fw, 1, lo); }
+  return fw;
+}
+
+design({
+  id: '5', name: 'Chips',
+  blurb: 'The numbers live inside the bars. LV is a gold chip that fills as you gain XP, MP is a blue chip that shows what you can spend, and the coins sit in a grey chip. The old XP line is gone.',
+  reads: [['Level', 'The LV chip is the XP bar. It goes from tan to bright gold as you fill it.'], ['Special', 'A blue chip with the MP number. Ticks along the bottom mark each cast.'], ['Coins', 'A grey chip with a coin and the count.']],
+  draw(s) {
+    const lw = s.p.name.length > 0 ? 6 * `LV${s.level}`.length - 1 + 4 : 0, lx = nameEnd(s) + 4;
+    // Dark text on both halves: the unfilled part is a muted tan and the filled part a bright gold, so the label never splits.
+    chip(lx, 0, lw, 9, s.xp, 'soil3', s.up ? 'white' : 'yellow', 'cream', 'amber');
+    T(`LV${s.level}`, lx + 2, 1, 'ink');
+
+    const mx = 96, mw = 32;
+    chip(mx, 0, mw, 9, s.mp / s.mpMax, 'dusk', s.afford ? 'blue' : 'slate', s.afford ? 'sky' : 'mist', 'dusk');
+    TT('MP', mx + 2, 2, 'bone');
+    T(String(s.mp), mx + 11, 1, 'white');
+    for (let k = 1; k * s.cost < s.mpMax; k++) R(mx + Math.round((mw * k * s.cost) / s.mpMax), 8, 1, 1, 'ink');
+
+    chip(MID, 0, 28, 9, 1, 'grey1', 'grey1', 'grey1', 'grey1');
+    blit(coin(7), MID + 1, 1);
+    T('x' + s.q, MID + 9, 1, 'bone');
+
+    if (s.insp > 0) {
+      chip(MID, 10, 28, 8, s.insp / INSPIRATION_SECONDS, 'soil3', 'yellow', 'cream', 'amber');
+      T(`${Math.ceil(s.insp)}S`, MID + 2, 10, 'ink');
+      drawIcon(X, 'd20Glow', MID + 19, 10, s.t);
+    }
+  },
+});
+
+// 6 ------------------------------------------------------------------
+design({
+  id: '6', name: 'String lights',
+  blurb: 'The Christmas lights come back, the way HP used to be bulbs. A blue bulb for each cast hangs from a wire, and a strand of tiny gold lights under HP lights up as you level.',
+  reads: [['Level', 'Ten gold lights on a wire under HP. A light is lit or it is not.'], ['Special', 'Blue bulbs, one per cast. The half-lit one is charging.'], ['Coins', 'A coin and a white count, as in Quiet.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    const lit = Math.floor(s.xp * 10 + 1e-6), part = s.xp * 10 - lit > 0.05 && !s.maxed;
+    const a = s.hp.x, w = s.hp.w;
+    R(a, 16, w, 1, 'grey1');
+    for (let i = 0; i < 10; i++) {
+      const bx = a + Math.round((i * (w + 1)) / 10), bw = Math.round(((i + 1) * (w + 1)) / 10) - 1 - Math.round((i * (w + 1)) / 10);
+      const on = i < lit, half = i === lit && part;
+      R(bx, 16, bw, 2, on ? 'yellow' : half ? 'orange' : 'dusk');
+      if (on) R(bx, 16, 1, 1, 'cream');
+    }
+    const pp = pips(s, 5);
+    R(94, 0, pp.n * 6 + 1, 1, 'grey2');
+    for (let i = 0; i < pp.n; i++) {
+      const k = i < pp.lit ? (s.afford ? 'blue' : 'dull') : i === pp.lit && pp.part ? 'dull' : 'dim';
+      blit(bulb(k), 95 + i * 6, 0);
+    }
+    blit(coin(7), MID, 1);
+    T('x' + s.q, MID + 9, 1);
+    inspireShipped(s);
+  },
+});
+
+// 7 ------------------------------------------------------------------
+design({
+  id: '7', name: 'Dice and slots',
+  blurb: 'The game is about a d20, so XP is one: the same die as the party meter, drawn small, filling gold from the bottom as XP grows. MP is a row of spell slot diamonds, one per cast.',
+  reads: [['Level', 'A small white d20 that fills gold like the party meter. LV text stays by the name.'], ['Special', 'Spell slot diamonds. Lit is a cast you have, hollow is spent.'], ['Coins', 'A coin and a white count.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    const gold = s.up ? { center: 'white', top: 'white', side: 'cream', low: 'cream', line: 'yellow', edge: 'yellow' } : { ...DIE_GOLD, edge: 'orange' };
+    drawDie(X, 98, 5, 4.5, { scheme: DIE_BONE, lit: s.xp, litScheme: gold });
+    const pp = pips(s, 4);
+    for (let i = 0; i < pp.n; i++) {
+      const k = i < pp.lit ? (s.afford ? 'blue' : 'dull') : i === pp.lit && pp.part ? 'dull' : null;
+      blit(k ? slot(k) : slotHole(), 105 + i * 6, 2);
+    }
+    blit(coin(7), MID, 1);
+    T('x' + s.q, MID + 9, 1);
+    inspireShipped(s);
+  },
+});
+
+// 8 ------------------------------------------------------------------
+design({
+  id: '8', name: 'Pillars',
+  blurb: 'XP and MP stand up like the bench HP bars, each with a small icon on top. The strip already reads upright bars as health on the right, so these read as the active hero\'s own meters.',
+  reads: [['Level', 'A gold pillar with ticks at the quarters. LV text stays by the name.'], ['Special', 'A blue pillar with a tick at every cast.'], ['Coins', 'A coin and a white count, to the right of the pillars.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    blit(star5('gold'), 116, 0);
+    rulerV(117, 6, 3, 10, s.xp, 'yellow', 'shadow', [0.25, 0.5, 0.75]);
+    blit(gem5(s.afford ? 'blue' : 'dull'), 123, 0);
+    const ticks = [];
+    for (let k = 1; k * s.cost < s.mpMax; k++) ticks.push((k * s.cost) / s.mpMax);
+    rulerV(124, 6, 3, 10, s.mp / s.mpMax, s.afford ? 'blue' : 'slate', 'shadow', ticks);
+    blit(coin(7), MID + 1, 1);
+    T('x' + s.q, MID + 10, 1);
+    inspireShipped(s);
+  },
+});
+
+// 9 ------------------------------------------------------------------
+design({
+  id: '9', name: 'Arcade',
+  blurb: 'The quarters are Palace Arcade money, so they get a credit counter. Zero padded numbers, tiny labels, blocky bars. MP shows how many casts you have left as a number.',
+  reads: [['Level', 'LV with a zero padded number and ten blocks under HP.'], ['Special', 'SP, a block bar and a cast count in tiny type.'], ['Coins', 'A CREDIT label over a coin and a two digit count.']],
+  draw(s) {
+    lvText(s, 'yellow', `LV${pad2(s.level)}`);
+    notches(s.hp.x, 16, s.hp.w, 2, 10, s.xp, 'yellow', 'dusk');
+    TT('SP', 94, 2, 'mist');
+    mpBar(s, 103, 2, 16, 5);
+    TT('x' + s.casts, 122, 2, s.afford ? 'sky' : 'slate');
+    TT('CREDIT', 133, 0, 'mist');
+    blit(coin(7), 131, 5);
+    T(pad2(s.q), 140, 5, 'yellow');
+    if (s.insp > 0) {
+      TT(`${Math.ceil(s.insp)}S`, 131, 13, 'yellow');
+      R(144, 15, 14, 2, 'dusk');
+      R(144, 15, Math.max(1, Math.round(14 * clamp01(s.insp / INSPIRATION_SECONDS))), 2, 'yellow');
+    }
+  },
+});
+
+// 10 -----------------------------------------------------------------
+design({
+  id: '10', name: 'Rail',
+  blurb: 'XP becomes one long rail along the bottom of the strip, under the bench as well. It is the biggest progress bar in the game and the easiest to read from across the room. The panel above it gets calmer.',
+  reads: [['Level', 'A 20 notch rail from the HP bar to the d20 meter. LV text stays by the name.'], ['Special', 'A gem and cast notches, in the name row.'], ['Coins', 'A coin and a white count, in the middle.']],
+  draw(s) {
+    lvText(s, 'yellow');
+    notches(25, 16, 211, 2, 20, s.xp, 'yellow', 'dusk');
+    blit(gem9(s.afford ? 'blue' : 'dull'), 95, 0);
+    mpBar(s, 106, 2, 22, 5);
+    blit(coin(8), MID, 0);
+    T('x' + s.q, MID + 10, 1);
+    if (s.insp > 0) {
+      drawIcon(X, 'd20Glow', MID, 8, s.t);
+      T(`${Math.ceil(s.insp)}S`, MID + 10, 9, 'yellow');
+    }
+  },
+});
+
+// ---------------------------------------------------------------- page
+const SW = SCREEN_W, SH = VIEW_TOP, LEFT = 160;
+const base = document.createElement('canvas');
+base.width = SW; base.height = SH;
+const baseCtx = base.getContext('2d');
+
+for (const d of DESIGNS) {
+  const off = document.createElement('canvas');
+  off.width = SW; off.height = SH;
+  d.off = off; d.ctx = off.getContext('2d');
+  d.ctx.imageSmoothingEnabled = false;
+}
+
+const cards = document.getElementById('cards'), overview = document.getElementById('overview');
+for (const d of DESIGNS) {
+  const tile = document.createElement('a');
+  tile.className = 'tile' + (d.ref ? ' ref' : '') + (d.chosen ? ' chosen' : '');
+  tile.href = '#d' + d.id;
+  tile.innerHTML = `<div class="cap"><i>${d.id}</i>${d.name}</div><canvas width="${LEFT}" height="${SH}" aria-label="${d.name}, left panel"></canvas>`;
+  overview.append(tile);
+  d.thumb = tile.querySelector('canvas').getContext('2d');
+
+  const sec = document.createElement('section');
+  sec.className = 'card' + (d.ref ? ' ref' : '') + (d.chosen ? ' chosen' : '');
+  sec.id = 'd' + d.id;
+  sec.innerHTML = `
+    <div class="head"><span class="badge">${d.id}</span><h2>${d.name}</h2>${d.chosen ? '<span class="pick">Chosen, now in the game</span>' : ''}</div>
+    <p class="blurb">${d.blurb}</p>
+    <dl class="reads">${d.reads.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    <div class="scroll"><canvas class="crop" width="${LEFT}" height="${SH}" aria-label="${d.name}, left panel at 6x"></canvas></div>
+    <div class="scroll"><canvas class="strip" width="${SW}" height="${SH}" aria-label="${d.name}, whole strip at 3x"></canvas></div>`;
+  cards.append(sec);
+  d.cropCtx = sec.querySelector('.crop').getContext('2d');
+  d.stripCtx = sec.querySelector('.strip').getContext('2d');
+}
+
+let t = 0;
+function frame() {
+  if (st.animate) t++;
+  settings.reduceFlashing = st.calm || !st.animate;
+  const s = sceneFor(t);
+  drawHud(baseCtx, s.hud, t, st.up ? { levelUp: new Set([s.p.id]) } : {});
+  for (const d of DESIGNS) {
+    const c = d.ctx;
+    c.clearRect(0, 0, SW, SH);
+    c.drawImage(base, 0, 0);
+    {
+      X = c;
+      c.fillStyle = '#0a0a14';
+      c.fillRect(0, 0, 158, 18);
+      d.ownFace ? face(s, false) : face(s, true);
+      T(slotKeyLabel(s.idx + 1), 18, 1, 'slate');
+      T(s.p.name, 25, 1, 'white');
+      s.hp = hpBar(s);
+      c.save();
+      c.beginPath(); c.rect(0, 0, 158, 18); c.clip();
+      d.draw(s);
+      c.restore();
+    }
+    d.thumb.drawImage(d.off, 0, 0, LEFT, SH, 0, 0, LEFT, SH);
+    d.cropCtx.drawImage(d.off, 0, 0, LEFT, SH, 0, 0, LEFT, SH);
+    d.stripCtx.drawImage(d.off, 0, 0);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- controls
+function seg(id, options, get, set) {
+  const root = document.getElementById(id);
+  const paint = () => root.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(String(get()) === b.dataset.v)));
+  for (const [value, label] of options) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.v = String(value); b.textContent = label;
+    b.addEventListener('click', () => { set(value); paint(); });
+    root.append(b);
+  }
+  paint();
+  return paint;
+}
+const slider = (id, outId, fmt, set) => {
+  const el = document.getElementById(id), out = document.getElementById(outId);
+  const sync = () => { out.textContent = fmt(Number(el.value)); };
+  el.addEventListener('input', () => { set(Number(el.value)); sync(); });
+  return { el, sync };
+};
+
+const paintHero = seg('hero', HEROES.map((h) => [h, h]), () => st.hero, (v) => { st.hero = v; });
+const paintHp = seg('hpseg', [['full', 'Full'], ['mixed', 'Mixed'], ['low', 'Low']], () => st.hp, (v) => { st.hp = v; });
+const lvS = slider('lv', 'lvOut', (v) => String(v), (v) => { st.level = v; });
+const xpS = slider('xp', 'xpOut', (v) => `${v}%`, (v) => { st.xp = v / 100; });
+const mpS = slider('mp', 'mpOut', (v) => `${v}%`, (v) => { st.mp = v / 100; });
+const qtS = slider('qt', 'qtOut', (v) => String(v), (v) => { st.q = v; });
+const paintPreset = seg('preset', Object.entries(PRESETS).map(([k, p]) => [k, p.label]), () => '', (k) => {
+  const p = PRESETS[k];
+  Object.assign(st, { level: p.level, xp: p.xp, mp: p.mp, q: p.q, hp: p.hp });
+  lvS.el.value = p.level; xpS.el.value = Math.round(p.xp * 100); mpS.el.value = Math.round(p.mp * 100); qtS.el.value = p.q;
+  for (const x of [lvS, xpS, mpS, qtS]) x.sync();
+  paintHp();
+});
+for (const x of [lvS, xpS, mpS, qtS]) x.sync();
+const bind = (id, key) => document.getElementById(id).addEventListener('change', (e) => { st[key] = e.target.checked; });
+bind('insp', 'insp'); bind('lvup', 'up'); bind('anim', 'animate'); bind('calm', 'calm');
+
+frame();
+window.__hud = { st, DESIGNS, base };
+</script>
+</body>
+</html>

@@ -116,7 +116,7 @@ function buildHud() {
     const mpMax = d.base.mp + Math.floor(d.growth.mp * (st.level - 1));
     const r = ratios[i] ?? 1;
     const hp = r <= 0 ? 0 : Math.max(1, Math.round(hpMax * r));
-    return { id, name: d.name, level: st.level, hp, hpMax, mp: Math.round(mpMax * 0.7), mpMax, xp: 40, xpNext: 100, ko: hp <= 0, active: i === active };
+    return { id, name: d.name, level: st.level, hp, hpMax, mp: Math.round(mpMax * 0.7), mpMax, mpCost: d.special.mp, xp: 40, xpNext: 100, ko: hp <= 0, active: i === active };
   });
   return { party, burst: 0.6, burstReady: false, quarters: 0, inspiration: 0, swapReady: st.swap, boss: null };
 }

@@ -84,7 +84,7 @@ function partyHud(s: S): PartyHud[] {
   return s.heroes.map((h, i) => ({
     id: h.id, name: HERO_DEFS[h.id].name, level: h.level,
     hp: h.ko ? 0 : Math.max(1, Math.ceil(h.hp)), hpMax: h.st.hp,
-    mp: Math.floor(h.mp), mpMax: h.st.mp,
+    mp: Math.floor(h.mp), mpMax: h.st.mp, mpCost: HERO_DEFS[h.id].special.mp,
     xp: h.level >= MAX_LEVEL ? xpToNext(h.level) : h.xp, xpNext: xpToNext(h.level),
     ko: h.ko, active: i === s.active,
   }));

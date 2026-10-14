@@ -4,13 +4,15 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, METER_LEFT, MIDDLE_END, benchPitch, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, CELL_H, LEFT_W, LEFT_X, METER_LEFT, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, benchPitch, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { HERO_DEFS } from '../src/heroes/defs.ts';
+import { bulbCount } from '../src/ui/format.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
 
 const IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
 function party(n: number, active = 0, ko: number[] = []): PartyHud[] {
   return IDS.slice(0, n).map((id, i) => ({
-    id, name: id, level: 1, hp: 30, hpMax: 30, mp: 10, mpMax: 10, xp: 0, xpNext: 18, ko: ko.includes(i), active: i === active,
+    id, name: id, level: 1, hp: 30, hpMax: 30, mp: 10, mpMax: 10, mpCost: 5, xp: 0, xpNext: 18, ko: ko.includes(i), active: i === active,
   }));
 }
 const center = (r: { x: number; y: number; w: number; h: number }): [number, number] => [r.x + r.w / 2, r.y + r.h / 2];
@@ -60,6 +62,27 @@ test('the tiny font has every letter and digit, in 3 columns by 5 rows', () => {
     const rows = (TINY_GLYPHS[ch] ?? '').split('/');
     assert.equal(rows.length, 5, `${ch} has five rows`);
     for (const r of rows) assert.match(r, /^[.#]{3}$/, `${ch} rows are three columns`);
+  }
+});
+
+test('the active hero\'s panel never collides, for every hero up to level 12 and 99 quarters', () => {
+  assert.ok(TINY_GLYPHS.M && TINY_GLYPHS.P, 'the tiny font has the MP label');
+  const labelEnd = MP_LABEL_X + 2 * 4 - 1;
+  assert.ok(labelEnd < MP_BAR_X, 'the MP label ends before its bar');
+  assert.ok(MP_BAR_X + MP_BAR_W <= MIDDLE_X, 'the MP bar ends before the quarters');
+  // The quarter counter is the coin, a gap, and "x99" in 6 px glyphs.
+  assert.ok(MIDDLE_X + 9 + 'x99'.length * 6 - 1 <= MIDDLE_END, 'two digits of quarters fit before the bench');
+  for (const d of Object.values(HERO_DEFS)) {
+    // The name, a gap, and the level in 6 px glyphs, 5 px of ink in the last one.
+    const nameRowEnd = LEFT_X + d.name.length * 6 + 6 + 'LV12'.length * 6 - 1;
+    assert.ok(nameRowEnd < MP_LABEL_X, `${d.name} at level 12 runs to ${nameRowEnd}, into the MP label at ${MP_LABEL_X}`);
+    for (let level = 1; level <= 12; level++) {
+      const hpMax = d.base.hp + Math.floor(d.growth.hp * (level - 1));
+      const n = bulbCount(hpMax);
+      const pitch = Math.max(6, Math.min(8, Math.floor(LEFT_W / n)));
+      const hpEnd = LEFT_X + n * pitch - 1;
+      assert.ok(hpEnd < MIDDLE_X, `${d.name} L${level} HP bar and the XP notches under it end at ${hpEnd}, into the quarters`);
+    }
   }
 });
 

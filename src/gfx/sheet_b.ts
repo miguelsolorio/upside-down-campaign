@@ -45,8 +45,8 @@ const props: Page = {
     drawText(ctx, 'ITEMS', 200, 108, 'cream', { shadow: true });
     ctx.fillStyle = PAL.night;
     ctx.fillRect(0, 128, SCREEN_W, 96);
-    const ids: IconId[] = ['bulbRed', 'bulbYellow', 'bulbGreen', 'bulbBlue', 'bulbOff', 'd20', 'd20Glow', 'eggo', 'coke', 'quarter', 'arrow', 'cursor', 'heart', 'mpGem'];
-    const short = ['RED', 'YEL', 'GRN', 'BLU', 'OFF', 'D20', 'GLOW', 'EGGO', 'COKE', 'QUAR', 'ARROW', 'CURS', 'HEART', 'GEM'];
+    const ids: IconId[] = ['bulbRed', 'bulbYellow', 'bulbGreen', 'bulbBlue', 'bulbOff', 'd20', 'd20Glow', 'eggo', 'coke', 'quarter', 'arrow', 'cursor', 'heart'];
+    const short = ['RED', 'YEL', 'GRN', 'BLU', 'OFF', 'D20', 'GLOW', 'EGGO', 'COKE', 'QUAR', 'ARROW', 'CURS', 'HEART'];
     ids.forEach((id, i) => {
       const x = 8 + (i % 7) * 34, y = 134 + ((i / 7) | 0) * 26;
       drawIcon(ctx, id, x + 8, y, t);

@@ -2,9 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, formatTime, hpTone, isLowHp,
-  MAX_BULBS, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  MAX_BULBS, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  XP_NOTCHES,
 } from '../src/ui/format.ts';
 import { wrapText } from '../src/core/text.ts';
+import { HERO_DEFS } from '../src/heroes/defs.ts';
+import { MP_BAR_W } from '../src/ui/hudlayout.ts';
+import type { HeroId } from '../src/core/types.ts';
 
 test('HP segments: one per 10 HP, rounded up, capped', () => {
   assert.equal(bulbCount(48), 5);
@@ -58,6 +62,93 @@ test('bench quarters fill from the bottom, and any HP at all lights part of the 
   assert.deepEqual(q(6), [0.5, 0, 0, 0]);
   assert.ok((q(1)[0] as number) > 0);
   assert.deepEqual([0, 1, 2, 3].map((i) => quarterFill(5, 0, i)), [0, 0, 0, 0]);
+});
+
+test('XP notches tile the bar edge to edge with a 1 px gap, and a bar too narrow for ten gets fewer', () => {
+  for (const w of [39, 47, 55, 71, 90]) {
+    const s = notchSpans(w, XP_NOTCHES);
+    assert.equal(s.length, XP_NOTCHES, `${w} px`);
+    assert.equal(s[0]?.x, 0);
+    for (let i = 1; i < s.length; i++) assert.equal((s[i]?.x ?? 0) - ((s[i - 1]?.x ?? 0) + (s[i - 1]?.w ?? 0)), 1, `a 1 px gap before notch ${i} at ${w} px`);
+    const last = s[s.length - 1] as { x: number; w: number };
+    assert.equal(last.x + last.w, w, `the last notch ends on the edge at ${w} px`);
+    for (const n of s) assert.ok(n.w >= 1);
+  }
+  // The level 1 HP bar is five segments, 39 px: ten 3 px notches.
+  assert.deepEqual(notchSpans(39, XP_NOTCHES).map((n) => n.w), Array(10).fill(3));
+  const narrow = notchSpans(7, XP_NOTCHES);
+  assert.ok(narrow.length < XP_NOTCHES && narrow.every((n) => n.w >= 1));
+  assert.equal((narrow[narrow.length - 1]?.x ?? 0) + (narrow[narrow.length - 1]?.w ?? 0), 7);
+});
+
+test('XP notches fill left to right, and a full bar lights every notch', () => {
+  const f = (frac: number): number[] => Array.from({ length: 10 }, (_, i) => Math.round(notchFill(frac, i, 10) * 100) / 100);
+  assert.deepEqual(f(0), Array(10).fill(0));
+  assert.deepEqual(f(1), Array(10).fill(1));
+  assert.deepEqual(f(0.55), [1, 1, 1, 1, 1, 0.5, 0, 0, 0, 0]);
+  assert.deepEqual(f(2), Array(10).fill(1), 'past full stays full');
+  assert.deepEqual(f(-1), Array(10).fill(0));
+});
+
+test('the MP bar has one segment per cast, and a segment is ready only when it holds a whole cast', () => {
+  // Mike at level 1: 16 MP and the DM screen costs 6. Three segments, and the third, 4 MP, is a short stub that is never a cast.
+  const full = mpBar(24, 16, 16, 6);
+  assert.equal(full.cells.length, 3);
+  assert.deepEqual(full.cells.map((c) => c.ready), [true, true, false]);
+  assert.ok((full.cells[2]?.w ?? 99) < (full.cells[0]?.w ?? 0), 'the stub is shorter');
+  assert.deepEqual(full.ticks, []);
+  // 9 MP is one cast and half of the next.
+  const half = mpBar(24, 9, 16, 6);
+  assert.deepEqual(half.cells.map((c) => c.fill), [1, 0.5, 0]);
+  assert.deepEqual(half.cells.map((c) => c.ready), [true, false, false]);
+  // 5 MP is not enough for any cast: the first segment is nearly full but not ready.
+  const dry = mpBar(24, 5, 16, 6);
+  assert.ok((dry.cells[0]?.fill ?? 0) > 0.8);
+  assert.deepEqual(dry.cells.map((c) => c.ready), [false, false, false]);
+  assert.deepEqual(mpBar(24, 0, 16, 6).cells.map((c) => c.fill), [0, 0, 0]);
+});
+
+test('with more casts than the bar has room for, MP is one bar with a tick at every cast', () => {
+  // Eleven at level 12: 66 MP and Mind Blast costs 8, so 9 casts in 24 px.
+  const b = mpBar(24, 20, 66, 8);
+  assert.equal(b.cells.length, 1);
+  assert.equal(b.cells[0]?.w, 24);
+  assert.equal(b.cells[0]?.ready, true, '20 MP is two casts');
+  assert.equal(mpBar(24, 7, 66, 8).cells[0]?.ready, false);
+  assert.equal(b.ticks.length, 8, 'a tick between each pair of casts');
+  for (let i = 0; i < b.ticks.length; i++) {
+    assert.ok((b.ticks[i] as number) > 0 && (b.ticks[i] as number) < 24);
+    if (i > 0) assert.ok((b.ticks[i] as number) > (b.ticks[i - 1] as number));
+  }
+});
+
+test('the MP bar copes with no MP and a special that is free', () => {
+  assert.deepEqual(mpBar(24, 0, 0, 6), { cells: [], ticks: [] });
+  const free = mpBar(24, 5, 10, 0);
+  assert.equal(free.cells.length, 1);
+  assert.deepEqual(free.ticks, []);
+  assert.equal(free.cells[0]?.fill, 0.5);
+});
+
+test('every hero at every level gets an MP bar that fits, shows its casts, and is bright only when it can cast', () => {
+  const ids = Object.keys(HERO_DEFS) as HeroId[];
+  for (const id of ids) {
+    const d = HERO_DEFS[id];
+    for (let level = 1; level <= 12; level++) {
+      const mpMax = d.base.mp + Math.floor(d.growth.mp * (level - 1));
+      const cost = d.special.mp;
+      for (const mp of [0, cost - 1, cost, mpMax]) {
+        const b = mpBar(MP_BAR_W, mp, mpMax, cost);
+        for (const c of b.cells) assert.ok(c.x >= 0 && c.x + c.w <= MP_BAR_W, `${id} L${level} cell ${c.x}+${c.w} sticks out of ${MP_BAR_W} px`);
+        const bright = b.cells.filter((c) => c.ready).length;
+        if (b.cells.length > 1) assert.equal(bright, Math.floor(mp / cost), `${id} L${level} at ${mp} MP`);
+        else {
+          assert.equal(b.cells[0]?.ready, mp >= cost, `${id} L${level} at ${mp} MP, one bar`);
+          assert.equal(b.ticks.length, Math.ceil(mpMax / cost) - 1, `${id} L${level}: a tick between each pair of casts`);
+        }
+      }
+    }
+  }
 });
 
 test('time formats as m:ss from frames', () => {

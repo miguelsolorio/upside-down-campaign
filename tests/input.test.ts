@@ -2,11 +2,12 @@
 // Node has no window, so the three browser globals input.ts touches are stubbed here.
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { createInput } from '../src/core/input.ts';
+import { createInput, toSimInput } from '../src/core/input.ts';
 import type { InputOptions, InputState } from '../src/core/input.ts';
 import { BTN } from '../src/core/gamepad.ts';
 import type { PadLike } from '../src/core/gamepad.ts';
 import { resetBindings } from '../src/core/bindings.ts';
+import { makeWhite } from './sim-helpers.ts';
 
 type Handler = (e: unknown) => void;
 const handlers = new Map<string, Handler[]>();
@@ -110,6 +111,39 @@ test('held movement keys win over a stick that has drifted', () => {
   i.poll();
   const a = i.axis();
   assert.ok(a.x > 0 && a.y > 0, 'the stick takes over once the key is up');
+});
+
+test('Space bursts only when the play scene says nothing is in reach to light', () => {
+  const i = make();
+  keyDown('Space');
+  i.poll();
+  assert.equal(toSimInput(i, true).burstPressed, true);
+  assert.equal(toSimInput(i).burstPressed, false, 'next to lights, Space lights them');
+  keyUp('Space');
+  keyDown('KeyU');
+  i.poll();
+  assert.equal(toSimInput(i).burstPressed, true, 'U bursts anywhere');
+});
+
+test('a Space press with a full d20 and nothing in reach sets off the party burst', () => {
+  const i = make();
+  const { sim, s } = makeWhite();
+  s.burst = 1;
+  keyDown('Space');
+  i.poll();
+  assert.equal(sim.step(toSimInput(i, true)).filter((e) => e.t === 'burst').length, 1);
+  assert.equal(sim.view().hud.burst, 0);
+});
+
+test("a controller's A attacks and never bursts, and Y does", () => {
+  const i = make();
+  pads = [pad([BTN.A])];
+  i.poll();
+  assert.ok(i.pressed('interact'));
+  assert.equal(toSimInput(i, true).burstPressed, false);
+  pads = [pad([BTN.Y])];
+  i.poll();
+  assert.equal(toSimInput(i, true).burstPressed, true);
 });
 
 test('the keyboard still works with no controller at all', () => {

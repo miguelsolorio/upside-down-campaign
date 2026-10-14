@@ -38,8 +38,8 @@ Every push to `main` builds the game and publishes it to GitHub Pages through `.
 | `X` or `K` | Special. Costs MP |
 | `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
 | `1` to `4`, or click a portrait | Pick a hero |
-| `U` or `B` | Party burst, when the d20 at the top right is full |
-| `Space` or `Enter` | Talk, light Joyce's Christmas lights, advance dialogue |
+| `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise party burst when the d20 at the top right is full. Also advances dialogue |
+| `U` or `B` | Party burst, even next to the lights |
 | `Esc` or `P` | Pause and settings |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
 | `M` | Mute |
@@ -62,7 +62,7 @@ Hints switch to button names once you touch the controller, and back to keys whe
 
 **Changing keys.** The table above is the defaults. Open CONTROLS from the options (the OPTIONS row on the title, or `P`) or the pause menu and every action shows its two key slots. Pick a slot with the arrow keys, press Enter, then press the new key. Backspace clears a slot, Escape cancels, and RESET ALL restores the defaults. A key that's already in use swaps places with the one you're replacing. ATTACK and SPECIAL always keep at least one key. The arrow keys, Enter and Esc always work and can't be rebound, so a menu can never get stuck. Your keys are saved, and every hint on screen follows them: the HUD's hero numbers, the controls in the corner of the level, the skip prompt and the tutorial lines. The title shows no key hints at all. The gamepad layout is listed there too but can't be changed yet.
 
-**Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special, swap and burst controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Every script still does what it does, so Eleven still joins and the gate still opens.
+**Story.** Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special and swap controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Burst isn't listed there: once the d20 is full, PRESS SPACE FOR PARTY BURST shows over the active hero until it's used, except next to the lights, where Space lights them instead. Every script still does what it does, so Eleven still joins and the gate still opens.
 
 **Saving.** The game saves by itself each time you light Joyce's Christmas lights, and `SAVED` shows over them. Reload or quit and the title offers CONTINUE, which puts the party back at the last lit lights with its levels, XP, d20 bonuses, kills, opened gates and story beats. Health comes back full, the same as a retry. NEW GAME on the title and START OVER in the pause menu both wipe the save (press twice to confirm). START OVER restarts the level straight away with the party it started that level with, and NEW GAME plays the prologue unless skip story is on. Clearing Level 1 saves a fresh start at the Lab door with your levels, XP and d20 bonuses, so CONTINUE picks up there. Clearing Level 2 clears the save. It's one save per browser, and `?bot`, `?god`, `?level` and `?party` runs never touch it.
 

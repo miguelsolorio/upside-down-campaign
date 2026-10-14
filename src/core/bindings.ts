@@ -39,7 +39,7 @@ export const BIND_ROWS: readonly BindRow[] = [
   { action: 'swap3', label: 'HERO 3', required: false },
   { action: 'swap4', label: 'HERO 4', required: false },
   { action: 'burst', label: 'PARTY BURST', required: false },
-  { action: 'interact', label: 'TALK OR LIGHT', required: false },
+  { action: 'interact', label: 'LIGHT OR BURST', required: false },
   { action: 'skip', label: 'SKIP DIALOGUE', required: false },
   { action: 'pause', label: 'PAUSE', required: false },
   { action: 'mute', label: 'MUTE', required: false },
@@ -286,15 +286,24 @@ export interface HintRow { keys: string; what: string }
 /**
  * The controls drawn in the corner of the level, one row each. Movement, pause, talking and lighting are left out
  * because the arrows, WASD, Esc, Space and Enter are expected, and so is picking a hero by number, since swap covers it.
- * Swap shows both keys, back then next: C and V on a keyboard, the bumpers on a controller.
+ * Swap shows one key on a keyboard, C, so every row has a single key. A controller shows both bumpers.
+ * Burst is left out too: a word with no meter means nothing, so `burstHint` names it over the hero once it's ready.
  */
 export function controlRows(): HintRow[] {
   return [
     { keys: labelOf('attack'), what: 'ATTACK' },
     { keys: labelOf('special'), what: 'SPECIAL' },
-    { keys: `${labelOf('swapPrev')} ${labelOf('swapNext')}`, what: 'SWAP' },
-    { keys: labelOf('burst'), what: 'BURST' },
+    { keys: onPad() ? `${labelOf('swapPrev')} ${labelOf('swapNext')}` : labelOf('swapPrev'), what: 'SWAP' },
   ];
+}
+
+/** The burst key the prompts teach. On a keyboard it's the interact key, Space, which bursts whenever there's nothing
+ * in reach to light. U and B burst too but go unnamed. A controller names Y. */
+const burstKey = (): string => labelOf(onPad() ? 'burst' : 'interact');
+
+/** The line over the active hero while the d20 is full and the party burst is ready. */
+export function burstHint(): string {
+  return `PRESS ${burstKey()} FOR PARTY BURST`;
 }
 
 // Story lines name keys with {tokens}, so a tutorial stays true after a rebind.
@@ -309,7 +318,7 @@ const TOKENS: Record<string, () => string> = {
   },
   attack: () => labelOf('attack'),
   special: () => labelOf('special'),
-  burst: () => labelOf('burst'),
+  burst: burstKey,
   interact: () => labelOf('interact'),
   skip: () => labelOf('skip'),
   swap: () => `${labelOf('swapPrev')} and ${labelOf('swapNext')}`,

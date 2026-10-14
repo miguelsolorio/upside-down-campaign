@@ -192,9 +192,9 @@ export function drawFlash(ctx: Ctx, view: SimView): void {
 }
 
 // ---------------------------------------------------------------- small overlays
-/** A short line over a point in world space, on a dark strip so it reads on any ground. */
-export function drawCallout(ctx: Ctx, text: string, wx: number, wy: number, cam: Camera, color: ColorName = 'white'): void {
-  const lines = wrapText(text, 26);
+/** A short line over a point in world space, on a dark strip so it reads on any ground. It wraps at `cols` characters. */
+export function drawCallout(ctx: Ctx, text: string, wx: number, wy: number, cam: Camera, color: ColorName = 'white', cols = 26): void {
+  const lines = wrapText(text, cols);
   const w = Math.max(...lines.map((l) => textWidth(l)));
   const h = lines.length * 9;
   const x = Math.max(2, Math.min(SCREEN_W - w - 4, Math.round(wx - cam.x - w / 2)));

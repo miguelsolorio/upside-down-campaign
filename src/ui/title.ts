@@ -3,7 +3,7 @@
 // No key hints are drawn here. P still opens the options and T still flips skip story, and both are also on screen
 // as a menu row and a status line. A mouse can pick the rows, and a click on the status line flips it.
 import type { Game, Scene } from '../core/scene.ts';
-import { SCREEN_H, SCREEN_W } from '../core/config.ts';
+import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
 import { hasSave } from '../core/save.ts';
 import { inRect } from '../core/pointer.ts';
@@ -12,7 +12,7 @@ import type { HeroId } from '../core/types.ts';
 import { drawIcon, drawLogo, drawPanel, drawText, paintGlow, textWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { LAUNCH_FRAMES, launchLevel } from './format.ts';
-import { bigText, blinkOn, box, dither } from './kit.ts';
+import { bigText, blinkOn, box, dither, inFrame, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { drawMenu, settingItems, toggleSkipStory, updateMenu } from './menu.ts';
 import type { Menu } from './menu.ts';
@@ -99,11 +99,13 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
     let y = 78;
     let first = 0;
     const boxes: Menu['boxes'] = [];
+    // The boxes are in screen px, like drawMenu's, so the menu lines up with the mouse inside the centered frame.
+    const ox = ctx.getTransform().e;
     if (!saved) {
       const on = main.sel === 0;
       if (promptOn(t, launch) || !on) bigText(ctx, 'PRESS START', 128, y, on ? 'white' : 'mist', 2);
       const w = textWidth('PRESS START') * 2;
-      boxes.push({ x: 128 - w / 2 - 6, y: y - 4, w: w + 12, h: 22 });
+      boxes.push({ x: ox + 128 - w / 2 - 6, y: y - 4, w: w + 12, h: 22 });
       y += 24;
       first = 1;
     }
@@ -115,7 +117,7 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       const on = i === main.sel;
       if (on) drawIcon(ctx, 'cursor', x - 11, y - 1, t);
       drawText(ctx, text, x, y, on ? 'yellow' : 'bone', { shadow: true });
-      boxes.push({ x: x - 12, y: y - 3, w: textWidth(text) + 24, h: 13 });
+      boxes.push({ x: ox + x - 12, y: y - 3, w: textWidth(text) + 24, h: 13 });
       y += 13;
     }
     main.boxes = boxes;
@@ -151,10 +153,11 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       }
       if (i.pressed('skip')) { toggleSkipStory(g); return; }
       const skipAt = skipBox(g.settings.skipDialogue);
-      const ptr = i.hover();
+      // The status line is drawn in the centered frame, so the mouse is measured from there too.
+      const ptr = toFrame(i.hover());
       skipHot = !!ptr && inRect(ptr, skipAt);
       if (skipHot) i.point();
-      const click = i.clicked();
+      const click = toFrame(i.clicked());
       if (click && inRect(click, skipAt)) { toggleSkipStory(g); return; }
       // A controller's Start button picks the highlighted row, the same as A.
       if (i.pressed('start')) { audio.sfx('confirm'); main.items[main.sel]?.activate?.(); return; }
@@ -168,38 +171,43 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       woods(ctx);
       spores(ctx, t);
 
-      // Light on the path: the flashlights Mike and Lucas hold, which travel with the party as it walks off.
-      const lights: Glow[] = PARTY.filter((p) => p.id !== 'eleven').map((p) => ({ x: p.x, y: p.y - 6 - walk * 30, r: 30, k: 0.85, flicker: 0.4 }));
+      // Light on the path: the flashlights Mike and Lucas hold, which travel with the party as it walks off. The
+      // pools are painted straight onto the pixels, so they take screen x, not the frame's.
+      const lights: Glow[] = PARTY.filter((p) => p.id !== 'eleven').map((p) => ({ x: FRAME_X + p.x, y: p.y - 6 - walk * 30, r: 30, k: 0.85, flicker: 0.4 }));
       paintGlow(ctx, lights, t, 1);
 
-      // Heroes in the back row first, so the front one overlaps them.
-      for (const p of [...PARTY].sort((a, b) => a.y - b.y)) {
-        const off = launch > 0 ? Math.round(launch * 1.1) : 0;
-        bigActor(ctx, p.id, p.x, p.y - off, 2, launch > 0 ? launch : t, {
-          dir: launch > 0 ? 'up' : 'down', anim: launch > 0 ? 'walk' : 'idle', strained: p.id === 'eleven',
-        });
-      }
-      drawLogo(ctx, t, 128, 14);
-      drawMain(ctx);
+      inFrame(ctx, () => {
+        // Heroes in the back row first, so the front one overlaps them.
+        for (const p of [...PARTY].sort((a, b) => a.y - b.y)) {
+          const off = launch > 0 ? Math.round(launch * 1.1) : 0;
+          bigActor(ctx, p.id, p.x, p.y - off, 2, launch > 0 ? launch : t, {
+            dir: launch > 0 ? 'up' : 'down', anim: launch > 0 ? 'walk' : 'idle', strained: p.id === 'eleven',
+          });
+        }
+        drawLogo(ctx, t, 128, 14);
+        drawMain(ctx);
 
-      const skip = g.settings.skipDialogue;
-      const skipColor = skip ? 'yellow' : 'mist';
-      drawText(ctx, skipLine(skip), 128, SKIP_Y, skipColor, { align: 'center', shadow: true });
-      // The mouse over the status line underlines it, like a link.
-      if (skipHot && !open && launch === 0) {
-        const w = textWidth(skipLine(skip));
-        box(ctx, 128 - w / 2, SKIP_Y + 8, w - 1, 1, skipColor);
-      }
-      // A controller press can't always wake the browser's audio. Say so rather than leave the game silent.
-      if (!open && g.input.device() === 'gamepad' && !audio.ready()) {
-        drawText(ctx, 'CLICK THE GAME ONCE FOR SOUND', 128, 202, 'amber', { align: 'center', shadow: true });
-      }
+        const skip = g.settings.skipDialogue;
+        const skipColor = skip ? 'yellow' : 'mist';
+        drawText(ctx, skipLine(skip), 128, SKIP_Y, skipColor, { align: 'center', shadow: true });
+        // The mouse over the status line underlines it, like a link.
+        if (skipHot && !open && launch === 0) {
+          const w = textWidth(skipLine(skip));
+          box(ctx, 128 - w / 2, SKIP_Y + 8, w - 1, 1, skipColor);
+        }
+        // A controller press can't always wake the browser's audio. Say so rather than leave the game silent.
+        if (!open && g.input.device() === 'gamepad' && !audio.ready()) {
+          drawText(ctx, 'CLICK THE GAME ONCE FOR SOUND', 128, 202, 'amber', { align: 'center', shadow: true });
+        }
+      });
       fadeOut(ctx, walk > 0.45 ? (walk - 0.45) / 0.55 : 0);
 
       if (open) {
         dither(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink', 2);
-        drawPanel(ctx, 36, 58, 184, 92, 'menu');
-        drawMenu(ctx, settingsMenu ?? build(g), 48, 65, 160, t, 10);
+        inFrame(ctx, () => {
+          drawPanel(ctx, 36, 58, 184, 92, 'menu');
+          drawMenu(ctx, settingsMenu ?? build(g), 48, 65, 160, t, 10);
+        });
       }
     },
   };

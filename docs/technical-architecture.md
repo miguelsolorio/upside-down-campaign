@@ -5,7 +5,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 ## Rules
 
 - TypeScript with erasable syntax only: no `enum`, no `namespace`, no constructor parameter properties. Use `import type` for types. Every relative import ends in `.ts`.
-- Pure modules never touch `document`, `window`, `localStorage`, canvas or `Audio*` at import time, so Node can run them: `src/combat`, `src/heroes`, `src/enemies`, `src/progression`, story data, stage data, and the pure files in `src/core` (`types`, `tiles`, `text`, `rng`, `config`).
+- Pure modules never touch `document`, `window`, `localStorage`, canvas or `Audio*` at import time, so Node can run them: `src/combat`, `src/heroes`, `src/enemies`, `src/progression`, story data, stage data, and the pure files in `src/core` (`types`, `tiles`, `text`, `rng`, `config`, `viewport`).
 - Files stay under about 500 lines. Write in chunks of about 400 lines or less.
 - Don't edit files you don't own. Shared files (`src/core/*`, `src/main.ts`, `src/flow.ts`, `docs/*`, `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`) are read-only for sub-agents. If one needs to change, say so in your report.
 - Copy rules for every string, comment and doc: no em dashes, ever. Contractions are fine. Dry, flat and short. Concrete nouns. Spell out numbers under ten in prose. Sentence case in headings. Avoid "seamless", "robust", "leverage", "unlock", "delve".
@@ -16,7 +16,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 - Typecheck: `node /Users/miguelsolorio/Developer/diablo/node_modules/typescript/bin/tsc --noEmit -p .`
 - Tests: `node --test tests/<file>.test.ts`, or `node --test tests/*.test.ts` for all. Node strips the types itself.
 - The dev server is already running at http://127.0.0.1:5173 (Vite, hot reload). Don't start another. `npm install` doesn't work in this sandbox.
-- Browser pane: open your own tab with `tabs_create` and pass its `tabId` on every call. Close it when done. Screenshots at scale 0.5, no more than three. Prefer `javascript_tool` and console reads. `window.__ud` exposes `{ g, audio }`.
+- Browser pane: open your own tab with `tabs_create` and pass its `tabId` on every call. Close it when done. Screenshots at scale 0.5, no more than three. Prefer `javascript_tool` and console reads. `window.__ud` exposes `{ g, audio, bindings, frame }`. Read 1x pixels from `frame`, not the page canvas, which is scaled up.
 - URL flags: `?sheet=1` sprite sheet, `?audio=1` audio lab, `?skip=1` skip title and prologue, `?dev=1` dev panel, `?bot=1` bot, `?stage=1.1` or `?stage=1.2`, `?time=day` or `?time=night`, `?mute=1`, `?god=1`, `?level=3`, `?touch=1` touch controls with a mouse.
 
 ## Ownership
@@ -33,7 +33,11 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 
 ## Units and conventions
 
-- Screen is 256 by 224 px, tiles are 16 by 16. The HUD covers the top 20 px (`VIEW_TOP`). The world is drawn after `ctx.translate(-camX, VIEW_TOP - camY)`.
+- Screen is `SCREEN_W` by 224 px, tiles are 16 by 16. `SCREEN_W` follows the window (`core/viewport.ts` picks it, `setScreenWidth` sets it) and is 256 in Node and on the dev scenes. It is a live binding: read it when you draw and never copy it into a module-level const. The HUD covers the top 20 px (`VIEW_TOP`). The world is drawn after `ctx.translate(-camX, VIEW_TOP - camY)`.
+- The world shows in the clear band, `VIEW_W` wide starting at `VIEW_X` (at most `CLEAR_MAX`, 448). The camera frames the band, so `camX` is still the world x at screen x 0. Anything placed against the world view (callouts, the puzzle caret, the corner controls) stays inside the band.
+- Screens laid out for 256 (menus, cards, dialogue, the prologue set) draw inside `inFrame` from `ui/kit.ts`, which moves the origin to `FRAME_X`. Inside it, center on `BASE_W` or 128, never `SCREEN_W`. Full-width backgrounds go outside it. The mouse is in screen px: hit-test something drawn in the frame with `toFrame(input.hover())`. `drawMenu` records its row boxes in screen px already. `paintGlow` writes pixels directly and ignores the transform, so its lights take screen x.
+- While the touch controls show, the screen is 256 wide and `core/touchlayout.ts` places it between the controls.
+- The game draws into an offscreen canvas at 1x (`__ud.frame` in the browser). `main.ts` copies it up onto the page's canvas each frame.
 - World coordinates are pixels. An actor's position is its feet: bottom-center of the sprite. Sprites live in 16 by 16 cells. The collision box is 10 wide by 8 tall, centered on x and ending at y. The hurt box is 12 wide by 14 tall, ending at y.
 - 60 Hz fixed step. Durations are frames. Speeds are px per frame.
 - Facing is `'down' | 'up' | 'left' | 'right'`. Art draws left by flipping right.

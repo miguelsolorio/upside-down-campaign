@@ -34,7 +34,7 @@ export interface InputState {
   axis(): Vec2;
   /** Whichever the player touched last. A connected controller counts as touched. */
   device(): Device;
-  /** Where the mouse is over the game, in game px (256 by 224), or null when it is elsewhere. A finger can't hover, so it's never here. */
+  /** Where the mouse is over the game, in game px (SCREEN_W by SCREEN_H), or null when it is elsewhere. A finger can't hover, so it's never here. */
   hover(): Vec2 | null;
   /** True on a tick the mouse moved over the game. A menu row under it takes the selection only then, so a resting mouse never fights the keys. */
   moved(): boolean;

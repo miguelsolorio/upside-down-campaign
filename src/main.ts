@@ -25,7 +25,7 @@ if (flags.mute) audio.mute(true);
 audio.setVolumes(settings.musicVol, settings.sfxVol);
 
 const g: Game = {
-  input: createInput(),
+  input: createInput(canvas),
   settings,
   flags,
   scenes: createSceneManager(() => g),

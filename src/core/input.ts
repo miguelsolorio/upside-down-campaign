@@ -1,6 +1,7 @@
 import type { SimInput, Vec2 } from './types.ts';
 import { actionsForCode } from './bindings.ts';
 import type { Action } from './bindings.ts';
+import { clientToGame } from './pointer.ts';
 
 export type { Action };
 
@@ -14,11 +15,15 @@ export interface InputState {
   /** Movement vector, length <= 1. */
   axis(): Vec2;
   device(): 'keyboard' | 'gamepad';
+  /** Where the mouse or finger is over the game, in game px (256 by 224), or null when it is elsewhere. */
+  pointer(): Vec2 | null;
+  /** Where the primary button went down this tick, in game px, or null. A short click is never lost. */
+  clicked(): Vec2 | null;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
   capture(cb: (code: string) => void): () => void;
 }
 
-export function createInput(): InputState {
+export function createInput(canvas?: HTMLCanvasElement): InputState {
   const down = new Set<string>();
   const latch = new Set<Action>();
   let prev = new Set<Action>();
@@ -28,6 +33,9 @@ export function createInput(): InputState {
   let analog: Vec2 = { x: 0, y: 0 };
   let device: 'keyboard' | 'gamepad' = 'keyboard';
   let captureCb: ((code: string) => void) | null = null;
+  let at: Vec2 | null = null;
+  let clickLatch: Vec2 | null = null;
+  let clickNow: Vec2 | null = null;
 
   addEventListener('keydown', (e) => {
     if (captureCb) {
@@ -49,6 +57,16 @@ export function createInput(): InputState {
   });
   addEventListener('keyup', (e) => { down.delete(e.code); });
   addEventListener('blur', () => { down.clear(); });
+
+  if (canvas) {
+    const place = (e: PointerEvent): Vec2 | null => clientToGame(e.clientX, e.clientY, canvas.getBoundingClientRect());
+    canvas.addEventListener('pointermove', (e) => { at = place(e); });
+    canvas.addEventListener('pointerleave', () => { at = null; });
+    canvas.addEventListener('pointerdown', (e) => {
+      at = place(e);
+      if (e.button === 0 && at) clickLatch = at;
+    });
+  }
 
   function padActions(): Set<Action> {
     const out = new Set<Action>();
@@ -94,6 +112,8 @@ export function createInput(): InputState {
       for (const a of latch) pressedNow.add(a);
       for (const a of prev) if (!now.has(a)) releasedNow.add(a);
       latch.clear();
+      clickNow = clickLatch;
+      clickLatch = null;
     },
     held: (a) => now.has(a),
     pressed: (a) => pressedNow.has(a),
@@ -109,6 +129,8 @@ export function createInput(): InputState {
       return { x, y };
     },
     device: () => device,
+    pointer: () => at,
+    clicked: () => clickNow,
     capture(cb) {
       captureCb = cb;
       return () => { if (captureCb === cb) captureCb = null; };

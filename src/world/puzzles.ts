@@ -6,8 +6,8 @@ import type { PuzzleDef } from './types.ts';
 
 /** 30 seconds at the sim's fixed 60 Hz. */
 export const HINT_AFTER = 30 * 60;
-/** How long the skip-story objective strip stays up once the clock starts. */
-export const TIP_FRAMES = 8 * 60;
+/** The only words a hint ever shows. It says where to look, never which hero or which key. */
+export const HINT_NUDGE = 'TRY CHANGING CHARACTERS';
 /** The hero counts as "at" the puzzle within this many px of the prop's center, about a screen's reach. */
 export const NEAR_PX = 150;
 
@@ -27,8 +27,6 @@ export interface PuzzleTracker {
   reset(): void;
   /** The puzzle to highlight now: unsolved with 30 seconds spent near it. */
   highlight(): PuzzleDef | null;
-  /** The puzzle to show an objective for: the clock has just started. */
-  tip(): PuzzleDef | null;
 }
 
 /** Same test the play scene uses to carry a prop across a retry. */
@@ -57,6 +55,5 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
     },
     reset() { spent.clear(); live.clear(); },
     highlight: () => first((t) => t >= HINT_AFTER),
-    tip: () => first((t) => t > 0 && t < TIP_FRAMES),
   };
 }

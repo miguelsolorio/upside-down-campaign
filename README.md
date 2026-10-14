@@ -29,7 +29,7 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | `J` or `Z` | Attack. Melee heroes chain three hits |
 | `K` or `X` | Special. Costs MP |
 | `L` or `C` | Dash, with a few frames of invulnerability |
-| `Q` `E` or `1` to `4` | Swap hero |
+| `Q` `E` or `1` to `4`, or click a portrait | Swap hero |
 | `U` or `V` | Party burst, when the d20 at the top right is full |
 | `Space` or `Enter` | Talk, light Joyce's Christmas lights, advance dialogue |
 | `Esc` or `P` | Pause and settings |
@@ -83,7 +83,7 @@ src/heroes      hero stats, abilities, growth
 src/enemies     enemy stats and behavior
 src/progression XP curve, the d20 level-up
 src/world       stage 1.1 and the play scene
-src/ui          HUD, dialogue, title, menus, level-up screen
+src/ui          HUD, dialogue, title, menus
 src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy
 docs            game design, architecture, Level 1 spec, screenshots

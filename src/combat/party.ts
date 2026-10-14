@@ -116,7 +116,8 @@ export function ageBodies(s: S): void {
   if (s.bodies.length > 0 && !s.over) s.bodies = s.bodies.filter((b) => b.t < BODY_FRAMES);
 }
 
-function levelUp(s: S, h: Hero, from: number, to: number): void {
+/** `show` is false for all but the last level of a batch, so a big XP drop floats one LEVEL UP, not several on top of each other. */
+function levelUp(s: S, h: Hero, from: number, to: number, show = true): void {
   const def = HERO_DEFS[h.id];
   const fixed = fixedGain(def, from);
   const roll = rollLevelUp(s.rng, def.weights, h.advantage);
@@ -144,7 +145,10 @@ function levelUp(s: S, h: Hero, from: number, to: number): void {
   };
   s.events.push({ t: 'levelUp', info });
   s.stats.levelUps.push({ hero: h.id, from, to });
-  if (!h.ko) floater(s, 'LEVEL UP', h.x, h.y - 22, 'yellow', true, 60);
+  if (!h.ko) {
+    if (show) floater(s, 'LEVEL UP', h.x, h.y - 22, 'yellow', true, 60);
+    sfx(s, 'levelUp');
+  }
   if (roll.natTwenty) {
     s.inspire = INSPIRATION_SECONDS * 60;
     s.events.push({ t: 'natTwenty', hero: h.id, source: 'levelUp' });
@@ -160,7 +164,7 @@ export function awardXp(s: S, n: number): void {
   s.heroes.forEach((h, i) => {
     const r = addXp(h.level, h.xp, xpShare(n, i === s.active));
     h.xp = r.xp;
-    for (const to of r.gained) levelUp(s, h, to - 1, to);
+    r.gained.forEach((to, k) => levelUp(s, h, to - 1, to, k === r.gained.length - 1));
   });
 }
 

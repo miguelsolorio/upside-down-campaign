@@ -52,10 +52,6 @@ export interface PuzzleDef {
   prop: string;
   /** The hero whose bench slot pulses with the highlight. */
   hero: HeroId;
-  /** One word over the prop, such as SHOOT. */
-  label: string;
-  /** A short objective with {key} tokens, shown at the bottom of the screen when the story is skipped. */
-  tip: string;
 }
 
 /** Where the party stands again after a retry, once this lights prop has been lit. Feet position in px. */

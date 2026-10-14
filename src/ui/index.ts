@@ -5,7 +5,6 @@ export { createDialogueBox } from './dialogue.ts';
 export type { DialogueBox } from './dialogue.ts';
 export { createTitleScene } from './title.ts';
 export { createChapterCard, createGameOverScene } from './cards.ts';
-export { createLevelUpOverlay } from './levelup.ts';
 export { createResultsScene } from './results.ts';
 export { createPauseScene } from './pause.ts';
 export { mountDevPanel } from './devpanel.ts';

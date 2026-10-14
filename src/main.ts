@@ -1,11 +1,12 @@
 import * as bindings from './core/bindings.ts';
-import { SCREEN_H, SCREEN_W } from './core/config.ts';
+import { BASE_W, SCREEN_H, SCREEN_W, setScreenWidth } from './core/config.ts';
 import { flags } from './core/flags.ts';
 import { createInput } from './core/input.ts';
 import { startLoop } from './core/loop.ts';
 import { createSceneManager } from './core/scene.ts';
 import type { Game } from './core/scene.ts';
 import { applySettings, loadSettings, settings } from './core/settings.ts';
+import { fitScreen } from './core/viewport.ts';
 import { initGfx } from './gfx/index.ts';
 import { createSheetScene } from './gfx/sheet.ts';
 import { audio } from './audio/index.ts';
@@ -15,10 +16,12 @@ import { mountTouchUi } from './ui/touchui.ts';
 import type { TouchLayout } from './core/touchlayout.ts';
 import { startGame } from './flow.ts';
 
+// The page shows #game, but the game draws at 1x into `frame`, which is copied up onto #game each frame.
 const canvas = document.getElementById('game') as HTMLCanvasElement;
+const view = canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
+const frame = document.createElement('canvas');
 // The night stages paint their pools of light by reading the world's pixels back every frame.
-const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true }) as CanvasRenderingContext2D;
-ctx.imageSmoothingEnabled = false;
+const ctx = frame.getContext('2d', { alpha: false, willReadFrequently: true }) as CanvasRenderingContext2D;
 
 loadSettings();
 bindings.loadBindings();
@@ -49,24 +52,35 @@ const g: Game = {
 const stage = document.getElementById('stage') as HTMLElement;
 const wrap = document.getElementById('wrap') as HTMLElement;
 let placed = '';
-/** Desktop: the biggest whole scale that fits, centered. Touch: wherever the touch layout puts the game. */
+/**
+ * Sizes the screen and places the canvas, when the window or the touch layout changed. Desktop: as wide as the
+ * window's shape and filling it. Touch: 256 wide, wherever the touch layout puts the game. The dev scenes are drawn
+ * for 256 wide, so they keep it too. Moving to a screen with a different pixel density counts as a change.
+ */
 function fit(l: TouchLayout | null): void {
-  const key = l ? `${l.game.x},${l.game.y},${l.game.w},${l.game.h}` : `${innerWidth}x${innerHeight}`;
+  const dpr = devicePixelRatio || 1;
+  const key = l ? `${l.game.x},${l.game.y},${l.game.w},${l.game.h}@${dpr}` : `${innerWidth}x${innerHeight}@${dpr}`;
   if (key === placed) return;
   placed = key;
   stage.classList.toggle('touch', l !== null);
-  if (l) {
-    wrap.style.left = `${l.game.x}px`;
-    wrap.style.top = `${l.game.y}px`;
-    canvas.style.width = `${l.game.w}px`;
-    canvas.style.height = `${l.game.h}px`;
-    return;
+  const f = l
+    ? fitScreen(l.game.w, l.game.h, dpr, BASE_W)
+    : fitScreen(innerWidth, innerHeight, dpr, flags.sheet || flags.audio ? BASE_W : undefined);
+  setScreenWidth(f.w);
+  // Resizing a canvas resets its context, smoothing included.
+  if (frame.width !== SCREEN_W || frame.height !== SCREEN_H) {
+    frame.width = SCREEN_W;
+    frame.height = SCREEN_H;
   }
-  wrap.style.left = wrap.style.top = '';
-  const raw = Math.min(innerWidth / SCREEN_W, innerHeight / SCREEN_H);
-  const s = raw >= 1 ? Math.floor(raw) : raw;
-  canvas.style.width = `${SCREEN_W * s}px`;
-  canvas.style.height = `${SCREEN_H * s}px`;
+  ctx.imageSmoothingEnabled = false;
+  if (canvas.width !== SCREEN_W * f.k || canvas.height !== SCREEN_H * f.k) {
+    canvas.width = SCREEN_W * f.k;
+    canvas.height = SCREEN_H * f.k;
+  }
+  wrap.style.left = l ? `${l.game.x}px` : '';
+  wrap.style.top = l ? `${l.game.y}px` : '';
+  canvas.style.width = `${l ? l.game.w : f.cssW}px`;
+  canvas.style.height = `${l ? l.game.h : f.cssH}px`;
 }
 fit(touch.frame(g.input));
 
@@ -90,7 +104,7 @@ else if (flags.audio) g.scenes.go(createAudioLabScene());
 else startGame(g);
 
 // Handy for the dev panel, the bot and browser-driven checks.
-Object.assign(window, { __ud: { g, audio, bindings } });
+Object.assign(window, { __ud: { g, audio, bindings, frame } });
 
 startLoop(
   () => {
@@ -105,10 +119,13 @@ startLoop(
     g.frame++;
   },
   () => {
+    // Before drawing, so a resize never shows a frame drawn for the old size.
+    fit(touch.frame(g.input));
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     g.scenes.draw(ctx);
     toast.draw(ctx);
-    fit(touch.frame(g.input));
+    view.imageSmoothingEnabled = false;
+    view.drawImage(frame, 0, 0, canvas.width, canvas.height);
   },
 );

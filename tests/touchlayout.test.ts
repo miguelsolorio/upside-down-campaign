@@ -1,7 +1,7 @@
 // Where the game and the touch controls go on phones and tablets. Pure, so no browser is needed.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SCREEN_W } from '../src/core/config.ts';
+import { BASE_W } from '../src/core/config.ts';
 import { EDGE, STICK_R, TARGET, TOUCH_BUTTONS, buttonAt, crispScale, layoutTouch } from '../src/core/touchlayout.ts';
 import type { Rect, Viewport } from '../src/core/touchlayout.ts';
 
@@ -71,7 +71,7 @@ test('portrait puts the game at the top of the safe area, landscape centers it',
 
 test('a crisp scale wins when it gives up little, a fraction when it would give up a lot', () => {
   assert.equal(crispScale(3.2, 2), 3, '3 fills 94 percent');
-  assert.equal(crispScale(1.6, 1), Math.floor(1.6 * SCREEN_W) / SCREEN_W, '1 would fill 63 percent');
+  assert.equal(crispScale(1.6, 1), Math.floor(1.6 * BASE_W) / BASE_W, '1 would fill 63 percent');
   assert.equal(crispScale(1.7, 3), 5 / 3);
 });
 

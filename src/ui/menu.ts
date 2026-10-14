@@ -91,10 +91,12 @@ export function updateMenu(m: Menu, g: Game): void {
 export function drawMenu(ctx: Ctx, m: Menu, x: number, y: number, w: number, t: number, rowH = 11): void {
   // Rows meet with no gap, so the mouse is always over one of them. The 7 px text sits in the middle of its row.
   const pad = (rowH - 7) >> 1;
+  // The boxes are in screen px, so a menu drawn inside the centered frame still lines up with the mouse.
+  const { e: ox, f: oy } = ctx.getTransform();
   m.boxes = m.items.map((it, i): RowBox => {
-    const top = y + i * rowH - pad;
-    const row: RowBox = { x: x - 2, y: top, w: w + 4, h: rowH };
-    if (it.level) row.bar = { x: x + w - BAR_W, y: top, w: BAR_W, h: rowH };
+    const top = oy + y + i * rowH - pad;
+    const row: RowBox = { x: ox + x - 2, y: top, w: w + 4, h: rowH };
+    if (it.level) row.bar = { x: ox + x + w - BAR_W, y: top, w: BAR_W, h: rowH };
     return row;
   });
   m.items.forEach((it, i) => {

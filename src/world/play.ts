@@ -3,7 +3,7 @@
 // the pools of light at night, the HUD and the dialogue. Retry rebuilds the sim from the last lit checkpoint.
 import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, DevHooks, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
-import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP } from '../core/config.ts';
+import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import { burstHint, labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
@@ -40,9 +40,9 @@ const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
 /** Props that stay open across a retry or a load. */
-/** The prop is inside the camera's view, so a caret over it can be seen. */
+/** The prop is inside the camera's clear band, so a caret over it can be seen. */
 const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
-  p.x + p.w > cam.x && p.x < cam.x + SCREEN_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
+  p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
 
 const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera']);
 
@@ -89,6 +89,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let saved: { x: number; y: number; t: number } | null = null;
   /** Frames since the last hero swap, to flash the new active portrait. Null before the first one. */
   let swapAge: number | null = null;
+  /** The screen width the camera last framed. A resize snaps the camera instead of letting it drift over. */
+  let camW = SCREEN_W;
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -104,6 +106,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     }));
     view = sim.view();
     cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
+    camW = SCREEN_W;
   }
 
   const env: DirectorEnv = {
@@ -366,6 +369,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
     },
 
     draw(ctx, g) {
+      // Here rather than in update, which doesn't run under the pause menu or a dialogue.
+      if (camW !== SCREEN_W) {
+        cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
+        camW = SCREEN_W;
+      }
       const fig = figure();
       drawWorld(ctx, stage, view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
       drawFlash(ctx, view);

@@ -2,7 +2,8 @@
 // Everything here is in CSS px. Portrait puts the game at the top and the controls in a band under it.
 // Landscape puts the game in the middle, the stick on the left and the buttons on the right.
 // The controls never sit on the game, so a tap on the game is always a tap on the game.
-import { SCREEN_H, SCREEN_W } from './config.ts';
+// While the controls show, the screen is BASE_W wide: the controls already take the room at the sides.
+import { BASE_W, SCREEN_H } from './config.ts';
 import type { Vec2 } from './types.ts';
 
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -59,7 +60,7 @@ const CRISP_KEEP = 0.88;
 export function crispScale(raw: number, dpr: number): number {
   const crisp = Math.floor(raw * dpr) / dpr;
   if (crisp > 0 && crisp >= raw * CRISP_KEEP) return crisp;
-  return Math.floor(raw * SCREEN_W * dpr) / (SCREEN_W * dpr);
+  return Math.floor(raw * BASE_W * dpr) / (BASE_W * dpr);
 }
 
 export function layoutTouch(v: Viewport): TouchLayout {
@@ -88,7 +89,7 @@ function pills(x: number, y: number): Pick<Record<TouchButton, Rect>, 'skip' | '
 }
 
 function gameRect(scale: number, x: number, y: number, snap: (n: number) => number): Rect {
-  return { x: snap(x), y: snap(y), w: SCREEN_W * scale, h: SCREEN_H * scale };
+  return { x: snap(x), y: snap(y), w: BASE_W * scale, h: SCREEN_H * scale };
 }
 
 const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
@@ -103,9 +104,9 @@ function stickRestIn(zone: Rect, y: number): Vec2 {
 /** Game on top, then a row with SKIP and PAUSE, then the stick on the left and the cluster on the right. */
 function portrait(v: Viewport, safe: Rect, snap: (n: number) => number): TouchLayout {
   const band = TARGET + GAP + CLUSTER_H + FOOT + GAP;
-  const raw = Math.min(safe.w / SCREEN_W, Math.max(0, safe.h - band) / SCREEN_H);
+  const raw = Math.min(safe.w / BASE_W, Math.max(0, safe.h - band) / SCREEN_H);
   const scale = crispScale(raw, v.dpr);
-  const gw = SCREEN_W * scale;
+  const gw = BASE_W * scale;
   const game = gameRect(scale, safe.x + (safe.w - gw) / 2, safe.y, snap);
   const bottom = safe.y + safe.h;
   const right = safe.x + safe.w;
@@ -127,9 +128,9 @@ function portrait(v: Viewport, safe: Rect, snap: (n: number) => number): TouchLa
 /** Game in the middle. SKIP and PAUSE top left with the stick under them, the cluster bottom right. */
 function landscape(v: Viewport, safe: Rect, snap: (n: number) => number): TouchLayout {
   const side = CLUSTER_W + GAP * 2;
-  const raw = Math.min(Math.max(0, safe.w - side * 2) / SCREEN_W, safe.h / SCREEN_H);
+  const raw = Math.min(Math.max(0, safe.w - side * 2) / BASE_W, safe.h / SCREEN_H);
   const scale = crispScale(raw, v.dpr);
-  const gw = SCREEN_W * scale;
+  const gw = BASE_W * scale;
   const gh = SCREEN_H * scale;
   const game = gameRect(scale, safe.x + (safe.w - gw) / 2, safe.y + (safe.h - gh) / 2, snap);
   const bottom = safe.y + safe.h;

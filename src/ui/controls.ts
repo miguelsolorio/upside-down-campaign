@@ -11,7 +11,7 @@ import type { Vec2 } from '../core/types.ts';
 import { BIND_ROWS, SLOTS, clearBinding, getBinding, getPromptDevice, keyLabel, resetBindings, setBinding } from '../core/bindings.ts';
 import type { BindAction } from '../core/bindings.ts';
 import { drawIcon, drawText } from '../gfx/index.ts';
-import { bigText, blinkOn, box, outline } from './kit.ts';
+import { bigText, blinkOn, box, inFrame, outline, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 
 interface Entry { label: string; kind: 'key' | 'reset' | 'pad' | 'back'; action?: BindAction }
@@ -116,12 +116,13 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
     opts.onBack();
   };
 
-  /** The mouse while browsing. Returns true when a click was used, so the keys sit out that tick. */
+  /** The mouse while browsing. Returns true when a click was used, so the keys sit out that tick. The list is drawn in
+   * the centered frame, so the mouse is measured from there. */
   const mouse = (g: Game): boolean => {
     const i = g.input;
     const w = i.wheel();
     const scrolled = w !== 0 && scroll(w);
-    const p = i.hover();
+    const p = toFrame(i.hover());
     const over = cellAt(p);
     if (over && (i.moved() || scrolled)) {
       const s = over.slot >= 0 ? over.slot : slot;
@@ -133,7 +134,7 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
     // A key row's name isn't a button. Its two cells are, and so are the rows below the keys.
     if (over ? over.slot >= 0 || (ENTRIES[over.idx] as Entry).kind !== 'key' : p && onArrow(p)) i.point();
 
-    const c = i.clicked();
+    const c = toFrame(i.clicked());
     if (!c) return false;
     if (upShown() && inRect(c, UP_BOX)) { scroll(-1); audio.sfx('select'); return true; }
     if (downShown() && inRect(c, DOWN_BOX)) { scroll(1); audio.sfx('select'); return true; }
@@ -183,60 +184,62 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
     },
     draw(ctx) {
       box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');
-      bigText(ctx, mode === 'pad' ? 'GAMEPAD' : 'CONTROLS', 128, 6, 'yellow', 2, 'center', true);
-      if (mode === 'pad') { drawPad(ctx); return; }
+      inFrame(ctx, () => {
+        bigText(ctx, mode === 'pad' ? 'GAMEPAD' : 'CONTROLS', 128, 6, 'yellow', 2, 'center', true);
+        if (mode === 'pad') { drawPad(ctx); return; }
 
-      drawText(ctx, 'ACTION', 24, 25, 'slate');
-      drawText(ctx, 'KEY 1', (CELL_X[0] as number) + CELL_W / 2, 25, 'slate', { align: 'center' });
-      drawText(ctx, 'KEY 2', (CELL_X[1] as number) + CELL_W / 2, 25, 'slate', { align: 'center' });
+        drawText(ctx, 'ACTION', 24, 25, 'slate');
+        drawText(ctx, 'KEY 1', (CELL_X[0] as number) + CELL_W / 2, 25, 'slate', { align: 'center' });
+        drawText(ctx, 'KEY 2', (CELL_X[1] as number) + CELL_W / 2, 25, 'slate', { align: 'center' });
 
-      for (let r = 0; r < VISIBLE; r++) {
-        const idx = top + r;
-        const e = ENTRIES[idx];
-        if (!e) break;
-        const y = LIST_Y + r * ROW_H;
-        const on = idx === sel;
-        if (on) drawIcon(ctx, 'cursor', 12, y - 1, t);
-        drawText(ctx, e.label, 24, y, on ? 'yellow' : 'bone');
-        if (e.kind === 'key' && e.action) {
-          const keys = getBinding(e.action);
-          for (let s = 0; s < SLOTS; s++) {
-            const x = CELL_X[s] as number;
-            const picked = on && slot === s;
-            const waiting = picked && mode === 'listen';
-            box(ctx, x, y - 1, CELL_W, 10, waiting ? 'blood0' : 'night');
-            outline(ctx, x, y - 1, CELL_W, 10, picked ? 'yellow' : 'shadow');
-            if (waiting) {
-              if (blinkOn(t, 30, 20)) drawText(ctx, 'PRESS', x + CELL_W / 2, y, 'white', { align: 'center' });
-            } else {
-              const code = keys[s] ?? null;
-              drawText(ctx, keyLabel(code), x + CELL_W / 2, y, code ? (on ? 'white' : 'bone') : 'slate', { align: 'center' });
+        for (let r = 0; r < VISIBLE; r++) {
+          const idx = top + r;
+          const e = ENTRIES[idx];
+          if (!e) break;
+          const y = LIST_Y + r * ROW_H;
+          const on = idx === sel;
+          if (on) drawIcon(ctx, 'cursor', 12, y - 1, t);
+          drawText(ctx, e.label, 24, y, on ? 'yellow' : 'bone');
+          if (e.kind === 'key' && e.action) {
+            const keys = getBinding(e.action);
+            for (let s = 0; s < SLOTS; s++) {
+              const x = CELL_X[s] as number;
+              const picked = on && slot === s;
+              const waiting = picked && mode === 'listen';
+              box(ctx, x, y - 1, CELL_W, 10, waiting ? 'blood0' : 'night');
+              outline(ctx, x, y - 1, CELL_W, 10, picked ? 'yellow' : 'shadow');
+              if (waiting) {
+                if (blinkOn(t, 30, 20)) drawText(ctx, 'PRESS', x + CELL_W / 2, y, 'white', { align: 'center' });
+              } else {
+                const code = keys[s] ?? null;
+                drawText(ctx, keyLabel(code), x + CELL_W / 2, y, code ? (on ? 'white' : 'bone') : 'slate', { align: 'center' });
+              }
             }
+          } else if (e.kind === 'pad') {
+            drawText(ctx, 'VIEW', 244, y, on ? 'white' : 'mist', { align: 'right' });
           }
-        } else if (e.kind === 'pad') {
-          drawText(ctx, 'VIEW', 244, y, on ? 'white' : 'mist', { align: 'right' });
         }
-      }
-      if (upShown()) {
-        ctx.save();
-        ctx.translate(0, LIST_Y - 2 + 8);
-        ctx.scale(1, -1);
-        drawIcon(ctx, 'arrow', 246, 0, t);
-        ctx.restore();
-      }
-      if (downShown()) drawIcon(ctx, 'arrow', 246, LIST_Y + (VISIBLE - 1) * ROW_H, t);
+        if (upShown()) {
+          ctx.save();
+          ctx.translate(0, LIST_Y - 2 + 8);
+          ctx.scale(1, -1);
+          drawIcon(ctx, 'arrow', 246, 0, t);
+          ctx.restore();
+        }
+        if (downShown()) drawIcon(ctx, 'arrow', 246, LIST_Y + (VISIBLE - 1) * ROW_H, t);
 
-      box(ctx, 8, 170, 240, 1, 'shadow');
-      if (mode === 'listen') {
-        drawText(ctx, `PRESS THE NEW KEY. ${getPromptDevice() === 'gamepad' ? 'B' : 'ESC'} CANCELS.`, 128, 175, 'amber', { align: 'center' });
-        drawText(ctx, 'BKSP CLEARS THIS SLOT.', 128, 184, 'mist', { align: 'center' });
-      } else {
-        const hint = entry().kind === 'key' ? 'ENTER REBINDS. LEFT RIGHT PICKS A SLOT.' : 'ENTER TO CHOOSE. ESC GOES BACK.';
-        drawText(ctx, hint, 128, 175, 'mist', { align: 'center' });
-        if (notice) drawText(ctx, notice.text, 128, 184, notice.ok ? 'leaf' : 'hot', { align: 'center' });
-      }
-      drawText(ctx, 'ALWAYS ON: ARROWS, ENTER, ESC', 128, 198, 'slate', { align: 'center' });
-      drawText(ctx, 'ATTACK AND TALK KEYS ALSO CONFIRM', 128, 207, 'slate', { align: 'center' });
+        box(ctx, 8, 170, 240, 1, 'shadow');
+        if (mode === 'listen') {
+          drawText(ctx, `PRESS THE NEW KEY. ${getPromptDevice() === 'gamepad' ? 'B' : 'ESC'} CANCELS.`, 128, 175, 'amber', { align: 'center' });
+          drawText(ctx, 'BKSP CLEARS THIS SLOT.', 128, 184, 'mist', { align: 'center' });
+        } else {
+          const hint = entry().kind === 'key' ? 'ENTER REBINDS. LEFT RIGHT PICKS A SLOT.' : 'ENTER TO CHOOSE. ESC GOES BACK.';
+          drawText(ctx, hint, 128, 175, 'mist', { align: 'center' });
+          if (notice) drawText(ctx, notice.text, 128, 184, notice.ok ? 'leaf' : 'hot', { align: 'center' });
+        }
+        drawText(ctx, 'ALWAYS ON: ARROWS, ENTER, ESC', 128, 198, 'slate', { align: 'center' });
+        drawText(ctx, 'ATTACK AND TALK KEYS ALSO CONFIRM', 128, 207, 'slate', { align: 'center' });
+      });
     },
   };
 }

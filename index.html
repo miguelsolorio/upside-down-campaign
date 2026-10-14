@@ -35,6 +35,9 @@
     #stage.touch { display: block; }
     #stage.touch #wrap { position: absolute; }
     canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+    /* The game is already blown up by a whole number with hard edges, so the browser only smooths the last small
+       step to the window's size. Its box must be exactly the drawn image, since clicks are mapped through it. */
+    #game { image-rendering: auto; }
     /* The touch controls. Clear between the buttons, so the game shows through. */
     #pad { position: fixed; left: 0; top: 0; z-index: 2; display: none; pointer-events: none; background: transparent; }
     #safe { position: fixed; visibility: hidden; pointer-events: none; top: env(safe-area-inset-top, 0px);

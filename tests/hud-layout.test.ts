@@ -166,7 +166,7 @@ test('a click on a portrait, mapped from page pixels, lands on the right hero', 
 });
 
 test('on a wide screen the active hero hugs the band\'s left edge and the bench its right edge, and clicks follow', () => {
-  for (const band of [{ x: 44, w: 448 }, { x: 0, w: 400 }, { x: 0, w: 256 }]) {
+  for (const band of [{ x: 50, w: 436, top: 3, h: 26 }, { x: 6, w: 388, top: 3, h: 26 }, { x: 4, w: 256, top: 3, h: 26 }, { x: 0, w: 256, top: 0, h: 20 }]) {
     const lx = leftShift(band), rx = rightShift(band);
     for (let n = 1; n <= 4; n++) {
       for (let active = 0; active < n; active++) {
@@ -174,6 +174,7 @@ test('on a wide screen the active hero hugs the band\'s left edge and the bench 
         const rects = slotRects(p, band);
         const me = rects.find((r) => r.active);
         assert.equal(me?.x, band.x, 'the active cell starts at the band');
+        for (const r of rects) assert.ok(r.y === 0 && r.h === band.h, 'a click cell spans the whole strip');
         const bench = rects.filter((r) => !r.active);
         const last = bench[bench.length - 1];
         if (last) assert.equal(last.x + last.w, BENCH_END + rx, 'the bench ends against the d20');
@@ -189,7 +190,7 @@ test('on a wide screen the active hero hugs the band\'s left edge and the bench 
 });
 
 test('at 256 the band changes nothing', () => {
-  assert.deepEqual(hudBand(), { x: 0, w: STRIP_W });
+  assert.deepEqual(hudBand(), { x: 0, w: STRIP_W, top: 0, h: CELL_H });
   assert.equal(leftShift(hudBand()), 0);
   assert.equal(rightShift(hudBand()), 0);
 });

@@ -4,13 +4,12 @@ import { SCREEN_H, VIEW_TOP, VIEW_W, VIEW_X } from './config.ts';
  * frames the clear band, VIEW_W wide and centered on the screen. A wider screen shows faded world on either side. */
 export interface Camera { x: number; y: number }
 
-const VIEW_H = SCREEN_H - VIEW_TOP;
-
 export function createCamera(): Camera {
   return { x: 0, y: 0 };
 }
 
 function target(fx: number, fy: number, mapW: number, mapH: number): Camera {
+  const VIEW_H = SCREEN_H - VIEW_TOP;
   let x = fx - VIEW_W / 2;
   let y = fy - VIEW_H / 2;
   x = mapW <= VIEW_W ? (mapW - VIEW_W) / 2 : Math.max(0, Math.min(mapW - VIEW_W, x));

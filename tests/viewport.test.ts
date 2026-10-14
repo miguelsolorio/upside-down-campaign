@@ -2,7 +2,7 @@
 // clear band up to 28 tiles wide. Pure, so no canvas is needed.
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BASE_W, CLEAR_MAX, FRAME_X, MAX_W, SCREEN_H, SCREEN_W, VIEW_W, VIEW_X, setScreenWidth } from '../src/core/config.ts';
+import { BASE_W, CLEAR_MAX, FRAME_X, HUD_PAD_X, HUD_PAD_Y, MAX_W, SCREEN_H, SCREEN_W, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X, setScreenWidth } from '../src/core/config.ts';
 import { cameraSnap, createCamera } from '../src/core/camera.ts';
 import { clientToGame } from '../src/core/pointer.ts';
 import { fitScreen } from '../src/core/viewport.ts';
@@ -83,6 +83,7 @@ test('the clear band stops at 448 and sits centered, and everything lands on mul
   assert.equal(VIEW_W, 360);
   assert.equal(VIEW_X, 0);
   assert.equal(FRAME_X, 52);
+  assert.equal(VIEW_TOP, STRIP_H + HUD_PAD_Y * 2, 'a wider screen gives the HUD strip room above and below');
   for (let w = BASE_W; w <= MAX_W; w += 8) {
     setScreenWidth(w);
     assert.equal(VIEW_X % 4, 0, `${w}`);
@@ -90,6 +91,7 @@ test('the clear band stops at 448 and sits centered, and everything lands on mul
   }
   setScreenWidth(100);
   assert.equal(SCREEN_W, BASE_W);
+  assert.equal(VIEW_TOP, STRIP_H, 'at 256 the strip is as it always was');
   setScreenWidth(5000);
   assert.equal(SCREEN_W, MAX_W);
 });
@@ -105,6 +107,8 @@ test('the camera centers the hero in the band, and the band meets the map at its
   assert.equal(cam.x + VIEW_X + VIEW_W, 768, 'the band ends at the map\'s right edge');
   cameraSnap(cam, 100, 100, 300, 640);
   assert.equal(cam.x + SCREEN_W / 2, 150, 'a map narrower than the band is centered');
+  cameraSnap(cam, 384, 636, 768, 640);
+  assert.equal(cam.y + SCREEN_H - VIEW_TOP, 640, 'under the taller strip, the view still ends at the map\'s bottom edge');
 });
 
 test('at 256 the camera frames the world as it always has', () => {
@@ -120,5 +124,7 @@ test('clicks and the HUD follow the live width', () => {
   const box = { left: 0, top: 0, width: 536 * 3, height: SCREEN_H * 3 };
   const mid = clientToGame(box.width / 2, box.height / 2, box);
   assert.ok(mid && mid.x === 268 && mid.y === SCREEN_H / 2);
-  assert.deepEqual(hudBand(), { x: 44, w: 448 });
+  assert.deepEqual(hudBand(), { x: 44 + HUD_PAD_X, w: 448 - HUD_PAD_X * 2, top: HUD_PAD_Y, h: STRIP_H + HUD_PAD_Y * 2 });
+  setScreenWidth(264);
+  assert.deepEqual(hudBand(), { x: 4, w: 256, top: HUD_PAD_Y, h: STRIP_H + HUD_PAD_Y * 2 }, 'a band just wider than the strip gets a smaller inset');
 });

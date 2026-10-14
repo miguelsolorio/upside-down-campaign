@@ -1,9 +1,10 @@
 // Where each hero sits in the top strip. The HUD draws from these rectangles and the play scene hit-tests clicks
 // against the same ones, so what you see is what you can press. Pure, so Node can test it.
-// The constants below place things in a strip STRIP_W wide. On a wider screen the strip runs edge to edge, but its
-// contents follow the clear band: the active hero and the middle stay against the band's left edge (leftShift), and
-// the bench and the d20 against its right edge (rightShift).
-import { VIEW_W, VIEW_X } from '../core/config.ts';
+// The constants below place things in a strip STRIP_W wide and CELL_H tall. On a wider screen the strip runs edge to
+// edge and is taller, and its contents follow the clear band with some room around them: the active hero and the
+// middle stay against the band's left edge (leftShift), the bench and the d20 against its right edge (rightShift),
+// and everything is moved down by the band's `top` so it sits centered in the strip.
+import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud } from '../core/types.ts';
 
 /** The width the constants below are laid out for. */
@@ -15,8 +16,8 @@ export const BENCH_PITCH = 26;
 export const BENCH_FACE_DX = 7;
 /** Room for three benched heroes. */
 export const BENCH_W = 78;
-/** The strip is 20 px tall and a slot's click cell spans all of it. The last two rows are its border. */
-export const CELL_H = 20;
+/** The strip is 20 px tall on a 256 px screen and a slot's click cell spans all of it. The last two rows are its border. */
+export const CELL_H = STRIP_H;
 /** The d20 meter starts here, and the quarters and Inspiration end by here. The bench ends against the meter. */
 export const METER_LEFT = 238;
 export const MIDDLE_END = 158;
@@ -57,10 +58,14 @@ export function benchPitch(count: number): number {
 /** Right edge of the bench. */
 export const BENCH_END = METER_LEFT - 1;
 
-/** The part of the screen the strip's contents span, in screen px. */
-export interface HudBand { x: number; w: number }
-/** The clear band, read when called, so the strip and its clicks always use the current screen width. */
-export const hudBand = (): HudBand => ({ x: VIEW_X, w: VIEW_W });
+/** Where the strip's contents go, in screen px: across from x for w, moved down by top, in a strip h tall. */
+export interface HudBand { x: number; w: number; top: number; h: number }
+/** The clear band, inset at the sides on a wider screen, and the strip's height. Read when called, so the strip and
+ * its clicks always use the current screen. The inset shrinks when the band is barely wider than the strip. */
+export function hudBand(): HudBand {
+  const pad = Math.max(0, Math.min(HUD_PAD_X, Math.floor((VIEW_W - STRIP_W) / 2)));
+  return { x: VIEW_X + pad, w: VIEW_W - pad * 2, top: (VIEW_TOP - STRIP_H) / 2, h: VIEW_TOP };
+}
 /** How far the left-hand contents (active hero, middle) move from where the constants put them. */
 export const leftShift = (b: HudBand): number => b.x;
 /** How far the right-hand contents (bench, d20) move from where the constants put them. */
@@ -78,12 +83,12 @@ export function slotRects(party: readonly PartyHud[], band: HudBand = hudBand())
   const lx = leftShift(band);
   party.forEach((p, i) => {
     if (!p.active) return;
-    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, px: 1 + lx });
+    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, h: band.h, px: 1 + lx });
   });
   const pitch = benchPitch(bench.length);
   bench.forEach((b, k) => {
     const x = benchX(k, bench.length, band);
-    out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, x, y: 0, w: pitch, h: CELL_H, px: x + BENCH_FACE_DX });
+    out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, x, y: 0, w: pitch, h: band.h, px: x + BENCH_FACE_DX });
   });
   return out;
 }

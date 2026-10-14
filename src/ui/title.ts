@@ -17,6 +17,7 @@ import type { Ctx } from './kit.ts';
 import { drawMenu, settingItems, toggleSkipStory, updateMenu } from './menu.ts';
 import type { Menu } from './menu.ts';
 import { bigActor, sky, spores, woods } from './title_art.ts';
+import { sideGround, sideLights, sideProps, skyline } from './title_wide.ts';
 
 /** `continue` loads the save. `new` is a fresh run, and the caller wipes any save. */
 export type StartMode = 'new' | 'continue';
@@ -168,12 +169,16 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
     draw(ctx, g) {
       const walk = launchLevel(launch);
       sky(ctx, t);
+      skyline(ctx, t);
       woods(ctx);
+      sideProps(ctx, t);
+      sideGround(ctx, t);
       spores(ctx, t);
 
       // Light on the path: the flashlights Mike and Lucas hold, which travel with the party as it walks off. The
       // pools are painted straight onto the pixels, so they take screen x, not the frame's.
       const lights: Glow[] = PARTY.filter((p) => p.id !== 'eleven').map((p) => ({ x: FRAME_X + p.x, y: p.y - 6 - walk * 30, r: 30, k: 0.85, flicker: 0.4 }));
+      lights.push(...sideLights());
       paintGlow(ctx, lights, t, 1);
 
       inFrame(ctx, () => {

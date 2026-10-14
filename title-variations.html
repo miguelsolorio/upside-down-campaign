@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Title Screen Variations</title>
+<meta name="description" content="Five takes on the starting screen, running live on the game's own title code. None of them show controls.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --red: #c8202e; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; width: 100%; aspect-ratio: 8 / 7; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; outline: none; }
+  button, .btn { font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--bone); background: var(--shadow);
+    border: 2px solid var(--slate); padding: 8px 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+  button:hover, .btn:hover { background: var(--dusk); }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 36px 0 20px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 14px; }
+  h1 { margin: 0 0 14px; line-height: 1.05; font-size: 34px; }
+  .hero p { margin: 0 0 8px; max-width: 72ch; }
+  .muted { color: var(--mist); }
+
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; padding-block: 10px; font: 12px/1.4 var(--mono); color: var(--mist); }
+  .bar label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .bar input { accent-color: var(--amber); width: 16px; height: 16px; }
+  .bar .spacer { flex: 1; }
+
+  #grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 28px 24px; padding: 28px 0 64px; }
+  .card { background: var(--night); border: 2px solid var(--shadow); }
+  .card.live { border-color: var(--amber); }
+  .screen { position: relative; }
+  .screen .note { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 12px; background: rgba(10,10,20,.92); border-top: 2px solid var(--amber);
+    font: 600 12px/1.3 var(--mono); letter-spacing: .04em; color: var(--cream); text-transform: uppercase; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .screen .note.show { opacity: 1; }
+  .screen .keys { position: absolute; top: 8px; left: 8px; padding: 4px 8px; background: var(--amber); color: var(--ink);
+    font: 700 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; display: none; }
+  .card.live .keys { display: block; }
+  .meta { padding: 16px 18px 18px; }
+  .meta h2 { margin: 0 0 8px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .num { display: inline-grid; place-items: center; width: 26px; height: 26px; background: var(--amber); color: var(--ink); font: 700 14px/1 var(--mono); }
+  .meta p { margin: 0 0 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  @media (prefers-reduced-motion: reduce) { .screen .note { transition: none; } }
+</style>
+</head>
+<body>
+  <header class="hero"><div class="wrap">
+    <p class="kicker">Starting screen</p>
+    <h1>Five title screens, none with controls</h1>
+    <p>These run on the game's own title code, so what you see is what the game would draw. The key hints are gone from all five. OPTIONS is now a row in the menu, and skip story shows as a small tag only when it is on.</p>
+    <p class="muted">Click a screen to give it the keyboard, then use the arrow keys and Enter. Or use the buttons under each one. Pick a number and I will make it the real title.</p>
+  </div></header>
+  <div class="bar"><div class="wrap">
+    <label><input id="save" type="checkbox"> Pretend a save exists (CONTINUE and NEW GAME)</label>
+    <label><input id="calm" type="checkbox"> Reduce flashing</label>
+    <span class="spacer"></span>
+    <span>Each screen restarts a moment after START</span>
+  </div></div>
+  <main class="wrap"><div id="grid"></div></main>
+  <script type="module" src="/src/ui/title/gallery.ts"></script>
+</body>
+</html>

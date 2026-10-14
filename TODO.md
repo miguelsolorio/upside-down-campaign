@@ -9,6 +9,7 @@ Scope for this pass: Level 1 only (stage 1.1, the title, the basement prologue).
 - [x] Phase 2: world, UI, story
 - [x] Integrate: 161 tests pass, typecheck clean, production build clean, bot clears the level (22 kills, 144 XP, 0 KOs), real keyboard path checked (move, attack, special, dash, swap, pause), dev panel mounts, no console errors
 - [ ] Feedback on Level 1, then the rest
+- [ ] Pick a title screen from the five in `title-variations.html`, make it the default and delete the other four (the controls block is gone from all of them)
 
 ## Known rough edges
 

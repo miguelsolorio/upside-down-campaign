@@ -68,6 +68,7 @@ Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full 
 | `?bot=1` | A bot plays the level by itself |
 | `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport |
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
+| `?title=1` to `?title=5` | Show one of the five title screen variants with no controls on it. `title-variations.html` shows all five side by side |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
 | `?mute=1`, `?god=1`, `?level=3`, `?stage=1.1`, `?seed=N` | Self-explanatory |

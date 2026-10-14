@@ -64,7 +64,7 @@
 <header class="hero"><div class="wrap">
   <p class="kicker">HUD review</p>
   <h1>HP bar check</h1>
-  <p>The HP bar the game ships in the top strip, drawn by the game's own HUD code. It sits under the active hero's name with the XP notches below it, and runs flat with a tick every 10 HP, so it grows with max HP. Benched heroes show no HP in the strip, just the shortcut key and the face, and the key fills from the bottom as the swap recharges. The bench crop shows those and the burst meter. Every hero's health is also the bar over their head in the world.</p>
+  <p>The HP bar the game ships in the top strip, drawn by the game's own HUD code. It sits under the active hero's name with the XP notches below it, and runs flat with a tick every 10 HP, so it grows with max HP. Benched heroes show no HP in the strip, just the shortcut key and the face, and the key fills from the bottom as the swap recharges. The bench crop shows those and the Crit meter. Every hero's health is also the bar over their head in the world.</p>
   <ul class="rules">
     <li><b>Color:</b> green above half, yellow above 30%, red at 30% and below</li>
     <li><b>Low:</b> red blinks on both sides, in step</li>
@@ -125,7 +125,7 @@ function buildHud() {
 const SW = SCREEN_W, SH = VIEW_TOP;
 const CROPS = [
   { key: 'left', label: 'Active hero', sx: 0, w: 130, s: 5 },
-  { key: 'bench', label: 'Burst meter and bench', sx: 156, w: 100, s: 7 },
+  { key: 'bench', label: 'Crit meter and bench', sx: 156, w: 100, s: 7 },
 ];
 
 const VARIANTS = [{ id: 'HUD', name: 'In the game' }];

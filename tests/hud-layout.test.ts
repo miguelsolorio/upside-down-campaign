@@ -30,7 +30,7 @@ test('every hero gets one rectangle, the active one first, numbered by party slo
   }
 });
 
-test('bench slots sit left to right in party order, clear of the middle readout and the burst meter', () => {
+test('bench slots sit left to right in party order, clear of the middle readout and the Crit meter', () => {
   for (let n = 2; n <= 4; n++) {
     const bench = slotRects(party(n, 1)).filter((r) => !r.active);
     assert.equal(bench.length, n - 1);
@@ -41,7 +41,7 @@ test('bench slots sit left to right in party order, clear of the middle readout 
       assert.equal(r.w, BENCH_PITCH, 'every slot is the same width, whoever else is benched');
       assert.equal(r.px, r.x + BENCH_FACE_DX, 'the face sits after the key');
       assert.equal(r.x, BENCH_START + k * BENCH_PITCH, 'the slots sit in fixed places, so nobody moves when the party grows');
-      assert.ok(r.x >= METER_LEFT + METER_W, `slot ${r.n} starts at ${r.x}, over the burst meter`);
+      assert.ok(r.x >= METER_LEFT + METER_W, `slot ${r.n} starts at ${r.x}, over the Crit meter`);
       assert.ok(r.x + r.w <= BENCH_END, `slot ${r.n} ends at ${r.x + r.w}, past the bench`);
     });
   }
@@ -58,9 +58,9 @@ test('a bench slot holds its key and face with room before the next slot\'s key'
   assert.ok(end <= BENCH_PITCH && air >= 4, `the face ends at ${end}, leaving ${air} px before the next key`);
 });
 
-test('the burst meter sits between the quarters and the bench: the die, then its BURST label to the right', () => {
-  for (const ch of 'BURST') assert.ok(TINY_GLYPHS[ch], `the tiny font has ${ch}`);
-  const label = 'BURST'.length * 4 - 1;
+test('the Crit meter sits between the quarters and the bench: the die, then its CRIT label to the right', () => {
+  for (const ch of 'CRIT') assert.ok(TINY_GLYPHS[ch], `the tiny font has ${ch}`);
+  const label = 'CRIT'.length * 4 - 1;
   const dieRight = METER_X + 4;
   assert.ok(METER_X - 4 >= METER_LEFT, 'the die starts inside the meter box');
   assert.ok(METER_LABEL_X > dieRight + 1, 'the label clears the die and its sparks');
@@ -193,7 +193,7 @@ test('on a wide screen the active hero hugs the band\'s left edge and the meter 
         if (first) assert.equal(first.x, BENCH_START + rx, 'the bench starts against the meter');
         for (const r of bench) {
           assert.ok(r.x >= MIDDLE_END + lx, `band ${band.x},${band.w}: the bench clears the middle`);
-          assert.ok(r.x >= METER_LEFT + METER_W + rx, 'the bench clears the burst meter');
+          assert.ok(r.x >= METER_LEFT + METER_W + rx, 'the bench clears the Crit meter');
           assert.ok(r.x + r.w <= BENCH_END + rx, 'the bench stays inside the band');
           const [cx, cy] = center(r);
           assert.equal(slotAt(p, cx, cy, band), r.index);

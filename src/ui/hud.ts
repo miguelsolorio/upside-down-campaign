@@ -1,5 +1,5 @@
 // The top strip. Opaque, VIEW_TOP tall and as wide as the screen. Left: the active hero. Middle: quarters and Inspiration.
-// Right: the burst meter and the bench. On a wide screen the contents sit inside the clear band with room around them.
+// Right: the Crit meter and the bench. On a wide screen the contents sit inside the clear band with room around them.
 // HP is a segmented bar under the active hero's name, with the XP notches under it. A bench slot is just the key and the
 // face: every hero's health is also the bar over their head in the world. The strip is quiet, with no frames.
 // MP is one blue segment per cast.
@@ -29,11 +29,11 @@ const ACTIVE_KEY_X = LEFT_X - 7;
  * The key is 2 px in from the slot's left edge. */
 const FACE_Y = 2;
 const KEY_DX = 2;
-/** The burst meter: a d20 of this radius, 8.7 px wide and 10 tall, centered this far down (level with the bench faces),
+/** The Crit meter: a d20 of this radius, 8.7 px wide and 10 tall, centered this far down (level with the bench faces),
  * with the label to its right, centered on the die's height. */
 const METER_R = 5;
 const METER_CY = 7;
-const METER_LABEL = 'BURST';
+const METER_LABEL = 'CRIT';
 const METER_LABEL_Y = 5;
 /** The strip is near black, so the lit die gets an orange outline instead of the usual ink one. */
 const METER_LIT: DieScheme = { ...DIE_GOLD, edge: 'orange' };
@@ -126,7 +126,7 @@ function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, 
 }
 
 /** The party meter: a small d20 that fills with light from the bottom and glows gold, with sparks, once the burst is ready,
- * and a BURST label to its right that lights up with it. */
+ * and a CRIT label to its right that lights up with it. */
 function drawMeter(ctx: Ctx, hud: HudView, t: number, mx: number): void {
   drawTinyText(ctx, METER_LABEL, mx + METER_LABEL_X - METER_X, METER_LABEL_Y, hud.burstReady ? 'yellow' : 'mist');
   if (!hud.burstReady) {
@@ -149,7 +149,7 @@ function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>): void {
   drawText(ctx, boss.name, SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
 }
 
-/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, quarters, d20 burst meter, bench faces, boss bar.
+/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, quarters, d20 Crit meter, bench faces, boss bar.
  * Every portrait shows the key that picks it, and the bench shows how far the swap has recharged. The same
  * rectangles (`slotRects`) answer clicks, so a portrait is a button. */
 export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, o: HudOpts = {}): void {

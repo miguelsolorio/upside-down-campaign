@@ -59,7 +59,7 @@ test('a key already in use is swapped into the slot it replaces', () => {
 test('taking a key into an empty slot leaves the other action one key short', () => {
   const r = setBinding('mute', 1, 'KeyU');
   assert.equal(r.ok, true);
-  assert.match(r.note, /TAKEN FROM PARTY BURST/);
+  assert.match(r.note, /TAKEN FROM CRIT/);
   assert.deepEqual(keysOf('burst'), ['KeyB']);
   assert.deepEqual(keysOf('mute'), ['KeyM', 'KeyU']);
 });
@@ -138,18 +138,18 @@ test('the corner controls are the combat keys only, and follow a rebind', () => 
   assert.equal(controlRows()[0]?.keys, 'H');
   assert.equal(controlRows()[2]?.keys, 'N');
   const whats = controlRows().map((r) => r.what);
-  assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE', 'BURST'].some((w) => whats.includes(w)));
+  assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE', 'CRIT'].some((w) => whats.includes(w)));
 });
 
 test('the burst line under the HUD names Space, follows an interact rebind, and names Y on a controller', () => {
-  assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST');
+  assert.equal(burstHint(), 'PRESS SPACE FOR CRIT');
   setBinding('burst', 0, 'KeyN');
-  assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST', 'U and B still burst, but the line teaches Space');
+  assert.equal(burstHint(), 'PRESS SPACE FOR CRIT', 'U and B still burst, but the line teaches Space');
   setBinding('interact', 0, 'KeyE');
-  assert.equal(burstHint(), 'PRESS E FOR PARTY BURST');
+  assert.equal(burstHint(), 'PRESS E FOR CRIT');
   assert.equal(keyText('press {burst}'), 'press E', 'the story names the same key');
   setPromptDevice('gamepad');
-  assert.equal(burstHint(), 'PRESS Y FOR PARTY BURST');
+  assert.equal(burstHint(), 'PRESS Y FOR CRIT');
 });
 
 test('story key tokens fill in and follow rebinds', () => {
@@ -262,5 +262,5 @@ test('story tokens name the on-screen controls on a touch screen', () => {
 
 test('the burst line names the d20 on a touch screen, since its A also attacks and never bursts', () => {
   setPromptDevice('touch');
-  assert.equal(burstHint(), 'TAP THE D20 FOR PARTY BURST');
+  assert.equal(burstHint(), 'TAP THE D20 FOR CRIT');
 });

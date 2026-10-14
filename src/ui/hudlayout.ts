@@ -2,7 +2,7 @@
 // against the same ones, so what you see is what you can press. Pure, so Node can test it.
 // The constants below place things in a strip STRIP_W wide and CELL_H tall. On a wider screen the strip runs edge to
 // edge and is taller, and its contents follow the clear band with some room around them: the active hero and the
-// middle stay against the band's left edge (leftShift), the burst meter and the bench against its right edge (rightShift),
+// middle stay against the band's left edge (leftShift), the Crit meter and the bench against its right edge (rightShift),
 // and everything is moved down by the band's `top` so it sits centered in the strip.
 import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud } from '../core/types.ts';
@@ -18,18 +18,18 @@ export const BENCH_FACE_DX = 7;
 export const BENCH_W = 63;
 /** The strip is 20 px tall on a 256 px screen and a slot's click cell spans all of it. The last two rows are its border. */
 export const CELL_H = STRIP_H;
-/** The quarters and Inspiration end by here. The burst meter starts after them. */
+/** The quarters and Inspiration end by here. The Crit meter starts after them. */
 export const MIDDLE_END = 158;
 /** The bench ends at the strip's edge (a slot has 3 px of its own past the face), and its first slot starts BENCH_W before that. The slots sit in fixed places from
  * the first one on, so a hero joining the party fills the next one and nothing else moves. */
 export const BENCH_END = STRIP_W;
 export const BENCH_START = BENCH_END - BENCH_W;
-/** The burst meter is a small d20 with its BURST label to the right, just left of the bench: a 9 px die, a 2 px gap and
- * the 19 px label. The label ends 5 px before the first key (3 here and the key's 2 px of padding), so the number reads as
+/** The Crit meter is a small d20 with its CRIT label to the right, just left of the bench: a 9 px die, a 2 px gap and
+ * the 15 px label. The label ends 5 px before the first key (3 here and the key's 2 px of padding), so the number reads as
  * the hero's and not as part of the label. */
-export const METER_W = 30;
+export const METER_W = 26;
 export const METER_LEFT = BENCH_START - 3 - METER_W;
-/** Center of the burst die, and the left edge of its label. */
+/** Center of the Crit die, and the left edge of its label. */
 export const METER_X = METER_LEFT + 4;
 export const METER_LABEL_X = METER_LEFT + 11;
 /** The active hero's text, HP bar and XP notches start here, right of the portrait and its shortcut key. */
@@ -74,7 +74,7 @@ export function hudBand(): HudBand {
 }
 /** How far the left-hand contents (active hero, middle) move from where the constants put them. */
 export const leftShift = (b: HudBand): number => b.x;
-/** How far the right-hand contents (burst meter, bench) move from where the constants put them. */
+/** How far the right-hand contents (Crit meter, bench) move from where the constants put them. */
 export const rightShift = (b: HudBand): number => b.x + b.w - STRIP_W;
 
 /** Left edge of bench slot `k`. */

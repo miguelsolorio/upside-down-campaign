@@ -8,12 +8,13 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] Spine: `docs/level-7.md`, `docs/level-8.md`, "Erica's cart" and "Chapter three on the map" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, 23 mall and base tiles, the nine-hero pool, `core/shop.ts`, the purse and stash in `core/progress.ts`, stand-ins, stub stages 3.1 and 3.2. Chapter 3 enemies are sized for the party a chained bot run really brings (Mike Lv 6, the bench at 4 and 5, Robin and Nancy at 3), not the design's Lv 7
 - [x] Sim A: Robin, Nancy, confusion, the cipher door, the stash (1107 tests pass)
 - [x] Art: `heroes3-variations.html` (Robin, Nancy, Erica), `grigori-variations.html`, `mall-variations.html` (mall and base looks), sent to the owner one image per option
-- [ ] Owner picks from the three sheets
+- [x] Owner picks: Robin Sailor, Nancy Overalls, Erica Boss, Grigori Greatcoat (a size up), a Confetti mall over the Brass base, both stages after closing
 - [x] Sim B: the soldier, the Flayed, the melting rat, Grigori, the power box and breaker, the bot's play. Grigori is at 1200 HP, not the spec's 800: his bot fight takes 29 s with Nancy and 73 s without a shooter. The careless bot can't beat his front guard, so 3.2's careless target needs a look when it's tuned
-- [ ] Audio: `starcourt`, the effects, Robin's and Nancy's stingers, blips for Robin, Nancy and Erica
-- [ ] Art build: the picks, the foes, the tiles, the props, fx, sheet pages, Starcourt on the map
-- [ ] World 3.1 and World 3.2: maps, beats, `l7_*` and `l8_*` scripts, waypoints, tuned with the bot
-- [ ] UI: Erica's cart, picks three by three, the stash and purse in the HUD
+- [x] Audio: `starcourt` (C Lydian, 118, base peak 0.48, combat 0.75, no limiting), ten effects, Robin's and Nancy's stingers, blips for Robin, Nancy and Erica. WAVs sent to the owner
+- [x] Art build: the picks, the foes, the 23 tiles, the props, fx, sheet pages 25 to 34, Starcourt on the map
+- [x] World 3.1: the mall, beats, `l7_*` scripts, alt hints, the purse and stash in the play scene. The first chapter 3 numbers needed a factor of 3.3, so the lead retuned the rat, the Flayed (it now shambles through light hits) and the soldier: 3.1 sits at 1.7. Chief 18 of 20 (262 damage, 1.6 KOs, 36% low, 98 s), 100 seeds 86 and none stuck, careless 18, kid 20, upside 8
+- [ ] World 3.2: the base, beats, `l8_*` scripts, tuned with the bot
+- [x] UI: Erica's cart, picks three by three, the stash and purse in the HUD
 - [ ] Flow: the purse on a clear, the stash written on `stashUsed`, the cart from the map
 - [ ] Verified: typecheck, tests, the bot clears 3.1 and 3.2 inside the targets, the map chains 2.3 to 3.1 to 3.2 with the chapter three card, no console errors
 - [ ] Owner asked before merging into main

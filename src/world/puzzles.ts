@@ -8,6 +8,9 @@
 // A puzzle with an `alt` list (the mall's panel, docs/level-7.md) is live while any of its heroes is in the party, and the first of
 // them who is, in order, is the one the hint names and the bench pulses for (`namedFor`).
 //
+// A puzzle stays solved once its prop has been seen lit or open, even if the prop goes back to closed: the breaker in 3.2 re-arms 300
+// frames after a shot, and the hint does not come back with it (docs/level-8.md, "Puzzles"). A retry or a load forgets (`reset`).
+//
 // A puzzle can watch an enemy instead of a prop (`PuzzleDef.enemy`, the pinned Demogorgon). `puzzleProps` stands a prop
 // in for it, at its feet and about its size, so the tracker and the caret work the same way: the hint follows it while it
 // lives, and its death takes the stand-in away, which ends the puzzle. A `poked` event whose propId is the spawn id is a try.
@@ -102,6 +105,8 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
   const live = new Map<string, PuzzleDef>();
   /** Puzzle id to the prop someone tried it on with the wrong hero. */
   const tried = new Map<string, string>();
+  /** Puzzles whose prop has been lit or open at some point since the last reset. */
+  const solved = new Set<string>();
   /** The party as the last tick saw it, to know which hero a try is the wrong one for. Unknown until the first tick. */
   let party: readonly HeroId[] | undefined;
 
@@ -111,7 +116,8 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
       party = s.party;
       for (const d of defs) {
         const prop = s.props.find((p) => p.id === d.prop);
-        if (!prop || isSolved(prop) || s.busy || !s.hasFired(d.beat)) continue;
+        if (prop && isSolved(prop)) solved.add(d.id);
+        if (!prop || solved.has(d.id) || s.busy || !s.hasFired(d.beat)) continue;
         if (!namedFor(d, s.party)) continue;
         live.set(d.id, d);
         if (isNear(prop, s.hero)) spent.set(d.id, (spent.get(d.id) ?? 0) + 1);
@@ -122,7 +128,7 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
         if (hero !== (namedFor(d, party)?.hero ?? d.hero) && (propId === d.prop || d.blocks?.includes(propId))) tried.set(d.id, propId);
       }
     },
-    reset() { spent.clear(); live.clear(); tried.clear(); },
+    reset() { spent.clear(); live.clear(); tried.clear(); solved.clear(); },
     highlight() {
       for (const d of defs) {
         if (!live.has(d.id) || !(tried.has(d.id) || (spent.get(d.id) ?? 0) >= HINT_AFTER)) continue;

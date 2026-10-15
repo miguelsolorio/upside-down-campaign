@@ -80,6 +80,11 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         special(hit(sp.power), 'Beam through every foe in line'),
       ];
     }
+    case 'will':
+      return [
+        basic(b.power, 'Slow bolt, aims eight ways'),
+        special(hit(sp.power), 'Burst sized by a d20, 1 fizzles'),
+      ];
   }
 }
 

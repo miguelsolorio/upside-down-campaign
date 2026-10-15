@@ -10,7 +10,7 @@ import type { SheetMove } from '../src/heroes/charsheet.ts';
 import { MAX_LEVEL, emptyStats } from '../src/progression/xp.ts';
 import { TALENTS } from '../src/progression/talents.ts';
 import { GLYPHS } from '../src/gfx/data/font.ts';
-import { PANEL, RIGHT, STAT_COLS, STAT_VALUE_DX, TAB_COUNT, TAB_W, TEXT_X, backRect, tabAt, tabRect } from '../src/ui/charsheetlayout.ts';
+import { PANEL, RIGHT, STAT_COLS, STAT_VALUE_DX, TAB_COUNT, TAB_NAME_DX, TAB_W, TEXT_X, backRect, tabAt, tabRect } from '../src/ui/charsheetlayout.ts';
 
 const move = (id: HeroId, level: number, kind: SheetMove['kind']): SheetMove => {
   const m = heroSheet(id, level).moves.find((x) => x.kind === kind);
@@ -131,15 +131,16 @@ test('every line fits the panel and the font, for every hero and level', () => {
         assert.ok(end <= next, `${id} L${level}: "${v}" runs into the next column`);
       });
     }
-    // The tab holds a face and the name.
-    assert.ok(2 + 14 + HERO_DEFS[id].name.length * 6 - 1 <= TAB_W - 2, `${id}'s name fits its tab`);
+    // The tab holds a face and the name in the tiny font, 4 px a letter.
+    assert.ok(TAB_NAME_DX + HERO_DEFS[id].name.length * 4 - 1 <= TAB_W - 2, `${id}'s name fits its tab`);
   }
 });
 
-test('the tabs sit side by side inside the frame, and a point picks at most one', () => {
+test('there is a tab for every hero, side by side over the panel, and a point picks at most one', () => {
+  assert.equal(TAB_COUNT, HERO_IDS.length);
   for (let i = 0; i < TAB_COUNT; i++) {
     const r = tabRect(i);
-    assert.ok(r.x >= 0 && r.x + r.w <= 256);
+    assert.ok(r.x >= PANEL.x && r.x + r.w <= PANEL.x + PANEL.w, `tab ${i} sits over the panel`);
     assert.equal(tabAt({ x: r.x + r.w / 2, y: r.y + r.h / 2 }), i);
     if (i > 0) {
       const prev = tabRect(i - 1);

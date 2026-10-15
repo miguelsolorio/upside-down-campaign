@@ -11,6 +11,7 @@ import { Px } from './px.ts';
 import { pineMask } from './tile_objects.ts';
 import { isTree } from './tile_ground.ts';
 import type { TileCtx } from './tile_ground.ts';
+import { hasLitWindow } from './tile_school2.ts';
 
 type Rgb = readonly [number, number, number];
 type Recolor = Partial<Record<ColorName, Rgb>>;
@@ -154,7 +155,7 @@ export function nightSprite(day: Px): Px {
   return out;
 }
 
-/** The Byers house has lit windows on its odd columns. A lit one is amber at its middle. */
+/** The Byers house and the school's brick have lit windows on their odd columns. A lit one is amber at its middle. */
 export function litWindow(day: Px, name: TileName): boolean {
-  return name === 'housewall' && day.get(5, 9) === px32('amber');
+  return (name === 'housewall' && day.get(5, 9) === px32('amber')) || (name === 'brick' && hasLitWindow(day));
 }

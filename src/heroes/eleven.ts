@@ -1,4 +1,5 @@
-// Eleven, the Sorcerer. Basic: Push, a free cone shove that clears logs. Special: Mind Blast, a piercing beam.
+// Eleven, the Sorcerer. Basic: Push, a free cone shove that clears logs and vans. Special: Mind Blast, a piercing beam,
+// the only thing that finishes a pinned Demogorgon.
 // The Flip talent (Lv 3) makes Push hit harder and throw farther.
 import { HERO_DEFS } from './defs.ts';
 import { hasTalent } from '../progression/talents.ts';
@@ -50,7 +51,7 @@ export function elevenSpecial(s: S, h: Hero): void {
     for (const e of s.enemies) {
       if (e.dead || e.dormant || e.hp <= 0) continue;
       if (distToSegment(e.x, e.y - BODY_Y, ox, oy, ex, ey) > d.x.width + 6) continue;
-      hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: aim, stagger: 18 });
+      hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: aim, stagger: 18, beam: true });
     }
   });
 }

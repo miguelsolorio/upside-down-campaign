@@ -203,7 +203,7 @@ export function recruitHero(s: S, id: HeroId): void {
 export function healParty(s: S, frac: number): void {
   if (s.over) {
     // Getting up after a wipe: drop whatever was in flight.
-    s.hitstop = 0; s.projs = []; s.zones = []; s.timers = []; s.seq = null;
+    s.hitstop = 0; s.projs = []; s.globs = []; s.zones = []; s.timers = []; s.seq = null;
   }
   for (const h of s.heroes) {
     if (h.ko) { h.ko = false; h.hp = 0; h.anim = 'idle'; h.animT = 0; }

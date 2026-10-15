@@ -1,6 +1,6 @@
-// The character sheet: one hero per page, with all four heroes as tabs across the top. It shows the stats, the crit
+// The character sheet: one hero per page, with every hero as a tab across the top. It shows the stats, the crit
 // chance and every move with its damage at the hero's level. Opened by a click on the HUD's name and level, and from
-// CHARACTERS in the pause menu. A hero who hasn't joined yet is shown grey, at Lv 1.
+// CHARACTERS in the pause menu. A hero who isn't in the party is shown grey, at Lv 1.
 // The arrows, the swap keys and the hero keys switch heroes, and so does a click on a tab. Back or pause closes it.
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
@@ -19,10 +19,10 @@ import { bigText, box, clipped, inFrame, outline, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import {
   FOOT_Y, LEFT, MOVES_Y, MOVE_PITCH, NAME_Y, NOTE_DY, PANEL, PORTRAIT_Y, RIGHT, ROLE_Y, RULE_Y, STAT_COLS, STAT_ROWS,
-  STAT_VALUE_DX, TEXT_X, backRect, tabAt, tabRect,
+  STAT_VALUE_DX, TAB_FACE_DX, TAB_NAME_DX, TEXT_X, backRect, tabAt, tabRect,
 } from './charsheetlayout.ts';
 
-/** One hero as the sheet needs them. A hero who hasn't joined comes in at Lv 1 with no bonus. */
+/** One hero as the sheet needs them. A hero who isn't in the party comes in at Lv 1 with no bonus. */
 export interface CharSheetHero {
   id: HeroId;
   level: number;
@@ -33,6 +33,8 @@ export interface CharSheetHero {
   bonus: Stats;
   joined: boolean;
   active: boolean;
+  /** Party slot, 0..3, which the hero keys pick as they do in the HUD. -1 outside the party. */
+  slot: number;
 }
 
 const KIND_LABEL: Record<SheetMove['kind'], string> = { basic: 'BASIC', special: 'SPECIAL', crit: 'PARTY', talent: 'TALENT' };
@@ -40,10 +42,10 @@ const KIND_LABEL: Record<SheetMove['kind'], string> = { basic: 'BASIC', special:
 function drawTab(ctx: Ctx, h: CharSheetHero, i: number, on: boolean, hot: boolean): void {
   const r = tabRect(i);
   outline(ctx, r.x, r.y, r.w, r.h, on ? 'yellow' : hot ? 'cream' : 'dusk');
-  const fx = r.x + 2, fy = r.y + 2;
+  const fx = r.x + TAB_FACE_DX, fy = r.y + 2;
   outline(ctx, fx, fy, 11, 11, on ? 'amber' : 'slate');
   clipped(ctx, fx + 1, fy + 1, 9, 9, () => drawPortrait(ctx, h.id, 'neutral', fx - 7, fy - 5, !h.joined));
-  drawText(ctx, HERO_DEFS[h.id].name, fx + 14, r.y + 4, on ? 'yellow' : h.joined ? 'bone' : 'slate');
+  drawTinyText(ctx, HERO_DEFS[h.id].name, r.x + TAB_NAME_DX, r.y + 5, on ? 'yellow' : h.joined ? 'bone' : 'slate');
 }
 
 function drawHeader(ctx: Ctx, h: CharSheetHero, s: HeroSheet): void {
@@ -53,7 +55,7 @@ function drawHeader(ctx: Ctx, h: CharSheetHero, s: HeroSheet): void {
   const nameW = drawText(ctx, s.name, TEXT_X, NAME_Y, 'white');
   drawText(ctx, `LV${s.level}`, TEXT_X + nameW + 6, NAME_Y, 'yellow');
   drawText(ctx, s.role, TEXT_X, ROLE_Y, 'amber');
-  if (!h.joined) drawText(ctx, 'NOT IN THE PARTY YET', RIGHT, ROLE_Y, 'mist', { align: 'right' });
+  if (!h.joined) drawText(ctx, 'NOT IN THE PARTY', RIGHT, ROLE_Y, 'mist', { align: 'right' });
   else drawText(ctx, h.level >= MAX_LEVEL ? 'XP MAX' : `XP ${h.xp}/${h.xpNext}`, RIGHT, NAME_Y, 'mist', { align: 'right' });
 }
 
@@ -146,7 +148,8 @@ export function createCharSheetScene(opts: { heroes: () => CharSheetHero[]; star
       if (mouse(g)) return;
       if (i.pressed('left') || i.pressed('swapPrev')) step(-1);
       if (i.pressed('right') || i.pressed('swapNext')) step(1);
-      for (let n = 0; n < heroes.length; n++) if (i.pressed(`swap${n + 1}` as BindAction)) pick(n);
+      // The hero keys pick by party slot, like the HUD, so 4 is whoever is fourth in the party, not the fourth tab.
+      for (let n = 0; n < 4; n++) if (i.pressed(`swap${n + 1}` as BindAction)) pick(heroes.findIndex((h) => h.slot === n));
     },
     draw(ctx) {
       box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');

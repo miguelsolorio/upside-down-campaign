@@ -1,12 +1,13 @@
-// "Trying it": a hero swings or fires toward a gate, door, log, crate, lantern or console that is still shut, or pushes
-// against one. The sim only reports the attempt, as `{ t: 'poked', propId, hero }`, whichever hero it was. The stage
-// decides whether that hero was the wrong one for the puzzle and shows the hint (see world/puzzles.ts).
+// "Trying it": a hero swings or fires toward a gate, door, log, crate, van, lantern, console, vines, fire-door box or hidden path that
+// is still shut, or pushes against one. The sim only reports the attempt, as `{ t: 'poked', propId, hero }`, whichever
+// hero it was. The stage decides whether that hero was the wrong one for the puzzle and shows the hint (see
+// world/puzzles.ts). A pinned Demogorgon reports the same event for a hit that is not Eleven's beam (enemies/demo_hit.ts).
 import type { HeroId, PropKind } from '../core/types.ts';
 import type { Hero, Prop, S } from './state.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './space.ts';
 
-/** Props that can be a puzzle. A crate or lantern only counts if it asks for something: a decor crate does not. */
-const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'target', 'console']);
+/** Props that can be a puzzle. A crate, van or lantern only counts if it asks for something: a decor crate does not. */
+const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden']);
 /** Frames before the same prop reports another attempt. */
 const POKE_GAP = 45;
 /** Frames of pushing against a shut prop before it counts as trying it. A third of a second. */

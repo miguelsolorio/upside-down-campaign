@@ -58,6 +58,7 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   eleven: { wave: 'tri', midi: 64, spread: 2, dur: 0.11, vol: 0.2, attack: 0.025 },
   will: { wave: 'tri', midi: 69, spread: 2, dur: 0.075, vol: 0.2, attack: 0.012 },
   joyce: { wave: 'tri', midi: 60, spread: 3, dur: 0.07, vol: 0.22, attack: 0.008 },
+  max: { wave: 'p25', midi: 72, spread: 3, dur: 0.04, vol: 0.2, attack: 0.002 },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };

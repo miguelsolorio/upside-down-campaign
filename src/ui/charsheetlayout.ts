@@ -2,21 +2,25 @@
 // mouse against the same boxes, so what you see is what you can press. Pure, so Node can test that everything fits.
 import type { Rect } from '../core/pointer.ts';
 import type { Vec2 } from '../core/types.ts';
+import { HERO_IDS } from '../heroes/defs.ts';
 
 /** The 5 by 7 font's advance. */
 const GLYPH = 6;
 
-/** Four hero tabs across the top: a small face and the name. */
-export const TAB_COUNT = 4;
-export const TAB_W = 56;
-export const TAB_H = 15;
-export const TAB_GAP = 4;
-export const TAB_Y = 24;
-export const TAB_X0 = (256 - (TAB_COUNT * TAB_W + (TAB_COUNT - 1) * TAB_GAP)) / 2;
-
 /** The panel under the tabs, and the content inside it: the portrait at LEFT, names and notes from TEXT_X, numbers
  * right-aligned to RIGHT. */
 export const PANEL: Rect = { x: 8, y: 42, w: 240, h: 164 };
+
+/** A tab per hero across the top, as wide as the panel: a small face and the name in the tiny font. */
+export const TAB_COUNT = HERO_IDS.length;
+export const TAB_GAP = 4;
+export const TAB_W = Math.floor((PANEL.w - (TAB_COUNT - 1) * TAB_GAP) / TAB_COUNT);
+export const TAB_H = 15;
+export const TAB_Y = 24;
+export const TAB_X0 = PANEL.x + Math.floor((PANEL.w - (TAB_COUNT * TAB_W + (TAB_COUNT - 1) * TAB_GAP)) / 2);
+/** In a tab, the face's frame starts this far in, and the name this far in. */
+export const TAB_FACE_DX = 2;
+export const TAB_NAME_DX = 16;
 export const LEFT = 16;
 export const RIGHT = 240;
 export const TEXT_X = 48;

@@ -1,7 +1,7 @@
-// The beat director. Runs a stage's beats: rect triggers fire once, cleared groups and sim events fire others,
-// and each beat is a queue of steps (dialogue, scare, wake, recruit, open, finish). Pure logic with no DOM and
-// no audio, so Node can run it. The play scene supplies the env.
-import type { JingleId, Sim, SimEvent } from '../core/types.ts';
+// The beat director. Runs a stage's beats: rect triggers fire once, cleared groups and sim events fire others
+// (a lit target, a cleared prop, a camera sighting, a pinned boss), and each beat is a queue of steps (dialogue, scare,
+// wake, recruit, open, music, finish). Pure logic with no DOM and no audio, so Node can run it. The play scene supplies the env.
+import type { JingleId, Sim, SimEvent, TrackId } from '../core/types.ts';
 import type { Beat, BeatStep, TileRect } from './types.ts';
 
 export interface DirectorEnv {
@@ -14,6 +14,8 @@ export interface DirectorEnv {
   open(prop: string): void;
   /** The klaxon: its sound and, if the stage draws one, the red pulse. Optional so a stand-in env can leave it out. */
   alarm?(): void;
+  /** Switches the stage music, such as to `clock` when a boss wakes. Optional so a stand-in env can leave it out. */
+  music?(track: TrackId): void;
   jingle(id: JingleId): void;
   /** The level-clear beat reached its last step. */
   finish(): void;
@@ -92,6 +94,7 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
       case 'say': wait((done) => env.say(s.script, done)); break;
       case 'scare': wait((done) => env.scare(done)); break;
       case 'alarm': env.alarm?.(); break;
+      case 'music': env.music?.(s.track); break;
       case 'wake': wake(s.group); break;
       case 'waves': { const first = waves[0]; if (first !== undefined) wake(first); break; }
       case 'recruit': {
@@ -124,6 +127,8 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
           groupDone(e.group);
         } else if (e.t === 'targetHit' || e.t === 'propCleared' || e.t === 'spotted') {
           for (const b of beats) if ('event' in b.when && b.when.event === e.t && b.when.prop === e.propId) fire(b);
+        } else if (e.t === 'pinned') {
+          for (const b of beats) if ('event' in b.when && b.when.event === 'pinned' && b.when.spawn === e.spawnId) fire(b);
         }
       }
     },

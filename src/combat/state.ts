@@ -53,6 +53,35 @@ export interface Hero {
 
 export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'recover' | 'lured';
 
+/**
+ * What the Demogorgon is doing (enemies/demogorgon.ts). walk: stalking. swipe: the close-range wind-up. wind: planted before
+ * the charge. run: the charge. stun: dazed against a wall. roar: the petals opening. spit: the acid wind-up. crouch: before
+ * the leap. air: the leap. recover: after a swipe, a spit or a landing. pinned: at 0 HP after three stuns, waiting for the beam.
+ */
+export type DemoMove = 'walk' | 'swipe' | 'wind' | 'run' | 'stun' | 'roar' | 'spit' | 'crouch' | 'air' | 'recover' | 'pinned';
+
+/** The Demogorgon's own state. Every other enemy has `demo: null`. */
+export interface DemoState {
+  move: DemoMove;
+  /** Frames left in the current move. */
+  t: number;
+  /** Wall stuns so far. */
+  stuns: number;
+  /** The petals have opened (once, at 60 percent HP). */
+  petals: boolean;
+  /** Frames until each attack can start. */
+  chargeCd: number; spitCd: number; leapCd: number;
+  /** Frames before another try at the pinned boss is reported. */
+  pokeCd: number;
+  /** Leap flight: where it jumped from and where it comes down. */
+  sx: number; sy: number; tx: number; ty: number;
+  /** The growing mark under a leap, so a pin can take it away. */
+  mark: FxView | null;
+}
+
+/** An acid glob: flies from (sx, sy) to (x, y), splashes when its age reaches life, and its splash is drawn for a few frames more. */
+export interface Glob { sx: number; sy: number; x: number; y: number; ang: number; age: number; life: number; atk: number; mark: FxView }
+
 export interface Enemy {
   uid: number;
   id: string;
@@ -106,10 +135,18 @@ export interface Enemy {
   slam: boolean;
   /** The growing ring that telegraphs a slam, so a break can remove it. */
   ring: FxView | null;
+  /** The Demogorgon only. */
+  demo: DemoState | null;
+  /** Spawned `hidden`: drawn faint, until Cold spot shows it or it attacks (which clears this for good). */
+  hidden: boolean;
+  /** Spawned `hidden`, for good. Will's Cold spot still shows it and hurts it more when it is near him after it has struck. */
+  cloaked: boolean;
+  /** A demodog in the air or in the wind-up before it: the pack lets one do that at a time. */
+  lunging: boolean;
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;
@@ -126,6 +163,8 @@ export interface Proj {
   hit: number[];
   /** Candy lobs: start and end, and what happens on landing. */
   lob: { sx: number; sy: number; ex: number; ey: number; onLand: () => void } | null;
+  /** A fireball: called with where it ended (an enemy, a solid prop or the end of its flight). It does the damage; the shot itself does none. */
+  end: ((x: number, y: number) => void) | null;
 }
 
 export interface Zone {
@@ -153,6 +192,8 @@ export interface Prop {
   cam?: CamDef; camT: number;
   /** Frames before this prop can report another attempt (see pokes.ts). */
   pokeCd: number;
+  /** Vines only: frames of burning left before they are gone. */
+  burnT: number;
 }
 export interface Npc { id: CharId; x: number; y: number; dir: Dir; t: number }
 export interface Body { id: HeroId; x: number; y: number; dir: Dir; t: number }
@@ -194,6 +235,10 @@ export interface S {
   /** The shut prop the active hero has been pushing against, and for how many frames. */
   bump: { id: string; t: number } | null;
   enemies: Enemy[];
+  /** Acid globs the Demogorgon has spat, still in the air. */
+  globs: Glob[];
+  /** The frame the last demodog lunge ended, so the next one waits at least 20 frames. */
+  lungeEnd: number;
   projs: Proj[];
   zones: Zone[];
   lure: Lure | null;

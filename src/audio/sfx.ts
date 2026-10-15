@@ -1,49 +1,12 @@
 // Sound effects. Every SfxId is one short synthesized sound built from pulse, triangle and noise parts.
-// playSfx adds a little random pitch variation so repeats do not machine-gun.
+// playSfx adds a little random pitch variation so repeats do not machine-gun. The part types and builders are
+// in sfx_kit.ts. The Level 3 and 4 effects (roar to sizzle) and their levels are in sfx_levels34.ts.
 import type { SfxId } from '../core/types.ts';
 import { noise, tone } from './synth.ts';
-import type { NoiseFilter } from './synth.ts';
-import type { Vib, Wave } from './tracks/types.ts';
-
-interface Tn {
-  k: 't';
-  w: Wave;
-  f: number;
-  /** Glide to this frequency over the sound. */
-  f2?: number;
-  at: number;
-  d: number;
-  v: number;
-  /** A flat beep with sharp edges. Without it the tone decays like a pluck. */
-  hold: boolean;
-  vib?: Vib;
-  arp?: number[];
-  ar?: number;
-}
-interface Ns {
-  k: 'n';
-  m: 15 | 7;
-  c: number;
-  c2?: number;
-  at: number;
-  d: number;
-  v: number;
-  f?: NoiseFilter;
-  rise?: number;
-}
-type Part = Tn | Ns;
-interface Recipe {
-  /** Random pitch variation, as a fraction either way. */
-  j: number;
-  parts: Part[];
-}
-
-const T = (w: Wave, f: number, d: number, v: number, o: Partial<Tn> = {}): Tn => ({ k: 't', w, f, at: 0, d, v, hold: false, ...o });
-const N = (m: 15 | 7, c: number, d: number, v: number, o: Partial<Ns> = {}): Ns => ({ k: 'n', m, c, at: 0, d, v, ...o });
-const bp = (freq: number, freqEnd?: number, q = 1): NoiseFilter => ({ type: 'bandpass', freq, freqEnd, q });
-const lp = (freq: number, freqEnd?: number): NoiseFilter => ({ type: 'lowpass', freq, freqEnd, q: 0.7 });
-const hp = (freq: number): NoiseFilter => ({ type: 'highpass', freq, q: 0.7 });
-const R = (parts: Part[], j = 0.04): Recipe => ({ j, parts });
+import { N, R, T, bp, hp, lp } from './sfx_kit.ts';
+import type { Recipe } from './sfx_kit.ts';
+import { LEVELS34, SFX34 } from './sfx_levels34.ts';
+import type { Sfx34 } from './sfx_levels34.ts';
 
 // A die bouncing: bursts that space out as it settles.
 const RATTLE = [0, 0.05, 0.1, 0.17, 0.25, 0.34, 0.45].map((at, i) =>
@@ -60,7 +23,7 @@ const KLAXON = [0, 1, 2, 3].flatMap((i) => {
   ];
 });
 
-export const SFX: Record<SfxId, Recipe> = {
+const BASE_SFX = {
   // combat
   swing: R([N(15, 44100, 0.12, 0.7, { f: bp(500, 3000, 1.1), rise: 0.05 })]),
   hit: R([N(15, 18000, 0.09, 0.9, { f: bp(900, undefined, 0.8) }), T('p25', 220, 0.09, 0.3, { f2: 90 })]),
@@ -206,7 +169,9 @@ export const SFX: Record<SfxId, Recipe> = {
   ], 0.02),
   alert: R([T('p50', 880, 0.05, 0.3, { hold: true }), T('p50', 1320, 0.09, 0.3, { at: 0.05, hold: true })], 0.01),
   step: R([N(7, 5000, 0.025, 0.4, { f: bp(900, undefined, 1.5) })], 0.08),
-};
+} satisfies Record<Exclude<SfxId, Sfx34>, Recipe>;
+
+export const SFX: Record<SfxId, Recipe> = { ...BASE_SFX, ...SFX34 };
 
 /**
  * Gain per effect, measured with an offline render so every effect peaks where it should: impacts near 0.5,
@@ -220,6 +185,7 @@ const LEVEL: Record<SfxId, number> = {
   gateOpen: 1, targetHit: 1, logPush: 0.41, lights: 1.22, flicker: 0.3, growl: 0.44, klaxon: 0.7,
   zap: 0.43, steam: 0.31, spotted: 0.64, block: 0.55, bash: 0.56, slam: 0.535,
   roll: 0.89, rollLand: 0.47, natTwenty: 0.95, levelUp: 0.9, alert: 0.47, step: 0.8,
+  ...LEVELS34,
 };
 
 /** Plays one effect at context time t. `mul` scales every pitch, so 1.05 is about a semitone sharp. */

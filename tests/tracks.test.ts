@@ -323,7 +323,7 @@ test('the scare is the motif upside down, two to three seconds, with a dissonant
 
 test('every jingle and stinger exists, ducks the music and has a sound', () => {
   assert.deepEqual(Object.keys(JINGLES).sort(), ['clear', 'dice', 'gameOver', 'item', 'levelUp', 'recruit']);
-  assert.deepEqual(Object.keys(STINGERS).sort(), ['dustin', 'eleven', 'lucas', 'mike', 'scare']);
+  assert.deepEqual(Object.keys(STINGERS).sort(), ['dustin', 'eleven', 'lucas', 'mike', 'scare', 'will']);
   for (const [id, c] of [...Object.entries(JINGLES), ...Object.entries(STINGERS)]) {
     assert.ok(c.notes.length + c.hits.length > 0, id);
     assert.ok(c.length > 0.2 && c.length < 6, `${id} length ${c.length}`);
@@ -334,11 +334,12 @@ test('every jingle and stinger exists, ducks the music and has a sound', () => {
 });
 
 test('tag-in stingers are two to four melody notes and all different', () => {
-  const heroes = ['mike', 'dustin', 'lucas', 'eleven'] as const;
+  const heroes = ['mike', 'dustin', 'lucas', 'eleven', 'will'] as const;
   const shapes = new Set<string>();
   for (const h of heroes) {
     const c = STINGERS[h];
-    const tune = c.notes.filter((n) => n.w !== 'tri' || h === 'eleven');
+    // Mike, Dustin and Lucas carry a bass under the tune on a triangle. Eleven's and Will's tunes are the triangle.
+    const tune = c.notes.filter((n) => n.w !== 'tri' || h === 'eleven' || h === 'will');
     assert.ok(tune.length >= 2 && tune.length <= 4, `${h} has ${tune.length} notes`);
     assert.ok(c.length < 1.6, `${h} stays short`);
     shapes.add(JSON.stringify(c.notes.map((n) => [n.w, n.midi])));

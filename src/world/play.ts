@@ -22,7 +22,7 @@ import { onLevel, slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
 import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
-import { createPuzzleTracker, isNear } from './puzzles.ts';
+import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
@@ -46,7 +46,7 @@ const SAVED_FRAMES = 120;
 const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
   p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
 
-const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera']);
+const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden']);
 
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
@@ -65,6 +65,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const levelFx = createLevelFx();
   /** Counts the time spent near each unsolved puzzle, to know when to point at it. */
   const puzzles = createPuzzleTracker(stage.puzzles);
+  /** The enemy kind behind each puzzle that watches a spawn (the pinned boss). Empty on 1.1 and 1.2. */
+  const foes = foeKinds(stage.puzzles, stage.spawns);
   let game!: Game;
   let sim!: Sim;
   let view!: SimView;
@@ -126,6 +128,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       sim.openProp(prop);
     },
     alarm() { audio.sfx('klaxon'); },
+    music: (track) => audio.music(track),
     jingle: (id) => audio.jingle(id),
     finish() { audio.jingle('clear'); clearT = 0; },
   };
@@ -234,17 +237,18 @@ export function createPlayScene(opts: PlayOptions): Scene {
     game.scenes.push(sc);
   }
 
-  /** All four heroes for the character sheet. Those in the party come with their level, XP and d20 bonus. A hero who
-   * hasn't joined yet comes in at Lv 1. */
+  /** Every hero for the character sheet. Those in the party come with their level, XP and d20 bonus. A hero who
+   * isn't in the party comes in at Lv 1. */
   function sheetParty(): CharSheetHero[] {
     const live = sim.party();
     return HERO_IDS.map((id): CharSheetHero => {
-      const p = live.find((m) => m.id === id);
+      const slot = live.findIndex((m) => m.id === id);
+      const p = live[slot];
       const hud = view.hud.party.find((m) => m.id === id);
-      if (!p) return { id, level: 1, xp: 0, xpNext: xpToNext(1), bonus: emptyStats(), joined: false, active: false };
+      if (!p) return { id, level: 1, xp: 0, xpNext: xpToNext(1), bonus: emptyStats(), joined: false, active: false, slot: -1 };
       return {
         id, level: p.level, xp: p.xp, xpNext: hud?.xpNext ?? xpToNext(p.level), bonus: { ...emptyStats(), ...p.bonus },
-        joined: true, active: hud?.active ?? false,
+        joined: true, active: hud?.active ?? false, slot,
       };
     });
   }
@@ -377,10 +381,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const p = sim.heroPos();
         director.tick((p.x / TILE) | 0, ((p.y - 4) / TILE) | 0);
         if (!leftHome && Math.hypot(p.x - stage.start.x, p.y - stage.start.y) > HOME_RADIUS) leftHome = true;
-        puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: view.props, hero: p });
+        puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: puzzleProps(stage.puzzles, view.props, view.actors, foes), hero: p });
       }
       if (scare) stepScare(scare);
-      prompt = frozen || director.busy() ? null : nearLights();
+      // No lighting mid-boss: the save would hold a fired beat for a fight the retry puts back to sleep.
+      prompt = frozen || director.busy() || view.hud.boss ? null : nearLights();
       burstCall = !frozen && !director.busy() && !prompt && view.hud.burstReady;
       if (prompt && !bot && g.input.pressed('interact')) lightUp(prompt);
       if (wipeT >= 0 && ++wipeT === WIPE_FRAMES) pushGameOver();
@@ -411,12 +416,13 @@ export function createPlayScene(opts: PlayOptions): Scene {
       drawLevelFx(ctx, levelFx.list(), view, cam);
       // While the party is at a puzzle it's stuck on, the caret points at the prop and a subtitle says who to try.
       const stuck = puzzles.highlight();
-      const stuckProp = stuck && view.props.find((p) => p.id === stuck.prop);
+      const watched = stuck ? puzzleProps(stage.puzzles, view.props, view.actors, foes) : view.props;
+      const stuckProp = stuck && watched.find((p) => p.id === stuck.prop);
       // A hint from trying a gate or door is shown where the party stands, which can be far from the puzzle's own prop
       // (the sensor, the lantern): the subtitle shows near either one, and the caret goes on the puzzle's prop when it
       // is in view, else on the gate or door that was tried.
       const triedId = stuck ? puzzles.triedProp(stuck) : null;
-      const triedProp = triedId ? view.props.find((p) => p.id === triedId) : undefined;
+      const triedProp = triedId ? watched.find((p) => p.id === triedId) : undefined;
       const hero = sim.heroPos();
       const atHint = stuckProp && (isNear(stuckProp, hero) || (triedProp && isNear(triedProp, hero)));
       const caretOn = stuckProp && (triedProp && !inView(stuckProp, cam) ? triedProp : stuckProp);

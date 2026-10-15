@@ -4,7 +4,7 @@
 // Nothing here touches the DOM, and nothing creates an audio object at import time.
 import type { Drum, Env, Vib, Wave } from './tracks/types.ts';
 import { DRUM_SECONDS } from './tracks/theory.ts';
-import { envLevel, lfsrBits, noiseOffset, pulseCoefs, triCoefs } from './dsp.ts';
+import { envLevel, lfsrBits, noiseOffset, pulseCoefs, sawCoefs, triCoefs } from './dsp.ts';
 import type { Coefs } from './dsp.ts';
 
 const HARMONICS = 512;
@@ -23,6 +23,7 @@ export function waves(ctx: BaseAudioContext): Waves {
       p25: make(pulseCoefs(0.25, HARMONICS)),
       p50: make(pulseCoefs(0.5, HARMONICS)),
       tri: make(triCoefs(HARMONICS)),
+      saw: make(sawCoefs(HARMONICS)),
     };
     waveCache.set(ctx, w);
   }

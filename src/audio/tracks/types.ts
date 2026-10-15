@@ -5,8 +5,11 @@ import type { TrackId } from '../../core/types.ts';
 export type PitchedSlot = 'p1' | 'p2' | 'p3' | 'tri';
 export type Slot = PitchedSlot | 'noi';
 export type LayerId = 'base' | 'combat';
-/** Pulse at 12.5, 25 and 50 percent duty, or the stepped triangle. */
-export type Wave = 'p12' | 'p25' | 'p50' | 'tri';
+/**
+ * Pulse at 12.5, 25 and 50 percent duty, or the stepped triangle. The sawtooth is not an NES voice: only Hopper's
+ * speech blip uses it, and no track does.
+ */
+export type Wave = 'p12' | 'p25' | 'p50' | 'tri' | 'saw';
 export type Drum = 'kick' | 'snare' | 'hat' | 'ohat' | 'tick' | 'tock' | 'swell' | 'crack' | 'wind';
 export type ModeName = 'minor' | 'phrygian' | 'dorian' | 'major' | 'whole' | 'chromatic';
 

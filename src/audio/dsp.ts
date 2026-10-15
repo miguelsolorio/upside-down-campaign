@@ -27,6 +27,14 @@ export function pulseCoefs(duty: number, harmonics: number): Coefs {
   return { real, imag };
 }
 
+/** Fourier series of a falling sawtooth: sin(n w t) / n for every harmonic. Only Hopper's speech blip uses it. */
+export function sawCoefs(harmonics: number): Coefs {
+  const real = new Float32Array(harmonics + 1);
+  const imag = new Float32Array(harmonics + 1);
+  for (let n = 1; n <= harmonics; n++) imag[n] = 2 / (n * Math.PI);
+  return { real, imag };
+}
+
 /** The NES triangle: sixteen steps down, sixteen up, four bits. */
 export const NES_TRIANGLE: readonly number[] = [
   15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,

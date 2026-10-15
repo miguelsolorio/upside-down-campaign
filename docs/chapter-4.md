@@ -34,7 +34,7 @@ He joins at the party's average level minus one. The recruit scene is in the Hel
 
 ### The Hellfire solo as a note highway
 
-The owner's call: the solo plays as a retro Guitar Hero. While Eddie plays, a note highway shows and notes come down it to a strum line. A note hit on time crits (the NAT 20 floater over what the ring hits) and widens the ring; a miss shrinks it. A streak counter shows under the strum line. The 4.3 rooftop is the same highway for a whole song, with the demobats as the pressure.
+The owner's call: the solo plays as a retro Guitar Hero. While Eddie plays, a note highway shows and notes come down it to a strum line. A note hit on time crits (the NAT 20 floater over what the ring hits) and widens the ring; a miss shrinks it. A streak counter keeps count beside the highway. The 4.3 rooftop is the same highway for a whole song, with the demobats as the pressure.
 
 - **Layout: The neck** (owner's pick, `solo-variations.html`). The highway is the neck of his Flying V, coming out from under him toward the player in perspective: dark wood, fret wires that scroll, inlay dots, three lanes. Notes start small at the far end and grow as they come, and hit three strum targets on a bone line near the bottom of the screen. The streak counter sits to the left of the neck, HIT over the struck target.
 - **Lanes and inputs.** Three lanes on Attack, Special and Crit (keys Z, X, Space; pad A, X, Y; touch A, B and the d20), colored like the HUD: Attack red, Special blue like the MP bar, Crit gold like the d20. Eddie is planted while he plays, so movement does nothing during the solo; a rebinding of the three actions moves the lanes with it.
@@ -66,7 +66,7 @@ It builds over the chapter.
 
 **The ways out.** Max's Walkman (below), anywhere. The marked memory orb, in the Vecna fight. Open: what breaks a curse in 4.3 for a party without Max (a proposal: smash or riff the clock that chimed).
 
-**The look** of the clock mark follows the Vecna pick (`vecna-variations.html`): each design has its own colors for the rim, the face and the sounded chimes.
+**The look** of the clock mark follows the Vecna pick: Rooted's is a dark red rim, a bone face and red for the sounded chimes.
 
 ### Max's Walkman
 
@@ -83,10 +83,14 @@ Hopper alone against a Demogorgon in a pit under the prison, with only his hayma
 | Phase | From | What he does | How you answer |
 |---|---|---|---|
 | 1 Clock | 100% | Walks slowly behind his vines. The clock chimes and curses a hero. Memory orbs heal him | Break the orbs, the marked one first. Burn the vines. The Walkman |
-| 2 Float | 60% | Rises out of melee reach and throws debris. The vines spread | Ranged heroes and Eddie's ring reach him (Eddie is gone by 4.4, so Lucas, Nancy, Eleven, Will). Breaking the orbs pulls him down |
+| 2 Float | 60% | Rises out of melee reach and throws debris. The vines spread | Ranged heroes reach him: Lucas, Nancy, Eleven, Will. Breaking the orbs pulls him down |
 | 3 Burn | 25% | On fire. The vine whips speed up and the clock chimes twice as fast | Keep a hero clear of the curse, finish him |
 
-Look: pending the pick from `vecna-variations.html` (Vined, Lich, Scorched, Creel suit, Lanky). Each design is drawn in stand, walk and the curse (Clock), float and the throw (Float), burning and the vine whip (Burn), and hurt. The fire is an effect drawn over him, so the sprite keeps five colors.
+Look: **Rooted** (owner's pick, `vecna-variations.html`, `src/gfx/var/vecna_scary.ts`), reached in two rounds: Vined from the first five, then Rooted from three scarier takes on it. He is hunched, his head sunk between raised shoulders, with long arms and long bone claws. His head is a skull: a big cranium over a narrow jaw, a heavy brow, black sockets with red points for eyes, a bare row of teeth, vines over the dome. Ash grey flesh, as if the Upside Down had dried him out, wound with dark red vines that branch down his chest, and roots running from his feet into the floor. Five fill colors: grey, dark grey, bone, red, dark red.
+
+- **The tendrils move all the time** (the owner's call). Four tall dark red tendrils rise behind his shoulders like a crown and writhe in a loop of eight frames: the root stays on the shoulder, the middle sways a pixel, the tip two, each out of step with the others. In the game they are a layer of their own drawn under every body frame, so they loop whatever pose he is in, floating and burning included. The frame is 36 by 62, with ten rows of headroom over him for the tips.
+- **Poses**, as drawn on the sheet: stand, walk and the curse (Clock), float and the throw (Float), burning and the vine whip (Burn), and hurt. The fire is an effect drawn over him, so the sprite keeps five colors.
+- **His clock** over a cursed hero: a dark red rim, a bone face, red for the sounded chimes.
 
 ## Foes
 
@@ -103,7 +107,7 @@ Look: pending the pick from `vecna-variations.html` (Vined, Lich, Scorched, Cree
 |---|---|---|
 | Eddie | `eddie-variations.html` | **1 Hellfire Club** |
 | The solo's note highway | `solo-variations.html` | **2 The neck** |
-| Vecna | `vecna-variations.html` | **1 Vined**, made scarier (three takes pending) |
+| Vecna | `vecna-variations.html` | **1 Vined**, then **3 Rooted** of the scarier takes, with the tendrils writhing |
 | The Demogorgon pit | `pit-variations.html` | **4 Mine shaft** |
 | Kamchatka | `kamchatka-variations.html` | **1 Blizzard** |
 | The Creel House | `creel-variations.html` | **2 Abandoned** now (4.2), **4 Upside Down** for the lair (4.4), **3 Blood red** for memories |

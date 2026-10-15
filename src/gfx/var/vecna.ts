@@ -39,8 +39,12 @@ function cursed(o: VecnaOpt): Px {
   return p;
 }
 
+/** The extra row a design that moves on its own gets: its stand pose through the whole loop at 2x. */
+const LOOP_H = 16 + VH * K + 8;
+
 export function vecnaCard(o: VecnaOpt): Made {
-  const { c, g } = cardCanvas(VECNA_W, VECNA_H, 'night');
+  const loop = o.loop ?? 0, H = VECNA_H + (loop ? LOOP_H : 0);
+  const { c, g } = cardCanvas(VECNA_W, H, 'night');
   for (const [name, i0, n] of PHASES) {
     const x = GAP + i0 * FX, w = n * FX - GAP;
     g.fillStyle = PAL.shadow;
@@ -49,7 +53,6 @@ export function vecnaCard(o: VecnaOpt): Made {
   }
   POSE_ORDER.forEach((pose, i) => {
     const x = GAP + i * FX, name = pose.toUpperCase();
-    zoom(g, o.draw(pose), x, 16, K);
     label(g, name, x + Math.round((VW * K - name.length * 6) / 2), 16 + VH * K + 4, 'mist');
   });
   label(g, 'THE CURSE ON A HERO', GAP, ROW2, 'mist');
@@ -62,11 +65,33 @@ export function vecnaCard(o: VecnaOpt): Made {
   label(g, '1X, WITH STEVE, MIKE, HOPPER AND THE DEMOGORGON', sx, ROW2 + 18, 'slate');
   const friends: CharSpec[] = [STEVE, KIDS[0]!, HOPPER];
   const base = ROW2 + 12 + 78;
-  flat(g, o.draw('stand'), sx, base - VH);
   friends.forEach((s, i) => flat(g, paintRoles(composeFrame(s, 'down', 'idle', 0), 16, s.pal), sx + 44 + i * 22, base - 16));
   const demo = composeDemo('down', 'stand', 0, false);
   flat(g, demo, sx + 44 + 3 * 22 + 4, base - demo.h);
+  if (loop) {
+    const ly = VECNA_H;
+    label(g, `THE TENDRILS WRITHE IN EVERY POSE, A LOOP OF ${loop} FRAMES`, GAP, ly, 'hot');
+    for (let f = 0; f < Math.min(loop, POSE_ORDER.length); f++) {
+      const x = GAP + f * FX;
+      zoom(g, o.draw('stand', f), x, ly + 12, K);
+      label(g, String(f + 1), x + VW * K / 2 - 3, ly + 12 + VH * K - 2, 'slate');
+    }
+  }
+  /** The poses and the 1x figure, which move when the design has a loop. */
+  const draw = (phase: number): void => {
+    POSE_ORDER.forEach((pose, i) => {
+      const x = GAP + i * FX;
+      g.fillStyle = PAL.night;
+      g.fillRect(x, 16, VW * K, VH * K);
+      zoom(g, o.draw(pose, phase), x, 16, K);
+    });
+    g.fillStyle = PAL.soil0;
+    g.fillRect(sx, base - VH, VW, VH);
+    flat(g, o.draw('stand', phase), sx, base - VH);
+  };
+  draw(0);
   c.setAttribute('data-snap', `vecna-${o.slug}`);
   c.setAttribute('aria-label', `Vecna, ${o.name}: stand, walk, curse, float, throw, burn, whip and hurt, his curse on Max, and Vecna at real size beside the heroes and the Demogorgon`);
-  return { canvas: c, meta: `${colorsOf(o)} fill colors and the ink outline. The fire in the Burn phase is an effect drawn over him.` };
+  const meta = `${colorsOf(o)} fill colors and the ink outline. The fire in the Burn phase is an effect drawn over him.${loop ? ' The tendrils are a layer of their own behind him, so they loop under every pose.' : ''}`;
+  return loop ? { canvas: c, draw, meta } : { canvas: c, meta };
 }

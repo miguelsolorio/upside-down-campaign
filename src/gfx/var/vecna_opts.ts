@@ -5,7 +5,7 @@
 // over a hero.
 import type { ColorName } from '../palette.ts';
 import { Px } from '../px.ts';
-import { POSES, body, finish, onFire, seg, wrap } from './vecna_kit.ts';
+import { POSES, TOP, VH, VW, body, finish, lowered, onFire, seg, wrap } from './vecna_kit.ts';
 import type { BodyOpts, Pt, Tri, VCols, VPose, VRig } from './vecna_kit.ts';
 
 export interface VecnaOpt {
@@ -15,7 +15,10 @@ export interface VecnaOpt {
   cols: VCols;
   /** The clock over a cursed hero: rim, face, and the sounded chimes. */
   mark: { ring: ColorName; face: ColorName; pip: ColorName };
-  draw(pose: VPose): Px;
+  /** phase counts up for anything that moves on its own, like tendrils that writhe in every pose. */
+  draw(pose: VPose, phase?: number): Px;
+  /** Frames in the loop of what moves on its own, if anything does. */
+  loop?: number;
 }
 
 export interface Spec {
@@ -24,20 +27,20 @@ export interface Spec {
   stretch?: (r: VRig) => VRig;
   body?: BodyOpts;
   /** Drawn first, so the body covers it: tendrils behind him. */
-  before?: (px: Px, r: VRig, pose: VPose) => void;
-  dress?: (px: Px, r: VRig, pose: VPose) => void;
+  before?: (px: Px, r: VRig, pose: VPose, phase: number) => void;
+  dress?: (px: Px, r: VRig, pose: VPose, phase: number) => void;
 }
 
 /** The vine whip cracking over his head from the raised hand, relative to the hand. */
 const WHIP: Pt[] = [[2, -3], [-1, -8], [-8, -9], [-16, -8], [-22, -4], [-24, 1]];
 
-export function make(s: Spec): (pose: VPose) => Px {
-  return (pose) => {
-    const r = s.stretch ? s.stretch(POSES[pose]) : POSES[pose];
-    const fig = new Px(36, 52);
-    s.before?.(fig, r, pose);
+export function make(s: Spec): (pose: VPose, phase?: number) => Px {
+  return (pose, phase = 0) => {
+    const r = lowered(s.stretch ? s.stretch(POSES[pose]) : POSES[pose], TOP);
+    const fig = new Px(VW, VH);
+    s.before?.(fig, r, pose, phase);
     body(fig, r, s.cols, s.body);
-    s.dress?.(fig, r, pose);
+    s.dress?.(fig, r, pose, phase);
     if (pose === 'whip') {
       const [hx, hy] = r.arms[1][2];
       const pts = WHIP.map(([x, y]) => [hx + x, hy + y] as Pt);
@@ -90,7 +93,7 @@ const LICH: VecnaOpt = {
     body: {
       legs: false, arm: 'purple0',
       mid(px, r) {
-        const top = r.neck[1] + 1, bot = r.lift ? 46 : 49;
+        const top = r.neck[1] + 1, bot = (r.lift ? 46 : 49) + TOP;
         for (let y = top; y <= bot; y++) {
           const u = (y - top) / (bot - top), hw = r.shW + 0.5 + u * 4.5, cx = r.neck[0];
           const x0 = Math.round(cx - hw), x1 = Math.round(cx + hw);

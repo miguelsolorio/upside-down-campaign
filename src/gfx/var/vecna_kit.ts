@@ -7,7 +7,9 @@
 import type { ColorName } from '../palette.ts';
 import { Px } from '../px.ts';
 
-export const VW = 36, VH = 52;
+/** The rigs are drawn in a 36 by 52 box with his feet on row 49; the frame adds TOP rows of headroom above it, for tendrils. */
+export const TOP = 10;
+export const VW = 36, VH = 52 + TOP;
 export type Pt = readonly [number, number];
 export type Tri = readonly [Pt, Pt, Pt];
 export type VPose = 'stand' | 'walk' | 'curse' | 'float' | 'throw' | 'burn' | 'whip' | 'hurt';
@@ -126,10 +128,17 @@ export function wrap(px: Px, t: Tri, col: ColorName, every = 3): void {
   }
 }
 
-/** The finished frame: the figure lifted by r.lift and outlined, a flat shadow left on the floor. */
+/** The same rig moved down by d rows, into the frame's headroom. */
+export function lowered(r: VRig, d: number): VRig {
+  const m = (p: Pt): Pt => [p[0], p[1] + d];
+  const t = (x: Tri): Tri => [m(x[0]), m(x[1]), m(x[2])];
+  return { ...r, head: m(r.head), neck: m(r.neck), waist: m(r.waist), arms: [t(r.arms[0]), t(r.arms[1])], legs: [t(r.legs[0]), t(r.legs[1])] };
+}
+
+/** The finished frame: the figure (drawn on a VW by VH buffer from a lowered rig) lifted by r.lift and outlined, a flat shadow left on the floor. */
 export function finish(fig: Px, r: VRig, fire?: (p: Px) => void): Px {
   const out = new Px(VW, VH);
-  if (r.lift) out.ellipse(18, 50.5, 7, 1.5, 'ink');
+  if (r.lift) out.ellipse(18, 50.5 + TOP, 7, 1.5, 'ink');
   const f = fig.outline('ink');
   out.blit(f, 0, -r.lift);
   if (fire) {

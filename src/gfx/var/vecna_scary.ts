@@ -41,12 +41,24 @@ function veins(px: Px, r: VRig, vine: ColorName, glow: ColorName): void {
   px.set(nx - 3, ny + 5, glow).set(nx + 1, ny + 10, glow);
 }
 
-/** Tendrils rising off his back past the shoulders and curling out, n a side; drawn behind him. */
-function tendrils(px: Px, r: VRig, vine: ColorName, n: number, tall: number): void {
+/** Frames in a tendril's writhe. */
+export const WRITHE = 8;
+
+/**
+ * Tendrils rising off his back past the shoulders and curling out, n a side, drawn behind him. With a phase they writhe: the
+ * root stays on the shoulder, the middle sways a px, the tip two, each tendril out of step with the others, a loop of WRITHE
+ * frames. In the game this is a layer of its own under every body frame, so it loops whatever pose he's in.
+ */
+function tendrils(px: Px, r: VRig, vine: ColorName, n: number, tall: number, phase = 0): void {
   for (let k = 0; k < n; k++) {
     for (const s of [-1, 1]) {
-      const [sx, sy] = r.arms[s < 0 ? 0 : 1][0], o = k * 3;
-      const pts: Pt[] = [[sx - s * 2, sy + 2], [sx + s * (1 + o), sy - 4 - o], [sx + s * (4 + o), sy - tall - o], [sx + s * (3 + o), sy - tall - 4 - o]];
+      const [sx, sy] = r.arms[s < 0 ? 0 : 1][0], o = k * 3, a = ((phase % WRITHE) / WRITHE) * Math.PI * 2 + k * 1.9 + (s > 0 ? 2.4 : 0);
+      const sway = (amp: number, lag: number): number => Math.round(Math.sin(a - lag) * amp);
+      const lift = Math.round(Math.cos(a - 1.2) * 1);
+      const pts: Pt[] = [
+        [sx - s * 2, sy + 2], [sx + s * (1 + o) + sway(1, 0), sy - 4 - o],
+        [sx + s * (4 + o) + sway(1.6, 0.6), sy - tall - o], [sx + s * (3 + o) + sway(2.4, 1.2), sy - tall - 4 - o + lift],
+      ];
       for (let i = 0; i + 1 < pts.length; i++) seg(px, pts[i] as Pt, pts[i + 1] as Pt, i === 0 ? 2 : 1, vine, null);
     }
   }
@@ -55,13 +67,13 @@ function tendrils(px: Px, r: VRig, vine: ColorName, n: number, tall: number): vo
 // ---------------------------------------------------------------- 1. Gaunt
 const GAUNT_COLS: VCols = { G: 'soil2', D: 'soil0', B: 'bone', E: 'hot' };
 const GAUNT: VecnaOpt = {
-  slug: 'gaunt', name: 'Gaunt',
+  slug: 'gaunt', name: 'Gaunt', loop: WRITHE,
   note: 'The show\'s Vecna, darker: deep brown flesh with black shadow, hunched, a skull of a head with glowing red points for eyes and bare teeth, long claws, veins that glow at the forks, and two tendrils rising off his back.',
   cols: GAUNT_COLS,
   mark: { ring: 'red', face: 'bone', pip: 'red' },
   draw: make({
     cols: GAUNT_COLS, vine: 'blood1', stretch: hunch, body: { claw: 4.6 },
-    before: (px, r) => tendrils(px, r, 'blood1', 1, 8),
+    before: (px, r, _pose, phase) => tendrils(px, r, 'blood1', 1, 8, phase),
     dress(px, r) {
       veins(px, r, 'blood1', 'hot');
       for (const t of [...r.arms, ...r.legs]) wrap(px, [t[0], t[1], t[1]] as Tri, 'blood1', 4);
@@ -95,13 +107,13 @@ const FLAYED: VecnaOpt = {
 // ---------------------------------------------------------------- 3. Rooted
 const ROOTED_COLS: VCols = { G: 'grey2', D: 'grey1', B: 'bone', E: 'red' };
 const ROOTED: VecnaOpt = {
-  slug: 'rooted', name: 'Rooted',
+  slug: 'rooted', name: 'Rooted', loop: WRITHE,
   note: 'Ash grey, as if the Upside Down had dried him out, hunched under four tall dark red tendrils that rise behind him like a crown, roots running from his feet into the floor, red points for eyes. The biggest outline.',
   cols: ROOTED_COLS,
   mark: { ring: 'blood1', face: 'bone', pip: 'red' },
   draw: make({
     cols: ROOTED_COLS, vine: 'blood1', stretch: hunch, body: { claw: 4.6 },
-    before: (px, r) => tendrils(px, r, 'blood1', 2, 12),
+    before: (px, r, _pose, phase) => tendrils(px, r, 'blood1', 2, 12, phase),
     dress(px, r) {
       veins(px, r, 'blood1', 'red');
       if (!r.lift) for (const t of r.legs) { const [fx, fy] = t[2]; px.line(fx - 1, fy, fx - 5, fy + 1, 'blood1').line(fx + 2, fy, fx + 6, fy + 1, 'blood1'); }

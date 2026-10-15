@@ -29,6 +29,40 @@ const NIGHT: Recolor = {
 };
 /** Trees sit darker than the ground around them: the same colors at about half the brightness. */
 const TREE_SCALE: Partial<Record<ColorName, number>> = { pine0: 0.5, pine1: 0.5, pine2: 0.55, pine3: 0.62, leaf: 0.6 };
+/**
+ * The Lab at midnight (stage 2.3): the pale panels and steel are dim blue-greys, near the school's floors in brightness, so the pools of the
+ * lamps and bulbs do the lighting. Paint and the reds it carries are dimmed too: the flesh is the quiet part of that stage, and a lamp or a
+ * lit sign is a small thing. Layered over NIGHT.
+ */
+const LAB_NIGHT: Recolor = {
+  white: [46, 56, 80], bone: [34, 42, 62], mist: [40, 50, 74], grey3: [22, 28, 44], grey2: [16, 20, 34], grey1: [9, 12, 22],
+  slate: [26, 34, 56], dusk: [18, 24, 42], shadow: [11, 15, 28], teal1: [8, 34, 50],
+  yellow: [150, 128, 48], amber: [110, 84, 32],
+};
+/** The reds of the overrun Lab, a step down from the day reds: the flesh and what has grown into the Lab stay the quiet part of the picture. */
+const OVERRUN: Recolor = {
+  blood0: [40, 8, 16], blood1: [84, 12, 26], red: [124, 22, 36], hot: [170, 44, 52], pink: [150, 84, 108], rose: [120, 52, 74],
+};
+/** A lump of growth or a vine in the overrun Lab is flesh too: the reds drop to the flesh's own, so the edge where it meets the Lab stays quiet. */
+const GROWTH: Recolor = {
+  blood0: [26, 5, 12], blood1: [44, 8, 18], red: [64, 12, 24], hot: [80, 20, 30], pink: [86, 50, 66], rose: [70, 32, 46],
+};
+/** The tiles of Hawkins Lab and the stage 2.3 dressing that only the Lab has. */
+const LAB = new Set<TileName>([
+  'labfloor', 'labfloor2', 'hazard', 'labwall', 'labcap', 'vent', 'pipe', 'glass', 'cage', 'locker', 'cabinet', 'shelf',
+  'cable', 'drain', 'stain', 'tilegreen', 'carpet', 'plate', 'wallsign',
+]);
+/** Dressing that the school uses at night too (a mass, vines, a bench in the gym): dim only where it sits against the Lab or its flesh. */
+const SHARED = new Set<TileName>(['mass', 'vines', 'bench']);
+const FLESH = new Set<TileName>(['fleshfloor', 'fleshwall', 'tear']);
+
+/** True for a tile that gets the Lab's night colors. */
+export function labNight(name: TileName, c: TileCtx): boolean {
+  if (LAB.has(name)) return true;
+  if (!SHARED.has(name)) return false;
+  return Object.values(c.near).some((n) => LAB.has(n) || FLESH.has(n));
+}
+
 /** The flowers glow: bioluminescent petals, not daylight ones. */
 const FLOWERS: Recolor = { white: [120, 255, 230], pink: [255, 120, 210], yellow: [255, 236, 120], magenta: [255, 90, 220] };
 /** Road paint is not a light, so at night it dims like everything else. */
@@ -48,6 +82,9 @@ function mapOf(...layers: Recolor[]): Map<number, number> {
 const NIGHT_MAP = mapOf(NIGHT);
 const FLOWER_MAP = mapOf(NIGHT, FLOWERS);
 const ROAD_MAP = mapOf(NIGHT, ROAD_PAINT);
+const LAB_MAP = mapOf(NIGHT, LAB_NIGHT, OVERRUN);
+const FLESH_MAP = mapOf(NIGHT, OVERRUN);
+const GROWTH_MAP = mapOf(NIGHT, LAB_NIGHT, GROWTH);
 const scale = (c: Rgb, f: number): Rgb => [Math.round(c[0] * f), Math.round(c[1] * f), Math.round(c[2] * f)];
 const TREE_MAP = (() => {
   const dark: Recolor = {};
@@ -127,7 +164,7 @@ export function nightTile(day: Px, name: TileName, c: TileCtx): Px {
       out.d[i] = ((canopy[i] ? TREE_MAP : NIGHT_MAP).get(v)) ?? v;
     }
   } else {
-    remap(out.d, name === 'roadline' ? ROAD_MAP : name === 'flowers' ? FLOWER_MAP : NIGHT_MAP);
+    remap(out.d, name === 'roadline' ? ROAD_MAP : name === 'flowers' ? FLOWER_MAP : FLESH.has(name) ? FLESH_MAP : labNight(name, c) ? (SHARED.has(name) && name !== 'bench' ? GROWTH_MAP : LAB_MAP) : NIGHT_MAP);
   }
   if (name === 'flowers') petalGlow(out.d, day.d);
   detail(out.d, name, c, canopy);

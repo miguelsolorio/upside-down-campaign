@@ -45,13 +45,14 @@ function edgeHash(c: TileCtx, side: Side, salt: number): number {
  * The sides a growth leaves by. Toward a peer only when the edge between the two tiles is switched on (decided the same from either
  * side, so the arm is there on both or neither), which makes a branching network and not a lattice; toward a wall by the tile's own
  * hash, since a wall draws nothing back. When nothing is switched on one side is chosen from the tile's place, and `lone` tells the
- * caller so it can taper that arm short of the edge.
+ * caller so it can taper that arm short of the edge. `peers` may be a function of the side, which must give the same answer for both tiles
+ * of an edge (take it from the edge's own place), so a growth can be denser or lean one way in one part of the map.
  */
-export function armsOf(c: TileCtx, link: (n: TileName) => Link, peers = 65, walls = 55, salt = 3): { sides: Side[]; lone: boolean } {
+export function armsOf(c: TileCtx, link: (n: TileName) => Link, peers: number | ((s: Side) => number) = 65, walls = 55, salt = 3): { sides: Side[]; lone: boolean } {
   const sides = SIDES.filter((s) => {
     const k = link(nearOf(c, s));
     if (k === 'none') return false;
-    return k === 'peer' ? edgeHash(c, s, salt) < peers : hash2(c.tx, c.ty, 90 + salt * 5 + SIDES.indexOf(s)) % 100 < walls;
+    return k === 'peer' ? edgeHash(c, s, salt) < (typeof peers === 'number' ? peers : peers(s)) : hash2(c.tx, c.ty, 90 + salt * 5 + SIDES.indexOf(s)) % 100 < walls;
   });
   if (sides.length) return { sides, lone: false };
   return { sides: [SIDES[hash2(c.tx, c.ty, 19) & 3] as Side], lone: true };

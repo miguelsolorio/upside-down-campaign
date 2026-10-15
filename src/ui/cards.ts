@@ -54,8 +54,11 @@ const BULBS = 15;
 /** Frame where the menu appears. Confirm or a click before that just gets there faster. */
 const MENU_AT = 150;
 
-/** "The lights went out." A string of bulbs dies one by one, then retry or quit. */
-export function createGameOverScene(opts: { onRetry(): void; onQuit(): void }): Scene {
+/**
+ * "The lights went out." A string of bulbs dies one by one, then retry or quit. `reason` is a short line under the title
+ * for a loss that isn't the party going down, such as ELEVEN IS DOWN when the ward falls in a defense.
+ */
+export function createGameOverScene(opts: { onRetry(): void; onQuit(): void; reason?: string }): Scene {
   let t = 0;
   let chosen = false;
   const pick = (fn: () => void) => (): void => {
@@ -96,6 +99,7 @@ export function createGameOverScene(opts: { onRetry(): void; onQuit(): void }): 
       const a = Math.max(0, Math.min(1, (t - 100) / 30));
       inFrame(ctx, () => {
         bigText(ctx, 'THE LIGHTS WENT OUT.', 128, 100, rampAt(RAMP_RED, a), 2, 'center', false);
+        if (opts.reason && a >= 1) drawText(ctx, opts.reason, 128, 120, 'mist', { align: 'center' });
         if (t >= MENU_AT) drawMenu(ctx, menu, 96, 140, 64, t, 13);
       });
     },

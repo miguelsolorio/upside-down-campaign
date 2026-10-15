@@ -134,10 +134,10 @@ export const STAGE_32: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
-  // Measured with node scripts/measure-stage.ts 3.2 chief 20 [--careless] at the chapter 3 numbers (the soldier 90/38, Grigori 1200 HP).
-  // Chief clears 18 of 20 (83 of 100, none stuck) for about 239 damage, 0.95 KOs, 41% lowest HP and 101 s, the fight 45 s of it; kid
-  // 20, upside 7 (44 of 100), the party without a shooter 17 of 20 in 162 s. The careless bot clears none: it reaches Grigori in 8 of 20
-  // and he beats it, since it never circles his front guard. Lower numbers cut the run under 90 s, higher ones put upside under 4 of 20.
-  enemyMult: 1.15,
+  // Measured with node scripts/measure-stage.ts 3.2 chief 20 [--careless] after the lead's Grigori pass (his guard drops while he
+  // recovers, softer hits, two soldiers called at half HP; rifle rounds at power 0.3), with the party a chained run brings (Mike 6,
+  // Eleven 5, Robin 4, Nancy 4). Chief clears 16 of 20 (90 of 100, none stuck) for about 282 damage, 1.15 KOs, 37% lowest HP and 101 s,
+  // the fight 44 s of it; careless 17, kid 20, upside 7. A party without a shooter clears 19 of 20 in about 160 s.
+  enemyMult: 1,
   waypoints: WAYPOINTS,
 };

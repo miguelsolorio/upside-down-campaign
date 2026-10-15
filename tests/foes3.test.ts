@@ -36,7 +36,7 @@ test('the numbers: what docs/level-7.md and docs/level-8.md say', () => {
   assert.deepEqual([f.hp, f.atk, f.def, f.speed, f.xp, f.windup, f.power], [140, 40, 4, 0.55, 11, 22, 0.8]);
   assert.deepEqual([f.x.range, f.x.reachT, f.x.recover, f.x.hold, f.x.eliteHold, f.x.kb, f.x.rise], [30, 10, 40, 40, 50, 3, 40]);
   assert.equal(f.x.reachSpeed, 2.4);
-  assert.deepEqual([so.hp, so.atk, so.def, so.speed, so.xp, so.windup, so.power, so.cooldown], [90, 38, 5, 0.8, 12, 30, 0.45, 120]);
+  assert.deepEqual([so.hp, so.atk, so.def, so.speed, so.xp, so.windup, so.power, so.cooldown], [90, 38, 5, 0.8, 12, 30, 0.3, 120]);
   assert.deepEqual([so.x.near, so.x.far, so.x.panic, so.x.back, so.x.speed, so.x.range, so.x.burst, so.x.eliteBurst, so.x.gap, so.x.recover], [80, 120, 60, 0.7, 3.2, 180, 3, 5, 6, 50]);
   assert.deepEqual([so.x.butt, so.x.buttWindup, so.x.buttPower, so.x.buttKb], [22, 20, 0.8, 3]);
 });

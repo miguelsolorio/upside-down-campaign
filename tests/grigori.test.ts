@@ -13,10 +13,10 @@ import { beginHold } from '../src/enemies/hold.ts';
 
 const hurt = (ev: SimEvent[]) => ofType(ev, 'hit').filter((h) => !h.onEnemy);
 test('the numbers: what docs/level-8.md says, with HP up from its 800 (see the note in enemies/defs.ts)', () => {
-  assert.deepEqual([GRIGORI.hp, GRIGORI.atk, GRIGORI.def, GRIGORI.speed, GRIGORI.xp, GRIGORI.windup, GRIGORI.power], [1200, 26, 8, 0.7, 80, 30, 1.2]);
+  assert.deepEqual([GRIGORI.hp, GRIGORI.atk, GRIGORI.def, GRIGORI.speed, GRIGORI.xp, GRIGORI.windup, GRIGORI.power], [1200, 12, 8, 0.7, 80, 30, 1]);
   assert.deepEqual([GX.reach, GX.arc, GX.kb, GX.range, GX.recover, GX.rageRecover, GX.block, GX.rageAt, GX.rageSpeed], [32, 70, 5, 28, 50, 36, 0.25, 0.5, 0.9]);
-  assert.deepEqual([GX.grabEvery, GX.grabLow, GX.grabMin, GX.grabMax, GX.grabWindup, GX.lungeT, GX.lungeSpeed, GX.holdT, GX.throwPower, GX.throwKb], [220, 160, 30, 80, 24, 12, 3.5, 45, 1, 6]);
-  assert.deepEqual([GX.stunT, GX.stunHp, GX.stunMul], [180, 0.08, 1.5]);
+  assert.deepEqual([GX.grabEvery, GX.grabLow, GX.grabMin, GX.grabMax, GX.grabWindup, GX.lungeT, GX.lungeSpeed, GX.holdT, GX.throwPower, GX.throwKb], [220, 160, 30, 80, 24, 12, 3.5, 45, 0.7, 6]);
+  assert.deepEqual([GX.stunT, GX.stunHp, GX.stunMul, GX.call], [180, 0.08, 1.5, 2]);
 });
 
 // ------------------------------------------------------------------ the boss bar
@@ -40,6 +40,7 @@ test('boss bar: nothing while he sleeps, then GRIGORI with his HP, and nothing a
 test('front guard: a hit from inside 70 degrees of his front does a quarter, with the block sfx and a BLOCK floater; from the side or behind, full', () => {
   const r = gRig();
   park(r, tc(9), tf(6));
+  r.g.move = 'walk';
   r.boss.dir = 'right';
   const full = damageRange(1, r.hero.st.atk, GRIGORI.def);
   const quarter = { min: Math.max(1, Math.round(full.min * 0.25)), max: Math.max(1, Math.round(full.max * 0.25)) };
@@ -57,9 +58,32 @@ test('front guard: a hit from inside 70 degrees of his front does a quarter, wit
   assert.ok(r.s.floaters.some((f) => f.text === 'BLOCK'), 'a BLOCK floater');
 });
 
+test('front guard: it is down while he recovers, so a hit from the front does full damage then', () => {
+  const r = gRig();
+  park(r, tc(9), tf(6));
+  r.boss.dir = 'right';
+  const full = damageRange(1, r.hero.st.atk, GRIGORI.def);
+  const h = strike(r, 0);
+  assert.ok(h.dmg >= full.min && h.dmg <= full.max, `recovering, front: ${h.dmg}, expected ${full.min} to ${full.max}`);
+  assert.ok(!h.sounds.includes('block'), 'no block while he recovers');
+});
+
+test('rage: at half HP he calls two soldiers into the chamber, once', () => {
+  const r = gRig();
+  r.boss.hp = Math.floor(r.boss.hpMax * GX.rageAt) - 1;
+  r.sim.step(idle());
+  const called = () => r.s.enemies.filter((e) => e.kind === 'soldier' && !e.dead).length;
+  assert.equal(called(), GX.call, 'two soldiers come in');
+  assert.ok(r.s.enemies.filter((e) => e.kind === 'soldier').every((e) => e.xp === 1 && e.aware), 'run-time spawns: awake, 1 XP');
+  r.boss.hp -= 10;
+  r.sim.step(idle());
+  assert.equal(called(), GX.call, 'only once');
+});
+
 test('front guard: a hit does not stagger him, and a blocked hit neither crits nor spends Mike\'s fiat crit', () => {
   const r = gRig();
   park(r, tc(9), tf(6));
+  r.g.move = 'walk';
   r.boss.dir = 'right';
   r.s.armed = true;
   r.hero.x = r.boss.x + 20; r.hero.y = r.boss.y;

@@ -17,7 +17,7 @@ One stage, five to eight minutes, and the start of chapter 3 (Starcourt, July 19
 - Light: `time: 'night'`, the mall after closing (the owner picked Confetti): pools at `lights` entries on the neon shop signs, the fountain and the exit signs, and at the lights props.
 - Music: `starcourt`.
 - Party: picked on the map from Mike, Dustin, Lucas, Will, Eleven, Max, Steve, Robin and Nancy (see "Party picks" in `docs/map-screen.md`). Nobody is locked. `?stage=3.1` starts Mike (lead) at Lv 6, Eleven 5, Robin 4 and Nancy 4 (`ARRIVAL` in `core/campaign.ts`), a little ahead of a real run, as 2.2's was.
-- `enemyMult`: start at 1 on the chapter 3 enemy numbers and set it by measuring (see "Targets").
+- `enemyMult: 1.75` (see "Result").
 - Dialogue is off by default. Gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
 
 ## Rooms
@@ -109,7 +109,7 @@ Nancy is a Gunslinger, in `heroes/nancy.ts`, and `HERO_DEFS.nancy` replaces the 
 
 ## New enemies
 
-HP, ATK and DEF are sized for the party that really arrives at chapter 3, so the chapter's stages keep `enemyMult` near 1, as chapter 2 did. A chained bot run through 1.1 to 2.3 ends with Mike at Lv 6, Dustin and Lucas at 5, Eleven, Max and Steve at 4 and Will at 3, so the recruit rule brings Robin and Nancy in at Lv 3. A Lv 6 Mike has about 83 HP and 16 ATK. Numbers are starting points. Tune them inside "Targets", not the targets themselves.
+HP, ATK and DEF are sized for the party that really arrives at chapter 3, so the factors stay near where earlier stages sit (1.75 for 3.1, 1 for 3.2). A chained bot run through 1.1 to 2.3 ends with Mike at Lv 6, Dustin and Lucas at 5, Eleven, Max and Steve at 4 and Will at 3, so the recruit rule brings Robin and Nancy in at Lv 3. A Lv 6 Mike has about 83 HP and 16 ATK. Numbers are starting points. Tune them inside "Targets", not the targets themselves.
 
 | Enemy | HP | ATK | DEF | Speed | XP | Behavior |
 |---|---|---|---|---|---|---|
@@ -197,15 +197,15 @@ The owner picks the look before Art builds. Art makes three standalone pages at 
 
 ## Result
 
-Measured with `node scripts/measure-stage.ts 3.1` at `enemyMult` 1.7. "Boss" in the script's output is the ambush.
+Measured with `node scripts/measure-stage.ts 3.1` at `enemyMult` 1.75. "Boss" in the script's output is the ambush.
 
 | | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
 |---|---|---|---|---|---|
-| Cleared | 18 | 86, none stuck | 18 | 20 | 8 |
-| Damage taken | 262 | 267 | 251 | 130 | 350 |
-| KOs | 1.6 | 1.65 | 1.35 | 0.55 | 3.2 |
-| Lowest party HP | 36% | 32% | 35% | 72% | 13% |
-| Time | 98 s | 98 s | 98 s | 88 s | 101 s |
+| Cleared | 17 | 83, none stuck | 19 | 19 | 8 |
+| Damage taken | 234 | 256 | 229 | 149 | 372 |
+| KOs | 1.65 | 1.76 | 1.3 | 1.1 | 3.35 |
+| Lowest party HP | 38% | 34% | 39% | 64% | 11% |
+| Time | 101 s | 100 s | 103 s | 88 s | 106 s |
 
 Stage XP is 207.
 
@@ -213,8 +213,7 @@ Stage XP is 207.
 - **Now:**
   - The rat has 50 HP and 40 ATK and lunges from 34 px.
   - The Flayed has 140 HP and 40 ATK, reaches from 30 px and shambles through light hits, so knockback really is the counter.
-  - The soldier has 90 HP and 38 ATK.
-  - The stage sits at 1.7, like 1.3.
+  - The soldier has 90 HP and 38 ATK, and fires rounds of power 0.3 (see `docs/level-8.md`, "Result").
+  - The stage sits at 1.75, about where 1.3 is.
 - **The roster is smaller than the spec's,** to keep the XP inside 170 to 210: 21 melting rats, seven Flayed and two soldiers.
 - **The ambush is about a quarter of the run,** like the other ambush stages.
-

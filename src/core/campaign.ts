@@ -78,9 +78,10 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '2.2': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
   '2.3': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
   // A chained bot run brings Mike to 3.1 at Lv 6 with the bench at 4 and 5, and the recruit rule makes Robin and Nancy Lv 3.
-  // The jump is a little ahead of that, as 2.2's is. 3.2's is provisional until a chained run through 3.1 sets it.
+  // The jump is a little ahead of that, as 2.2's is. A chained run from 3.1's jump into 3.2 keeps those levels (with more XP
+  // banked), so 3.2's jump is the same four.
   '3.1': [{ id: 'mike', level: 6 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 4 }, { id: 'nancy', level: 4 }],
-  '3.2': [{ id: 'mike', level: 7 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 5 }, { id: 'nancy', level: 5 }],
+  '3.2': [{ id: 'mike', level: 6 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 4 }, { id: 'nancy', level: 4 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

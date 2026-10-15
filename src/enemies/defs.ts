@@ -157,28 +157,30 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // instead, with buttWindup, buttPower, buttKb, buttReach, buttRecover and buttGap (frames between butts).
   soldier: {
     kind: 'soldier', name: 'Soldier', hp: 90, atk: 38, def: 5, speed: 0.8, xp: 12, aggro: 130,
-    windup: 30, power: 0.45, cooldown: 120, drop: 0.3, weight: 1.2,
+    windup: 30, power: 0.3, cooldown: 120, drop: 0.3, weight: 1.2,
     x: {
       near: 80, far: 120, panic: 60, back: 0.7, stamina: 50, speed: 3.2, range: 180, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6,
       recover: 50, butt: 22, buttWindup: 20, buttPower: 0.8, buttKb: 3, buttReach: 28, buttRecover: 30, buttGap: 60, patrol: 0.5, lose: 240,
     },
   },
   // The 3.2 mini-boss (enemies/grigori.ts, grigori_hit.ts). Walk, windup, power and cooldown are the haymaker's. HP is up from the spec's
-  // 800 to 1200: the careful bot never takes a hit from him, so the fight is all HP against how fast it can flank, and at 800 it took a
-  // shooter's party 21 s (four stuns) and a party with none 49 s. At 1200 it is 29 s and 73 s in the 18 by 12 test chamber on chief.
+  // 800 to 1200: the careful bot never takes a hit from him, so the fight is all HP against how fast it can flank. His hits are down
+  // from 26 ATK and power 1.2 (a throw of 1.0) to 12, 1.0 and 0.7, his guard drops while he recovers, and at half HP he calls `call`
+  // soldiers: at the first numbers the careless bot, which stands in front and never dodges, cleared 3.2 0 times in 20. On the stage at
+  // enemyMult 1 he takes about 44 s on chief with a shooter's party and 95 s with none.
   // reach, arc (half angle in degrees), kb: the haymaker. range: px at which he commits to one. recover and rageRecover: frames after it.
   // hold: px he stops short of the hero. block: the share of a hit that gets through his front (arc is the same half angle).
   // rageAt: the HP share that enrages him, rageSpeed his walk then. grabFirst, grabEvery and grabLow (enraged): frames between grabs,
   // grabMin and grabMax: the hero's distance band. grabWindup, lungeT and lungeSpeed: the lunge. holdT: frames he holds. throwPower
   // and throwKb: the throw. grabRecover: frames after a miss or a throw. stunT: frames stunned on the power box, stunHp: the share of
-  // his max HP it takes, stunMul: damage taken meanwhile.
+  // his max HP it takes, stunMul: damage taken meanwhile. call: soldiers he calls in when he rages.
   grigori: {
-    kind: 'grigori', name: 'Grigori', hp: 1200, atk: 26, def: 8, speed: 0.7, xp: 80, aggro: 200,
-    windup: 30, power: 1.2, cooldown: 100, drop: 1, weight: 4,
+    kind: 'grigori', name: 'Grigori', hp: 1200, atk: 12, def: 8, speed: 0.7, xp: 80, aggro: 200,
+    windup: 30, power: 1, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 32, arc: 70, kb: 5, range: 28, recover: 50, rageRecover: 36, hold: 18, block: 0.25, rageAt: 0.5, rageSpeed: 0.9,
       grabFirst: 150, grabEvery: 220, grabLow: 160, grabMin: 30, grabMax: 80, grabWindup: 24, lungeT: 12, lungeSpeed: 3.5, holdT: 45,
-      throwPower: 1, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5,
+      throwPower: 0.7, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5, call: 2,
     },
   },
 };

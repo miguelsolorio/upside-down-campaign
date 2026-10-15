@@ -16,6 +16,7 @@ import type { Enemy, GrigoriState, Hero, S } from '../combat/state.ts';
 import { angleDiff, dist, los, moveBody } from '../combat/space.ts';
 import { dust, floater, flashScreen, sfx, shake, sparks } from '../combat/fx.ts';
 import { alertEnemy, hurtHero } from '../combat/damage.ts';
+import { bringUp, howlSpots } from '../combat/spawns.ts';
 import { speedMul } from '../combat/status.ts';
 import { ENEMY_DEFS } from './defs.ts';
 import { beginHold, canGrab, isHolding, releaseHold } from './hold.ts';
@@ -106,6 +107,9 @@ function throwHero(s: S, e: Enemy, g: GrigoriState, hero: Hero): void {
 // ---------------------------------------------------------------- the brain
 function rage(s: S, e: Enemy, g: GrigoriState): void {
   g.raged = true;
+  // He calls his men: X.call soldiers come in round him, run-time spawns like the Alpha's pack (1 XP each, never skipped on a retry).
+  // A careful player sidesteps every haymaker, so without them the second half of the fight never threatened anyone.
+  if (X.call > 0) bringUp(s, 'howl', 'guards', 'soldier', undefined, howlSpots(s, e.x, e.y), X.call);
   floater(s, 'RAGE', e.x, e.y - 34, 'hot', true, 60);
   sfx(s, 'roar');
   shake(s, 4);

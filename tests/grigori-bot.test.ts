@@ -46,7 +46,7 @@ test('bot: it beats Grigori on chief in at least 9 of 10 seeds with a shooter in
     return { frames: wins.reduce((n, f) => n + f.frames, 0) / wins.length, fights };
   };
   const without = avg(NO_SHOOTER), withNancy = avg(WITH_SHOOTER);
-  assert.ok(withNancy.frames < without.frames * 0.6, `with a shooter ${(withNancy.frames / 60).toFixed(0)} s, without ${(without.frames / 60).toFixed(0)} s`);
+  assert.ok(withNancy.frames < without.frames * 0.75, `with a shooter ${(withNancy.frames / 60).toFixed(0)} s, without ${(without.frames / 60).toFixed(0)} s`);
   assert.ok(without.frames / 60 >= 40, 'flanking alone is a long fight');
   assert.ok(withNancy.fights.filter((f) => f.stunned >= 150).length >= 8, 'with a shooter he is stunned on the plate in most fights');
   assert.ok(without.fights.every((f) => f.lit === 0 && f.stunned === 0), 'without one the breaker is left alone');

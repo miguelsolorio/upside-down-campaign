@@ -26,8 +26,13 @@ export function grigoriPose(g: GrigoriState): ActorView['pose'] {
 
 export const grigoriStunned = (e: Enemy): boolean => e.grigori?.move === 'stun';
 
-/** His front guard is up: awake and not stunned. */
-export const grigoriGuards = (e: Enemy): boolean => e.grigori !== null && !e.dead && !e.dormant && e.grigori.move !== 'stun';
+/**
+ * His front guard is up: awake, not stunned and not recovering. The recovery after a haymaker or a throw is the opening the spec
+ * names, and he takes full damage from every side in it, not only from behind. With the guard up through it, a player who stands in
+ * front and swings (the careless bot) never won: 0 of 20 on the stage.
+ */
+export const grigoriGuards = (e: Enemy): boolean =>
+  e.grigori !== null && !e.dead && !e.dormant && e.grigori.move !== 'stun' && e.grigori.move !== 'recover';
 
 /** How much of a hit he takes on top of the front guard: half again while stunned. */
 export const grigoriTakes = (e: Enemy): number => (grigoriStunned(e) ? X.stunMul as number : 1);

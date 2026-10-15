@@ -18,7 +18,8 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Art build (Max, Steve, Hopper, the Alpha, the tunnels and flesh tiles, gap, crack, rift, the new fx, sheet pages 18 to 24), UI build (the Grid picks panel, the ward bar), Audio (six effects, two stingers, two blips, a saw voice), flow glue (picks remembered in progress)
 - [x] Art fix for 2.3: dark flesh with thin veins toward the rift, thin dark tears, dim Lab tiles at night. The other stages' tiles are unchanged (tile hashes match)
 - [x] Verified: typecheck clean, 972 tests pass, the production build passes. In the browser the map opens on The Tunnels, the Grid panel locks Max, a changed pick (Will lead, Steve out) starts 2.2 with that party and is remembered, LEVEL 5 CLEAR leads to the map, and 2.3's panel swaps Steve in for Max. The defense shows ELEVEN and the seconds left. No console errors on a clean load of the title, 2.2, 2.3 and the sheet
-- [ ] Feedback on Levels 5 and 6, then merge into main (the owner's call)
+- [x] Merged into main with main's playable arcade cabinets brought in first: typecheck clean, 1046 tests pass, 2.1 to 2.3 run with no console errors
+- [ ] Feedback on Levels 5 and 6
 
 ## Status
 
@@ -89,4 +90,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Stages 2.2 (the tunnels, `upside` track) and 2.3 (the Gate and the Demodog Alpha), with Max joining in 2.2. Then chapters 3 to 5, the other heroes, the shop and party picks, bonds, the remaining tracks, docs polish.
+Chapter 3, Starcourt (1985): 3.1 the mall concourse, 3.2 the Russian base, 3.3 the food court and the Mind Flayer, with Robin and Nancy joining, Erica's shop, and Hopper leaving the party. Then chapters 4 and 5, the other heroes, bonds, the remaining tracks, docs polish.

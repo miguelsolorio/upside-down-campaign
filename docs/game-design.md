@@ -106,7 +106,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
 | Crit | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
-| Pause | Esc / P | Party, items, settings |
+| Pause | Esc / P | Character sheet (also a click on the HUD's name and level), settings. Items later |
 
 Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
 

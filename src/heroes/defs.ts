@@ -84,7 +84,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'Farrah spray', mp: 8, cd: 40, power: 0.45, dur: 30, at: 8, lock: 0.25, reach: 54, kb: 0.6, sfx: 'flame',
       // half: cone half angle in degrees. life and tick in frames. burn: burn frames. burnTick: frames between burn ticks.
-      x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30 },
+      // burnAtk: each burn tick deals this much of Dustin's ATK, ignoring DEF.
+      x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30, burnAtk: 0.22 },
     },
     talent: TALENTS.dustin,
   },

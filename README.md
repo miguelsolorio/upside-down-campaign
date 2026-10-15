@@ -19,6 +19,7 @@ An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement
 | `1` to `4` | Pick a hero |
 | `Space` or `Enter` | Light Joyce's Christmas lights, or Crit when the d20 is full. Advances dialogue |
 | `Esc` or `P` | Pause and settings |
+| Click your hero's level | Character sheet: every hero's stats and damage. Also in the pause menu |
 | `T` | Skip dialogue |
 | `M` | Mute |
 

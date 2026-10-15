@@ -151,6 +151,7 @@ The lead and Dustin don't move and nothing wipes more. With the recruits a level
 - [x] Music: `upside` (1.3), `clock` (every boss), `hawkins` (map and 2.1), each with base and combat layers. Eight new effects and Will's stinger
 - [x] Verified: typecheck clean, 704 tests pass. In the browser the bot clears 1.3 (1:40, 140 XP), the map shows chapter two with Will in the party, and the bot clears 2.1 (1:45, 157 XP). No console errors on the title, 1.3 or 2.1
 - [x] Chapter 2 enemy numbers: the demodog, vine and pod are sized for a Lv 5 party in `enemies/defs.ts`, and 2.1's `enemyMult` is back to 1.15 from 3.15. Chapter 1 enemies and stages are unchanged. Typecheck clean, 777 tests pass, and the bot clears 2.1 in the browser (1:55, 157 XP). See `docs/level-4.md`, "New enemies" and "Result"
+- [x] README brought up to date with main before the next deploy (Levels 1 to 8, nine heroes and the picks, Erica's cart, controller rebinding and rumble, the dark Game Boy, pausing on focus loss), with two real screenshots, `public/social/starcourt.png` and `picks.png`, and the stale lines in `docs/development.md` fixed
 - [ ] Feedback on Levels 1 to 4, then the rest
 
 ## Known rough edges

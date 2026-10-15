@@ -39,7 +39,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Eleven, Robin and Nancy for 3.1 and 3.2 |
+| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Dustin, Robin and Nancy for 3.1 and 3.2 |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
@@ -47,7 +47,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 
 ## Social cards and app icon
 
-The link preview and the images in the README come from the game's own sprites, portraits, logo, tiles, effects and HUD, so redraw them whenever the HUD, the corner controls or the art change. The app icon is the game's d20, in crimson on a blue glow.
+The link preview and most of the images in the README come from the game's own sprites, portraits, logo, tiles, effects and HUD, so redraw them whenever the HUD, the corner controls or the art change. The app icon is the game's d20, in crimson on a blue glow.
 
 To redraw them all, run the dev server from the checkout you're committing in, open http://127.0.0.1:5173/social.html and press Save all. The save endpoint writes relative to the directory the server started in, so another checkout's server writes into that checkout. The cards land in `public/social`, the icon in `public/icons` and `public/favicon.ico`, and the build copies them as they are. Cards that haven't changed come out byte for byte the same.
 
@@ -56,7 +56,11 @@ To redraw them all, run the dev server from the checkout you're committing in, o
 | `og.png` | 1200 × 630 | `og:image` and `twitter:image` in `index.html`, and the README |
 | `fight.png` | 1200 × 630 | The README |
 | `party.png` | 1200 × 630 | The README |
+| `starcourt.png` | 1200 × 672 | The README. A real frame of the game, not drawn by `social.html` |
+| `picks.png` | 768 × 672 | The README. A real frame of the game, not drawn by `social.html` |
 | `github.png` | 1280 × 640 | The repo's social preview. GitHub doesn't read it from the repo, so upload it in the repo settings |
+
+Save all leaves `starcourt.png` and `picks.png` alone. They are frames of the running game (`__ud.frame`, the 1x canvas) scaled up by three and posted to `/__snap?dir=social&name=starcourt`, so retake them when the HUD, the map or the Starcourt art changes, with `?mute=1` on the URL. `starcourt.png` is the bot's run through the mall's fountain court (`?mute=1&rush=1&bot=1&stage=3.1&seed=7`, in a 1200 × 672 window so the screen is 400 px wide). `picks.png` is the party panel on the map for stage 3.2 with all nine heroes met, cropped to the map's 256 px.
 
 | Icon file | Size | Used for |
 | --- | --- | --- |
@@ -98,5 +102,6 @@ Besides `index.html`, the HTML pages at the root are dev-only review pages that 
 - `header-variations.html` holds eight layouts for the active hero's name, XP, MP, coins and Crit meter.
 - `map-variations.html` holds the five Hawkins map designs; design 4, Two Hawkins, is the one in the game.
 - `touch-controls.html` shows the touch controls on phone frames.
+- The rest are the sheets each build pass was picked from, such as `heroes2-variations.html` and `picks-variations.html` (chapter 2), `shell-variations.html` (the dark Game Boy), and `heroes3-variations.html`, `grigori-variations.html` and `mall-variations.html` (chapter 3). The chapter 4 sheets are listed in `docs/chapter-4.md`.
 
 The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests, and two scripts play it headlessly: `node scripts/measure-stage.ts 1.3 chief 20` measures one stage (see "Measuring" in `docs/level-2.md`), and `node scripts/measure-campaign.ts chief 20` plays the whole run with the party carried and prints the levels after each stage (`docs/pace.md`). The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.

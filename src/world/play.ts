@@ -349,7 +349,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const p = sim.heroPos();
         director.tick((p.x / TILE) | 0, ((p.y - 4) / TILE) | 0);
         if (!leftHome && Math.hypot(p.x - stage.start.x, p.y - stage.start.y) > HOME_RADIUS) leftHome = true;
-        puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: puzzleProps(stage.puzzles, view.props, view.actors, foes), hero: p });
+        puzzles.tick({
+          hasFired: director.hasFired, busy: director.busy(), props: puzzleProps(stage.puzzles, view.props, view.actors, foes), hero: p,
+          party: view.hud.party.map((m) => m.id),
+        });
       }
       if (scare) stepScare(scare);
       // No lighting mid-boss: the save would hold a fired beat for a fight the retry puts back to sleep.

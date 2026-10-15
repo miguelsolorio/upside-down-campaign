@@ -374,20 +374,20 @@ test("Eleven's vocabulary grows with her level", () => {
   assert.ok(high > low, 'her level-up line is fuller from level 6');
 });
 
-test('a touch player is never told to press a key or a controller button', () => {
+test('a touch player is never told to press a key or a controller button, only the Game Boy on screen', () => {
   try {
     setPromptDevice('touch');
     for (const l of allLines) {
       const shown = keyText(l.text);
       assert.ok(!/\{|\}/.test(shown), `${l.id}[${l.i}] has an unfilled token: ${shown}`);
-      assert.ok(!/\b(WASD|SPACE|TAB|SHIFT|ESC|LB|RB|VIEW|START|D-pad|[JKLQEUVXYZC])\b/.test(shown), `${l.id}[${l.i}] names a key or pad button: ${shown}`);
+      assert.ok(!/\b(WASD|SPACE|TAB|SHIFT|ESC|LB|RB|VIEW|stick|[JKLQEUVXYZC])\b/.test(shown), `${l.id}[${l.i}] names a key or pad button: ${shown}`);
     }
     const text = (id: string): string => keyText((SCRIPTS[id]?.lines ?? []).map((l) => l.text).join(' '));
     assert.match(text('l1_tut_attack'), /\bA attacks\b/);
     assert.match(text('l1_tut_special'), /\bB is your special\b/);
-    assert.match(text('l1_tut_swap'), /The arrows cycle through us\. Or tap a face up top to pick\./);
-    assert.match(text('l1_start'), /the stick to move/);
-    assert.match(text('l1_gate_hint'), /with an arrow/);
+    assert.match(text('l1_tut_swap'), /Taps on SWAP cycle through us\. Or tap a face up top to pick\./);
+    assert.match(text('l1_start'), /the D-pad to move/);
+    assert.match(text('l1_gate_hint'), /with the SWAP key/);
     assert.match(text('l2_lockdown_start'), /press the d20/);
   } finally {
     setPromptDevice('keyboard');

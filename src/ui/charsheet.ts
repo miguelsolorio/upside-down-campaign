@@ -112,7 +112,7 @@ export function createCharSheetScene(opts: { heroes: () => CharSheetHero[]; star
 
   const backLabel = (): string => {
     const device = getPromptDevice();
-    return device === 'gamepad' ? 'B BACK' : device === 'touch' ? 'BACK' : 'ESC BACK';
+    return device === 'keyboard' ? 'ESC BACK' : 'B BACK';
   };
   const switchHint = (): string => {
     const device = getPromptDevice();

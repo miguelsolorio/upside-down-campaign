@@ -57,11 +57,10 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
         bigText(ctx, 'PAUSED', 128, 30, 'yellow', 2, 'center', true);
         drawPanel(ctx, 36, 48, 184, 132, 'menu');
         drawMenu(ctx, menu ?? build(g), 48, 56, 160, t);
-        // Escape always works on a keyboard. On a controller the back button does. On a touch screen, PAUSE again.
+        // Escape always works on a keyboard. On a controller and on the touch screen's Game Boy, B does.
         const key = labelOf('pause');
-        const device = getPromptDevice();
-        const back = device === 'gamepad' ? 'B' : 'ESC';
-        const hint = device === 'touch' ? 'TAP PAUSE TO RESUME' : key === back ? `${back} TO RESUME` : `${key} OR ${back} TO RESUME`;
+        const back = getPromptDevice() === 'keyboard' ? 'ESC' : 'B';
+        const hint = key === back ? `${back} TO RESUME` : `${key} OR ${back} TO RESUME`;
         drawText(ctx, hint, 128, 189, 'mist', { align: 'center' });
       });
     },

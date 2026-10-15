@@ -3,7 +3,7 @@ import type { HeroSnapshot, RunStats, Sim, SimEvent, SimInput, SimOptions } from
 import { updateEnemies, anyAggro } from '../enemies/ai.ts';
 import type { S, Stats, Timer } from './state.ts';
 import { activeHero } from './state.ts';
-import { createState } from './init.ts';
+import { createState, setDifficulty } from './init.ts';
 import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
 import { ageBodies, awardXp, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
@@ -152,6 +152,7 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     closeProp: (id) => closePropById(s, id),
     defend: () => startDefense(s),
     healParty: (frac) => healParty(s, frac),
+    setDifficulty: (d) => setDifficulty(s, d),
     bonus(xp, quarters) {
       const h = activeHero(s);
       awardXp(s, xp);

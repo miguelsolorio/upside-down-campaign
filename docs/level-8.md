@@ -173,6 +173,8 @@ Art builds only after the owner picks from the variation sheets. The base look c
 
 ## Result
 
+The difficulty pass moved the factor from 1.25 to 1.1, and NORMAL came in as the default. Its numbers are under "The difficulty pass" at the end of this section. The table here is the 1.25 tuning.
+
 Measured with `node scripts/measure-stage.ts 3.2` at `enemyMult` 1.25, with the party a real run brings (Mike 7, Dustin 6, Robin 3, Nancy 3). "Boss" in the script's output runs from the `grigori` beat to the finish.
 
 | | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
@@ -195,3 +197,23 @@ Stage XP is 236, with the two soldiers Grigori calls at 1 each.
 - **The soldiers were too hot.** Six of them dealt three-quarters of the damage, even to the careful bot. Their rounds are power 0.3 now, not 0.45, and the bay holds two, not three.
 - **The arrival party is the campaign run's** (`docs/pace.md`): a Lv 7 Mike and a Lv 6 Dustin carry Robin and Nancy at Lv 3. That is stronger at the top than the first guess, so the factor went from 1 to 1.25.
 
+### The difficulty pass
+
+HARD is `chief`, the balance every band in these docs is measured at, and NORMAL (`normal`, enemy HP and damage at 0.85) is the default (`docs/level-7.md`, "The difficulty pass"). The base was in line for a careful player on HARD and hit harder than the chapter 1 and 2 curve for a careless one, so its factor went from 1.25 to 1.1.
+
+Measured with `node scripts/measure-stage.ts 3.2 chief 100 [--careless]` (`--mult=1.25` for before) and `normal` for NORMAL:
+
+| 100 seeds | HARD before (1.25) | HARD after (1.1) | NORMAL after | Careless, HARD before | Careless, HARD after | Careless, NORMAL after |
+|---|---|---|---|---|---|---|
+| Cleared | 89 | 97, none stuck | 100 | 60 | 80 | 96 |
+| Damage taken | 303 | 275 | 223 | 542 | 503 | 397 |
+| KOs | 0.8 | 0.42 | 0.2 | 1.93 | 1.07 | 0.28 |
+| Lowest party HP | 42% | 49% | 58% | 18% | 31% | 50% |
+| Time | 119 s | 109 s | 101 s | 114 s | 118 s | 113 s |
+| Boss time | 56 s | 48 s | 41 s | 64 s | 61 s | 55 s |
+
+Over 20 seeds at 1.1: HARD 18 of 20 (279 damage, 0.55 KOs, 49% lowest, 106 s, the fight 43%), careless 16, kid 20, upside 13, NORMAL 20 for 220 damage.
+
+- **Against the curve.** The careless bot clears chapters 1 and 2 on HARD 14 to 20 times in 20 (70% to 100%), and takes 342 at most outside 2.3's defense (399). Here it cleared 60 of 100 (12 of 20) for 542 damage. The careful bot was in line.
+- **Why 1.1.** Careless clears over 100 seeds: 55 at 1.2, 65 at 1.15, 80 at 1.1. 1.1 is the first that is back in line, level with 1.2's 16 of 20. The cost falls on the careful bot: its lowest HP is 49%, over the band's "under 45%", and its KOs 0.42 are under 0.5.
+- **Careless damage stays near 500.** It is 439 even at 1.0. A bot that never dodges stands in front of Grigori for a minute, and the damage counted grows as fewer runs wipe early. That is the fight's length, not the factor, so the clears and the lowest HP are the numbers that moved.

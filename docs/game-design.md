@@ -119,7 +119,7 @@ Gamepad uses the standard mapping, Xbox layout (rebindable in CONTROLS, with A a
 - Crit (the party move, not the per-hit crit above; the code calls it burst): the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR CRIT shows just under the HUD with no box behind it (the corner controls leave Crit out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
 - Status: burn, stun, slow, confuse, curse (Vecna's clock).
 - A KO'd hero drops out and the next swaps in. All four down returns you to the last light with XP kept.
-- Difficulty: Kid, Chief, Upside Down (enemy HP and damage ×0.7, ×1, ×1.4).
+- Difficulty: NORMAL and HARD in the options (enemy HP and damage ×0.85 and ×1), NORMAL by default. HARD is `chief`, the balance every stage is tuned and measured at. Kid (×0.7) and Upside Down (×1.4) stay for the measure scripts and the tests, in no menu. See `docs/difficulty.md`.
 
 **Leveling rules**
 - Cap is 12. XP to next level is `round(18 × L^1.7)`, about 4,900 XP from 1 to 12.

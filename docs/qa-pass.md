@@ -40,9 +40,11 @@ Status: **fixed** means the fix is in this branch and was checked in the browser
 - A jump's title still offers CONTINUE for a real save in the browser, and it reads it. It can't write it back.
 - URL: `http://127.0.0.1:5196/?mute=1&rush=1&stage=2.2`.
 
-### QA-5 (open, minor): the options have no difficulty row
+### QA-5 (fixed): the options have no difficulty row
 
 - `docs/game-design.md` lists difficulty among the settings, and `settings.difficulty` exists and is saved (`chief`), but neither the title options, the pause menu nor the touch menu has a row for it. The same file lists "difficulty levels" under things that are out until played, so this may be intended. Worth a one-line decision.
+- Decision (the owner, 2026-10-15): NORMAL and HARD, NORMAL the default, HARD today's `chief`.
+- Fix: a DIFFICULTY row leads `settingItems` in `ui/menu.ts`, so it shows on the title options and the pause menu on every input, touch included. A change in the pause menu applies as play resumes. A saved `chief` from before the row loads once as NORMAL, and a bad value loads as NORMAL. See `docs/difficulty.md`. `tests/difficulty.test.ts` covers the row, the default, the migration and the switch mid-stage. Checked in the browser.
 
 ### QA-6 (fixed): in CONTROLS, Backspace leaves the screen when browsing
 

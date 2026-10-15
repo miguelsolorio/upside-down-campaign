@@ -40,7 +40,7 @@ const [stageId = '1.2', difficulty = 'chief', seedsArg = '20'] = args.filter((a)
 const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32 };
 const base = STAGES[stageId];
 if (!base) throw new Error(`unknown stage ${stageId}; try ${Object.keys(STAGES).join(' or ')}`);
-if (!['kid', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, chief or upside, not ${difficulty}`);
+if (!['kid', 'normal', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, normal, chief or upside, not ${difficulty}`);
 const mult = args.find((a) => a.startsWith('--mult='));
 const S: StageData = { ...base, ...(flag('--no-hazards') ? { hazards: [] } : {}), ...(mult ? { enemyMult: Number(mult.slice(7)) } : {}) };
 const N = Number(seedsArg);

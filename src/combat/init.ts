@@ -1,5 +1,5 @@
 // Builds the starting state from SimOptions: party, enemies, items, props and npcs.
-import type { DefenseDef, PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
+import type { DefenseDef, Difficulty, EnemyKind, PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { createRng } from '../core/rng.ts';
 import { ENEMY_DEFS, DIFFICULTY_MULT, ELITE } from '../enemies/defs.ts';
@@ -34,13 +34,19 @@ const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
 };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
+/** An enemy's full HP at the state's difficulty and stage factor. */
+function enemyHp(s: S, kind: EnemyKind, elite: boolean): number {
+  const def = ENEMY_DEFS[kind];
+  return Math.max(1, Math.round(elite ? def.hp * ELITE.hp * s.mult * s.foeMult : def.hp * s.mult * s.foeMult));
+}
+
 /** Builds an enemy from its spawn. The run-time spawns (spawns.ts) use it too. */
 export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
   const def = ENEMY_DEFS[sp.type];
   const f = tileFeet(sp.tx, sp.ty);
   const uid = s.nextUid++;
   const elite = sp.tier === 'elite';
-  const hp = Math.max(1, Math.round(elite ? def.hp * ELITE.hp * s.mult * s.foeMult : def.hp * s.mult * s.foeMult));
+  const hp = enemyHp(s, sp.type, elite);
   const patrol = (sp.patrol ?? []).map((p) => tileFeet(p.tx, p.ty));
   return {
     uid, id: sp.id, kind: sp.type, group: sp.group,
@@ -59,6 +65,21 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' ? newSoldier() : null,
     grigori: sp.type === 'grigori' ? newGrigori() : null,
   };
+}
+
+/**
+ * Sim.setDifficulty. Damage reads s.mult on every hit, so only the HP built at spawn needs redoing: each living enemy gets the
+ * full HP a stage started on the new difficulty builds, and keeps its share of it.
+ */
+export function setDifficulty(s: S, d: Difficulty): void {
+  if (DIFFICULTY_MULT[d] === s.mult) return;
+  s.mult = DIFFICULTY_MULT[d];
+  for (const e of s.enemies) {
+    if (e.dead || e.hp <= 0) continue;
+    const max = enemyHp(s, e.kind, e.elite);
+    e.hp = Math.max(1, Math.min(max, Math.round(e.hp * max / e.hpMax)));
+    e.hpMax = max;
+  }
 }
 
 /** A defense that has not started: she stands where her npc does once it does (combat/defense.ts). */

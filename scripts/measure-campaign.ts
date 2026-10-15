@@ -18,7 +18,7 @@ const args = process.argv.slice(2);
 const flag = (f: string): boolean => args.includes(f);
 const opt = (k: string): string | undefined => args.find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3);
 const [difficulty = 'chief', seedsArg = '10'] = args.filter((a) => !a.startsWith('--'));
-if (!['kid', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, chief or upside, not ${difficulty}`);
+if (!['kid', 'normal', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, normal, chief or upside, not ${difficulty}`);
 const N = Number(seedsArg);
 const picks = opt('picks')?.split(',') as HeroId[] | undefined;
 const o = { difficulty: difficulty as Difficulty, careless: flag('--careless'), rotate: Number(opt('rotate') ?? 0), picks, noLights: flag('--no-lights') };

@@ -2,7 +2,7 @@
 
 A browser pass over main at 352622f, on a dev server on port 5191, every URL with `?mute=1`. Nobody had played the whole run with saves before. Two bugs turned up that a unit test would not have caught, both in `flow.ts` and both fixed here. The rest is open or a note.
 
-Status: **fixed** means the fix is in this branch and was checked in the browser. **open** means it is logged for whoever owns the file. QA-4, QA-6, QA-7 and QA-8 were fixed in a second pass, each reproduced first. QA-5 is with the session adding the difficulty row.
+Status: **fixed** means the fix is in this branch and was checked in the browser. **open** means it is logged for whoever owns the file. QA-4, QA-6, QA-7 and QA-8 were fixed in a second pass, each reproduced first. QA-5, the difficulty row, was fixed by the difficulty session.
 
 ## Bugs
 

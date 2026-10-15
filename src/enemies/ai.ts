@@ -1,5 +1,5 @@
 // Enemy AI driver: shared per-tick upkeep (cooldowns, knockback, stagger, stun, the candy lure), then the
-// kind-specific brain (the Demogorgon's skips the stagger, the stun and the lure), then a soft push so enemies do not stack on one pixel.
+// kind-specific brain (the Demogorgon's and the Alpha's skip the stagger, the stun and the lure), then a soft push so enemies do not stack on one pixel.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
@@ -10,6 +10,7 @@ import { agentUpdate } from './agent.ts';
 import { guardUpdate } from './guard.ts';
 import { demogorgonUpdate, updateGlobs } from './demogorgon.ts';
 import { demodogUpdate } from './demodog.ts';
+import { alphaUpdate } from './alpha.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
@@ -33,8 +34,9 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   if (s.over || hero.ko) { setEnemyAnim(e, 'idle'); return; }
 
-  // The boss ignores the candy bar, and nothing staggers it. It runs its own moves.
+  // The bosses ignore the candy bar, and nothing staggers them. They run their own moves.
   if (e.demo) { demogorgonUpdate(s, e, hero); return; }
+  if (e.alpha) { alphaUpdate(s, e, hero); return; }
   // The vine and the pod are rooted: no lure moves them.
   if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
   if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }

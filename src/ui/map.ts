@@ -2,10 +2,10 @@
 // the walk and the input and builds that view every frame: the nodes and their states, the party that would go in, the chapter,
 // the stage name and one line of hints. The rules live in map_logic.ts so Node can test them.
 import type { Scene } from '../core/scene.ts';
-import type { CharId, PartySeed } from '../core/types.ts';
+import type { CharId, HeroId, PartySeed } from '../core/types.ts';
 import type { MapNode, MapView } from '../core/mapdata.ts';
 import type { Progress } from '../core/progress.ts';
-import { CHAPTERS, chapterOf } from '../core/campaign.ts';
+import { CHAPTERS, chapterOf, needsPicks, pickParty, poolFor, requiredFor } from '../core/campaign.ts';
 import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { audio } from '../audio/index.ts';
@@ -14,13 +14,16 @@ import { drawMapScreen } from '../gfx/index.ts';
 import { box, inFrame } from './kit.ts';
 import { hintLine, mapNodes, startHop, startNode, stepFrom, stepHop } from './map_logic.ts';
 import type { Hop } from './map_logic.ts';
+import { createPicksPanel } from './picks.ts';
+import type { PicksPanel } from './picks.ts';
 
 export interface MapOpts {
   progress: Progress | null;
   /** Who would go into a stage, in party order. The first is the lead and the token. */
   party(stageId: string): PartySeed[];
   name(stageId: string): string;
-  onPlay(stageId: string): void;
+  /** `picks` is who goes, lead first, from the party picks panel. A stage that needs no picks calls it without. */
+  onPlay(stageId: string, picks?: HeroId[]): void;
   onQuit(): void;
 }
 
@@ -36,6 +39,8 @@ export function createMapScene(opts: MapOpts): Scene {
   let hop: Hop | null = null;
   let k = 0;
   let left = false;
+  /** The party picks panel while it is open over the map. */
+  let picks: PicksPanel | null = null;
 
   const leave = (fn: () => void): void => {
     if (left) return;
@@ -52,6 +57,17 @@ export function createMapScene(opts: MapOpts): Scene {
     audio.sfx('select');
   };
 
+  /** Opens the picks panel for a stage with a pool bigger than the party, on the last party picked, fixed up for it. */
+  const openPicks = (id: string): void => {
+    picks = createPicksPanel({
+      pool: poolFor(id, opts.progress?.heroes ?? []),
+      locked: requiredFor(id),
+      seed: pickParty(id, opts.progress?.picks),
+      onStart: (who) => leave(() => opts.onPlay(id, who)),
+      onBack: () => { picks = null; },
+    });
+  };
+
   return {
     opaque: true,
     enter() {
@@ -60,6 +76,7 @@ export function createMapScene(opts: MapOpts): Scene {
     },
     update(g) {
       t++;
+      if (picks) { picks.update(g); return; }
       if (hop) {
         const s = stepHop(hop);
         hop = s.done ? null : s.hop;
@@ -74,6 +91,7 @@ export function createMapScene(opts: MapOpts): Scene {
         if (nodeOf(sel)?.state === 'locked') { audio.sfx('cancel'); return; }
         audio.sfx('confirm');
         const id = sel;
+        if (needsPicks(id)) { openPicks(id); return; }
         leave(() => opts.onPlay(id));
         return;
       }
@@ -91,13 +109,17 @@ export function createMapScene(opts: MapOpts): Scene {
         party: party.map((p) => ({ id: p.id, level: p.level ?? 1 })),
         chapter: CHAPTERS[chapterOf(sel)]?.title ?? '',
         stage: opts.name(sel),
-        hint: hintLine(getPromptDevice(), labelOf('attack')),
+        // The picks panel prints its own legend, so the map's goes quiet while it is open.
+        hint: picks ? '' : hintLine(getPromptDevice(), labelOf('attack')),
         t,
         calm: settings.reduceFlashing,
       };
       // On a wide window the map sits in the centered 256 px frame, like every other menu screen, over ink.
       box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');
-      inFrame(ctx, () => drawMapScreen(ctx, view));
+      inFrame(ctx, () => {
+        drawMapScreen(ctx, view);
+        picks?.draw(ctx);
+      });
     },
   };
 }

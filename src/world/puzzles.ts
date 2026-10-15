@@ -4,6 +4,8 @@
 // 5 seconds the hint shows anyway. Pure logic with no DOM, so Node can run it. The play scene feeds it the director,
 // the props and the hero every tick, and the sim's `poked` events as they come.
 //
+// A puzzle whose hero is not in the party never shows its hint: with Steve benched in 2.2 the cache stays shut and nothing nags.
+//
 // A puzzle can watch an enemy instead of a prop (`PuzzleDef.enemy`, the pinned Demogorgon). `puzzleProps` stands a prop
 // in for it, at its feet and about its size, so the tracker and the caret work the same way: the hint follows it while it
 // lives, and its death takes the stand-in away, which ends the puzzle. A `poked` event whose propId is the spawn id is a try.
@@ -23,6 +25,11 @@ export interface PuzzleTick {
   props: readonly PropView[];
   /** The active hero's feet position in px. */
   hero: Vec2;
+  /**
+   * Who is in the party, benched or not. A puzzle whose hero is not among them is never live: no hint, however long the
+   * party spends near it or whatever it tries. Left out, every hero counts as in the party.
+   */
+  party?: readonly HeroId[];
 }
 
 export interface PuzzleTracker {
@@ -90,6 +97,7 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
       for (const d of defs) {
         const prop = s.props.find((p) => p.id === d.prop);
         if (!prop || isSolved(prop) || s.busy || !s.hasFired(d.beat)) continue;
+        if (s.party && !s.party.includes(d.hero)) continue;
         live.set(d.id, d);
         if (isNear(prop, s.hero)) spent.set(d.id, (spent.get(d.id) ?? 0) + 1);
       }

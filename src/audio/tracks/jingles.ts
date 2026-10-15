@@ -175,4 +175,23 @@ export const STINGERS: Record<StingerId, Cue> = {
     ...line(140, 'tri', 0.28, [[0, 0.5, 'G4'], [0.5, 0.5, 'D5']]),
     ...line(140, 'tri', 0.28, [[1, 1, 'Bb4']], { to: note('A4'), vib: true }),
   ], [], 3, 0.9),
+  // Max: quick and dry. A C minor seventh run up the 25 percent pulse in a quarter of a second, each note a short
+  // pluck with no sustain and no bass under it, and a click on the first like a board popping off the ground.
+  max: cue(
+    [
+      ...line(220, 'p25', 0.3, [[0, 0.3, 'C5'], [0.3, 0.3, 'Eb5'], [0.6, 0.3, 'G5']], { ring: true }),
+      ...line(220, 'p25', 0.3, [[0.9, 0.7, 'Bb5']], { ring: true }),
+    ],
+    [{ at: 0, dur: 0.02, vol: 0.14, mode: 7, clock: 12000, filter: 'highpass', freq: 3000 }],
+    3,
+    1.07,
+  ),
+  // Steve: warm and a little goofy. The first note scoops up a major third like a hair flip, then A and a held D
+  // with a late wobble, all on the mid square, with a triangle bass under it for the warmth.
+  steve: cue([
+    ...line(170, 'p50', 0.24, [[0, 0.5, 'D4']], { to: note('F#4') }),
+    ...line(170, 'p50', 0.24, [[0.5, 0.5, 'A4']]),
+    ...line(170, 'p50', 0.24, [[1, 1.1, 'D5']], { vib: true }),
+    ...line(170, 'tri', 0.26, [[0, 2.1, 'D3']]),
+  ], [], 3, 0.8),
 };

@@ -10,6 +10,7 @@ import { floater, sfx } from './fx.ts';
 import { speedMul } from './status.ts';
 import { pokeAimed, trackBump } from './pokes.ts';
 import { smashAimed } from './props.ts';
+import { endDash, stepDash } from '../heroes/skate.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -72,6 +73,8 @@ export function updateActive(s: S, input: SimInput): void {
   if (h.invuln > 0 && --h.invuln === 0) h.blink = false;
   if (h.hurtT > 0) h.hurtT--;
   if (h.actT > 0 && --h.actT === 0) h.act = null;
+  // Max's roll ends with her action timer. Anything that cut the action short ended it for good.
+  if (h.dash && h.actT <= 0) endDash(s, h);
   if (h.flash > 0) h.flash = Math.max(0, h.flash - 0.12);
   if (h.z > 0) h.z = Math.max(0, h.z - 1.5);
   h.animT++;
@@ -84,16 +87,21 @@ export function updateActive(s: S, input: SimInput): void {
   let meant = 0;
 
   if (h.hurtT <= 0) {
-    if (live) {
+    // A rolling Max goes where she was aimed: the stick does not steer her, turn her or walk her.
+    if (live && !h.dash) {
       h.aim = snap8(Math.atan2(uy, ux));
       h.dir = dirOfAngle(h.aim);
       // The way he is walking, from his input. Followers rest on the opposite side when he stops.
       s.walkDir = dirOfVec(ux, uy, s.walkDir);
     }
     tryActions(s, h, input);
-    const lock = h.actT > 0 ? h.lock : 1;
-    const sp = def.speed * speedFactor(h) * speedMul(h.stat) * lock * Math.min(1, mag);
-    if (live) { moveBody(s, h, ux * sp, uy * sp, true); meant = sp; }
+    if (h.dash) {
+      stepDash(s, h);
+    } else {
+      const lock = h.actT > 0 ? h.lock : 1;
+      const sp = def.speed * speedFactor(h) * speedMul(h.stat) * lock * Math.min(1, mag);
+      if (live) { moveBody(s, h, ux * sp, uy * sp, true); meant = sp; }
+    }
   }
   if (h.vx !== 0 || h.vy !== 0) {
     moveBody(s, h, h.vx, h.vy);
@@ -105,6 +113,7 @@ export function updateActive(s: S, input: SimInput): void {
 
   let anim: AnimId = 'idle';
   if (h.hurtT > 0) anim = 'hurt';
+  else if (h.dash) anim = 'dash';
   else if (h.actT > 0 && h.act) anim = h.act === 'special' ? 'cast' : 'attack';
   else if (h.moving) anim = 'walk';
   setAnim(h, anim);

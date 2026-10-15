@@ -16,6 +16,8 @@ export const TALENTS: Record<HeroId, Talent> = {
   lucas: { name: 'Sharp eye', text: '+15% crit chance', level: 3 },
   eleven: { name: 'Flip', text: 'Push hits harder, flies farther', level: 3 },
   will: { name: 'Cold spot', text: 'Shows hidden foes nearby', level: 3 },
+  max: { name: 'High score', text: '+10% quarters, +5% crit', level: 3 },
+  steve: { name: 'Hair of steel', text: 'Shrugs off a hit after 5s unhurt', level: 3 },
 };
 
 /** True once the hero is at or past the talent's level. */

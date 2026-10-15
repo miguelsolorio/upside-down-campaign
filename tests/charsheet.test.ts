@@ -10,7 +10,7 @@ import type { SheetMove } from '../src/heroes/charsheet.ts';
 import { MAX_LEVEL, emptyStats } from '../src/progression/xp.ts';
 import { TALENTS } from '../src/progression/talents.ts';
 import { GLYPHS } from '../src/gfx/data/font.ts';
-import { PANEL, RIGHT, STAT_COLS, STAT_VALUE_DX, TAB_COUNT, TAB_NAME_DX, TAB_W, TEXT_X, backRect, tabAt, tabRect } from '../src/ui/charsheetlayout.ts';
+import { PANEL, RIGHT, STAT_COLS, STAT_VALUE_DX, TAB_COUNT, TAB_NAME_DX, TAB_NAMES, TAB_W, TEXT_X, backRect, tabAt, tabRect } from '../src/ui/charsheetlayout.ts';
 
 const move = (id: HeroId, level: number, kind: SheetMove['kind']): SheetMove => {
   const m = heroSheet(id, level).moves.find((x) => x.kind === kind);
@@ -131,8 +131,9 @@ test('every line fits the panel and the font, for every hero and level', () => {
         assert.ok(end <= next, `${id} L${level}: "${v}" runs into the next column`);
       });
     }
-    // The tab holds a face and the name in the tiny font, 4 px a letter.
-    assert.ok(TAB_NAME_DX + HERO_DEFS[id].name.length * 4 - 1 <= TAB_W - 2, `${id}'s name fits its tab`);
+    // The tab holds a face and the name in the tiny font, 4 px a letter, or the face alone once the names don't fit.
+    if (TAB_NAMES) assert.ok(TAB_NAME_DX + HERO_DEFS[id].name.length * 4 - 1 <= TAB_W - 2, `${id}'s name fits its tab`);
+    else assert.ok(TAB_W >= 11 + 4, `${id}'s face fits its tab`);
   }
 });
 

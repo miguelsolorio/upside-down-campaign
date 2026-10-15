@@ -6,12 +6,14 @@ import { blitRows, outlineRoles } from './canvas.ts';
 import { KID } from './data/kid.ts';
 import { ADULT } from './data/adult.ts';
 import { AGENT_BODY } from './data/agent.ts';
+import { BIG } from './data/big.ts';
+import { aimOf, blitWide, crop, dashParts, drawGear, isGear, lift } from './actor_gear.ts';
 import { RAT } from './data/foes.ts';
 import type { RatFrame } from './data/foes.ts';
 import { mirrorRoles } from './canvas.ts';
 
 export const CELL = 16;
-const BODIES: Record<CharSpec['body'], BodyDef> = { kid: KID, adult: ADULT, agent: AGENT_BODY };
+const BODIES: Record<CharSpec['body'], BodyDef> = { kid: KID, adult: ADULT, agent: AGENT_BODY, big: BIG };
 const code = (c: string): number => c.charCodeAt(0);
 
 interface Pose {
@@ -22,6 +24,8 @@ interface Pose {
   lean: number;
   /** Front view only: extra drop for crouches and lunges. */
   leanV: number;
+  /** Lifts the hands this many px above the arm pose's targets and spreads them wider (forward from the side): Eleven's arms thrown up. */
+  up?: number;
 }
 
 const P = (legs: LegPose, arms: ArmPose, bob = 0, lean = 0, leanV = 0, face: Face = 'open'): Pose => ({ legs, arms, face, bob, lean, leanV });
@@ -31,7 +35,8 @@ export const POSES: Record<AnimId, Pose[]> = {
   idle: [P('stand', 'rest'), P('stand', 'rest', 1)],
   walk: [P('stepA', 'swingA', 1), P('stand', 'rest'), P('stepB', 'swingB', 1), P('stand', 'rest')],
   attack: [P('stand', 'windup', 0, -1), P('wide', 'strike', 0, 1, 1)],
-  cast: [P('stand', 'raise'), P('wide', 'thrust', 0, 1, 1)],
+  // The third cast frame is Eleven channeling in the defense: the arms stay up and the body breathes (actors.ts holds it while she is strained).
+  cast: [P('stand', 'raise'), P('wide', 'thrust', 0, 1, 1), { ...P('stand', 'raise', 1), up: 3 }],
   dash: [P('wide', 'back', 1, 2, 1)],
   hurt: [P('stand', 'flail', 0, -1, 0, 'hurt')],
   ko: [P('stand', 'flail', 0, 0, 0, 'ko')],
@@ -54,8 +59,8 @@ function blit(buf: Uint8Array, part: Part, dx: number, dy: number): void {
   if (part.rows.length) blitRows(buf, CELL, part.rows, dx, part.y + dy);
 }
 
-/** 1 px arm from shoulder to hand. Sleeve pixels never overwrite the torso, the hand always does. */
-function arm(buf: Uint8Array, from: [number, number], to: [number, number], dx: number, dy: number, sleeve: string): void {
+/** 1 px arm from shoulder to hand, or 2 px with `extra` set to the column the second pixel sits in. Sleeve pixels never overwrite the torso, the hand always does. */
+function arm(buf: Uint8Array, from: [number, number], to: [number, number], dx: number, dy: number, sleeve: string, extra = 0): void {
   let x = from[0] + dx, y = from[1] + dy;
   const ex = to[0] + dx, ey = to[1] + dy;
   const adx = Math.abs(ex - x), ady = -Math.abs(ey - y);
@@ -64,7 +69,10 @@ function arm(buf: Uint8Array, from: [number, number], to: [number, number], dx: 
   for (let i = 0; i < 40; i++) {
     const last = x === ex && y === ey;
     if (last) put(buf, x, y, 's');
-    else if (!buf[y * CELL + x]) put(buf, x, y, sleeve);
+    else {
+      if (!buf[y * CELL + x]) put(buf, x, y, sleeve);
+      if (extra && x + extra >= 0 && x + extra < CELL && !buf[y * CELL + x + extra]) put(buf, x + extra, y, sleeve);
+    }
     if (last) break;
     const e2 = 2 * err;
     if (e2 >= ady) { err += ady; x += sx; }
@@ -153,22 +161,39 @@ export function composeFrame(spec: CharSpec, view: View, anim: AnimId, frame: nu
   const poses = POSES[anim];
   const pose = poses[Math.min(frame, poses.length - 1)] as Pose;
   const buf = new Uint8Array(CELL * CELL);
+  // Gear: the nail bat and the board are drawn on a wider buffer and cropped (actor_gear.ts). A swing or a dash hides the carried one.
+  const aim = isGear(spec.weapon) && anim !== 'ko' ? aimOf(spec.weapon, view, pose.arms) : null;
+  const riding = spec.weapon === 'board' && anim === 'dash';
   const dx = view === 'side' ? pose.lean : 0;
-  const dy = pose.bob + (view === 'down' ? pose.leanV : 0);
+  const dy = riding ? 0 : pose.bob + (view === 'down' ? pose.leanV : 0);
   const sh = body.shoulder[view];
-  const hands = body.arms[view][pose.arms];
-  const trim = spec.trim?.[view] ?? [];
+  const hands = body.arms[view][pose.arms].map((h) => [...h]) as [number, number][];
+  const front = sh[1] as [number, number];
+  if (aim) hands[1] = [front[0] + aim.rx, front[1] + aim.ry];
+  if (pose.up) for (const h of hands) { h[1] -= pose.up; h[0] += view === 'side' ? 2 : h[0] < 8 ? -1 : 1; }
+  const trim = [...(spec.trim?.[view] ?? []), ...(aim || riding ? [] : spec.carry?.[view] ?? [])];
+  const thick = spec.body === 'big' ? 1 : 0, sleeve = spec.sleeve ?? 'a';
+  const dash = riding ? dashParts(view) : null;
 
-  if (view === 'side') arm(buf, sh[0] as [number, number], hands[0] as [number, number], dx, dy, 'a');
-  blit(buf, body.legs[view][pose.legs], 0, 0);
+  if (view === 'side') arm(buf, sh[0] as [number, number], hands[0] as [number, number], dx, dy, sleeve);
+  blit(buf, dash ? dash.legs : body.legs[view][pose.legs], 0, 0);
   blit(buf, shirt(spec, body.torso[view]), dx, dy);
   for (const t of trim) blit(buf, t, dx, dy);
-  if (view === 'side') arm(buf, sh[1] as [number, number], hands[1] as [number, number], dx, dy, 'a');
-  else { arm(buf, sh[0] as [number, number], hands[0] as [number, number], dx, dy, 'a'); arm(buf, sh[1] as [number, number], hands[1] as [number, number], dx, dy, 'a'); }
+  if (view === 'side') arm(buf, sh[1] as [number, number], hands[1] as [number, number], dx, dy, sleeve, thick);
+  else {
+    arm(buf, sh[0] as [number, number], hands[0] as [number, number], dx, dy, sleeve, -thick);
+    arm(buf, sh[1] as [number, number], hands[1] as [number, number], dx, dy, sleeve, thick);
+  }
   blit(buf, body.head[view], dx, dy);
   blit(buf, body.face[pose.face][view], dx, dy);
   for (const h of spec.hair[view]) blit(buf, h, dx, dy);
-  weapon(buf, spec, view, pose.arms, (view === 'side' ? hands[1] : hands[1]) as [number, number], dx, dy);
+  if (aim || dash) {
+    const wide = lift(buf);
+    if (aim) drawGear(wide, spec.weapon, [front[0] + aim.rx + dx, front[1] + aim.ry + dy], aim);
+    if (dash) blitWide(wide, dash.board);
+    return crop(wide);
+  }
+  weapon(buf, spec, view, pose.arms, hands[1] as [number, number], dx, dy);
   if (anim === 'ko') {
     const lying = settle(rotate(buf, view !== 'down'));
     outlineRoles(lying, CELL, CELL, code('k'));

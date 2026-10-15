@@ -85,6 +85,16 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         basic(b.power, 'Slow bolt, aims eight ways'),
         special(hit(sp.power), 'Burst sized by a d20, 1 fizzles'),
       ];
+    case 'max':
+      return [
+        basic(b.power, `Second hit ${range(hit(b.power * b.x.secondPower))}`),
+        special(hit(sp.power), 'Invulnerable roll, crosses gaps'),
+      ];
+    case 'steve':
+      return [
+        basic(b.power, `Third hit ${range(hit(b.power * b.x.thirdPower))}, throws`),
+        special(null, `Taunts, takes ${Math.round(sp.x.guard * 100)}% less, ${secs(sp.x.life)}`),
+      ];
   }
 }
 

@@ -19,7 +19,7 @@ import { bigText, box, clipped, inFrame, outline, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import {
   FOOT_Y, LEFT, MOVES_Y, MOVE_PITCH, NAME_Y, NOTE_DY, PANEL, PORTRAIT_Y, RIGHT, ROLE_Y, RULE_Y, STAT_COLS, STAT_ROWS,
-  STAT_VALUE_DX, TAB_FACE_DX, TAB_NAME_DX, TEXT_X, backRect, tabAt, tabRect,
+  STAT_VALUE_DX, TAB_FACE_DX, TAB_NAME_DX, TAB_NAMES, TEXT_X, backRect, tabAt, tabRect,
 } from './charsheetlayout.ts';
 
 /** One hero as the sheet needs them. A hero who isn't in the party comes in at Lv 1 with no bonus. */
@@ -42,10 +42,10 @@ const KIND_LABEL: Record<SheetMove['kind'], string> = { basic: 'BASIC', special:
 function drawTab(ctx: Ctx, h: CharSheetHero, i: number, on: boolean, hot: boolean): void {
   const r = tabRect(i);
   outline(ctx, r.x, r.y, r.w, r.h, on ? 'yellow' : hot ? 'cream' : 'dusk');
-  const fx = r.x + TAB_FACE_DX, fy = r.y + 2;
+  const fx = TAB_NAMES ? r.x + TAB_FACE_DX : r.x + Math.floor((r.w - 11) / 2), fy = r.y + 2;
   outline(ctx, fx, fy, 11, 11, on ? 'amber' : 'slate');
   clipped(ctx, fx + 1, fy + 1, 9, 9, () => drawPortrait(ctx, h.id, 'neutral', fx - 7, fy - 5, !h.joined));
-  drawTinyText(ctx, HERO_DEFS[h.id].name, r.x + TAB_NAME_DX, r.y + 5, on ? 'yellow' : h.joined ? 'bone' : 'slate');
+  if (TAB_NAMES) drawTinyText(ctx, HERO_DEFS[h.id].name, r.x + TAB_NAME_DX, r.y + 5, on ? 'yellow' : h.joined ? 'bone' : 'slate');
 }
 
 function drawHeader(ctx: Ctx, h: CharSheetHero, s: HeroSheet): void {

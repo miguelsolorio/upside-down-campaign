@@ -3,7 +3,7 @@
 // any non-solid tile, and refuse to cut diagonal corners.
 import { TILE } from '../core/config.ts';
 import type { Grid } from '../core/types.ts';
-import type { Nav, Pos, S } from './state.ts';
+import type { Flow, Nav, Pos, S } from './state.ts';
 import { propBlocks } from './space.ts';
 
 export type { Nav };
@@ -68,10 +68,12 @@ export function flowStep(nav: Nav, dist: Int16Array, x: number, y: number): Pos 
   return best;
 }
 
-/** Keeps s.flow pointed at the active hero's tile. Cheap: a few thousand tiles, redone when the hero moves a tile. */
-export function ensureFlow(s: S, hx: number, hy: number): Nav {
+/**
+ * Keeps a flow field (s.flow, pointed at the active hero, or s.wardFlow, pointed at the ward) on a tile. Cheap: a few thousand
+ * tiles, redone when the target moves a tile.
+ */
+export function ensureFlow(s: S, hx: number, hy: number, f: Flow = s.flow): Nav {
   const tx = Math.floor(hx / TILE), ty = Math.floor((hy - 4) / TILE);
-  const f = s.flow;
   f.age++;
   if (f.nav === null || f.dist === null || f.tx !== tx || f.ty !== ty || f.age >= 20) {
     f.nav = buildNav(s.grid, s.props.filter(propBlocks));

@@ -20,6 +20,8 @@ const SIGNATURE: Record<Hero['id'], { kind: FxKind; w: number; h: number }> = {
   lucas: { kind: 'beam', w: 140, h: 8 },
   eleven: { kind: 'nova', w: 60, h: 60 },
   will: { kind: 'blast', w: 60, h: 60 },
+  max: { kind: 'trail', w: 70, h: 10 },
+  steve: { kind: 'slash', w: 52, h: 76 },
 };
 
 /** Starts the burst if the meter is full and the button was pressed. Returns true on the tick it starts. */

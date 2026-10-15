@@ -138,9 +138,46 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     talent: TALENTS.will,
   },
+  // Max and Steve join in 2.2 (docs/level-5.md, "Max" and "Steve"). Max is the Monk: a quick two-hit board and the Skate dash.
+  max: {
+    id: 'max', name: CHAR_NAMES.max, role: 'Monk',
+    base: st(36, 16, 8, 3, 11), growth: st(5, 2, 1.4, 0.7, 0.7), weights: st(1, 1, 3, 1, 3),
+    speed: 1.1, crit: 0.03, utilities: ['dash'],
+    basic: {
+      name: 'Board', mp: 0, cd: 9, power: 0.9, dur: 10, at: 4, lock: 0.4, reach: 24, kb: 1.8, sfx: 'swing',
+      // half: arc half-angle in degrees. The second swing is harder and takes a little longer (secondDur, secondAt, secondCd).
+      x: { half: 55, chainGap: 14, secondPower: 1.2, secondDur: 12, secondAt: 4, secondCd: 16 },
+    },
+    special: {
+      name: 'Skate dash', mp: 4, cd: 30, power: 0.9, dur: 16, at: 0, lock: 0, reach: 72, kb: 3, sfx: 'skate',
+      // speed: px per frame. frames: the roll's length in frames (speed x frames is the reach). r: how close an enemy's center
+      // is to her path for her to hit it. after: frames of invulnerability once it ends. extra: the most px it carries on to
+      // clear a gap it would end over.
+      x: { speed: 4.5, frames: 16, r: 10, after: 6, extra: 16 },
+    },
+    talent: TALENTS.max,
+  },
+  // Steve is the Fighter: a three-hit nail bat with a heavy third, and Babysit.
+  steve: {
+    id: 'steve', name: CHAR_NAMES.steve, role: 'Fighter',
+    base: st(54, 14, 10, 6, 7), growth: st(7.5, 1.5, 1.6, 1.3, 0.3), weights: st(3, 1, 3, 3, 0),
+    speed: 0.9, crit: 0, utilities: ['smash'],
+    basic: {
+      name: 'Nail bat', mp: 0, cd: 13, power: 1.1, dur: 16, at: 7, lock: 0.35, reach: 30, kb: 2.8, sfx: 'swing',
+      // The third swing is 1.5 in all (power x thirdPower), wider in reach and throws the enemy (kb x thirdKb).
+      x: { half: 60, chainGap: 18, thirdPower: 1.36, thirdKb: 2.2, thirdReach: 4, thirdCd: 28, thirdDur: 22, thirdAt: 9 },
+    },
+    special: {
+      name: 'Babysit', mp: 6, cd: 60, power: 0, dur: 20, at: 6, lock: 0.2, reach: 72, kb: 0, sfx: 'taunt',
+      // life: frames his guard and the party's DEF bonus hold. guard: the share of damage he does not take. partyDef: the
+      // party's DEF bonus. taunt: frames an enemy in reach stays taunted onto him.
+      x: { life: 300, guard: 0.4, partyDef: 0.15, taunt: 180 },
+    },
+    talent: TALENTS.steve,
+  },
 };
 
-export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will'];
+export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'max', 'steve'];
 
 /** The stat at `level`: base, plus floored fixed growth, plus the d20 bonus received so far (in stat units). */
 export function statsAt(def: HeroDef, level: number, bonus: Stats = emptyStats()): Stats {
@@ -158,7 +195,8 @@ export function fixedGain(def: HeroDef, level: number): Stats {
   return out;
 }
 
-/** Crit chance 0..1: 5 percent, the hero's bonus and Lucas's Sharp eye. */
+/** Crit chance 0..1: 5 percent, the hero's bonus, Lucas's Sharp eye and Max's High score. */
 export function critChance(def: HeroDef, level: number): number {
-  return BASE_CRIT + def.crit + (def.id === 'lucas' && hasTalent('lucas', level) ? 0.15 : 0);
+  const talent = def.id === 'lucas' && hasTalent('lucas', level) ? 0.15 : def.id === 'max' && hasTalent('max', level) ? 0.05 : 0;
+  return BASE_CRIT + def.crit + talent;
 }

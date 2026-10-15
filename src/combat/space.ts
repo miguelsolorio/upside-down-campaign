@@ -12,7 +12,8 @@ export const HURT_H = 14;
 /** Distance from an actor's feet up to the middle of its hurt box. */
 export const BODY_Y = 7;
 
-export function propBlocks(p: Prop): boolean { return p.solid && p.state !== 'open'; }
+/** Blocks bodies. A gap is a drop, not a wall: it stays shut to walking after it is crossed, and sight and shots pass over it. */
+export function propBlocks(p: Prop): boolean { return p.solid && (p.state !== 'open' || p.kind === 'gap'); }
 
 export function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.hypot(bx - ax, by - ay);
@@ -30,8 +31,11 @@ export function rectsOverlap(ax: number, ay: number, aw: number, ah: number, bx:
   return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 }
 
-/** True when the 10 x 8 foot box with bottom-center (x, y) overlaps a solid tile or a solid prop. */
-export function footBlocked(s: S, x: number, y: number): boolean {
+/**
+ * True when the 10 x 8 foot box with bottom-center (x, y) overlaps a solid tile or a solid prop. `over` is a body in the air
+ * over drops, Max's Skate dash: a gap does not count.
+ */
+export function footBlocked(s: S, x: number, y: number, over = false): boolean {
   const l = x - FOOT_W / 2, r = x + FOOT_W / 2, t = y - FOOT_H, b = y;
   const tx0 = Math.floor(l / TILE), tx1 = Math.floor((r - 0.001) / TILE);
   const ty0 = Math.floor(t / TILE), ty1 = Math.floor((b - 0.001) / TILE);
@@ -39,15 +43,23 @@ export function footBlocked(s: S, x: number, y: number): boolean {
     for (let tx = tx0; tx <= tx1; tx++) if (isSolidTile(s.grid, tx, ty)) return true;
   }
   for (const p of s.props) {
+    if (over && p.kind === 'gap') continue;
     if (propBlocks(p) && rectsOverlap(l, t, FOOT_W, FOOT_H, p.x, p.y, p.w, p.h)) return true;
   }
   return false;
 }
 
+/** The gap props the foot box with bottom-center (x, y) is over. */
+export function gapsUnder(s: S, x: number, y: number): Prop[] {
+  const l = x - FOOT_W / 2, t = y - FOOT_H;
+  return s.props.filter((p) => p.kind === 'gap' && rectsOverlap(l, t, FOOT_W, FOOT_H, p.x, p.y, p.w, p.h));
+}
+
+/** Solid to sight and to shots: tiles and solid props, but not a gap. */
 export function pointSolid(s: S, x: number, y: number): boolean {
   if (isSolidTile(s.grid, Math.floor(x / TILE), Math.floor(y / TILE))) return true;
   for (const p of s.props) {
-    if (propBlocks(p) && x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return true;
+    if (p.kind !== 'gap' && propBlocks(p) && x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return true;
   }
   return false;
 }

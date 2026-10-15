@@ -1,6 +1,7 @@
 // Status effects. Burn and stun are live. Slow is a cheap speed cut. Confuse and curse exist as types only.
 import type { Hero, Statuses, S } from './state.ts';
 import { floater } from './fx.ts';
+import { UNHURT_CAP } from './state.ts';
 import { demoSettle, isPinned } from '../enemies/demo_hit.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 
@@ -18,6 +19,7 @@ export function tickEnemyStatus(s: S): void {
     const st = e.stat;
     if (st.stun > 0) st.stun--;
     if (st.slow > 0) st.slow--;
+    if (e.taunt > 0) e.taunt--;
     if (st.burn > 0) {
       st.burn--;
       st.burnTick--;
@@ -47,7 +49,11 @@ export function slowHero(s: S, h: Hero, frames: number): void {
   h.stat.slow = Math.max(h.stat.slow, frames);
 }
 
-/** Ticks every hero's statuses: only slow is live on a hero. */
+/** Ticks every hero's statuses: only slow is live on a hero. Also the clocks Steve's kit reads: Babysit and the unhurt count. */
 export function tickHeroStatus(s: S): void {
-  for (const h of s.heroes) if (h.stat.slow > 0) h.stat.slow--;
+  for (const h of s.heroes) {
+    if (h.stat.slow > 0) h.stat.slow--;
+    if (h.unhurt < UNHURT_CAP) h.unhurt++;
+  }
+  if (s.babysit > 0) s.babysit--;
 }

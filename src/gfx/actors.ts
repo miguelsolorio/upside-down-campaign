@@ -1,7 +1,7 @@
 // Actor sprites: one atlas canvas per character (13 frames by 4 directions), plus flash and tint variants.
 // Overlays (shadow, nosebleed, "!" and HP bar) are drawn with plain rects around the sprite. A cell is 16 by 16, or
 // 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own. The
-// Demogorgon, the demodog, the vine and the pod are drawn from frames of their own (actor_demo.ts, actor_dog.ts, actor_plant.ts).
+// Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts, actor_dog.ts, actor_alpha.ts, actor_plant.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
@@ -9,11 +9,14 @@ import { ANIM_ORDER, CELL, POSES, bodyShift, composeFrame, composeRat } from './
 import { composeGuard, composeWarden, FOE_CELL } from './actor_foes.ts';
 import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
 import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
+import { ALPHA_H, ALPHA_W, alphaFrame } from './actor_alpha.ts';
 import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
 import type { Frame } from './actor_kit.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
 import { MAX } from './data/max.ts';
+import { STEVE } from './data/steve.ts';
+import { HOPPER } from './data/hopper.ts';
 import { AGENT, RAT_PAL } from './data/foes.ts';
 import { PALS, TRIM } from './data/guard.ts';
 import { canvasFromPixels, mirrorRoles, px32, rect } from './canvas.ts';
@@ -25,8 +28,12 @@ const FRAME_BASE = {} as Record<AnimId, number>;
 let FRAME_COUNT = 0;
 for (const a of ANIM_ORDER) { FRAME_BASE[a] = FRAME_COUNT; FRAME_COUNT += POSES[a].length; }
 
-/** Frames of the walk cycle hold for 7 ticks, idle breathes every 30, the attack and cast poses switch at 6 and 8. */
-function frameIndex(anim: AnimId, t: number): number {
+/**
+ * Frames of the walk cycle hold for 7 ticks, idle breathes every 30, the attack and cast poses switch at 6 and 8. An npc who is
+ * channeling (Eleven holding the Gate shut, anim cast and strained) holds the third cast frame, her arms thrown up.
+ */
+function frameIndex(anim: AnimId, t: number, channeling = false): number {
+  if (channeling) return 2;
   switch (anim) {
     case 'idle': return ((t / 30) | 0) & 1;
     case 'walk': return ((t / 7) | 0) & 3;
@@ -50,7 +57,7 @@ interface Sheet {
 }
 
 const specs = new Map<string, CharSpec>();
-for (const s of [...KIDS, ...ADULTS, MAX, AGENT]) specs.set(s.id, s);
+for (const s of [...KIDS, ...ADULTS, MAX, STEVE, HOPPER, AGENT]) specs.set(s.id, s);
 const sheets = new Map<string, Sheet>();
 
 /** The red band of an elite: the second row of the sprite, across the head. */
@@ -147,13 +154,20 @@ function atlasFor(sh: Sheet, v: ActorView): HTMLCanvasElement {
 const SHADOW_SIZES: [number, number][] = [[12, 4], [10, 4], [8, 3], [6, 2]];
 /** The warden's shadow is wider. */
 const SHADOW_BIG: [number, number][] = [[20, 6], [18, 5], [14, 4], [10, 3]];
+/** The Alpha's: it stands 30 px wide. */
+const SHADOW_HUGE: [number, number][] = [[30, 8], [26, 7], [20, 5], [14, 4]];
+const SHADOWS = [SHADOW_SIZES, SHADOW_BIG, SHADOW_HUGE];
 const shadowCache = new Map<number, HTMLCanvasElement>();
 
-function shadowSprite(size: number, phase: number, big = false): HTMLCanvasElement {
-  const key = (big ? 8 : 0) + size * 2 + phase;
+/** tier 0 is the plain shadow, 1 the warden's and the bosses', 2 the Alpha's. */
+type ShadowTier = boolean | 0 | 1 | 2;
+const tierOf = (t: ShadowTier): number => (t === true ? 1 : t === false ? 0 : t);
+
+function shadowSprite(size: number, phase: number, tier: ShadowTier = 0): HTMLCanvasElement {
+  const key = tierOf(tier) * 8 + size * 2 + phase;
   let c = shadowCache.get(key);
   if (c) return c;
-  const [w, h] = (big ? SHADOW_BIG : SHADOW_SIZES)[size] as [number, number];
+  const [w, h] = (SHADOWS[tierOf(tier)] as [number, number][])[size] as [number, number];
   const px = new Uint32Array(w * h);
   const ink = px32('black');
   for (let j = 0; j < h; j++) {
@@ -169,11 +183,11 @@ function shadowSprite(size: number, phase: number, big = false): HTMLCanvasEleme
 }
 
 /** Dithered oval on the ground. The checker is anchored to world pixels so it never shimmers. */
-function drawShadow(ctx: Ctx, cx: number, cy: number, z: number, big = false): void {
+function drawShadow(ctx: Ctx, cx: number, cy: number, z: number, tier: ShadowTier = 0): void {
   const size = z >= 14 ? 3 : z >= 8 ? 2 : z >= 4 ? 1 : 0;
-  const [w, h] = (big ? SHADOW_BIG : SHADOW_SIZES)[size] as [number, number];
+  const [w, h] = (SHADOWS[tierOf(tier)] as [number, number][])[size] as [number, number];
   const x = cx - (w >> 1), y = cy + 1 - h;
-  ctx.drawImage(shadowSprite(size, (x + y) & 1, big), x, y);
+  ctx.drawImage(shadowSprite(size, (x + y) & 1, tier), x, y);
 }
 
 const ALERT_ROWS = [
@@ -249,11 +263,11 @@ function drawNosebleed(ctx: Ctx, v: ActorView, ox: number, oy: number, frame: nu
 }
 
 /** An actor drawn from a frame of its own (actor_kit.ts), cw by ch with its feet on the bottom, with the same shadow, bar and "!" as the others. */
-function drawFramed(ctx: Ctx, v: ActorView, f: Frame, cw: number, ch: number, shadow: 'none' | 'small' | 'big'): void {
+function drawFramed(ctx: Ctx, v: ActorView, f: Frame, cw: number, ch: number, shadow: 'none' | 'small' | 'big' | 'huge'): void {
   const cx = Math.round(v.x), cy = Math.round(v.y), z = Math.max(0, Math.round(v.z));
   const oy = cy - ch - z, head = oy + f.top;
   if (!v.blink) {
-    if (shadow !== 'none' && !v.hidden) drawShadow(ctx, cx, cy, z, shadow === 'big');
+    if (shadow !== 'none' && !v.hidden) drawShadow(ctx, cx, cy, z, shadow === 'huge' ? 2 : shadow === 'big' ? 1 : 0);
     ctx.drawImage(f.img, cx - (cw >> 1), oy);
     if (v.bar && !v.hidden) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
   }
@@ -265,6 +279,7 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
   switch (v.id) {
     case 'demogorgon': drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big'); return;
     case 'demodog': drawFramed(ctx, v, dogFrame(v), DOG_W, DOG_H, 'big'); return;
+    case 'alpha': drawFramed(ctx, v, alphaFrame(v), ALPHA_W, ALPHA_H, 'huge'); return;
     case 'vine': drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return;
     case 'pod': drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none'); return;
     default: break;
@@ -278,7 +293,7 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
   const head = oy + (sh.tops[row] as number);
   if (!v.blink) {
     drawShadow(ctx, cx, cy, z, C > CELL);
-    const frame = frameIndex(v.anim, v.t);
+    const frame = frameIndex(v.anim, v.t, v.kind === 'npc' && v.strained && v.anim === 'cast');
     ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[v.anim] + frame) * C, row * C, C, C, ox, oy, C, C);
     if (v.strained) drawNosebleed(ctx, v, ox, oy, frame);
     // A hero's bar is drawn later, on top of the whole scene, by drawHeroBar.
@@ -289,11 +304,11 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
 
 /** Builds every sheet and the main atlases up front. */
 export function warmActors(): void {
-  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'agent', 'rat', 'guard', 'warden']) {
+  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'steve', 'hopper', 'agent', 'rat', 'guard', 'warden']) {
     const sh = sheetOf(id);
     sh.main = render(sh, 'main');
   }
-  shadowSprite(0, 0); shadowSprite(0, 1); shadowSprite(0, 0, true); shadowSprite(0, 1, true); alertSprite();
+  shadowSprite(0, 0); shadowSprite(0, 1); shadowSprite(0, 0, true); shadowSprite(0, 1, true); shadowSprite(0, 0, 2); shadowSprite(0, 1, 2); alertSprite();
 }
 
 /** For the sheet scene: draws one raw frame at x, y (top-left). A guard or warden can have its shield down, and any enemy can be an elite. */

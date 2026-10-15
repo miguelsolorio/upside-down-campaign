@@ -11,6 +11,8 @@ import { camView } from './cameras.ts';
 import { hazardViews } from './hazards.ts';
 import { guarding, isShielded } from '../enemies/shield.ts';
 import { demoPose } from '../enemies/demo_hit.ts';
+import { alphaPose } from '../enemies/alpha_hit.ts';
+import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
 
 let shakeScale = 1;
@@ -49,18 +51,24 @@ function enemyView(s: S, e: Enemy): ActorView {
     const pose = e.dead ? undefined : demoPose(e.demo);
     if (pose) v.pose = pose;
   }
+  if (e.alpha && !e.dead) {
+    const pose = alphaPose(e.alpha);
+    if (pose) v.pose = pose;
+  }
   return v;
 }
 
-function propView(p: Prop): PropView {
+function propView(s: S, p: Prop): PropView {
   const v: PropView = { id: p.id, kind: p.kind, x: p.x, y: p.y, w: p.w, h: p.h, state: p.state, t: p.t };
   if (p.cam) v.cam = camView(p);
+  const k = riftK(s, p);
+  if (k !== undefined) v.k = k;
   return v;
 }
 
-const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON' };
+const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA' };
 
-/** The first Warden or Demogorgon that is awake and standing fills the boss bar. */
+/** The first Warden, Demogorgon or Alpha that is awake and standing fills the boss bar. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
@@ -131,6 +139,8 @@ export function buildView(s: S): SimView {
   }
   for (const e of s.enemies) if (!e.dormant) actors.push(enemyView(s, e));
   for (const n of s.npcs) {
+    const ward = wardView(s, n);
+    if (ward) { actors.push(ward); continue; }
     actors.push({ kind: 'npc', id: n.id, x: n.x, y: n.y, dir: n.dir, anim: 'idle', t: n.t, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null });
   }
   actors.sort((p, q) => p.y - q.y);
@@ -138,13 +148,14 @@ export function buildView(s: S): SimView {
     actors,
     fx: fxList(s),
     items: s.items.map((it) => ({ kind: it.kind, x: it.x, y: it.y, t: it.t })),
-    props: s.props.map(propView),
+    props: s.props.map((p) => propView(s, p)),
     hazards: hazardViews(s),
     floaters: s.floaters.slice(),
     hud: {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,
       quarters: s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
+      ward: wardHud(s),
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

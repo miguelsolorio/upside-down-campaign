@@ -1,21 +1,24 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STAGE_ORDER, chapterOf, defaultParty, isFinalStage, levelNumber, mergeHeroes, nextStage, opensChapter, partyFor, seedsFrom } from '../src/core/campaign.ts';
-import { isOpen, nextUncleared, parseProgress, recordClear } from '../src/core/progress.ts';
+import { PARTY_SIZE, STAGE_ORDER, chapterOf, defaultParty, isFinalStage, levelNumber, mergeHeroes, needsPicks, nextStage, opensChapter, partyFor, pickParty, poolFor, requiredFor, rosterFor, seedsFrom } from '../src/core/campaign.ts';
+import { isOpen, nextUncleared, parseProgress, recordClear, withPicks } from '../src/core/progress.ts';
 import { HERO_IDS } from '../src/heroes/index.ts';
 import type { HeroSnapshot } from '../src/core/types.ts';
 
-test('stages run 1.1, 1.2, 1.3, 2.1, and only the last one is final', () => {
-  assert.deepEqual([...STAGE_ORDER], ['1.1', '1.2', '1.3', '2.1']);
+test('stages run 1.1 to 2.3, and only the last one is final', () => {
+  assert.deepEqual([...STAGE_ORDER], ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3']);
   assert.equal(nextStage('1.1'), '1.2');
   assert.equal(nextStage('1.3'), '2.1');
-  assert.equal(nextStage('2.1'), null);
+  assert.equal(nextStage('2.1'), '2.2');
+  assert.equal(nextStage('2.2'), '2.3');
+  assert.equal(nextStage('2.3'), null);
   assert.equal(nextStage('9.9'), null, 'an unknown id leads nowhere');
   assert.equal(isFinalStage('1.2'), false);
-  assert.equal(isFinalStage('2.1'), true);
-  assert.deepEqual(STAGE_ORDER.map(levelNumber), [1, 2, 3, 4]);
+  assert.equal(isFinalStage('2.1'), false);
+  assert.equal(isFinalStage('2.3'), true);
+  assert.deepEqual(STAGE_ORDER.map(levelNumber), [1, 2, 3, 4, 5, 6]);
   assert.equal(levelNumber('9.9'), 1);
-  assert.deepEqual(STAGE_ORDER.map(chapterOf), [1, 1, 1, 2]);
+  assert.deepEqual(STAGE_ORDER.map(chapterOf), [1, 1, 1, 2, 2, 2]);
   assert.deepEqual(STAGE_ORDER.filter(opensChapter), ['1.1', '2.1']);
 });
 
@@ -80,4 +83,59 @@ test('progress marks cleared stages in order and opens the next one', () => {
   assert.deepEqual(back?.heroes.map((s) => [s.id, s.level, s.xp]), p.heroes.map((s) => [s.id, s.level, s.xp]));
   assert.equal(parseProgress({ v: 1, cleared: ['1.1'], heroes: [{ id: 'nobody', level: 1, xp: 0 }] }), null);
   assert.equal(parseProgress('junk'), null);
+});
+
+test('2.2 and 2.3 need picks from six heroes; chapter 1 and 2.1 keep a fixed party', () => {
+  for (const id of ['1.1', '1.2', '1.3', '2.1']) assert.equal(needsPicks(id), false, id);
+  for (const id of ['2.2', '2.3']) {
+    assert.equal(needsPicks(id), true, id);
+    assert.deepEqual(rosterFor(id), ['mike', 'dustin', 'lucas', 'will', 'max', 'steve']);
+    assert.ok(!rosterFor(id).includes('eleven'), 'Eleven is gone until the end of 2.3');
+  }
+  assert.deepEqual(requiredFor('2.2'), ['max']);
+  assert.deepEqual(requiredFor('2.3'), ['steve']);
+  assert.deepEqual(requiredFor('2.1'), []);
+});
+
+test('picks keep their order, drop strangers and repeats, force the required hero in and fill to four', () => {
+  assert.deepEqual(pickParty('2.2', ['will', 'max', 'lucas', 'mike']), ['will', 'max', 'lucas', 'mike']);
+  // Max is required in 2.2: she takes the place of the last pick that isn't required.
+  assert.deepEqual(pickParty('2.2', ['will', 'lucas', 'mike', 'steve']), ['will', 'lucas', 'mike', 'max']);
+  // Steve is required in 2.3, so carrying the 2.2 party over swaps him in.
+  assert.deepEqual(pickParty('2.3', ['will', 'max', 'lucas', 'mike']), ['will', 'max', 'lucas', 'steve']);
+  assert.deepEqual(pickParty('2.2', ['eleven', 'will', 'will']), ['will', 'max', 'mike', 'dustin']);
+  assert.deepEqual(pickParty('2.2'), defaultParty('2.2').map((s) => s.id));
+  for (const id of ['2.2', '2.3']) assert.equal(pickParty(id, []).length, PARTY_SIZE);
+  assert.deepEqual(pickParty('1.2', ['will']), ['mike', 'dustin', 'lucas', 'eleven'], 'a fixed party ignores picks');
+});
+
+test('a new hero joins at the pool average minus one, whoever else is picked', () => {
+  const known = [
+    { id: 'mike' as const, level: 7, xp: 0 }, { id: 'dustin' as const, level: 6, xp: 0 },
+    { id: 'lucas' as const, level: 5, xp: 0 }, { id: 'will' as const, level: 4, xp: 0 }, { id: 'eleven' as const, level: 9, xp: 0 },
+  ];
+  const a = partyFor('2.2', known, ['will', 'max', 'steve', 'lucas']);
+  const b = partyFor('2.2', known, ['mike', 'max', 'steve', 'dustin']);
+  assert.deepEqual(a.map((s) => s.id), ['will', 'max', 'steve', 'lucas']);
+  // The met heroes in the pool average 5.5 (Eleven isn't in it), so Max and Steve join at 4 either way.
+  for (const p of [a, b]) for (const s of p.filter((q) => q.id === 'max' || q.id === 'steve')) assert.equal(s.level, 4);
+});
+
+test('progress remembers the last picks, keeps them across a clear and drops a bad list', () => {
+  const p = withPicks(recordClear(null, '2.1', []), ['will', 'max', 'lucas', 'mike']);
+  assert.deepEqual(p.picks, ['will', 'max', 'lucas', 'mike']);
+  assert.deepEqual(recordClear(p, '2.2', []).picks, ['will', 'max', 'lucas', 'mike']);
+  assert.deepEqual(parseProgress(JSON.parse(JSON.stringify(p)))?.picks, ['will', 'max', 'lucas', 'mike']);
+  const bad = { ...JSON.parse(JSON.stringify(p)), picks: ['will', 'nobody'] };
+  const back = parseProgress(bad);
+  assert.ok(back, 'a bad pick list does not spoil the record');
+  assert.equal(back?.picks, undefined);
+  assert.equal(parseProgress({ ...bad, picks: ['will', 'will'] })?.picks, undefined);
+});
+
+test('the picks panel sees the whole pool at the levels they would play at', () => {
+  const known = [{ id: 'mike' as const, level: 7, xp: 0 }, { id: 'dustin' as const, level: 6, xp: 0 }, { id: 'lucas' as const, level: 5, xp: 0 }, { id: 'will' as const, level: 4, xp: 0 }];
+  assert.deepEqual(poolFor('2.2', known).map((s) => [s.id, s.level]), [['mike', 7], ['dustin', 6], ['lucas', 5], ['will', 4], ['max', 4], ['steve', 4]]);
+  assert.deepEqual(poolFor('2.2', []).map((s) => s.id), ['mike', 'dustin', 'lucas', 'will', 'max', 'steve']);
+  assert.equal(poolFor('2.2', []).find((s) => s.id === 'max')?.level, 4, 'the arrival level with nothing known');
 });

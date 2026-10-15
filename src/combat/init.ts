@@ -1,14 +1,15 @@
 // Builds the starting state from SimOptions: party, enemies, items, props and npcs.
-import type { PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
+import type { DefenseDef, PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { createRng } from '../core/rng.ts';
 import { ENEMY_DEFS, DIFFICULTY_MULT, ELITE } from '../enemies/defs.ts';
 import { xpToNext } from '../progression/xp.ts';
-import type { Enemy, S, Stats } from './state.ts';
+import type { Defense, Enemy, S, Stats } from './state.ts';
 import { noStatus } from './state.ts';
 import { makeHero } from './party.ts';
 import { hazardAt } from './hazards.ts';
 import { newDemo } from '../enemies/demo_hit.ts';
+import { newAlpha } from '../enemies/alpha_hit.ts';
 
 const TRAIL = 256;
 
@@ -18,14 +19,19 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack']);
 /** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
 const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox']);
+/** Props that stay solid once solved: the lit ones, and a gap, which is crossed and never filled in. */
+const SOLID_WHEN_SOLVED = new Set<PropKind>([...LIT_WHEN_SOLVED, 'gap']);
 /** What lights or clears a prop when its spawn does not say: a target, camera or fire-door box takes a shot, vines take fire. */
-const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = { target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense' };
+const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
+  target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense', gap: 'dash', crack: 'smash',
+};
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
-function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
+/** Builds an enemy from its spawn. The run-time spawns (spawns.ts) use it too. */
+export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
   const def = ENEMY_DEFS[sp.type];
   const f = tileFeet(sp.tx, sp.ty);
   const uid = s.nextUid++;
@@ -44,7 +50,16 @@ function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
     demo: sp.type === 'demogorgon' ? newDemo() : null,
-    hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false,
+    hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
+    alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
+  };
+}
+
+/** A defense that has not started: she stands where her npc does once it does (combat/defense.ts). */
+function newDefense(def: DefenseDef): Defense {
+  return {
+    def, waves: def.waves.slice().sort((a, b) => a.at - b.at), started: false, left: def.frames, total: def.frames,
+    hp: def.hp, hpMax: def.hp, down: false, done: false, flash: 0, animT: 0, next: 0, cursor: 0, pos: { x: 0, y: 0, ward: true },
   };
 }
 
@@ -74,12 +89,14 @@ export function createState(opts: SimOptions): S {
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
-    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, over: false, nextUid: 1, nextDrop: 1,
+    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
     },
     buf: { attack: 0, special: 0, burst: 0, swapT: 0, swapDelta: 0, swapTo: -1 },
     flow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
+    wardFlow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
+    burrows: (opts.burrows ?? []).map((b) => ({ ...b })), defense: opts.defense ? newDefense(opts.defense) : null, rtSeq: 0,
     cleared: new Set(), god: opts.god === true, boxes: false,
   };
   for (const sp of opts.spawns) {
@@ -98,13 +115,16 @@ export function createState(opts: SimOptions): S {
       let state: PropState = sp.state ?? DEFAULT_STATE[sp.prop] ?? 'closed';
       if (open.has(sp.id)) {
         state = LIT_WHEN_SOLVED.has(sp.prop) ? 'lit' : 'open';
-        if (!LIT_WHEN_SOLVED.has(sp.prop)) solid = false;
+        if (!SOLID_WHEN_SOLVED.has(sp.prop)) solid = false;
       }
-      const hitBy: Utility | undefined = sp.hitBy ?? DEFAULT_HIT[sp.prop];
+      // A prop spawned open has nothing to solve: vines that start open are a seal (Sim.closeProp), and nothing burns a seal.
+      const hitBy: Utility | undefined = sp.hitBy ?? (sp.state === 'open' ? undefined : DEFAULT_HIT[sp.prop]);
+      const dflt = SOLID_BY_DEFAULT.has(sp.prop);
+      const shutSolid = sp.solid === true || (sp.solid === undefined && dflt) || (sp.state === 'open' && dflt);
       const pushBy: Utility | undefined = sp.pushBy ?? (sp.prop === 'log' ? 'push' : undefined);
       s.props.push({
         id: sp.id, kind: sp.prop, x: sp.tx * TILE, y: sp.ty * TILE, w: sp.w ?? size[0], h: sp.h ?? size[1],
-        solid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
+        solid, shutSolid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
       });
     }
   }

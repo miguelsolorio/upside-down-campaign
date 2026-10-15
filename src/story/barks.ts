@@ -128,6 +128,17 @@ const LEVEL_UP: Record<HeroId, LevelUpSet> = {
     three: 'Level three. I can tell when it is close.',
     other: 'Stronger. It is not getting me again.',
   },
+  // Max and Steve: stand-ins until Story writes theirs (docs/level-5.md).
+  max: {
+    two: 'Level two. Try and keep up.',
+    three: 'Level three. New high score.',
+    other: 'Stronger. Still faster than you.',
+  },
+  steve: {
+    two: 'Level two. Okay, kids, behind me.',
+    three: 'Level three. The hair stays perfect.',
+    other: 'Stronger. Still the babysitter.',
+  },
 };
 const ELEVEN_FULL = "I'm stronger now, and I won't let anything happen to them.";
 

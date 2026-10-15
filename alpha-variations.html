@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demodog Alpha Designs</title>
+<meta name="description" content="Five designs for the Demodog Alpha, drawn with the game's own pixel tools next to the young demodog for scale. Pick one.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; width: 100%; height: auto; background: #000; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .muted { color: var(--mist); }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding-block: 10px; font: 600 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .bar b { color: var(--amber); }
+  h2.sec { margin: 30px 0 4px; font-size: 22px; }
+  .sub { margin: 0 0 14px; color: var(--mist); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 640px), 1fr)); gap: 18px; }
+  .card { border: 2px solid var(--shadow); padding: 14px; background: var(--night); display: flex; flex-direction: column; gap: 10px; }
+  .card.picked { border-color: var(--amber); }
+  .head { display: flex; align-items: center; gap: 12px; }
+  .badge { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 16px/1 var(--mono); }
+  .head h3 { margin: 0; font-size: 18px; }
+  .pick { margin-left: auto; padding: 6px 10px; border: 2px solid var(--dusk); background: var(--ink); font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .pick[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+  .note { margin: 0; color: var(--mist); min-height: 3em; }
+  .meta { margin: 0; font: 11px/1.3 var(--mono); color: var(--slate); }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Boss review</p>
+  <h1>Five designs for the Demodog Alpha</h1>
+  <p>The den boss of the Lab, about 32 by 24 px, where a young demodog is 24 by 20. Each card draws one design with the game's own pixel tools in four fill colors and the ink outline, the same count the young demodog uses: the walk frame, the howl pose it takes at 75, 50 and 25 percent health, and the leap before the pounce.</p>
+  <p class="muted">The pale grey demodog on the left of every card is the game's own frame, for scale. The top row is 4x. The strip under it is the real size, 1x, on a tunnel floor. Each design is facing right. The game draws left by flipping.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span></div></div>
+
+<main class="wrap">
+  <h2 class="sec">The designs</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="grid" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { ALPHA_OPTS, CARD_W, alphaCard, colorsOf } from '/src/gfx/var/alpha.ts';
+
+initGfx();
+const grid = document.getElementById('cards'), out = document.getElementById('pick');
+let picked = null;
+const cards = [];
+ALPHA_OPTS.forEach((o, i) => {
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.innerHTML = `<div class="head"><span class="badge">${i + 1}</span><h3></h3><button class="pick" type="button" aria-pressed="false">Pick</button></div><p class="note"></p>`;
+  card.querySelector('h3').textContent = o.name;
+  card.querySelector('.note').textContent = o.note;
+  const cv = alphaCard(o);
+  cv.style.maxWidth = CARD_W + 'px';
+  card.append(cv);
+  const meta = document.createElement('p'); meta.className = 'meta';
+  meta.textContent = `${colorsOf(o)} colors and the ink outline`;
+  card.append(meta);
+  const btn = card.querySelector('.pick');
+  btn.setAttribute('aria-label', `Pick ${o.name}`);
+  btn.onclick = () => {
+    picked = picked === o ? null : o;
+    cards.forEach((c) => { const on = picked === c.o; c.card.classList.toggle('picked', on); c.btn.setAttribute('aria-pressed', String(on)); });
+    out.innerHTML = '';
+    if (picked) { const b = document.createElement('b'); b.textContent = picked.name; out.append(b); } else out.textContent = 'none yet';
+  };
+  cards.push({ o, card, btn });
+  grid.append(card);
+});
+</script>
+</body>
+</html>

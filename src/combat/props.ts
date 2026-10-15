@@ -1,16 +1,20 @@
 // Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
+// A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat.
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
 // for any hero who swings at it from up close.
-import type { Utility } from '../core/types.ts';
+import type { PropKind, PropState, Utility } from '../core/types.ts';
+import { TILE } from '../core/config.ts';
 import type { Hero, Prop, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
-import { angleDiff, dist, nearestOnRect } from './space.ts';
+import { FOOT_H, FOOT_W, angleDiff, dist, footBlocked, nearestOnRect, rectsOverlap } from './space.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
+/** The state a prop returns to when it is shut again, where it is not 'closed'. */
+const DEFAULT_SHUT: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 /** How close a hero who can sense it must stand to show a hidden path, in px from the nearest point of the prop. */
 export const SENSE_RANGE = 40;
 /** How close a basic attack has to start to smash a prop, in px from the hero's feet to the nearest edge of it. */
@@ -96,6 +100,44 @@ export function smashAimed(s: S, h: Hero): void {
   }
 }
 
+/**
+ * Max has crossed a gap: it reads 'open', which solves the puzzle, and the stage hears it once. It stays solid, so walking
+ * across is still no way over, and it looks the same.
+ */
+export function crossGap(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.t = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+}
+
+/** The crack gives way: a crack and dust, the stage hears it, and it is open and walkable. */
+export function breakCrack(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.solid = false;
+  p.t = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+  sfx(s, 'crack');
+  dust(s, p.x + p.w / 2, p.y + p.h, 8);
+}
+
+/**
+ * One of Steve's nail bat swings lands from `h` along `aim`. Every shut crack inside the swing's reach breaks, the way a
+ * swing that reaches an enemy hits it: the nearest point of the crack to his feet within `reach` and inside the cone.
+ */
+export function smashCracks(s: S, h: Hero, aim: number, reach: number, half: number): void {
+  const hy = h.y - 2;
+  for (const p of s.props) {
+    if (p.kind !== 'crack' || p.state === 'open') continue;
+    const q = nearestOnRect(p, h.x, hy);
+    const d = dist(h.x, hy, q.x, q.y);
+    if (d > reach + 4) continue;
+    if (d > 2 && angleDiff(Math.atan2(q.y - hy, q.x - h.x), aim) > half) continue;
+    breakCrack(s, p);
+  }
+}
+
 /** A log (or anything pushable) is shoved out of the way. */
 export function clearProp(s: S, p: Prop): void {
   if (p.state === 'open') return;
@@ -114,11 +156,56 @@ export function openPropById(s: S, id: string): void {
   if (p.kind === 'log' || isPushable(p)) { clearProp(s, p); return; }
   if (p.kind === 'vines') { clearVines(s, p); return; }
   if (p.kind === 'hidden') { revealHidden(s, p); return; }
+  if (p.kind === 'gap') { crossGap(s, p); return; }
+  if (p.kind === 'crack') { breakCrack(s, p); return; }
   if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
   p.t = 0;
   if (p.kind === 'gate' || p.kind === 'door') sfx(s, 'gateOpen');
+}
+
+/** How far from a hero's feet closeProp looks for open floor, in tiles. */
+const EJECT_RADIUS = 8;
+
+/** The open floor nearest (x, y): a tile whose foot box is clear of solid tiles and props. Ties go to the side of the Alpha. */
+function nearestOpenFeet(s: S, x: number, y: number): { x: number; y: number } | null {
+  const alpha = s.enemies.find((e) => e.alpha !== null && !e.dead);
+  const tx0 = Math.floor(x / TILE), ty0 = Math.floor(y / TILE);
+  let best: { x: number; y: number } | null = null;
+  let bestScore = Infinity;
+  for (let ty = ty0 - EJECT_RADIUS; ty <= ty0 + EJECT_RADIUS; ty++) {
+    for (let tx = tx0 - EJECT_RADIUS; tx <= tx0 + EJECT_RADIUS; tx++) {
+      const fx = tx * TILE + TILE / 2, fy = ty * TILE + 12;
+      if (footBlocked(s, fx, fy)) continue;
+      const score = dist(x, y, fx, fy) + (alpha ? dist(alpha.x, alpha.y, fx, fy) * 0.001 : 0);
+      if (score < bestScore) { bestScore = score; best = { x: fx, y: fy }; }
+    }
+  }
+  return best;
+}
+
+/**
+ * Shuts an open prop again (Sim.closeProp): solid once more, like a seal of vines across the Alpha's den. A hero whose feet are
+ * inside it is moved to the nearest open floor, so nobody is ever stuck in one. Nothing else is told: no event.
+ */
+export function closePropById(s: S, id: string): void {
+  const p = s.props.find((q) => q.id === id);
+  if (!p || p.state !== 'open') return;
+  p.state = DEFAULT_SHUT[p.kind] ?? 'closed';
+  p.solid = p.shutSolid;
+  p.t = 0;
+  p.burnT = 0;
+  sfx(s, 'thud');
+  dust(s, p.x + p.w / 2, p.y + p.h, 5);
+  if (!p.solid) return;
+  s.heroes.forEach((h, i) => {
+    if (!rectsOverlap(h.x - FOOT_W / 2, h.y - FOOT_H, FOOT_W, FOOT_H, p.x, p.y, p.w, p.h)) return;
+    const to = nearestOpenFeet(s, h.x, h.y);
+    if (!to) return;
+    h.x = to.x; h.y = to.y; h.vx = 0; h.vy = 0;
+    if (i === s.active) { s.trailX.fill(to.x); s.trailY.fill(to.y); }
+  });
 }
 
 export function updateProps(s: S): void {

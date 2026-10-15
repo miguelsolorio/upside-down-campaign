@@ -1,7 +1,8 @@
 // School props (stage 1.3): the fire-door release box (dark, then lit), the wall of Upside Down vines across a doorway
 // (closed, then burned to stubs) and the agents' van tipped on its side. Each is one bold shape in at most five colors,
 // drawn by hand: ASCII for the box, strokes for the vines and the van. The static art is cached by drawProp (and
-// repainted at night like any prop); the live bits (lamp rays, embers) are drawn over it from PropView.t alone.
+// repainted at night like any prop); the live bits (lamp rays, embers) are drawn over it from PropView.t alone. A seal in 2.3 (id seal...)
+// that stands open is low roots, drawn in props_gate.ts.
 import type { PropView } from '../core/types.ts';
 import { createRng } from '../core/rng.ts';
 import { rect } from './canvas.ts';
@@ -10,6 +11,7 @@ import type { ArtFn } from './props_lab2.ts';
 import { rim } from './props_lab2.ts';
 import { Px } from './px.ts';
 import { transposed } from './tile_lab.ts';
+import { sealRootsArt } from './props_gate.ts';
 
 // ---------------------------------------------------------------- firebox
 const BOX = [
@@ -145,6 +147,8 @@ export function drawSchoolProp(ctx: Ctx, v: PropView, art: ArtFn, calm: boolean)
   }
   if (v.kind === 'vines') {
     const open = v.state === 'open';
+    // A seal (stage 2.3) that stands open was never burned: low roots along its doorway, and the way is clear.
+    if (open && v.id.startsWith('seal')) { ctx.drawImage(art(`seal${w}x${h}`, () => sealRootsArt(w, h)), x, y); return true; }
     const beat = calm || open ? 0 : (v.t >> 5) & 1;
     const ember = open && !calm ? (v.t >> 4) & 1 : 0;
     ctx.drawImage(art(`vines${w}x${h}${open}${open ? ember : beat}`, () => vinesArt(w, h, open, open ? ember : beat)), x, y);

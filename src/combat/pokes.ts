@@ -2,12 +2,18 @@
 // is still shut, or pushes against one. The sim only reports the attempt, as `{ t: 'poked', propId, hero }`, whichever
 // hero it was. The stage decides whether that hero was the wrong one for the puzzle and shows the hint (see
 // world/puzzles.ts). A pinned Demogorgon reports the same event for a hit that is not Eleven's beam (enemies/demo_hit.ts).
-import type { HeroId, PropKind } from '../core/types.ts';
+// A gap and a crack are the exception: the hero who solves them (Max's dash, Steve's nail bat) never pokes them.
+// A try at a prop that only knocked-out heroes can open stands the first of them back up (standFor), so a gate never
+// waits on a hero who is out.
+import type { HeroId, PropKind, Utility } from '../core/types.ts';
 import type { Hero, Prop, S } from './state.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './space.ts';
+import { HERO_DEFS } from '../heroes/defs.ts';
 
 /** Props that can be a puzzle. A crate, van or lantern only counts if it asks for something: a decor crate does not. */
-const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden']);
+const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack']);
+/** Props whose own hero is not "trying" them when he goes at them: it is how they are solved. */
+const SOLVED_BY_TRY = new Set<PropKind>(['gap', 'crack']);
 /** Frames before the same prop reports another attempt. */
 const POKE_GAP = 45;
 /** Frames of pushing against a shut prop before it counts as trying it. A third of a second. */
@@ -28,8 +34,36 @@ function shut(p: Prop): boolean {
 
 function report(s: S, p: Prop, hero: HeroId): void {
   if (p.pokeCd > 0) return;
+  if (SOLVED_BY_TRY.has(p.kind) && p.hitBy !== undefined && HERO_DEFS[hero].utilities.includes(p.hitBy)) return;
   p.pokeCd = POKE_GAP;
   s.events.push({ t: 'poked', propId: p.id, hero });
+  standFor(s, p);
+}
+
+/** Share of max HP a hero stands back up with when a gate needs them. The same as Eleven's for the pinned Demogorgon. */
+const STAND_HP = 0.3;
+
+/** What a shut prop asks for: a gap asks for the dash, anything else for its hitBy or pushBy. Gates and doors ask nothing. */
+function needs(p: Prop): Utility | undefined {
+  return p.kind === 'gap' ? 'dash' : p.hitBy ?? p.pushBy;
+}
+
+/**
+ * A gate can't wait on a hero who is out. When the party tries a prop that only knocked-out heroes can open (Max for a
+ * gap, Steve for a crack, Dustin for vines), the first of them stands back up with STAND_HP of their HP and the MP for
+ * one special. Nobody stands if someone who can open it is still up, or if nobody in the party can.
+ */
+function standFor(s: S, p: Prop): void {
+  const util = needs(p);
+  if (util === undefined) return;
+  const able = s.heroes.filter((h) => HERO_DEFS[h.id].utilities.includes(util));
+  const h = able[0];
+  if (!h || able.some((a) => !a.ko)) return;
+  h.ko = false;
+  h.hp = Math.max(1, Math.ceil(h.st.hp * STAND_HP));
+  h.mp = Math.max(h.mp, HERO_DEFS[h.id].special.mp);
+  h.anim = 'idle'; h.animT = 0;
+  s.bodies = s.bodies.filter((b) => b.id !== h.id);
 }
 
 /**

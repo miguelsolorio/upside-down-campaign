@@ -5,6 +5,8 @@
 //   node scripts/measure-stage.ts 1.2 chief 20
 //   node scripts/measure-stage.ts 1.3 chief 20
 //   node scripts/measure-stage.ts 2.1 chief 20
+//   node scripts/measure-stage.ts 2.2 chief 20
+//   node scripts/measure-stage.ts 2.3 chief 20
 //   node scripts/measure-stage.ts 1.2 chief 20 --careless
 //
 // The default bot sidesteps darts, slams and bashes almost perfectly, so it shows the best case. --careless never
@@ -20,6 +22,8 @@ import { STAGE_11 } from '../src/world/stages/stage11.ts';
 import { STAGE_12 } from '../src/world/stages/stage12.ts';
 import { STAGE_13 } from '../src/world/stages/stage13.ts';
 import { STAGE_21 } from '../src/world/stages/stage21.ts';
+import { STAGE_22 } from '../src/world/stages/stage22.ts';
+import { STAGE_23 } from '../src/world/stages/stage23.ts';
 import { defaultParty } from '../src/core/campaign.ts';
 import type { Difficulty } from '../src/core/types.ts';
 import type { StageData } from '../src/world/types.ts';
@@ -27,7 +31,7 @@ import type { StageData } from '../src/world/types.ts';
 const args = process.argv.slice(2);
 const flag = (f: string): boolean => args.includes(f);
 const [stageId = '1.2', difficulty = 'chief', seedsArg = '20'] = args.filter((a) => !a.startsWith('--'));
-const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21 };
+const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23 };
 const base = STAGES[stageId];
 if (!base) throw new Error(`unknown stage ${stageId}; try ${Object.keys(STAGES).join(' or ')}`);
 if (!['kid', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, chief or upside, not ${difficulty}`);
@@ -38,8 +42,9 @@ const careless = flag('--careless');
 const tile = (x: number, y: number): [number, number] => [Math.floor(x / 16), Math.floor((y - 4) / 16)];
 
 const rows: string[] = [];
-let cleared = 0, wiped = 0, stuck = 0, dmg = 0, kos = 0, frames = 0, low = 0, bossFrames = 0, bossRuns = 0;
-const BOSS_BEAT = stageId === '2.1' ? 'ambush' : 'demogorgon';
+let cleared = 0, wiped = 0, stuck = 0, dmg = 0, kos = 0, frames = 0, low = 0, bossFrames = 0, bossRuns = 0, fell = 0;
+// The fight the script times: 2.1 and 2.2 end on an ambush, 2.3 on the Alpha and the defense after it.
+const BOSS_BEAT = stageId === '2.1' || stageId === '2.2' ? 'ambush' : stageId === '2.3' ? 'alpha' : 'demogorgon';
 for (let seed = 1; seed <= N; seed++) {
   const grid = stageGrid(S);
   const sim = createSim(simOptions(S, grid, { party: defaultParty(stageId), seed, difficulty: difficulty as Difficulty }));
@@ -47,12 +52,16 @@ for (let seed = 1; seed <= N; seed++) {
   const dir = createDirector(S.beats, S.waves, {
     sim: () => sim, say: (_i, done) => done(), scare: (done) => done(), open: (id) => sim.openProp(id),
     alarm: () => undefined, jingle: () => undefined, finish: () => undefined,
+    // A beat that lights a string does what the play scene's lightUp does to the party.
+    light: (id) => { sim.openProp(id); sim.healParty(0.5); },
   });
-  let allDown = false, f = 0, lowest = 1, bossAt = -1;
+  let allDown = false, f = 0, lowest = 1, bossAt = -1, wardDown = false;
   for (; f < 30000 && !dir.finished() && !allDown; f++) {
     const ev = sim.step(bot.next(sim));
     dir.events(ev);
     if (ev.some((e) => e.t === 'allDown')) allDown = true;
+    // In a defense (2.3) the one the party guards going down loses the run too.
+    if (ev.some((e) => e.t === 'wardDown')) { allDown = true; wardDown = true; }
     const [tx, ty] = tile(sim.heroPos().x, sim.heroPos().y);
     dir.tick(tx, ty);
     if (bossAt < 0 && dir.hasFired(BOSS_BEAT)) bossAt = f;
@@ -60,13 +69,13 @@ for (let seed = 1; seed <= N; seed++) {
     lowest = Math.min(lowest, party.reduce((a, p) => a + p.hp, 0) / party.reduce((a, p) => a + p.hpMax, 0));
   }
   const st = sim.stats();
-  const result = dir.finished() ? 'clear' : allDown ? 'WIPED' : 'STUCK';
-  if (result === 'clear') cleared++; else if (result === 'WIPED') wiped++; else stuck++;
+  const result = dir.finished() ? 'clear' : wardDown ? 'FELL' : allDown ? 'WIPED' : 'STUCK';
+  if (result === 'clear') cleared++; else if (result === 'FELL') { wiped++; fell++; } else if (result === 'WIPED') wiped++; else stuck++;
   dmg += st.damageTaken; kos += st.kos; frames += f; low += lowest;
   if (bossAt >= 0) { bossFrames += f - bossAt; bossRuns++; }
   rows.push(`seed ${String(seed).padStart(3)}: ${result.padEnd(5)}  damage ${String(Math.round(st.damageTaken)).padStart(4)}  KOs ${st.kos}  ${(f / 60).toFixed(0).padStart(3)} s  lowest party HP ${(lowest * 100).toFixed(0).padStart(3)}%  XP ${st.xpEarned}${bossAt >= 0 ? `  boss ${((f - bossAt) / 60).toFixed(0)} s` : ''}`);
 }
 console.log(rows.join('\n'));
-console.log(`--- ${S.id} on ${difficulty}, ${N} seeds${careless ? ', careless bot' : ''}${flag('--no-hazards') ? ', no hazards' : ''}${mult ? `, enemyMult ${S.enemyMult}` : ''}: cleared ${cleared}, wiped ${wiped}, stuck ${stuck}; ` +
+console.log(`--- ${S.id} on ${difficulty}, ${N} seeds${careless ? ', careless bot' : ''}${flag('--no-hazards') ? ', no hazards' : ''}${mult ? `, enemyMult ${S.enemyMult}` : ''}: cleared ${cleared}, wiped ${wiped}${fell > 0 ? ` (the ward fell ${fell})` : ''}, stuck ${stuck}; ` +
   `average damage taken ${(dmg / N).toFixed(0)}, KOs ${(kos / N).toFixed(2)}, time ${(frames / N / 60).toFixed(0)} s, lowest party HP ${(low / N * 100).toFixed(0)}%` +
   (bossRuns > 0 ? `, boss fight ${(bossFrames / bossRuns / 60).toFixed(0)} s (${(100 * bossFrames / bossRuns / (frames / N)).toFixed(0)}% of the run)` : ''));

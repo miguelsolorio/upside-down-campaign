@@ -2,10 +2,10 @@
 // to the Hawkins map. The map enters the next stage or replays a cleared one, and campaign progress (core/progress.ts)
 // keeps every hero met so far, so the party for any stage comes from it.
 import type { Game } from './core/scene.ts';
-import type { PartySeed } from './core/types.ts';
+import type { HeroId, PartySeed } from './core/types.ts';
 import { CHAPTERS, STAGE_ORDER, chapterOf, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
 import { flags } from './core/flags.ts';
-import { clearProgress, loadProgress, recordClear, writeProgress } from './core/progress.ts';
+import { clearProgress, loadProgress, recordClear, withPicks, writeProgress } from './core/progress.ts';
 import type { Progress } from './core/progress.ts';
 import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
@@ -55,9 +55,14 @@ export function startGame(g: Game): void {
     g.scenes.go(createChapterCard({ title: 'Chapter one', subtitle: 'The vanishing', onDone: () => toPlay(jump, defaultParty(jump)) }));
   const toMap = (): void => g.scenes.go(createMapScene({
     progress,
-    party: (id) => partyFor(id, known()),
+    // From 2.2 on the map asks who goes (docs/map-screen.md, "Party picks"): the band shows the last picks, fixed up for the
+    // stage, and a confirmed pick is remembered for next time.
+    party: (id) => partyFor(id, known(), progress?.picks),
     name: stageName,
-    onPlay: (id) => toStage(id, partyFor(id, known())),
+    onPlay: (id, picks?: HeroId[]) => {
+      if (picks) { progress = withPicks(progress, picks); writeProgress(progress); }
+      toStage(id, partyFor(id, known(), picks ?? progress?.picks));
+    },
     onQuit: toTitle,
   }));
   /** A stage opens on its own card, unless the story is skipped. A chapter's first stage shows the chapter the first time. */

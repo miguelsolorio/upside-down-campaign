@@ -2,7 +2,7 @@
 // mouse against the same boxes, so what you see is what you can press. Pure, so Node can test that everything fits.
 import type { Rect } from '../core/pointer.ts';
 import type { Vec2 } from '../core/types.ts';
-import { HERO_IDS } from '../heroes/defs.ts';
+import { HERO_DEFS, HERO_IDS } from '../heroes/defs.ts';
 
 /** The 5 by 7 font's advance. */
 const GLYPH = 6;
@@ -21,6 +21,9 @@ export const TAB_X0 = PANEL.x + Math.floor((PANEL.w - (TAB_COUNT * TAB_W + (TAB_
 /** In a tab, the face's frame starts this far in, and the name this far in. */
 export const TAB_FACE_DX = 2;
 export const TAB_NAME_DX = 16;
+/** True when every hero's name fits beside the face in the tiny font (4 px a letter). With seven heroes it doesn't, and a
+ *  tab is the face alone, centered: the panel under it prints the name in full. */
+export const TAB_NAMES = HERO_IDS.every((id) => TAB_NAME_DX + HERO_DEFS[id].name.length * 4 - 1 <= TAB_W - 2);
 export const LEFT = 16;
 export const RIGHT = 240;
 export const TEXT_X = 48;

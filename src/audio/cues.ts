@@ -48,6 +48,8 @@ interface BlipDef {
   dur: number;
   vol: number;
   attack: number;
+  /** Slide this many semitones over the blip. Steve's sags and Hopper's drops, which is how they sound unimpressed. */
+  bend?: number;
 }
 
 /** One voice per speaker, from the table in the design doc. The narrator is quiet on purpose. */
@@ -59,6 +61,11 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   will: { wave: 'tri', midi: 69, spread: 2, dur: 0.075, vol: 0.2, attack: 0.012 },
   joyce: { wave: 'tri', midi: 60, spread: 3, dur: 0.07, vol: 0.22, attack: 0.008 },
   max: { wave: 'p25', midi: 72, spread: 3, dur: 0.04, vol: 0.2, attack: 0.002 },
+  // Steve is the mid square: between Lucas's low one and Mike's, a little slower, and every blip droops a semitone.
+  // Hopper is the low saw, the only sawtooth in the game, slow and gruff, and his sags too. A saw is quieter than a
+  // square at the same peak, so it has a little more volume.
+  steve: { wave: 'p50', midi: 61, spread: 2, dur: 0.06, vol: 0.2, attack: 0.004, bend: -1 },
+  hopper: { wave: 'saw', midi: 45, spread: 2, dur: 0.085, vol: 0.24, attack: 0.006, bend: -1 },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };
@@ -69,9 +76,11 @@ export function playBlip(
   const b = BLIPS[who];
   const semis = Math.floor(rand() * (2 * b.spread + 1)) - b.spread;
   const cents = (rand() - 0.5) * 30;
+  const freq = midiToHz(b.midi + semis) * Math.pow(2, cents / 1200);
   tone(ctx, dest, {
     wave: b.wave,
-    freq: midiToHz(b.midi + semis) * Math.pow(2, cents / 1200),
+    freq,
+    to: b.bend ? freq * Math.pow(2, b.bend / 12) : undefined,
     t,
     gate: b.dur,
     vol: b.vol,

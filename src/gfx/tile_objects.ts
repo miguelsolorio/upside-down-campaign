@@ -1,4 +1,4 @@
-// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts, the school's walls in tile_school2.ts and its furniture in tile_school3.ts, the street in tile_town.ts, the patch in tile_patch.ts and the barn and corn in tile_barn.ts.
+// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts, the school's walls in tile_school2.ts and its furniture in tile_school3.ts, the street in tile_town.ts, the patch in tile_patch.ts, the barn and corn in tile_barn.ts, the tunnels in tile_tunnel.ts and the overrun Lab in tile_flesh.ts.
 // Trees read their neighbours so a forest is one canopy with trunks only along its south edge.
 import type { TileName } from '../core/tiles.ts';
 import { hash2 } from './canvas.ts';
@@ -13,6 +13,8 @@ import { schoolFurniture } from './tile_school3.ts';
 import { townObject } from './tile_town.ts';
 import { patchObject } from './tile_patch.ts';
 import { barnObject } from './tile_barn.ts';
+import { tunnelTile } from './tile_tunnel.ts';
+import { fleshTile } from './tile_flesh.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
@@ -281,6 +283,10 @@ function mailbox(c: TileCtx): Px {
 
 export function objectTile(name: TileName, c: TileCtx): Px | null {
   switch (name) {
+    case 'tunnelfloor': case 'tunnelcap': case 'tunnelwall': case 'roots': case 'veins': case 'nest': case 'ladder':
+      return tunnelTile(name, c);
+    case 'fleshfloor': case 'fleshwall': case 'tear':
+      return fleshTile(name, c);
     case 'pine': return pine(c);
     case 'deadtree': return deadtree(c);
     case 'bush': return bush(c);

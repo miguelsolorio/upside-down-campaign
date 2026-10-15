@@ -54,6 +54,39 @@
 //   speed 0.55 for 90 frames). A pod that bursts dies for no XP; a vine takes double from fire. 'spore' fx: w the cloud's diameter.
 // - A prop spawned with smash: true (a camera, a console) also lights for any hero's basic attack that starts within
 //   18 px of it, aimed its way (props.ts), whatever its hitBy asks for.
+// - Max (heroes/max.ts, heroes/skate.ts): the Board is a two-hit chain. The Skate dash is a straight 72 px roll along her aim, 16 frames,
+//   invulnerable for the roll and 6 frames after, one hit to every enemy it passes through, a 'skate' sfx, a 'trail' fx (x, y where
+//   it started at chest height, angle the heading, w the length rolled) and the 'dash' anim. It stops at a wall. A gap (a drop, solid
+//   to walking and to enemies, not to sight or shots) does not stop it: a roll that would end over one carries on up to 16 px to
+//   clear it, or stops on the near side if the far side is blocked. The gaps she crossed open when she lands: state 'open', one
+//   propCleared each, still solid. A swap waits out the roll. A hero without 'dash' who pushes at a gap for 20 ticks, swings or fires
+//   at it is a 'poked'; Max is not. High score (Lv 3) adds 10 percent quarter drops and 5 percent crit.
+// - Steve (heroes/steve.ts, heroes/steve_guard.ts): the nail bat is a three-hit chain, and a swing that reaches a 'crack' prop (hitBy
+//   'smash', solid) breaks it: 'crack' sfx, dust, propCleared, open and not solid. Other heroes at a crack are 'poked'; Steve never is.
+//   Babysit pulses a 'taunt' fx (w the diameter, 144) and sfx, sets Enemy.taunt to 180 frames on every enemy within 72 px, and for
+//   300 frames he takes 40 percent less damage and the party's DEF is up 15 percent. Hair of steel (Lv 3): after 300 frames without
+//   a hit, the next one does nothing and floats SAVED.
+// - The bot (bot.ts) crosses a gap at a waypoint flagged `dash: true`: it swaps to the party hero with the 'dash' utility, faces the
+//   next waypoint, casts the special and carries on. It treats gaps and cracks as walls, so there is no way across without it.
+// - The Demodog Alpha (enemies/alpha.ts, enemies/alpha_hit.ts): hud.boss reads DEMODOG ALPHA while it is awake. It bites (24 frame
+//   wind-up under the "!"), lunges along a line locked when its wind-up starts, and pounces (pose 'crouch', then 'leap' with z rising,
+//   a 'mark' fx where it lands, a 36 px shockwave, then pose 'stun' for 40 frames at 50 percent more damage). At 75, 50 and 25
+//   percent HP it howls once each: pose 'howl' for 50 frames at double damage, a 'howl' fx (w the ring's diameter), the 'howl' sfx
+//   and { t: 'howl', spawnId } with three young demodogs climbing out of the three burrows nearest it. Hits never stun or stagger it.
+// - Run-time spawns (combat/spawns.ts) come up at SimOptions.burrows: awake, with a dust burst, worth 1 XP, dropping nothing, with
+//   ids made up (rt1, rt2, ...) that are never looked up in skipSpawns. Their groups are howl1 to howl3 and defense. A defense wave
+//   uses the burrows nearest the ward (the nearest and any within 128 px of it) in turn; with no burrows listed they come up on
+//   open floor round the Alpha or the ward.
+// - closeProp(id) shuts an open prop: solid again if it is solid when shut, no event, a thud sfx. A vines prop spawned `state: 'open'`
+//   has no default hitBy, so nothing burns a seal. A hero standing in the prop is moved to the nearest open tile (the tie goes to the
+//   Alpha's side).
+// - The defense (combat/defense.ts): defend() starts the clock. view().hud.ward is { name: 'ELEVEN', hp, hpMax, left, total } from then
+//   on. Her npc ActorView is anim 'cast', strained true, with a bar (anim 'ko' after wardDown, 'idle' after defended). The rift prop's
+//   PropView.k is 1 - left / total. Wave enemies go for her unless the hero is within 40 px of them, hit them in the last 90 frames, or
+//   Babysit holds them (Enemy.taunt). Her HP is fixed; damage to her scales with difficulty and enemyMult. God mode makes her immune.
+//   The clock runs through hit-stop and stops only for a burst and a game over. About every 600 frames the sim plays 'rumble'. At 0:
+//   { t: 'defended' }, the 'gateShut' sfx, a shake and a flash, and every run-time enemy still up dies for no XP and no kill event.
+//   If her HP hits 0 first: { t: 'wardDown', id } once, the clock stops and the waves stop.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

@@ -11,7 +11,8 @@ import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
 import { updateItems } from './pickups.ts';
-import { openPropById, updateProps } from './props.ts';
+import { closePropById, openPropById, updateProps } from './props.ts';
+import { startDefense, updateDefense } from './defense.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
 import { stepBurst, tryBurst } from './burst.ts';
@@ -75,6 +76,8 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   if (s.hitstop > 0) {
     s.hitstop--;
     tickShakeFlash(s);
+    // The defense clock is the stage's own: 45 seconds are 45 seconds, hit-stop or not. Only the burst and a game over stop it.
+    updateDefense(s);
     return drain(s);
   }
   if (s.swapCd > 0) s.swapCd--;
@@ -90,6 +93,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   tickEnemyStatus(s);
   tickHeroStatus(s);
   updateEnemies(s);
+  updateDefense(s);
   updateProjectiles(s);
   updateAreas(s);
   updateItems(s);
@@ -137,6 +141,8 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
       }
     },
     openProp: (id) => openPropById(s, id),
+    closeProp: (id) => closePropById(s, id),
+    defend: () => startDefense(s),
     healParty: (frac) => healParty(s, frac),
     bonus(xp, quarters) {
       const h = activeHero(s);

@@ -1,7 +1,7 @@
 // Internal state of one simulation. Only src/combat, src/heroes and src/enemies import this.
 import type {
   AnimId, CamDef, CharId, Dir, EnemyKind, Floater, FxView, Grid, HazardDef, HeroId, ItemKind, PropKind, PropState,
-  RunStats, SimEvent, SfxId, Utility,
+  RunStats, SimEvent, SfxId, Utility, Burrow, DefenseDef, DefenseWave,
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
 
@@ -11,7 +11,16 @@ export interface Pos { x: number; y: number }
 
 /** Burn and stun are live. Slow is cheap, so it works too. Confuse and curse are types only. */
 export interface Statuses { burn: number; burnTick: number; burnDmg: number; stun: number; slow: number }
+/** The most frames `Hero.unhurt` counts up to. A hero starts a level fully unhurt. */
+export const UNHURT_CAP = 600;
 export const noStatus = (): Statuses => ({ burn: 0, burnTick: 0, burnDmg: 0, stun: 0, slow: 0 });
+
+/**
+ * Max's Skate dash while it runs (heroes/skate.ts plans it when she casts). She rolls `len` px along (ux, uy), `gone` so far,
+ * and every enemy her body passes through takes one hit (`hit` holds their uids). `gaps` are the drops she crosses: they
+ * open when she lands.
+ */
+export interface Dash { ux: number; uy: number; len: number; gone: number; hit: number[]; gaps: string[] }
 
 export interface Hero {
   id: HeroId;
@@ -49,6 +58,10 @@ export interface Hero {
   combo: number; comboT: number;
   stat: Statuses;
   nosebled: boolean;
+  /** Max's Skate dash while it runs, else null. */
+  dash: Dash | null;
+  /** Frames since this hero last took a hit, capped at 600. Steve's Hair of steel reads it. */
+  unhurt: number;
 }
 
 export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'recover' | 'lured';
@@ -81,6 +94,28 @@ export interface DemoState {
 
 /** An acid glob: flies from (sx, sy) to (x, y), splashes when its age reaches life, and its splash is drawn for a few frames more. */
 export interface Glob { sx: number; sy: number; x: number; y: number; ang: number; age: number; life: number; atk: number; mark: FxView }
+
+/**
+ * What the Demodog Alpha is doing (enemies/alpha.ts). walk: stalking. bite: the close-range wind-up. wind: planted before the
+ * lunge, the line already locked. run: the lunge. crouch: before the pounce. air: the pounce. stun: dazed after landing.
+ * howl: stopped, calling the pack. recover: after a bite or a lunge.
+ */
+export type AlphaMove = 'walk' | 'bite' | 'wind' | 'run' | 'crouch' | 'air' | 'stun' | 'howl' | 'recover';
+
+/** The Alpha's own state. Every other enemy has `alpha: null`. */
+export interface AlphaState {
+  move: AlphaMove;
+  /** Frames left in the current move. */
+  t: number;
+  /** Frames until a lunge or a pounce can start. */
+  lungeCd: number; pounceCd: number;
+  /** Howls done so far, at 75, 50 and 25 percent HP. */
+  howls: number;
+  /** Pounce flight: where it jumped from and where it comes down. */
+  sx: number; sy: number; tx: number; ty: number;
+  /** The growing mark under a pounce, so a death can take it away. */
+  mark: FxView | null;
+}
 
 export interface Enemy {
   uid: number;
@@ -143,6 +178,35 @@ export interface Enemy {
   cloaked: boolean;
   /** A demodog in the air or in the wind-up before it: the pack lets one do that at a time. */
   lunging: boolean;
+  /** Frames this enemy stays taunted onto Steve (Babysit). Zero when it is not. The defense's targeting reads it. */
+  taunt: number;
+  /** The Demodog Alpha only. */
+  alpha: AlphaState | null;
+  /** A run-time spawn: a howl's pup or a defense wave's enemy (combat/spawns.ts). Worth 1 XP, drops nothing. */
+  rt: 'howl' | 'wave' | null;
+  /** The target its current attack is locked on: Eleven in a defense, instead of the hero. Chosen again after each attack. */
+  onWard: boolean;
+  /** The frame a hero last hit it. The defense's targeting reads it. */
+  hitAt: number;
+}
+
+/**
+ * The stage's defense while it runs (combat/defense.ts). `left` counts frames down from `total`. `down` is set once her HP
+ * hits 0, `done` once the clock runs out with her standing. `animT` is the ward's anim clock.
+ */
+export interface Defense {
+  def: DefenseDef;
+  waves: DefenseWave[];
+  started: boolean;
+  left: number; total: number;
+  hp: number; hpMax: number;
+  down: boolean; done: boolean;
+  flash: number;
+  animT: number;
+  /** The next wave to bring up, and where the round of burrows is. */
+  next: number; cursor: number;
+  /** Where she stands (feet). `ward` marks it as hers for the enemies' steering (enemies/steer.ts). */
+  pos: Pos & { ward: true };
 }
 
 export interface Proj {
@@ -188,6 +252,8 @@ export interface Prop {
   hitBy?: Utility; pushBy?: Utility;
   /** Any hero's basic attack from up close lights it too (see smashAimed). */
   smash?: boolean;
+  /** Whether it is solid when shut, so closeProp can put a seal back. A prop spawned open has solid false until then. */
+  shutSolid: boolean;
   /** Cameras only: the sweep, and the frames the head has been turning. */
   cam?: CamDef; camT: number;
   /** Frames before this prop can report another attempt (see pokes.ts). */
@@ -265,12 +331,20 @@ export interface S {
   calm: number;
   /** Mike's DM fiat: the next hit he lands is a crit. */
   armed: boolean;
+  /** Frames of Steve's Babysit left: he takes less damage and the whole party's DEF is up. */
+  babysit: number;
   over: boolean;
   nextUid: number;
   nextDrop: number;
   stats: RunStats;
   buf: Buf;
   flow: Flow;
+  /** The same BFS field, pointed at the ward: a defense enemy that has no line to her walks down it. */
+  wardFlow: Flow;
+  /** Where run-time enemies come up from, the defense (null without one) and a count for the ids the sim makes up. */
+  burrows: Burrow[];
+  defense: Defense | null;
+  rtSeq: number;
   cleared: Set<string>;
   god: boolean;
   boxes: boolean;

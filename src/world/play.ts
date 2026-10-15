@@ -20,7 +20,9 @@ import { createCharSheetScene, createDialogueBox, createGameOverScene, createPau
 import type { CharSheetHero } from '../ui/index.ts';
 import { onLevel, slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
-import { createDirector } from './triggers.ts';
+import { routeFrom } from './options.ts';
+import { isLoss, lossReason } from './loss.ts';
+import { createDirector, musicAfter } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
 import { nearUsable } from './interact.ts';
@@ -53,7 +55,7 @@ const MAX_LINE_TO = 290;
 const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
   p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
 
-const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden']);
+const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap']);
 
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
@@ -94,6 +96,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let speechCd = 0;
   let scare: { t: number; done: () => void } | null = null;
   let wipeT = -1;
+  /** What the game over card says under its title, set when the wipe is the ward falling and not the party going down. */
+  let wipeReason: string | undefined;
   let clearT = -1;
   /** How strong the pools of light are at night. 1 is normal; the scare stutters it. */
   let glowLevel = 1;
@@ -140,6 +144,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
     },
     alarm() { audio.sfx('klaxon'); },
     music: (track) => audio.music(track),
+    // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
+    light(prop) {
+      const pr = view.props.find((p) => p.id === prop && p.kind === 'lights');
+      if (pr && pr.state !== 'lit') lightUp(pr);
+    },
     jingle: (id) => audio.jingle(id),
     finish() { audio.jingle('clear'); clearT = 0; },
   };
@@ -218,10 +227,18 @@ export function createPlayScene(opts: PlayOptions): Scene {
     swapAge = null;
     deferred.length = 0;
     swallow.clear();
-    scare = null; speech = null; wipeT = -1;
+    scare = null; speech = null; wipeT = -1; wipeReason = undefined;
     puzzles.reset();
     glowLevel = 1;
-    audio.music(stage.music);
+    // The beats already played carry the music with them: a retry from the lights after the Alpha stays on its boss track.
+    audio.music(musicAfter(stage.beats, checkpoint.state.fired, stage.music));
+    // A bot that was walking the route starts over from the lights, not from wherever its route had got to.
+    if (bot) bot = makeBot();
+  }
+
+  /** The bot (?bot=1), walking the route from the checkpoint on. */
+  function makeBot(): Bot {
+    return createBot({ grid: stage.grid, waypoints: routeFrom(stage.waypoints, checkpoint) });
   }
 
   /** Same party, levels and kills; the lead, full health, standing at the last lit checkpoint. */
@@ -243,7 +260,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   function pushGameOver(): void {
     if (bot) { retry(); return; }
-    const sc = createGameOverScene({ onRetry: () => { closeOverlay(sc); retry(); }, onQuit: () => opts.onQuit() });
+    const sc = createGameOverScene({ onRetry: () => { closeOverlay(sc); retry(); }, onQuit: () => opts.onQuit(), ...(wipeReason ? { reason: wipeReason } : {}) });
     overlay = sc;
     game.scenes.push(sc);
   }
@@ -300,7 +317,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
         case 'heroKO': speak(e.hero, 'ko', true); break;
         case 'pickup': if (e.item === 'eggo') speak(e.hero, 'eggo'); break;
         case 'swap': speak(e.to, 'swapIn'); swapAge = 0; break;
-        case 'allDown': if (wipeT < 0) wipeT = 0; break;
+        // The whole party down, or the one it guards in a defense: either loses the stage (world/loss.ts).
+        case 'allDown': case 'wardDown': if (wipeT < 0 && isLoss(e)) { wipeT = 0; wipeReason = lossReason(e); } break;
         case 'poked': puzzles.poke(e.propId, e.hero); break;
         default: break;
       }
@@ -379,7 +397,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       } else {
         build(seeds(g), stage.start, [], []);
       }
-      bot = g.flags.bot ? createBot({ grid: stage.grid, waypoints: stage.waypoints }) : null;
+      bot = g.flags.bot ? makeBot() : null;
       audio.music(stage.music);
       audio.intensity(0);
       if (g.flags.dev) unmountDev = mountDevPanel(devHooks());
@@ -419,11 +437,14 @@ export function createPlayScene(opts: PlayOptions): Scene {
         const p = sim.heroPos();
         director.tick((p.x / TILE) | 0, ((p.y - 4) / TILE) | 0);
         if (!leftHome && Math.hypot(p.x - stage.start.x, p.y - stage.start.y) > HOME_RADIUS) leftHome = true;
-        puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: puzzleProps(stage.puzzles, view.props, view.actors, foes), hero: p });
+        puzzles.tick({
+          hasFired: director.hasFired, busy: director.busy(), props: puzzleProps(stage.puzzles, view.props, view.actors, foes), hero: p,
+          party: view.hud.party.map((m) => m.id),
+        });
       }
       if (scare) stepScare(scare);
-      // No lighting mid-boss: the save would hold a fired beat for a fight the retry puts back to sleep.
-      prompt = frozen || director.busy() || view.hud.boss ? null : nearUsable(view.props, sim.heroPos());
+      // No lighting or cabinets mid-boss or mid-defense: the save would hold a fired beat for a fight the retry puts back to sleep.
+      prompt = frozen || director.busy() || view.hud.boss || view.hud.ward ? null : nearUsable(view.props, sim.heroPos());
       burstCall = !frozen && !director.busy() && !prompt && view.hud.burstReady;
       if (prompt && !bot && g.input.pressed('interact')) {
         if (prompt.kind === 'arcade') openArcade(prompt); else lightUp(prompt);

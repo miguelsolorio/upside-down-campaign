@@ -42,14 +42,15 @@ test('the route drops through the hole: chapter 1 and 2.1 sit above the horizon,
   assert.ok(Math.abs(a.x - b.x) < 40, 'the drop is under the patch');
 });
 
-test('states come from progress: cleared, then the next stage open, then locked, and the stages ahead are always locked', () => {
+test('states come from progress: cleared, then the next stage open, then locked', () => {
   assert.equal(states(null), 'olllll');
   assert.equal(states(cleared(1)), 'collll');
   assert.equal(states(cleared(2)), 'ccolll');
   assert.equal(states(cleared(3)), 'cccoll');
-  // Everything cleared: no open node is left, and the stages ahead stay grey.
-  assert.equal(states(cleared(4)), 'ccccll');
-  assert.deepEqual(mapNodes(cleared(4)).slice(-2).map((n) => n.state), ['locked', 'locked']);
+  assert.equal(states(cleared(4)), 'ccccol');
+  assert.equal(states(cleared(5)), 'ccccco');
+  // Everything cleared: no open node is left.
+  assert.equal(states(cleared(6)), 'cccccc');
 });
 
 test('the token starts on the next uncleared stage, or the last stage when all are cleared', () => {
@@ -58,8 +59,10 @@ test('the token starts on the next uncleared stage, or the last stage when all a
   assert.equal(startNode(cleared(1)), '1.2');
   assert.equal(startNode(cleared(2)), '1.3');
   assert.equal(startNode(cleared(3)), '2.1');
-  assert.equal(startNode(cleared(4)), '2.1');
-  assert.equal(startNode(cleared(4)), STAGE_ORDER[STAGE_ORDER.length - 1]);
+  assert.equal(startNode(cleared(4)), '2.2');
+  assert.equal(startNode(cleared(5)), '2.3');
+  assert.equal(startNode(cleared(6)), '2.3');
+  assert.equal(startNode(cleared(6)), STAGE_ORDER[STAGE_ORDER.length - 1]);
 });
 
 test('a start node is never locked', () => {
@@ -81,10 +84,11 @@ test('stepping goes to the neighbour, skips locked nodes and stops at the ends',
   assert.equal(stepFrom(two, '1.2', 1), '1.3');
   assert.equal(stepFrom(two, '1.3', 1), '1.3', 'the locked 2.1 is not a step');
 
-  const all = mapNodes(cleared(4));
-  assert.equal(stepFrom(all, '1.3', 1), '2.1');
-  assert.equal(stepFrom(all, '2.1', 1), '2.1', '2.2 and 2.3 are locked');
-  assert.equal(stepFrom(all, '2.1', -1), '1.3');
+  const four = mapNodes(cleared(4)); // up to 2.1 cleared, 2.2 open, 2.3 locked
+  assert.equal(stepFrom(four, '1.3', 1), '2.1');
+  assert.equal(stepFrom(four, '2.1', 1), '2.2');
+  assert.equal(stepFrom(four, '2.2', 1), '2.2', 'the locked 2.3 is not a step');
+  assert.equal(stepFrom(four, '2.1', -1), '1.3');
 });
 
 test('a step jumps over a locked node in the middle', () => {

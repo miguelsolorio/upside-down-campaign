@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Party Picks Layouts</title>
+<meta name="description" content="Five layouts for the party picks panel, drawn over the real map screen with the game's own code. Pick one.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .muted { color: var(--mist); }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; padding-block: 10px; font: 600 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .bar b { color: var(--amber); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+  h2.sec { margin: 30px 0 4px; font-size: 22px; }
+  .sub { margin: 0 0 14px; color: var(--mist); }
+  .cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .card { border: 2px solid var(--shadow); padding: 14px; background: var(--night); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .card.picked { border-color: var(--amber); }
+  .head { display: flex; align-items: center; gap: 12px; }
+  .badge { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 16px/1 var(--mono); }
+  .head h3 { margin: 0; font-size: 18px; }
+  .pick { margin-left: auto; padding: 6px 10px; border: 2px solid var(--dusk); background: var(--ink); font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .pick[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+  .note { margin: 0; color: var(--mist); }
+  .shot { overflow-x: auto; }
+  .shot canvas { width: 1040px; height: 672px; max-width: none; }
+  .key { margin: 26px 0 40px; padding: 14px; border: 2px solid var(--shadow); background: var(--night); }
+  .key h2 { margin: 0 0 8px; font-size: 18px; }
+  .key ul { margin: 0; padding-left: 20px; color: var(--mist); }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Party picks review</p>
+  <h1>Five layouts for the party picks</h1>
+  <p>From stage 2.2 on, more heroes can play than fit in a party, so the map asks who goes. Each card draws the panel over the real map screen with the game's own renderer, font and palette. The big picture is 3x. The copy beside it is 1x, the size the game draws.</p>
+  <p class="muted">Every card shows the same moment: stage 2.2, six heroes, Mike leading Dustin, Lucas and Max, Max locked in, the cursor on Dustin and START live. The map's own hints are off while a panel is open, because the panel prints its own legend.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><b id="pick">none yet</b>
+  <label class="chk"><input id="anim" type="checkbox"> Animate</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The layouts</h2>
+  <p class="sub">Pick one by name. The one you choose is what gets built.</p>
+  <div class="cards" id="cards"></div>
+  <section class="key">
+    <h2>The marks are the same in all five</h2>
+    <ul>
+      <li>An amber frame and LEAD for the lead, the same amber as the active hero in the HUD.</li>
+      <li>A number for the rest of the party, in party order, and a padlock after it for a hero the stage needs.</li>
+      <li>Bone frames for the party, slate for the bench, and dimmer names and levels on the bench.</li>
+      <li>White corners for the cursor, as on the map. The list uses the menus' yellow pointer instead.</li>
+      <li>The gate word is what the hero opens: DASH, SMASH, BURN, SHOOT or SENSE. Mike has none.</li>
+      <li>START is yellow and live with four picked. It would go slate with fewer.</li>
+    </ul>
+  </section>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { PICKS_OPTS, picksCard } from '/src/ui/var/picks.ts';
+
+initGfx();
+const grid = document.getElementById('cards'), out = document.getElementById('pick');
+const cards = [];
+let picked = null, t = 60, animate = false;
+
+PICKS_OPTS.forEach((o, i) => {
+  const c = picksCard(o);
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.innerHTML = `<div class="head"><span class="badge">${i + 1}</span><h3></h3><button class="pick" type="button" aria-pressed="false">Pick</button></div><p class="note"></p><div class="shot"></div>`;
+  card.querySelector('h3').textContent = o.name;
+  card.querySelector('.note').textContent = o.note;
+  card.querySelector('.shot').append(c.canvas);
+  const btn = card.querySelector('.pick');
+  btn.setAttribute('aria-label', `Pick ${o.name}`);
+  btn.onclick = () => {
+    picked = picked === o ? null : o;
+    cards.forEach((k) => { const on = picked === k.o; k.card.classList.toggle('picked', on); k.btn.setAttribute('aria-pressed', String(on)); });
+    out.textContent = picked ? picked.name : 'none yet';
+  };
+  cards.push({ o, c, card, btn });
+  grid.append(card);
+});
+
+const draw = () => { for (const k of cards) k.c.render(t); };
+draw();
+document.getElementById('anim').onchange = (e) => { animate = e.target.checked; if (!animate) { t = 60; draw(); } };
+(function loop() { if (animate) { t++; draw(); } requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>

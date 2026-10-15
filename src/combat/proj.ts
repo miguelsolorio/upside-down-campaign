@@ -40,7 +40,7 @@ function collide(s: S, p: Proj, hero: Hero): boolean {
       sparks(s, p.x, p.y, 4);
       return false;
     }
-    if (propBlocks(pr) && p.x >= pr.x && p.x <= pr.x + pr.w && gy >= pr.y && gy <= pr.y + pr.h) {
+    if (pr.kind !== 'gap' && propBlocks(pr) && p.x >= pr.x && p.x <= pr.x + pr.w && gy >= pr.y && gy <= pr.y + pr.h) {
       sparks(s, p.x, p.y, 2);
       return false;
     }

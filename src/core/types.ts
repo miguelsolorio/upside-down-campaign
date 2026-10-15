@@ -10,16 +10,18 @@ export interface Vec2 { x: number; y: number }
 export interface Rect { x: number; y: number; w: number; h: number }
 
 // ---------------------------------------------------------------- identity
-/** Playable so far. Will joins in chapter 2. Later: max, steve, nancy, hopper, robin, eddie. */
-export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will';
-/** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1. */
-export type CharId = HeroId | 'joyce' | 'max';
+/** Playable so far. Will joins in chapter 2, Max and Steve in 2.2. Later: nancy, hopper, robin, eddie. */
+export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | 'steve';
+/** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1 and plays from
+ *  2.2 on. Hopper is an npc at the Gate in 2.3. */
+export type CharId = HeroId | 'joyce' | 'hopper';
 /**
  * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
  * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
  * vine: a rooted tendril that lashes and slows. pod: a rooted spore pod that bursts into a slowing cloud. Both burn.
+ * alpha: the Demodog Alpha, the chapter 2 boss (docs/level-6.md).
  */
-export type EnemyKind = 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod';
+export type EnemyKind = 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -57,8 +59,9 @@ export interface ActorView {
   elite?: boolean;
   /** A guard or warden whose shield is up. It stops hits from the front, so gfx can show the shield raised or dropped. */
   guarding?: boolean;
-  /** The Demogorgon's pose, when it is doing something other than walking (docs/level-3.md, "Demogorgon"). */
-  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned';
+  /** A boss's pose, when it is doing something other than walking. The Demogorgon uses charge to pinned
+   *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md). */
+  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl';
   /** The Demogorgon's head petals are open (below 60% HP). */
   petals?: boolean;
   /** A hidden enemy that only Will's Cold spot shows. gfx draws it faint or not at all. */
@@ -70,7 +73,10 @@ export type FxKind =
   | 'rock' | 'candy' | 'dart' | 'blast' | 'heal' | 'ring' | 'spore'
   /** acid: a Demogorgon spit glob in flight and its splash. mark: a shadow mark on the floor where it will land.
    *  bolt: Will's sketch bolt. reveal: a hidden path showing itself. */
-  | 'acid' | 'mark' | 'bolt' | 'reveal';
+  | 'acid' | 'mark' | 'bolt' | 'reveal'
+  /** trail: the streak behind Max's Skate dash, w its length, angle its heading. howl: the Alpha's howl, a ring that
+   *  grows to w. taunt: Steve's Babysit pulse, a ring that grows to w. */
+  | 'trail' | 'howl' | 'taunt';
 
 export interface FxView {
   kind: FxKind;
@@ -94,10 +100,14 @@ export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
  * firebox: a red fire-door release box on a wall. hitBy 'shoot' lights it (targetHit), like a console.
  * hidden: a hidden path, solid and drawn as plain wall until a hero with `sense` stands near it (hitBy 'sense').
  * arcade: an arcade cabinet with a live screen, solid furniture.
+ * gap: a one-tile drop across a tunnel. Always solid to walking and to enemies; only Max's Skate dash crosses it. Her first
+ *   crossing sets it 'open' (the puzzle is solved) but it stays solid. Drawn the same in both states.
+ * crack: a cracked wall across a passage, hitBy 'smash'. Steve's nail bat breaks it: open and walkable.
+ * rift: the Gate, a tear in the Lab's floor and wall. Solid. Its PropView.k is how far it has closed during the defense.
  */
 export type PropKind =
   | 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console'
-  | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade';
+  | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade' | 'gap' | 'crack' | 'rift';
 /** alert: a camera that has just spotted the party. */
 export type PropState = 'closed' | 'open' | 'lit' | 'off' | 'alert';
 export interface PropView {
@@ -107,6 +117,8 @@ export interface PropView {
   state: PropState; t: number;
   /** A camera's current cone. angle is in radians, 0 = right, y down. live is false once it is shot. */
   cam?: { angle: number; range: number; half: number; live: boolean };
+  /** 0..1 progress a prop shows: how far the Gate (a rift) has closed during the defense. Absent means 0. */
+  k?: number;
 }
 
 /** A sweeping camera. It turns between two headings, spots a hero inside its cone with a clear line, and raises the alarm. */
@@ -167,6 +179,11 @@ export interface HudView {
   /** How recharged the hero swap is: 0 just swapped, 1 ready. */
   swapReady: number;
   boss: { name: string; hp: number; hpMax: number } | null;
+  /**
+   * The defense (docs/level-6.md): who the party guards, their health, and the clock in frames. left counts down from
+   * total to 0. The HUD draws it where the boss bar goes. Null outside a defense.
+   */
+  ward: { name: string; hp: number; hpMax: number; left: number; total: number } | null;
 }
 export interface SimView {
   /** Y-sorted, painter's order: heroes, followers, enemies, npcs. */
@@ -211,6 +228,9 @@ export type SfxId =
   /** roar: the Demogorgon's call. acid: a spit. lunge: a charge or demodog lunge. petals: the head opening.
    *  chomp: a bite landing. thud: a charge hitting a wall. reveal: a hidden path showing. sizzle: vines burning away. */
   | 'roar' | 'acid' | 'lunge' | 'petals' | 'chomp' | 'thud' | 'reveal' | 'sizzle'
+  /** howl: the Alpha calling its pack. skate: Max's dash rolling. crack: a cracked wall breaking. taunt: Steve's Babysit.
+   *  rumble: the Gate tearing at the floor during the defense. gateShut: the Gate closing for good. */
+  | 'howl' | 'skate' | 'crack' | 'taunt' | 'rumble' | 'gateShut'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
@@ -241,6 +261,12 @@ export type SimEvent =
   | { t: 'poked'; propId: string; hero: HeroId }
   /** The Demogorgon hit 0 HP and is pinned: only Eleven's Mind Blast finishes it. spawnId is the boss's spawn. */
   | { t: 'pinned'; spawnId: string }
+  /** The Alpha howled and called its pack. Once per howl. */
+  | { t: 'howl'; spawnId: string }
+  /** The one the party guards in a defense went down. The stage treats it like the whole party going down. */
+  | { t: 'wardDown'; id: CharId }
+  /** The defense clock ran out with the ward standing: the Gate is shut. Once. */
+  | { t: 'defended' }
   | { t: 'burst' }
   | { t: 'natTwenty'; hero: HeroId; source: 'crit' | 'levelUp' };
 
@@ -251,6 +277,28 @@ export type SimSpawn =
   /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. */
   | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; cam?: CamDef }
   | { kind: 'npc'; id: CharId; tx: number; ty: number; dir: Dir };
+
+/** A tile the sim may bring enemies up from at run time: the Alpha's howl and the defense waves. */
+export interface Burrow { tx: number; ty: number }
+
+/** One wave of a defense: `n` enemies of `type`, `at` frames after the defense starts, from the burrows. */
+export interface DefenseWave { at: number; n: number; type: EnemyKind; tier?: EnemyTier }
+
+/**
+ * A defense (docs/level-6.md, "The defense"): an npc channels for `frames` while the party keeps enemies off them. The npc
+ * gets `hp` (before difficulty) and a bar. Enemies favor the npc over the hero. The clock always runs. When it reaches 0
+ * the sim emits `defended`, every enemy still up from the defense waves dies with no XP, and `prop` (the rift) shows
+ * k = 1. If the npc's HP reaches 0 first, the sim emits `wardDown` once and stops the clock.
+ */
+export interface DefenseDef {
+  /** The npc spawn id (a CharId) the party guards. */
+  npc: CharId;
+  hp: number;
+  frames: number;
+  /** A rift prop whose k follows the clock, from 0 at the start to 1 at the end. */
+  prop?: string;
+  waves: DefenseWave[];
+}
 
 export interface PartySeed {
   id: HeroId; level?: number; xp?: number;
@@ -269,7 +317,11 @@ export interface SimOptions {
   hazards?: HazardDef[];
   /** Scales this stage's enemies on top of the difficulty setting: their HP and the damage they deal (not hazards). 1 if left out. */
   enemyMult?: number;
-  /** Spawn ids already cleared (retry from a checkpoint). */
+  /** Tiles the sim brings run-time enemies up from: the Alpha's howl and the defense waves. */
+  burrows?: Burrow[];
+  /** The stage's defense, started by Sim.defend(). */
+  defense?: DefenseDef;
+  /** Spawn ids already cleared (retry from a checkpoint). Run-time spawns are never skipped. */
   skipSpawns?: string[];
   /** Prop ids already opened or cleared. */
   openProps?: string[];
@@ -314,6 +366,11 @@ export interface Sim {
   spawnGroup(group: string): void;
   /** Opens a gate or clears a log by prop id. */
   openProp(id: string): void;
+  /** Shuts a prop that is open, such as a vine seal across the Alpha's den: closed and solid again. A hero standing in it
+   *  is moved out to the nearest open tile, so nobody is ever stuck inside one. */
+  closeProp(id: string): void;
+  /** Starts the stage's defense (SimOptions.defense). Does nothing without one, or once it has started. */
+  defend(): void;
   healParty(frac: number): void;
   /** A prize outside a fight (the arcade's high score): XP shared the usual way, quarters, and floaters over the hero. */
   bonus(xp: number, quarters: number): void;

@@ -16,6 +16,8 @@ export interface DirectorEnv {
   alarm?(): void;
   /** Switches the stage music, such as to `clock` when a boss wakes. Optional so a stand-in env can leave it out. */
   music?(track: TrackId): void;
+  /** Lights a lights prop the way the player does: the save point and the heal. Optional like music. */
+  light?(prop: string): void;
   jingle(id: JingleId): void;
   /** The level-clear beat reached its last step. */
   finish(): void;
@@ -42,6 +44,20 @@ type Item = BeatStep | { t: 'end'; id: string };
 
 const inside = (r: TileRect, tx: number, ty: number): boolean =>
   tx >= r.tx && ty >= r.ty && tx < r.tx + r.w && ty < r.ty + r.h;
+
+/**
+ * The track playing once the beats in `fired` have run: the last `music` step among them, in the stage's beat order, else the
+ * stage's own. A retry or a load rebuilds the director from a snapshot without replaying its beats, so this is how a boss track
+ * that a fired beat switched to carries on.
+ */
+export function musicAfter(beats: Beat[], fired: readonly string[], dflt: TrackId): TrackId {
+  let track = dflt;
+  for (const b of beats) {
+    if (!fired.includes(b.id)) continue;
+    for (const st of b.steps) if (st.t === 'music') track = st.track;
+  }
+  return track;
+}
 
 export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv): Director {
   let fired = new Set<string>();
@@ -104,6 +120,9 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
         break;
       }
       case 'open': env.open(s.prop); break;
+      case 'close': env.sim().closeProp(s.prop); break;
+      case 'defend': env.sim().defend(); break;
+      case 'light': env.light?.(s.prop); break;
       case 'finish': over = true; env.finish(); break;
       case 'end': completed.add(s.id); for (const b of beats) if ('after' in b.when && b.when.after === s.id) fire(b); break;
     }
@@ -129,6 +148,8 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
           for (const b of beats) if ('event' in b.when && b.when.event === e.t && b.when.prop === e.propId) fire(b);
         } else if (e.t === 'pinned') {
           for (const b of beats) if ('event' in b.when && b.when.event === 'pinned' && b.when.spawn === e.spawnId) fire(b);
+        } else if (e.t === 'defended') {
+          for (const b of beats) if ('event' in b.when && b.when.event === 'defended') fire(b);
         }
       }
     },

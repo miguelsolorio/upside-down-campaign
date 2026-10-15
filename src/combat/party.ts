@@ -6,7 +6,7 @@ import {
 } from '../progression/xp.ts';
 import { talentGainedAt } from '../progression/talents.ts';
 import type { Hero, S, Stats } from './state.ts';
-import { activeHero, noStatus } from './state.ts';
+import { UNHURT_CAP, activeHero, noStatus } from './state.ts';
 import { hitEnemy } from './damage.ts';
 import { dist } from './space.ts';
 import { addFx, dust, flashScreen, floater, hitstop, schedule, sfx, shake } from './fx.ts';
@@ -30,7 +30,7 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
     x, y, dir: 'down', aim: Math.PI / 2, vx: 0, vy: 0, z: 0, moving: false, anim: 'idle', animT: 0,
     flash: 0, invuln: 0, blink: false, hurtT: 0,
     actT: 0, act: null, lock: 1, actId: 0, cdBasic: 0, cdSpecial: 0, combo: 0, comboT: 0,
-    stat: noStatus(), nosebled: false,
+    stat: noStatus(), nosebled: false, dash: null, unhurt: UNHURT_CAP,
   };
 }
 
@@ -63,6 +63,8 @@ export function trySwap(s: S, idx: number, forced = false): boolean {
   const to = s.heroes[idx];
   if (!to || idx === s.active || to.ko) return false;
   if (!forced && s.swapLock > 0) return false;
+  // A rolling Max lands first: tagging out mid-roll could leave the next hero standing over a gap.
+  if (!forced && activeHero(s).dash) return false;
   const charged = forced || s.swapCd <= 0;
   const from = activeHero(s);
   from.actId++; from.actT = 0; from.act = null; from.vx = 0; from.vy = 0;
@@ -84,6 +86,8 @@ export function trySwap(s: S, idx: number, forced = false): boolean {
 /** Resolves the buffered swap request, if any. */
 export function handleSwap(s: S): void {
   if (s.buf.swapT <= 0) return;
+  // The request waits out Max's roll.
+  if (activeHero(s).dash) return;
   s.buf.swapT--;
   let idx = -1;
   if (s.buf.swapTo >= 0) idx = s.buf.swapTo;

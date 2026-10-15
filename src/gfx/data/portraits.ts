@@ -5,6 +5,7 @@
 import type { ColorName } from '../palette.ts';
 import type { CharId, Expr } from '../../core/types.ts';
 import type { Part } from './types.ts';
+import { HOPPER_PORTRAIT, MAX_PORTRAIT, STEVE_PORTRAIT } from './portraits_l56.ts';
 
 export type Shirt = 'stripes' | 'plaid' | 'plain' | 'jacket' | 'cardigan';
 
@@ -220,47 +221,7 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-  max: {
-    bg: 'purple', shirt: 'plain',
-    pal: { s: 'skin0', d: 'skin1', h: 'orange', i: 'amber', j: 'red', g: 'cyan', G: 'ink', H: 'bone', a: 'teal1', b: 'cyan', c: 'teal1' },
-    back: [
-      { y: 7, rows: [
-        '....................H.H.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................gGg.',
-        '....................H.H.',
-      ] },
-      { y: 12, rows: [
-        '...hhh..........hhh.....',
-        '...hhh..........hhh.....',
-        '....hh..........hh......',
-      ] },
-    ],
-    front: [{ y: 2, rows: [
-      '.......hhhhhhhhhh.......',
-      '.....hhhhhhihhhhhhh.....',
-      '....hhhhhiiihhhhhhhh....',
-      '....hhhhhhhhhhhhhhhh....',
-      '....hhjhhhhhhhhhhjhh....',
-      '....hhh.hhhhhhh.hhhh....',
-      '....hh............hh....',
-      '....hh............hh....',
-      '....hhh..........hhh....',
-      '....hh............hh....',
-    ] }],
-    trim: [],
-    grin: [{ y: 13, rows: [
-      '........eeeeeeee........',
-      '........ewweewwe........',
-      '.........eeeeee.........',
-    ] }],
-  },
-} satisfies Record<CharId, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper'>, PortraitSpec>;
 
-export const PORTRAITS: Record<CharId, PortraitSpec> = BASE_PORTRAITS;
+// Max, Steve and Hopper are in portraits_l56.ts.
+export const PORTRAITS: Record<CharId, PortraitSpec> = { ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT };

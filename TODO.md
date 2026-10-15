@@ -7,8 +7,8 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Owner's calls: Max and Steve join in 2.2, Hopper is an npc at the Gate. Party picks lock the heroes a stage's gates need (Max for 2.2, Steve for 2.3) and remember the last party. Eleven can fall in the defense, and a retry starts the defense again. Variation sheets first for the Alpha, the picks panel, the tunnels and the new heroes
 - [x] Spine: `docs/level-5.md`, `docs/level-6.md`, "Party picks" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, ten tiles, `pickParty` and remembered picks, stand-ins, stub stages
 - [x] Sim A: Max, Steve, `gap`, `crack`, the bot's dash crossing (805 tests pass)
-- [ ] Art: `heroes2-variations.html`, `alpha-variations.html`, `tunnel-variations.html`
-- [ ] Sim B: the Alpha, the seals, run-time spawns, the defense
+- [x] Art: `heroes2-variations.html` (Max, Steve, Hopper), `alpha-variations.html`, `tunnel-variations.html`, sent to the owner one image per option
+- [x] Sim B: the Alpha, the seals, run-time spawns, the defense (850 tests pass). The Alpha's ATK is 26, not the spec's 34: at 34 the bot never won the den
 - [ ] UI: `picks-variations.html`
 - [ ] Owner picks from the four sheets
 - [ ] World 2.2 and 2.3, Audio, Art build, UI build (picks panel, ward bar), flow glue

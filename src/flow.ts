@@ -17,10 +17,15 @@ import { createPlayScene, stageName, stageStart } from './world/index.ts';
 const FIRST = STAGE_ORDER[0] as string;
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five'];
 
-/** The save that waits at the start of a stage: the party that walks in, nothing fired, nothing killed. */
-function entrySave(stage: string, party: PartySeed[]): SaveData {
+/**
+ * The save that waits at the start of a stage: the party that walks in, nothing fired, nothing killed. A hero who is new
+ * to the party has no XP in the seed (Will in 2.1, Max and Steve in 2.2), and the loader refuses a hero without a level
+ * and XP, so the whole save would read as none. The sim treats a missing level as 1 and a missing XP as 0, so fill them in.
+ */
+export function entrySave(stage: string, party: PartySeed[]): SaveData {
   const at = stageStart(stage);
-  return { v: 1, stage, party, checkpoint: { x: at.x, y: at.y, state: { fired: [], cleared: [] } }, killed: [], openProps: [] };
+  const seeds = party.map((p) => ({ ...p, level: p.level ?? 1, xp: p.xp ?? 0 }));
+  return { v: 1, stage, party: seeds, checkpoint: { x: at.x, y: at.y, state: { fired: [], cleared: [] } }, killed: [], openProps: [] };
 }
 
 export function startGame(g: Game): void {
@@ -74,9 +79,9 @@ export function startGame(g: Game): void {
     g.scenes.go(createChapterCard({ title: `Level ${WORDS[levelNumber(id)] ?? levelNumber(id)}`, subtitle: stageName(id), onDone: () => toPlay(id, party) }));
   };
   const toPlay = (id: string, party: PartySeed[], resume?: SaveData): void => {
-    // A save from the stage's first moment holds the party it was entered with. A mid-stage save does not, so
-    // START OVER falls back to the party a stage normally opens with.
-    entry = resume ? (resume.checkpoint.state.fired.length === 0 ? resume.party : defaultParty(id)) : party;
+    // A save from the stage's first moment holds the party it was entered with. A mid-stage save does not, so START OVER
+    // builds the party the map would give now: the last picks and the best level of each hero, not the stage's default.
+    entry = resume ? (resume.checkpoint.state.fired.length === 0 ? resume.party : partyFor(id, known(), progress?.picks)) : party;
     g.scenes.go(createPlayScene({
       stageId: id,
       time: flags.time ?? undefined,

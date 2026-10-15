@@ -1,6 +1,8 @@
 // Turns a gamepad snapshot into actions. Pure: no DOM at import, so Node can test it with fake pads.
 // Layout is the browser's "standard" mapping, which is what an Xbox controller reports over USB or Bluetooth.
 import type { Action } from './bindings.ts';
+import { DEFAULT_PAD_MAP, PAD_BUTTONS } from './padmap.ts';
+import type { PadMap } from './padmap.ts';
 import type { Vec2 } from './types.ts';
 
 export interface PadButton { pressed: boolean; value: number }
@@ -28,6 +30,23 @@ const ON = 0.5;
 const OFF = 0.35;
 const TRIGGER = 0.5;
 
+/** The rebindable buttons (indices 0 to 7) a pad is holding. The triggers count past half a pull. */
+export function heldButtons(pad: PadLike): Set<number> {
+  const out = new Set<number>();
+  for (let i = 0; i < PAD_BUTTONS.length; i++) {
+    const b = pad.buttons[i];
+    if (i === BTN.LT || i === BTN.RT ? (b?.value ?? 0) > TRIGGER : !!b?.pressed) out.add(i);
+  }
+  return out;
+}
+
+/** The rebindable buttons held on any of these pads. */
+export function heldOn(pads: readonly PadLike[]): Set<number> {
+  const out = new Set<number>();
+  for (const pad of pads) for (const i of heldButtons(pad)) out.add(i);
+  return out;
+}
+
 export interface PadReading { actions: Set<Action>; stick: Vec2 }
 
 const DIRS: ReadonlyArray<readonly [Action, 0 | 1, 1 | -1]> = [
@@ -41,19 +60,15 @@ export function pickPads<T extends PadLike>(list: ArrayLike<T | null | undefined
   return standard.length > 0 ? standard : live;
 }
 
-/** One pad. `prev` is the actions this pad produced last tick, which gives the stick its hysteresis. */
-export function readPad(pad: PadLike, prev: ReadonlySet<Action> = new Set()): PadReading {
+/**
+ * One pad. `prev` is the actions this pad produced last tick, which gives the stick its hysteresis. `map` says what the
+ * eight face, bumper and trigger buttons do. The default is the factory layout, which the on-screen controls use too, so
+ * only a real controller is given the player's own.
+ */
+export function readPad(pad: PadLike, prev: ReadonlySet<Action> = new Set(), map: PadMap = DEFAULT_PAD_MAP): PadReading {
   const out = new Set<Action>();
   const down = (i: number): boolean => !!pad.buttons[i]?.pressed;
-  const trigger = (i: number): boolean => (pad.buttons[i]?.value ?? 0) > TRIGGER;
-
-  if (down(BTN.A)) { out.add('attack'); out.add('confirm'); out.add('interact'); }
-  if (down(BTN.X)) out.add('special');
-  if (down(BTN.B)) out.add('cancel');
-  if (down(BTN.Y)) out.add('burst');
-  if (down(BTN.LB)) out.add('swapPrev');
-  if (down(BTN.RB)) out.add('swapNext');
-  if (trigger(BTN.RT)) out.add('attack');
+  for (const i of heldButtons(pad)) for (const a of map[i] ?? []) out.add(a);
   if (down(BTN.VIEW)) out.add('skip');
   if (down(BTN.MENU)) { out.add('pause'); out.add('start'); }
   if (down(BTN.UP)) out.add('up');
@@ -77,11 +92,11 @@ export function readPad(pad: PadLike, prev: ReadonlySet<Action> = new Set()): Pa
 }
 
 /** Every chosen pad at once: actions are merged and the strongest stick wins. */
-export function readPads(pads: readonly PadLike[], prev: ReadonlySet<Action> = new Set()): PadReading {
+export function readPads(pads: readonly PadLike[], prev: ReadonlySet<Action> = new Set(), map: PadMap = DEFAULT_PAD_MAP): PadReading {
   const actions = new Set<Action>();
   let stick: Vec2 = { x: 0, y: 0 };
   for (const pad of pads) {
-    const r = readPad(pad, prev);
+    const r = readPad(pad, prev, map);
     for (const a of r.actions) actions.add(a);
     if (Math.hypot(r.stick.x, r.stick.y) > Math.hypot(stick.x, stick.y)) stick = r.stick;
   }

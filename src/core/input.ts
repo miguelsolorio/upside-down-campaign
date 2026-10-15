@@ -2,8 +2,10 @@ import type { SimInput, Vec2 } from './types.ts';
 import { actionsForCode } from './bindings.ts';
 import type { Action } from './bindings.ts';
 import { clientToGame } from './pointer.ts';
-import { pickPads, readPad, readPads } from './gamepad.ts';
+import { heldOn, pickPads, readPad, readPads } from './gamepad.ts';
 import type { PadLike } from './gamepad.ts';
+import { PAD_BUTTONS, currentPadMap, maskedMap } from './padmap.ts';
+import type { PadBtn } from './padmap.ts';
 
 export type { Action };
 /** Whichever the player touched last. The prompts name its keys or buttons. */
@@ -46,8 +48,19 @@ export interface InputState {
   point(): void;
   /** Takes and clears a one-line message about the controller (connected, lost), for a toast. */
   notice(): string | null;
+  /**
+   * True on the one tick after the player was pulled away from the game: the window lost focus, the tab was hidden, or the
+   * controller they were playing with disconnected. A scene where something moves answers it by pausing. Cleared by poll.
+   */
+  interrupted(): boolean;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
   capture(cb: (code: string) => void): () => void;
+  /**
+   * The next press of a controller's face, bumper or trigger button goes to cb instead of the game, for rebinding. Those
+   * buttons do nothing in the game while it waits, and the one pressed stays silent until it is let go. Start, View, the
+   * D-pad and the stick still work, so a controller can back out. Returns a function that stops waiting.
+   */
+  capturePad(cb: (b: PadBtn) => void): () => void;
   /** A scene says an action would do something this tick, so the touch screen can show its button. Cleared by poll. */
   offer(a: Action): void;
   offered(a: Action): boolean;
@@ -70,7 +83,14 @@ export function createInput(opts: InputOptions = {}): InputState {
   let touchStickWas = false;
   let offers = new Set<Action>();
   let message: string | null = null;
+  let breakLatch = false;
+  let breakNow = false;
   let captureCb: ((code: string) => void) | null = null;
+  let padCaptureCb: ((b: PadBtn) => void) | null = null;
+  /** The rebindable buttons down last tick, to tell a fresh press from one already held. */
+  let padHeld = new Set<number>();
+  /** Buttons that stay silent until they are let go: the one a rebind just took. */
+  let padSilent = new Set<number>();
   let at: Vec2 | null = null;
   let moveLatch = false;
   let movedNow = false;
@@ -100,7 +120,11 @@ export function createInput(opts: InputOptions = {}): InputState {
     for (const a of acts) latch.add(a);
   });
   addEventListener('keyup', (e) => { down.delete(e.code); });
-  addEventListener('blur', () => { down.clear(); });
+  addEventListener('blur', () => { down.clear(); breakLatch = true; });
+  // A hidden tab stops the loop, so the pause waits for the first tick after it comes back.
+  if (typeof document !== 'undefined') {
+    document.addEventListener?.('visibilitychange', () => { if (document.visibilityState === 'hidden') breakLatch = true; });
+  }
   // A finger anywhere on the page, the margins included, hands the prompts to the touch controls.
   addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') device = 'touch'; });
 
@@ -140,13 +164,37 @@ export function createInput(opts: InputOptions = {}): InputState {
   });
   addEventListener('gamepaddisconnected', () => {
     if (livePads().length > 0) return;
-    if (device === 'gamepad') device = opts.startDevice ?? 'keyboard';
+    // Only a pad that was being played with interrupts. One lost while the keyboard or the touch screen had the hands isn't news to the game.
+    if (device === 'gamepad') {
+      device = opts.startDevice ?? 'keyboard';
+      breakLatch = true;
+    }
     message = 'CONTROLLER LOST';
   });
 
+  const ALL_BUTTONS = new Set(PAD_BUTTONS.map((_, i) => i));
+
+  /** Hands a fresh face, bumper or trigger press to the rebinding that is waiting for one. */
+  function padCapture(held: ReadonlySet<number>): void {
+    for (const i of padSilent) if (!held.has(i)) padSilent.delete(i);
+    if (padCaptureCb) {
+      const fresh = [...held].find((i) => !padHeld.has(i));
+      if (fresh !== undefined) {
+        const cb = padCaptureCb;
+        padCaptureCb = null;
+        padSilent = new Set(held);
+        cb(PAD_BUTTONS[fresh] as PadBtn);
+      }
+    }
+    padHeld = new Set(held);
+  }
+
   /** All controller actions this tick. The device flips to gamepad on a fresh press, not on a stick that merely drifts. */
   function padActions(): Set<Action> {
-    const r = readPads(livePads(), padPrev);
+    const pads = livePads();
+    padCapture(heldOn(pads));
+    const map = padCaptureCb ? maskedMap(currentPadMap(), ALL_BUTTONS) : padSilent.size > 0 ? maskedMap(currentPadMap(), padSilent) : currentPadMap();
+    const r = readPads(pads, padPrev, map);
     analog = r.stick;
     const stickOn = r.stick.x !== 0 || r.stick.y !== 0;
     let fresh = stickOn && !stickWas;
@@ -204,6 +252,8 @@ export function createInput(opts: InputOptions = {}): InputState {
         canvas.style.cursor = hand ? 'pointer' : '';
       }
       hand = false;
+      breakNow = breakLatch;
+      breakLatch = false;
     },
     held: (a) => now.has(a),
     pressed: (a) => pressedNow.has(a),
@@ -232,6 +282,12 @@ export function createInput(opts: InputOptions = {}): InputState {
       captureCb = cb;
       return () => { if (captureCb === cb) captureCb = null; };
     },
+    capturePad(cb) {
+      padCaptureCb = cb;
+      padHeld = heldOn(livePads());
+      return () => { if (padCaptureCb === cb) padCaptureCb = null; };
+    },
+    interrupted: () => breakNow,
     offer(a) { offers.add(a); },
     offered: (a) => offers.has(a),
   };

@@ -166,7 +166,7 @@ The bot dodges telegraphed melee almost perfectly and walks straight through haz
 - The lab and dressing tiles, with variants so the lab doesn't look stamped. They must also survive the night remap, because `tests/night.test.ts` runs every tile name through it.
 - Props: `door` (closed, open), `console` (dark, lit), `camera` (turning head, alert, shot), `tank`, `rack`, `generator`. `crate` and `van` art already exist.
 - Overlays: `drawHazard` for the panels and grates, `drawCamCone` for the cones. `world/render.ts` draws them after the tiles and before anything that stands on the floor.
-- Optional: a dithered red border pulse for the klaxon, off under reduce-flashing.
+- The klaxon's red glow, built: `world/klaxon.ts` (pure timing, tested in `tests/klaxon.test.ts`) and `drawKlaxon` in `world/render.ts`. The play scene's `env.alarm` rings it. Bands of red step in from the edge of the world view (never over the HUD), fading in over 0.6 s, breathing once every 2.5 s for 5 s, and fading out over 1.5 s. It never blinks. With Reduce flashing on it holds one steady dim level instead of breathing.
 
 ## What Audio makes for this level
 

@@ -90,6 +90,24 @@ The lead and Dustin don't move and nothing wipes more. With the recruits a level
 - [x] The shell's colours are a `ShellTheme` (`ui/touchtheme.ts`), with the keys in `ui/touchkeys.ts`, so every touch file is under 500 lines. The grey shell draws as before
 - [x] The shell follows the phone's light or dark mode, even mid-game. A GAME BOY row in the options (touch only, where CONTROLS sits off touch) forces AUTO, LIGHT or DARK, and it's saved with the settings. `touch-controls.html` has a Light and Dark switch
 
+## Rough edges pass (the code fixes from the list below)
+
+- [x] Losing focus pauses. `input.interrupted()` is true for one tick after the window blurs or the tab is hidden, and the play scene opens the pause menu on it (not for `?bot=1`, and not over dialogue, the wipe or the clear, where nothing is moving to protect). A cabinet run holds the same way. The title, the map and the menus ignore it
+- [x] A lost controller pauses. Only the pad being played with counts: one that drops while the keyboard or the touch screen has the hands, or one of two, shows CONTROLLER LOST and nothing else
+- [x] The Lab's lockers and shelves were already fixed. The second pass gave corridor A its lockers as `L` and the storage hall its shelves as `N`, and `c` is left only on the animal lab's cage wall, so this list item was stale. Swapping in 1.3's `lockerwall` would have put school lockers in the Lab. `tests/lab-furniture.test.ts` now holds the split
+- [x] The klaxon's glow: `world/klaxon.ts` and `drawKlaxon`, rung from `env.alarm`. A red edge glow that fades in over 0.6 s, breathes once every 2.5 s for 5 s and fades out over 1.5 s, under the HUD. With Reduce flashing on it holds one steady dim level and nothing breathes or blinks
+- [x] The dev panel follows the stage: its group and prop suggestions (and the two boxes' starting values) come from the stage's own spawns (`world/devhooks.ts`). `KEPT_PROPS` moved to `world/options.ts`, and `play.ts` is back under 500 lines
+- [x] Verified: typecheck clean, 1091 tests pass (38 new), the production build passes. In the browser with `?mute=1`: blur, a hidden tab and a pad pulled out each open the pause menu and hold the level, the title ignores all three, a Galaga run holds on blur, the klaxon glow breathes in 1.2 and holds steady with Reduce flashing on, and the panel's boxes list 1.2's, 2.1's and 2.3's own groups and props. No console errors on the title, 1.2, 2.1 and 2.3. A real controller and a real window switch were simulated with events, not tried by hand
+
+## Controller pass (rebinding and rumble)
+
+- [x] Controller buttons rebind. The CONTROLS screen has a GAMEPAD page (it opens first while a controller is in use): ATTACK, SPECIAL, SWAP BACK, SWAP NEXT and CRIT, each with two of the eight face, bumper and trigger buttons. A taken button swaps, every action keeps one, and A (confirm and use) and B (back) are fixed the way Enter and Esc are. Saved beside the keys in `core/padmap.ts`, and every hint that names a button follows
+- [x] Rumble: short weak pulses on the active hero's hit, a KO, a level-up and a boss slam or landing, through `vibrationActuator`, skipped quietly where it's missing. A RUMBLE ON / OFF row shows in the options only while a controller is in use, saved with the settings
+- [x] The one hook into world code: a call to `rumble(ev)` at the top of `forward()` in `world/play.ts`. Nothing in combat, enemies or the HUD changed
+- [x] The options rebuild their rows when the input changes (picking up a pad with the menu open), keeping the cursor on its row
+- [x] Verified: typecheck clean, 1149 tests pass (58 new), the production build passes. In the browser with `?mute=1` and a simulated pad: RUMBLE shows and saves, the GAMEPAD page rebinds by pad and by mouse, B binds without backing out, Start cancels, View clears, the level's hints and the pause menu follow the new buttons, and a bot run buzzes the fake pad's motor on hits and level-ups
+- [ ] The picks screen's controller legend still prints `X LEAD` whatever SPECIAL is bound to (`legend()` in `ui/picks_logic.ts`, left alone while chapter 3 works in it). Its `A PICK` and `B BACK` are right, since A and B are fixed
+
 ## Status
 
 - [x] Level 1 (stage 1.1 Mirkwood, the title, the basement prologue). See `docs/level-1.md`
@@ -138,14 +156,10 @@ From Levels 1 and 2:
 - The bot opens gates and the crate by flag. The Dustin burn, the Lucas relay shot and the Eleven push are covered by unit tests and one by-hand browser run, not by a full human run of the stage. Nobody has played 1.2 start to finish by hand.
 - The bot is a good dodger and flatters the difficulty: hazards were about 75 percent of its damage on the first draft, and it sidesteps almost every guard bash. `createBot({ careless: true })` is a floor for a player who is not dodging. Nobody has played the harder Lab by hand, so how it feels to a person is unknown. If it is still too easy, raise `enemyMult` in `stage12.ts`; if it is too hard, lower it. The difficulty setting stacks on top.
 - Two bot stalls (a pickup at its reach edge, an idle enemy at its engage radius) were fixed in `combat/bot.ts`. There may be others.
-- The cage tile (`c`) is also used for lockers and shelves in corridor A and the storage hall, so some of them read as rat cages. A separate locker tile would fix it.
-- The klaxon has a sound but no visual. The red border pulse was cut. The `alarm` step calls an optional `env.alarm`, so a visual can hang off it later.
-- The dev panel's group and prop suggestions are still the 1.1 ones. Use `?stage=1.2` to jump and `?dev=1` to open the panel.
 - Stage 1.2's dialogue is off by default like the rest. The `l2_*` scripts only show with SKIP STORY off, and have only had the mechanical copy checks.
-- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Its buttons can't be rebound, there's no rumble, and a lost controller doesn't pause the game. Only the standard mapping is read.
+- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Nobody has felt the rumble: the pulses are weak numbers from `core/rumble.ts` (`PULSES`), sent through the Gamepad `vibrationActuator`, and a simulated pad only proves they're asked for. Only the standard mapping is read.
 - The autosave at Joyce's lights keeps levels, kills and story beats but not health, and the results screen only times the stretch since the last Continue.
 - Keyboard rebinding is saved per browser. Arrow keys, Enter, Escape and Backspace are fixed so menus can't get stuck.
-- Losing focus silences the game but doesn't pause it, so enemies keep moving while you're away.
 - Skip story is on by default, so the level's tutorial lines never show unless the player turns it off. The combat controls sit in the bottom left corner of the level instead, and fade to grey once the party leaves the starting yard. A puzzle gets a hint the moment someone tries it with the wrong hero (swings or fires at it, or pushes against its gate or door), with a bobbing yellow caret over the prop and a subtitle that names the hero (MAYBE ELEVEN SHOULD TRY HER SHOVE), so the Lab's three gates teach nothing else in words when the story is skipped. A party that tries nothing still gets the hint after five seconds near the puzzle.
 - Only four tag-in stingers exist (one per playable hero).
 - Level 1 takes the bot 86 seconds and Level 2 takes it 58. A person should need five to eight minutes for each.

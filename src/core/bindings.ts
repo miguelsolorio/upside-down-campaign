@@ -1,6 +1,7 @@
 // Key bindings: the defaults, the player's overrides, the conflict rules and the labels the UI shows.
 // Pure TypeScript with no DOM, so Node tests can import it. Storage is wrapped and safe in Node.
 import { storage } from './storage.ts';
+import { loadPadBindings, padButtonLabel } from './padmap.ts';
 
 export type Action =
   | 'up' | 'down' | 'left' | 'right'
@@ -200,7 +201,9 @@ export function parseBindings(data: unknown): Bindings {
   return out;
 }
 
+/** Reads the saved keys and the saved controller buttons (padmap.ts), which sit side by side in the browser's storage. */
 export function loadBindings(): void {
+  loadPadBindings();
   const raw = storage.get(STORE_KEY);
   cache = null;
   if (!raw) { current = cloneDefaults(); return; }
@@ -247,12 +250,6 @@ const onPad = (): boolean => promptDevice === 'gamepad';
 const onTouch = (): boolean => promptDevice === 'touch';
 const onKeys = (): boolean => promptDevice === 'keyboard';
 
-/** The Xbox face for each action a controller can do. These are fixed, so a key rebind never touches them. */
-const PAD_LABEL: Partial<Record<BindAction, string>> = {
-  attack: 'A', special: 'X', swapPrev: 'LB', swapNext: 'RB', burst: 'Y',
-  interact: 'A', skip: 'VIEW', pause: 'START',
-};
-
 /**
  * What the on-screen Game Boy prints, for a touch player. It has one SWAP key, which goes to the next hero, so going
  * back one has no name. Picking a hero is a tap on its face, so the numbers are left out too.
@@ -261,13 +258,14 @@ const TOUCH_LABEL: Partial<Record<BindAction, string>> = {
   attack: 'A', special: 'B', swapNext: 'SWAP', burst: 'D20', interact: 'A', skip: 'SELECT', pause: 'START',
 };
 
-/** What to show for an action: its first key, or the fixed key that always works for it. A controller shows its button. */
+/** What to show for an action: its first key, or the fixed key that always works for it. A controller shows its button,
+ * which follows the player's controller bindings (padmap.ts). */
 const FALLBACK: Partial<Record<BindAction, string>> = {
   up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT', interact: 'ENTER', pause: 'ESC',
 };
 export function labelOf(action: BindAction): string {
   if (onTouch()) return TOUCH_LABEL[action] ?? '--';
-  const button = onPad() ? PAD_LABEL[action] : undefined;
+  const button = onPad() ? padButtonLabel(action) : undefined;
   if (button) return button;
   const first = keysOf(action)[0];
   return first ? keyLabel(first) : (FALLBACK[action] ?? '--');

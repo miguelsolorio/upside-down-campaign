@@ -99,7 +99,8 @@ export function createArcadeScene(opts: ArcadeSceneOpts): Scene {
           if (go(g)) start(g);
           return;
         case 'play':
-          if (back(g)) { state = 'held'; audio.sfx('pause'); return; }
+          // The window losing focus holds the run too, as Esc does.
+          if (back(g) || g.input.interrupted()) { state = 'held'; audio.sfx('pause'); return; }
           play(cart.step(padOf(g)));
           if (cart.over) {
             last = postScore(board, game, opts.player, cart.score);

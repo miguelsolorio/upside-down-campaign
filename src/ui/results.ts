@@ -7,7 +7,7 @@ import { audio } from '../audio/index.ts';
 import { inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
 import { drawIcon, drawPanel, drawPortrait, drawText, textWidth } from '../gfx/index.ts';
-import { countUp, foeLines, formatTime } from './format.ts';
+import { TITLE_SCALE, countUp, foeLines, formatTime, resultsTitle } from './format.ts';
 import { bigText, blinkOn, box, inFrame, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 
@@ -18,7 +18,6 @@ const FOE_LINE = 9;
 const ROW_AT = 18;
 const ROW_GAP = 14;
 const COUNT = 30;
-const CHAPTER_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
 const PARTY_AT = ROW_AT + 5 * ROW_GAP;
 const FOOT_AT = PARTY_AT + 24;
 /** Confirm waits this long after everything is showing. */
@@ -29,7 +28,7 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
   const { stats, party } = opts;
   const final = !!opts.final;
   const level = opts.level ?? 1;
-  const title = opts.chapter ? `CHAPTER ${CHAPTER_WORDS[opts.chapter] ?? opts.chapter} CLEAR` : final ? `END OF LEVEL ${level}` : `LEVEL ${level} CLEAR`;
+  const title = resultsTitle({ chapter: opts.chapter, final, level });
   let t = 0;
   let finished = false;
   const kinds = Object.entries(stats.killsByKind).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
@@ -56,7 +55,7 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
   }
 
   function drawCard(ctx: Ctx): void {
-    bigText(ctx, title, 128, 12, 'yellow', 2, 'center', true);
+    bigText(ctx, title, 128, 12, 'yellow', TITLE_SCALE, 'center', true);
     if (final) drawText(ctx, 'This is a feedback build. More soon.', 128, 32, 'cream', { align: 'center' });
     drawPanel(ctx, 24, 46, 208, 70 + extra, 'menu');
 

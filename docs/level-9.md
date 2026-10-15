@@ -109,8 +109,10 @@ Listed in `puzzles` in `stage33.ts`, in this order.
 
 | | HP | ATK | DEF | XP |
 |---|---|---|---|---|
-| Body | 1600 | 30 | 6 | 120 |
-| Leg | 180 | 30 | 4 | 0 |
+| Body | 1200 | 30 | 6 | 120 |
+| Leg | 140 | 30 | 4 | 0 |
+
+Sim B built it at 1200 and 140, down from the first spec's 1600 and 180. A leg is hit at its tip, so its hurtbox is where the leg meets the floor; its view's x, y is the root and `aim` the tip.
 
 - **It comes in through the skylight.** On waking the body is in pose `rise` for 40 frames: a `glass` fx, `shatter` sfx, and nothing can hit it or its legs. Then it fights.
 - **It never moves.** The body and the legs are rooted. Knockback, Push and the candy bar do nothing to them.
@@ -123,7 +125,7 @@ Listed in `puzzles` in `stage33.ts`, in this order.
 - **The head comes down.** With all four legs severed, the body is in pose `down` for 300 frames: its head is on the floor in front of it and takes ×1.5. Then it rises, and every leg grows back at full HP.
 - **The body is shielded while it is up.** A hit on the body with any leg standing does nothing: a `block` spark and the `block` sfx.
 - **Flayed waves.** While the head is up, two Flayed come in from the arena's sides every 540 frames (run-time spawns from `burrows`, 1 XP each), at most three alive.
-- **Under 50 percent.** The warn drops to 28 frames and two legs slam at once. About every 480 frames a leg sweeps: a band 24 px tall right across the arena is warned for 40 frames, then any hero in it takes power 1.0 and knockback 4.
+- **Under 50 percent.** The warn drops to 28 frames and two legs slam at once. About every 480 frames a leg sweeps: a band 24 px tall right across the arena is warned for 40 frames, then any hero in it takes power 1.0 and knockback 4. The view shows it as a `sweep` fx (x, y the band's top-left, w and h its size, t under 40 the warning).
 - **It dies all at once.** At 0 HP the body and all four legs die together, so `groupCleared` `flayer` fires once and a retry's kill list never holds a leg by itself.
 - **The boss rules.** Word vomit staggers a leg for 30 frames (its slam waits), and nothing confuses the body. Traps don't hold either.
 - **Boss bar.** While it's awake, `hud.boss` is `{ name: 'MIND FLAYER', hp, hpMax, parts }`. `parts` holds the four legs' HP shares, 0 when severed. The HUD draws them as four pips under the bar.

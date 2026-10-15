@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Hellfire Club</title>
+<meta name="description" content="Four looks for the Hellfire Club's room in stage 4.2: Eddie's recruit scene in a Hawkins High classroom after hours. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>The Hellfire Club</h1>
+  <p>Stage 4.2 opens with Eddie's recruit scene: the Hellfire Club meets after hours in a classroom at Hawkins High, spring 1986. Each card is one sample room, 16 by 10 tiles, painted four ways: a chalkboard, windows, a door and the club's banner on the north wall, a linoleum floor, desks in rows on the left, and in the middle the D&amp;D table with the DM screen, a map and minis, Eddie standing at its head and Mike and Dustin in chairs beside him for scale.</p>
+  <p class="muted">The big picture is 3x. The same room at its real size, every tile and the props are on the right of each card. Flames, lamps and lightning flicker.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Flicker</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The looks</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { HELLFIRE_OPTS, HELLFIRE_ROOM } from '/src/gfx/var/hellfire.ts';
+import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: HELLFIRE_OPTS, width: LOOK_W, title: 'Chapter 4: the Hellfire Club room, four looks', file: 'ch4-hellfire', tick: 300,
+  make: (o) => lookCard(HELLFIRE_ROOM, o, 'hellfire'),
+});
+</script>
+</body>
+</html>

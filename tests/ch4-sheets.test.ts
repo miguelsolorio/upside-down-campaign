@@ -25,6 +25,7 @@ import { KGUARD_OPTS, colorsOf as guardColors } from '../src/gfx/var/kguard.ts';
 import { GHOUL_OPTS, colorsOf as ghoulColors } from '../src/gfx/var/ghoul.ts';
 import { DEMOBAT_OPTS, colorsOf as batColors } from '../src/gfx/var/demobat.ts';
 import { HELLFIRE_OPTS, HELLFIRE_ROOM } from '../src/gfx/var/hellfire.ts';
+import { ATTIC_OPTS, ATTIC_ROOM } from '../src/gfx/var/attic.ts';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
@@ -69,7 +70,7 @@ test('every Creel ghoul and demobat keeps to five fill colors', () => {
   assert.ok(GHOUL_OPTS.length >= 3 && GHOUL_OPTS.length <= 5 && DEMOBAT_OPTS.length >= 3 && DEMOBAT_OPTS.length <= 5);
 });
 
-const SHEETS: [string, Room, StageLook[]][] = [['pit', PIT_ROOM, PIT_OPTS], ['kamchatka', KAMCHATKA_ROOM, KAMCHATKA_OPTS], ['creel', CREEL_ROOM, CREEL_OPTS], ['hawkinsud', HAWKINSUD_ROOM, HAWKINSUD_OPTS], ['hellfire', HELLFIRE_ROOM, HELLFIRE_OPTS]];
+const SHEETS: [string, Room, StageLook[]][] = [['pit', PIT_ROOM, PIT_OPTS], ['kamchatka', KAMCHATKA_ROOM, KAMCHATKA_OPTS], ['creel', CREEL_ROOM, CREEL_OPTS], ['hawkinsud', HAWKINSUD_ROOM, HAWKINSUD_OPTS], ['hellfire', HELLFIRE_ROOM, HELLFIRE_OPTS], ['attic', ATTIC_ROOM, ATTIC_OPTS]];
 
 test('every stage look paints each letter of its room and keeps its props inside', () => {
   for (const [name, room, looks] of SHEETS) {
@@ -92,8 +93,8 @@ test('every stage look paints each letter of its room and keeps its props inside
 
 test('the chapter 4 sheet files stay under 500 lines with no em dashes', () => {
   const VAR = join(ROOT, 'src/gfx/var');
-  const mods = readdirSync(VAR).filter((f) => /^(ch4|sheet_png|look_|eddie|solo|vecna|pit|kamchatka|creel|hawkinsud|hopper4|kguard|ghoul|demobat|hellfire)/.test(f)).map((f) => join(VAR, f));
-  const pages = ['eddie', 'solo', 'vecna', 'pit', 'kamchatka', 'creel', 'hawkinsud', 'hopper4', 'guard', 'ghoul', 'demobat', 'hellfire'].map((s) => join(ROOT, `${s}-variations.html`));
+  const mods = readdirSync(VAR).filter((f) => /^(ch4|sheet_png|look_|eddie|solo|vecna|pit|kamchatka|creel|hawkinsud|hopper4|kguard|ghoul|demobat|hellfire|attic)/.test(f)).map((f) => join(VAR, f));
+  const pages = ['eddie', 'solo', 'vecna', 'pit', 'kamchatka', 'creel', 'hawkinsud', 'hopper4', 'guard', 'ghoul', 'demobat', 'hellfire', 'attic'].map((s) => join(ROOT, `${s}-variations.html`));
   for (const f of [...mods, ...pages, join(ROOT, 'docs/chapter-4.md')]) {
     const text = readFileSync(f, 'utf8');
     assert.ok(text.split('\n').length < 500, `${f} is 500 lines or more`);

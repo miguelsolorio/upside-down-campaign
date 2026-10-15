@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vecna's Attic</title>
+<meta name="description" content="Four looks for Vecna's attic in stage 4.4: the room in the Creel House's Upside Down skin where the three phases are fought. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for Vecna's attic</h1>
+  <p>Stage 4.4 ends in the Creel House in the Upside Down, and Vecna fights in the attic. It needs open floor for the three phases, the grandfather clock whose chime is the curse, four memory orbs that heal him until they are broken, and vines. Each card is one sample room, 16 by 10 tiles, painted in the Upside Down skin of the Creel House: the north wall is the underside of the roof with its rafters and a round window, the floor is boards with a worn rug where he stands, and the cover is a trunk, furniture under a sheet and a dress form. Vecna (Rooted) and Max stand in it for scale.</p>
+  <p class="muted">The big picture is 3x. The same room at its real size, every tile and the props are on the right of each card. The lightning, the orbs and the vines move.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The looks</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { ATTIC_OPTS, ATTIC_ROOM } from '/src/gfx/var/attic.ts';
+import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: ATTIC_OPTS, width: LOOK_W, title: "Chapter 4: Vecna's attic, four looks", file: 'ch4-attic', tick: 300,
+  make: (o) => lookCard(ATTIC_ROOM, o, 'attic'),
+});
+</script>
+</body>
+</html>

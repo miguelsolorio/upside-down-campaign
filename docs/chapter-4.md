@@ -9,9 +9,9 @@ Chapter 4 is spring 1986. Hopper is alive in a Soviet prison in Kamchatka. In Ha
 | # | Stage | Who plays | What happens | Ends with | Music |
 |---|---|---|---|---|---|
 | 4.1 | Kamchatka | Hopper alone. No swaps, one hero on the HUD | The snow yard inside the wire, then the prison block: guards, cells, the cold. Joyce's lights are a care package from home. Look: Blizzard | The Demogorgon pit (mini-boss) | `mirkwood`, with snow slowing it; `clock` in the pit |
-| 4.2 | The Hellfire Club and the Creel House | A party of four picked on the map. Eddie joins at the start | Eddie's recruit scene in the Hellfire Club. Max gets her Walkman back in a story beat. Across town to the Creel House: haunted mirrors, Creel ghouls, and the scripted beat that teaches the clock curse. Look: Abandoned, with Blood red for the memories | Getting out of the Creel House | `hawkins` |
+| 4.2 | The Hellfire Club and the Creel House | A party of four picked on the map. Eddie joins at the start | Eddie's recruit scene in the Hellfire Club (look: Storm). Max gets her Walkman back in a story beat. Across town to the Creel House: haunted mirrors, Creel ghouls, and the scripted beat that teaches the clock curse. Look: Abandoned, with Blood red for the memories | Getting out of the Creel House | `hawkins` |
 | 4.3 | Upside Down Hawkins | Picked on the map, Eddie locked in (mirrors on the route) | Hawkins upside down: streets, the trailer park, demobats. Grandfather clocks chime and curse a hero as a stage hazard. Look: Blue storm | The rooftop solo: a whole song on the note highway while the demobats come. Eddie falls, for good | `upside`, then the solo's own track |
-| 4.4 | Vecna's lair | Picked on the map. No Eddie | The Creel House in the Upside Down, then the attic. Look: the Creel House's Upside Down skin | Vecna, three phases | `clock` |
+| 4.4 | Vecna's lair | Picked on the map. No Eddie | The Creel House in the Upside Down, then the attic. Look: the Creel House's Upside Down skin, the attic in Vine nest | Vecna, three phases | `clock` |
 
 - **4.1 is a solo opener.** Hopper has no one to swap to, so the stage is built round his kit: haymaker, ground slam, the Wind-up and Berserk talents if his level has them. Gates on the route are ones he can open himself (smash). He comes back at the party's average level minus one, the recruit rule, unless chapter 3 changes how Hopper is carried.
 - **Eddie is playable in 4.2 and 4.3 only.** He falls on the 4.3 rooftop as he does in the show, and he is not in chapter 5. A replay of 4.2 or 4.3 brings him back for that run (`partyFor`), the way a chapter 1 replay brings Eleven. His mirrors appear only in 4.2 and 4.3, and chapter 5 must not need a riff.
@@ -63,6 +63,7 @@ The Creel ghouls (4.2) step out of mirrors in the dark. A mirror is a gate: the 
   - **Upside Down** is 4.4, Vecna's lair: the same rooms rotted and overgrown, red veins across the floor, a window flashing red, spores.
   - **Blood red** is the house in 1959, in Vecna's memory: deep red damask, near-black wood, candlelight. It's used for memory scenes, not a stage of its own. The 4.2 beat that teaches the curse turns the room Blood red while the four chimes count, and back to Abandoned when the curse is broken, so the curse shows as a place; Victor Creel's story (the flashback to the family's last night) plays in it; and Vecna's speeches between his phases in 4.4 cut to it. **Only that beat turns the room** (the owner's call): later curses in 4.3 and 4.4 show on the cursed hero alone, so Blue storm and the lair stay readable.
 - **Upside Down Hawkins (4.3): Blue storm**, the owner's mix of Blue night and Red storm (`src/gfx/var/hawkinsud_mix.ts`, image `docs/screenshots/ch4-hawkinsud-mix.png`). Blue night between bolts: blue black roofs, lawns and road, red veins, pale spores, and rain, so the asphalt holds dim red reflections. Every 6 to 10 s a bolt floods the lit edges (roof lips, curb tops, slab bevels, door frames) red and the wet road streaks bright, then it fades back to blue over a step. The night pass leaves reds alone, so the flash reads on the dark. To fix on the build: the house fronts read as flat bands, and the car is small at 1x.
+- **Vecna's attic (4.4): Vine nest** (`attic-variations.html`, round 2's pick under the standing instruction). The room where he fights, painted in the Creel House's Upside Down skin with its own painters (`creel_b.ts`): the underside of the roof with rafters and a round window flashing red, rotted boards with red veins, a rug, low eaves at the sides, trunks, furniture under sheets and a dress form for cover, the grandfather clock, and the four memory orbs, red bulbs on vine stalks round the floor. In Vine nest the vines hang from the rafters into a knot over the middle where Vecna floats, with roots running from the four orbs to his feet, and the floor stays open round him. Why: it is the show's picture of him bound in the attic, the knot puts the fight's center where the eye goes, and the roots tie the orbs to him, so breaking them reads as cutting him off. Room letters: `#` roof, `W` knee wall, `.` floor, `r` rug, `<` and `>` the eaves. To fix on the build: the north wall reads more like a wall with rafters than a slope, and the round window is a prop, not a tile.
 
 ## The clock curse
 
@@ -135,6 +136,7 @@ The new foes' looks, all picked in round 2 under the standing instruction:
 | The Creel ghoul | `ghoul-variations.html` | **1 Glass wraith** (round 2) |
 | The demobat | `demobat-variations.html` | **2 Pale** (round 2) |
 | The Hellfire Club room | `hellfire-variations.html` | **4 Storm** (round 2) |
+| Vecna's attic | `attic-variations.html` | **1 Vine nest** (round 2) |
 
 Each sheet is drawn by the game's own code, and its image is in `docs/screenshots/ch4-*.png`. Round 1's picks are the owner's. Round 2's were made by the pre-production session under the owner's standing instruction to go with its recommendations, and can be swapped before the build.
 
@@ -144,5 +146,4 @@ Each sheet is drawn by the game's own code, and its image is in `docs/screenshot
 - **The shop.** What Erica sells in chapter 4, and whether she is reachable while the party is split between Kamchatka and Hawkins.
 - **Hopper in 4.1.** His level and gear when he comes back, and whether 4.1 is replayable for XP like any stage.
 - **The solo.** Notes per solo and the bot's play.
-- **The Hellfire Club room** has no look sheet yet. Vecna's lair is the Creel House's Upside Down skin; its attic, where he fights, still needs a room.
 - **Chapter 5.** No Eddie there, so no mirrors and no riff gates.

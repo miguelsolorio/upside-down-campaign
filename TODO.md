@@ -18,7 +18,8 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] Merged main in (the pace pass, the QA pass, controller rebinding, the pause on focus loss). The campaign run now plays through 3.2. Robin and Nancy walk into 3.1 on their first visit (`JOINS` in `core/campaign.ts`), and the arrivals come from the run: 3.1 Mike 6, Dustin 5, Robin 3, Nancy 3; 3.2 Mike 7, Dustin 6, Robin 3, Nancy 3. The lead ends 3.2 at Lv 7, a level short of the chapter 3 target with 3.3 still to come
 - [x] Retuned to those parties. 3.1 at 1.4: chief 16 of 20 (239 damage, 1.75 KOs, 40% low, 92 s), 100 seeds 85 and none stuck, careless 18, kid 20, upside 13. 3.2 at 1.25: chief 19 of 20 (291 damage, 0.55 KOs, 47% low, 118 s, the fight 45%), 100 seeds 89 (303 damage, 42% low) and none stuck, careless 12, kid 20, upside 7
 - [x] Verified: typecheck clean, 1429 tests pass, the production build passes. In the browser (muted): the map opens on Chapter three with Starcourt open and the base and food court locked; X opens Erica's cart, an Eggo buys for 15 and is saved; the picks panel shows nine with Robin and Nancy in on the first visit; the chapter three card shows (with SKIP STORY off, as every chapter card does); with 3.1 cleared the map opens on the base and Robin is locked; the bot clears 3.1 (1:41) and 3.2 (1:47, the feedback note after it). No console errors
-- [ ] Owner asked before merging into main
+- [x] Merged into main with the owner's go-ahead (76c3904): typecheck clean, 1432 tests pass on main. Not pushed
+- [ ] Feedback on Levels 7 and 8
 
 ## Levels 5 and 6 (merged)
 
@@ -190,4 +191,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.
+Next: stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.

@@ -53,8 +53,11 @@ export function stepHop(h: Hop, speed = WALK_SPEED): { hop: Hop; k: number; done
 
 /**
  * The one line of hints at the bottom. A keyboard names the arrows and Escape, which always work, and the attack key as
- * the player has bound it. A controller names the stick, A and B. Neither names a key the other device doesn't have.
+ * the player has bound it. A controller names the stick, A and B, and the touch screen's Game Boy its D-pad, A and B.
+ * None names a key another device doesn't have.
  */
 export function hintLine(device: PromptDevice, attack: string): string {
-  return device === 'gamepad' ? `STICK MOVE   ${attack} PLAY   B BACK` : `ARROWS MOVE   ${attack} PLAY   ESC BACK`;
+  if (device === 'gamepad') return `STICK MOVE   ${attack} PLAY   B BACK`;
+  if (device === 'touch') return `D-PAD MOVE   ${attack} PLAY   B BACK`;
+  return `ARROWS MOVE   ${attack} PLAY   ESC BACK`;
 }

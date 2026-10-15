@@ -23,7 +23,7 @@ An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement
 | `T` | Skip dialogue |
 | `M` | Mute |
 
-Press any key once so the browser lets the sound start. Plug in a controller and press a button to play with it, menus included. Phones and tablets get on-screen controls. You can rebind keys in the options. The full list is in [docs/controls.md](docs/controls.md).
+Press any key once so the browser lets the sound start. Plug in a controller and press a button to play with it, menus included. Phones and tablets turn into a Game Boy, with the game in its screen and a D-pad, A, B, SELECT and START that work. You can rebind keys in the options. The full list is in [docs/controls.md](docs/controls.md).
 
 ## How it plays
 

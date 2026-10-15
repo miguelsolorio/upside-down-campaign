@@ -33,12 +33,19 @@ function face(a: V, b: V, c: V, tier: number): Face {
 
 const [T0, T1, T2] = T as [V, V, V];
 const [H0, H1, H2, H3, H4, H5] = H as [V, V, V, V, V, V];
-const FACES: Face[] = [
-  face(T0, T1, T2, 0),
-  face(T0, H5, H0, 1), face(T0, H0, H1, 1), face(T2, H5, T0, 1),
-  face(T0, H1, T1, 2), face(T1, H1, H2, 2), face(T2, H4, H5, 1),
-  face(T1, H2, H3, 3), face(T1, H3, T2, 3), face(T2, H3, H4, 3),
+const TRIS: [V, V, V, number][] = [
+  [T0, T1, T2, 0],
+  [T0, H5, H0, 1], [T0, H0, H1, 1], [T2, H5, T0, 1],
+  [T0, H1, T1, 2], [T1, H1, H2, 2], [T2, H4, H5, 1],
+  [T1, H2, H3, 3], [T1, H3, T2, 3], [T2, H3, H4, 3],
 ];
+const FACES: Face[] = TRIS.map(([a, b, c, tier]) => face(a, b, c, tier));
+
+/** The same faces as triangles in die units (radius 1, point up), for drawing the die with smooth paths. */
+export const DIE_TRIS: readonly { pts: readonly [V, V, V]; tier: (typeof TIERS)[number] }[] =
+  TRIS.map(([a, b, c, tier]) => ({ pts: [a, b, c], tier: TIERS[tier] as (typeof TIERS)[number] }));
+/** The die's outline in die units. */
+export const DIE_HEX: readonly V[] = H;
 const HEX_N: V[] = [-60, 0, 60, 120, 180, 240].map((d) => [Math.cos((d * Math.PI) / 180), Math.sin((d * Math.PI) / 180)] as V);
 
 /** The color at a point of the die, in die units, or null outside it. px is half a screen pixel in die units. */

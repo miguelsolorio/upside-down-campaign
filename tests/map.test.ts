@@ -154,8 +154,8 @@ test('a hop to the same node, or an unknown one, has no length and is over at on
   assert.equal(stepHop(startHop('1.1', 'nowhere')).k, 1);
 });
 
-test('hints name the keyboard or the controller, never both', () => {
-  const kb = hintLine('keyboard', 'Z'), pad = hintLine('gamepad', 'A');
+test('hints name the keyboard, the controller or the touch screen, never another device', () => {
+  const kb = hintLine('keyboard', 'Z'), pad = hintLine('gamepad', 'A'), touch = hintLine('touch', 'A');
   assert.match(kb, /ARROWS/);
   assert.match(kb, /ESC/);
   assert.match(kb, /\bZ\b/);
@@ -164,8 +164,12 @@ test('hints name the keyboard or the controller, never both', () => {
   assert.match(pad, /\bA\b/);
   assert.match(pad, /\bB\b/);
   assert.doesNotMatch(pad, /ARROWS|ESC|\bZ\b/);
+  assert.match(touch, /D-PAD/);
+  assert.match(touch, /\bA\b/);
+  assert.match(touch, /\bB\b/);
+  assert.doesNotMatch(touch, /ARROWS|ESC|STICK/);
   // The map splits the line at runs of spaces into a short legend, one key to a line, in the 3 by 5 font on the right of the band.
-  for (const line of [kb, pad]) {
+  for (const line of [kb, pad, touch]) {
     const legend = line.split(/\s{2,}/);
     assert.ok(legend.length <= 3);
     for (const l of legend) assert.ok(tinyWidth(l) <= 56, `"${l}" fits the legend`);

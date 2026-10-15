@@ -41,21 +41,21 @@ Hints switch to button names once you touch the controller, and back to keys whe
 
 ## Touch
 
-On a phone or tablet the controls are on screen. In portrait the game sits at the top with the controls under it. In landscape the game sits in the middle with the stick on the left and the buttons on the right. The controls never cover the game.
+On a phone or tablet the screen is dressed as the original grey Game Boy, with the game in its bezel. In portrait it's the Game Boy as it is. In landscape the same parts are laid out wide, like a Game Boy Advance: the D-pad, SELECT and START on the left, the face buttons on the right. The controls never cover the game.
 
 | Control | Action |
 | --- | --- |
-| Stick (left thumb, anywhere in the lower left) | Move and step through menus. The ring stays put and the knob follows your thumb. A short push is full speed |
+| D-pad | Move and step through menus. Each arm is a button. Slide your thumb and it steers like a stick, and a thumb anywhere left of the buttons grabs it |
 | `A` | Attack, talk, light Joyce's lights, confirm |
 | `B` | Special. Back in menus |
-| Arrows | Back one hero and next hero |
+| `SWAP`, the grey key over B | Next hero |
 | A bench face in the HUD | Pick that hero |
 | The hero's name and level in the HUD | Character sheet |
-| d20 | Crit. It lights up gold when the meter is full |
-| Pause | Pause. Begins the game on the title |
-| Skip | Skip dialogue. It lights up only while there's something to skip |
+| `CRIT`, the d20 key over A | Crit. It lights up gold when the meter is full |
+| `SELECT` | Skip dialogue. Flips SKIP STORY on the title |
+| `START` | Pause. Begins the game on the title |
 
-Hints name the on-screen buttons while you play by touch. A key or controller press hides the touch controls and puts the keyboard or controller hints back, and the next touch brings them back. Sound starts on your first tap. CONTROLS isn't in the options on a touch screen, since there are no keys to change. Add `?touch=1` to the URL to try the touch controls with a mouse.
+Hints name the Game Boy's buttons while you play by touch. A key or controller press hides the shell and puts the keyboard or controller hints back, and the next touch brings it back. Sound starts on your first tap. Phones that can buzz give a short one on each press. CONTROLS isn't in the options on a touch screen, since there are no keys to change. Add `?touch=1` to the URL to try the touch controls with a mouse.
 
 ## Mouse
 

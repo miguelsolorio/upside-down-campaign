@@ -141,6 +141,21 @@ test('progress remembers the last picks, keeps them across a clear and drops a b
   assert.equal(parseProgress({ ...bad, picks: ['will', 'will'] })?.picks, undefined);
 });
 
+test('Eleven comes back to 3.3 at the level of the party she joins, less one, and nobody else catches up', () => {
+  const known = [
+    { id: 'mike' as const, level: 7, xp: 200 }, { id: 'dustin' as const, level: 6, xp: 215 }, { id: 'robin' as const, level: 4, xp: 106 },
+    { id: 'eleven' as const, level: 3, xp: 109 }, { id: 'nancy' as const, level: 3, xp: 101 },
+  ];
+  const party = partyFor('3.3', known, ['mike', 'dustin', 'robin', 'nancy']);
+  assert.deepEqual(party.map((s) => s.id), ['mike', 'dustin', 'robin', 'eleven']);
+  // Mike 7, Dustin 6 and Robin 4 average 5.7: she walks in at Lv 4 with no XP toward 5.
+  assert.deepEqual(party.find((s) => s.id === 'eleven'), { id: 'eleven', level: 4, xp: 0, bonus: undefined });
+  const ahead = known.map((s) => (s.id === 'eleven' ? { ...s, level: 6, xp: 30 } : s));
+  assert.equal(partyFor('3.3', ahead, ['mike', 'dustin', 'robin', 'nancy']).find((s) => s.id === 'eleven')?.level, 6, 'a hero ahead keeps her level');
+  // Robin is locked in 3.2 too, but she played 3.1, so she walks in as she is.
+  assert.equal(partyFor('3.2', known, ['mike', 'dustin', 'nancy']).find((s) => s.id === 'robin')?.level, 4);
+});
+
 test('the picks panel sees the whole pool at the levels they would play at', () => {
   const known = [{ id: 'mike' as const, level: 7, xp: 0 }, { id: 'dustin' as const, level: 6, xp: 0 }, { id: 'lucas' as const, level: 5, xp: 0 }, { id: 'will' as const, level: 4, xp: 0 }];
   assert.deepEqual(poolFor('2.2', known).map((s) => [s.id, s.level]), [['mike', 7], ['dustin', 6], ['lucas', 5], ['will', 4], ['max', 4], ['steve', 4]]);

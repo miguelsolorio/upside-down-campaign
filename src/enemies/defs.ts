@@ -243,7 +243,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 40, power: 0.8, cooldown: 70, drop: 0, weight: 99,
     x: {
       warn: 40, warnLow: 28, slamT: 12, rest: 30, len: 150, halfW: 12, kb: 5, restLen: 56, daze: 30,
-      sweepWarn: 40, sweepPower: 1, sweepKb: 4, bandH: 24,
+      sweepWarn: 40, sweepPower: 0.5, sweepKb: 4, bandH: 24,
       poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.07, poolEvery: 30, poolSlow: 20,
     },
   },

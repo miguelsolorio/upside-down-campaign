@@ -22,7 +22,8 @@ One stage, five to eight minutes, and the end of chapter 3 and of this build. Th
   - the food court (end, north-west), an arena about 22 by 14 tiles under the skylight, with `door1` and `door2` across its two doorways off the balcony
 - Light: `time: 'night'`, the owner's pick from `foodcourt-variations.html`, under the Confetti mall: pools at the `lights` entries on the stalls' menu boards, the exit signs and the moonlight through the skylight, and at the lights props.
 - Music: `starcourt` from the start. The `sour` beat switches to `sour`, and the `billy` beat to `clock` for both phases. A retry carries the last switch on (`musicAfter` in `world/triggers.ts`).
-- Party: picked on the map from the nine, Eleven locked (`REQUIRED` in `core/campaign.ts`). `?stage=3.3` starts the party a real run brings: Mike (lead) at Lv 7, Dustin 6, Robin 4 and Eleven 3 (`ARRIVAL`, from `node scripts/measure-campaign.ts chief 40`). Eleven walks in at the level chapter 1 left her, since the run plays 3.1 and 3.2 without her.
+- Party: picked on the map from the nine, Eleven locked (`REQUIRED` in `core/campaign.ts`). `?stage=3.3` starts the party a real run brings: Mike (lead) at Lv 7, Dustin 6, Robin 4 and Eleven 4 (`ARRIVAL`, from `node scripts/measure-campaign.ts chief 40`).
+- **Eleven catches up.** The run plays 3.1 and 3.2 without her, so she would walk in at the Lv 3 chapter 1 left her, next to a Lv 7 Mike, in the stage only she can finish. She comes back at the level of the party she joins, averaged and less one, the recruit rule (`CATCH_UP` in `core/campaign.ts`, the lead's call).
 - `enemyMult` and `xpMult`: see "Result".
 - Dialogue is off by default. Gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
 
@@ -139,7 +140,7 @@ The first spec had 1600 and 180 HP, 30 ATK, a slam of 1.2 every 70 frames, pools
 | Group | Enemies | Notes |
 |---|---|---|
 | `kitchen` | 5 melting rats | among the fryers |
-| `crowd` | 4 Flayed, an elite Flayed | the lower concourse, dormant until `concourse` |
+| `crowd` | 5 Flayed | the lower concourse, dormant until `concourse` |
 | `balcony` | 3 melting rats, a Flayed | dormant in the balcony's goo. The Flayed rises |
 | `boss` | Billy `billy` | dormant in the court |
 | `flayer` | the Mind Flayer `flayer`, `leg1` to `leg4` | dormant on the north wall |
@@ -178,6 +179,12 @@ The same bands as `docs/level-3.md`, "Targets", measured with `node scripts/meas
 - The last waypoint is inside the `billy` trigger.
 
 ## What Art draws for this level
+
+The lead made the picks (2026-10-15). The owner asked, through the session that runs the build, for the lead's recommendations to stand in for picks and calls:
+
+- **Billy: Lifeguard** (`src/gfx/var/billy*.ts`, slug `lifeguard`). The red trunks and the whistle are the summer he had, so he reads as Billy at a glance, and the red ties him to the Mind Flayer.
+- **Mind Flayer: Meat Spider** (`src/gfx/var/flayer_spider.ts`). It is the design's flesh spider, and its legs are clean lines, so the fight's rule (hit the legs) reads at 1x.
+- **Food court: Neon Strip** (`src/gfx/var/food_neon.ts`). Its cool purples and teals belong to the Confetti mall, and the red Mind Flayer and its goo stand out on them. Checker Diner's red floor would swallow both.
 
 Art builds only after the owner picks from the variation sheets.
 

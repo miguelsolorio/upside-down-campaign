@@ -91,8 +91,8 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 123 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
   '3.1': [{ id: 'mike', level: 6, xp: 198 }, { id: 'dustin', level: 5, xp: 257 }, { id: 'robin', level: 3 }, { id: 'nancy', level: 3 }],
   '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 82 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
-  // Eleven is locked in 3.3 and walks in at the level chapter 1 left her: the run plays 3.1 and 3.2 without her (docs/level-9.md).
-  '3.3': [{ id: 'mike', level: 7, xp: 197 }, { id: 'dustin', level: 6, xp: 235 }, { id: 'robin', level: 4, xp: 102 }, { id: 'eleven', level: 3, xp: 109 }],
+  // Eleven is locked in 3.3 and catches up to the party she joins (CATCH_UP): the run plays 3.1 and 3.2 without her (docs/level-9.md).
+  '3.3': [{ id: 'mike', level: 7, xp: 175 }, { id: 'dustin', level: 6, xp: 220 }, { id: 'robin', level: 4, xp: 112 }, { id: 'eleven', level: 4 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */
@@ -188,6 +188,27 @@ function joinLevel(id: string, known: PartySeed[]): number | null {
   return Math.max(1, Math.floor(avg) - 1);
 }
 
+/**
+ * Heroes who come back at a stage after sitting the stages before it out, and catch up: Eleven at the food court, locked in after
+ * the run plays the mall and the base without her (docs/level-9.md). One who is behind walks in at the level of the party she joins,
+ * averaged and less one, the recruit rule, with no XP toward the next. Her d20 bonus carries.
+ */
+const CATCH_UP: Record<string, HeroId[]> = {
+  '3.3': ['eleven'],
+};
+
+/** `party` with the stage's returning heroes brought up to the rest of it (CATCH_UP). */
+function catchUp(id: string, party: PartySeed[]): PartySeed[] {
+  const back = CATCH_UP[id] ?? [];
+  return party.map((s) => {
+    if (!back.includes(s.id)) return s;
+    const rest = party.filter((o) => o.id !== s.id);
+    if (rest.length === 0) return s;
+    const level = Math.max(1, Math.floor(rest.reduce((n, o) => n + (o.level ?? 1), 0) / rest.length) - 1);
+    return (s.level ?? 1) >= level ? s : { ...s, level, xp: 0 };
+  });
+}
+
 const seedOf = (h: HeroId, known: PartySeed[], join: number): PartySeed => {
   const k = known.find((s) => s.id === h);
   return k ? { ...k, bonus: k.bonus ? { ...k.bonus } : undefined } : { id: h, level: join };
@@ -196,13 +217,13 @@ const seedOf = (h: HeroId, known: PartySeed[], join: number): PartySeed => {
 /**
  * The party for stage `id` built from the heroes met so far and, on a stage with picks, the player's picks (see
  * pickParty). A hero nobody has met yet joins at the average level of the met heroes in the stage's pool minus one
- * (at least 1), the plan's recruit rule, so who else was picked doesn't change it. With nothing known it is the
- * arrival party.
+ * (at least 1), the plan's recruit rule, so who else was picked doesn't change it. A hero who comes back at this stage
+ * catches up to the party she joins (CATCH_UP). With nothing known it is the arrival party.
  */
 export function partyFor(id: string, known: PartySeed[], picks?: readonly HeroId[]): PartySeed[] {
   const join = joinLevel(id, known);
   if (join === null) return defaultParty(id);
-  return pickParty(id, picks, known).map((h) => seedOf(h, known, join));
+  return catchUp(id, pickParty(id, picks, known).map((h) => seedOf(h, known, join)));
 }
 
 /**

@@ -6,15 +6,15 @@ Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy 
 
 - [x] Owner's calls (2026-10-15): Eleven is locked in. Hopper is an npc who leaves to go down to the Key, and the machine's boom takes him; he isn't playable yet. The Mind Flayer is the legs fight (four legs slam telegraphed lines, cut all four and the head comes down). Billy is phase one of the boss in the same arena, pinned at 0 HP until Eleven reaches him. The chapter ends on Hopper's letter, then CHAPTER THREE CLEAR with the feedback note, then the map with nothing ahead
 - [x] Spine: `docs/level-9.md`, the 3.3 lines in `docs/map-screen.md`, the contracts in `core/types.ts` (the audio vocabulary moved to `core/types_audio.ts` to keep the file under 500 lines) and `world/types.ts` (the `boom` and `leave` steps, `Sim.dismiss`), eight food court tiles, 3.3 in the campaign with Eleven locked, `closesChapter`, the epilogue scene and CHAPTER n CLEAR, stand-ins, a stub stage 3.3. `ARRIVAL['3.3']` comes from the run: Mike 7, Dustin 6, Robin 4, Eleven 3
-- [ ] Art: `billy-variations.html`, `flayer-variations.html`, `foodcourt-variations.html`, sent to the owner one image per option
-- [ ] Sim A: Billy, the pin and the reach, the bot against him
-- [ ] Owner picks
+- [x] Art: `billy-variations.html`, `flayer-variations.html`, `foodcourt-variations.html`, sent to the owner one image per option
+- [x] Sim A: Billy, the pin and the reach, the bot against him
+- [x] Picks by the lead, at the owner's word (relayed by the session that runs the build) that the lead's recommendations stand in: Billy Lifeguard, Mind Flayer Meat Spider, food court Neon Strip. Eleven catches up when she comes back in 3.3 (`CATCH_UP`)
 - [ ] Sim B: the Mind Flayer, its legs, pools, waves and sweep, the bot against it
 - [ ] Art build, Audio (`sour`, five effects, Billy's blip), UI (the epilogue, the leg pips)
 - [ ] World 3.3: the map, beats, `l9_*` scripts and the letter, the `boom` step in the play scene
 - [ ] Tuned inside the targets, and the campaign pace: the lead ends chapter 3 at Lv 8 (`xpMult`, `ARRIVAL`)
 - [ ] Verified: typecheck, tests, the bot clears 3.3 inside the targets, the map chains 3.2 to 3.3, the epilogue and CHAPTER THREE CLEAR, no console errors
-- [ ] Owner asked before merging into main
+- [ ] Merged into main by the lead at the owner's word (main merged in first, the bands checked on HARD), never pushed
 
 ## Levels 7 and 8 (merged)
 

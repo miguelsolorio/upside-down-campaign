@@ -24,8 +24,8 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, w: number, h: 
 };
 
 // ---------------------------------------------------------------- enemies
-// 289 XP before xpMult: five melting rats (20), four Flayed and an elite one (66), three more rats and a Flayed on the balcony (23),
-// Billy (60) and the Mind Flayer (120, its four legs pay nothing). The two Flayed Billy calls and the waves the Mind Flayer sends are
+// 278 XP before xpMult: five melting rats (20), five Flayed (55), three more rats and a Flayed on the balcony (23),
+// Billy (60) and the Mind Flayer (120, its four legs pay nothing). The Flayed Billy calls and the waves the Mind Flayer sends are
 // run-time spawns at 1 XP each and are not in the count. The kitchen's rats are awake among the fryers. The crowd is five puddles in
 // the concourse's goo until the concourse beat wakes them, the balcony's rats and Flayed are dormant in its goo until the balcony beat,
 // and Billy and the Mind Flayer sleep in the court. The body stands in the solid stall row of the north wall and its four legs are
@@ -34,10 +34,11 @@ const ENEMIES: SimSpawn[] = [
   // The kitchens: melting rats among the fryer lines and the counters.
   foe('kit_a', 'melter', 'kitchen', 16, 31), foe('kit_b', 'melter', 'kitchen', 21, 28), foe('kit_c', 'melter', 'kitchen', 25, 32),
   foe('kit_d', 'melter', 'kitchen', 28, 31), foe('kit_e', 'melter', 'kitchen', 23, 36),
-  // The lower concourse: a Flayed crowd asleep in the goo patches, an elite in the north-east corner.
+  // The lower concourse: a Flayed crowd asleep in the goo patches. It had an elite, which wiped a party that doesn't dodge before the
+  // fight at the factor the stage needs (docs/level-9.md, "Result").
   foe('crowd_a', 'flayed', 'crowd', 44, 24, { dormant: true }), foe('crowd_b', 'flayed', 'crowd', 45, 26, { dormant: true }),
   foe('crowd_c', 'flayed', 'crowd', 38, 28, { dormant: true }), foe('crowd_d', 'flayed', 'crowd', 43, 33, { dormant: true }),
-  foe('crowd_elite', 'flayed', 'crowd', 46, 23, { dormant: true, elite: true }),
+  foe('crowd_e', 'flayed', 'crowd', 46, 23, { dormant: true }),
   // The balcony: three melting rats and a Flayed in the goo of the lower lane, west of the beat.
   foe('bal_a', 'melter', 'balcony', 31, 13, { dormant: true }), foe('bal_b', 'melter', 'balcony', 29, 11, { dormant: true }),
   foe('bal_c', 'melter', 'balcony', 27, 13, { dormant: true }), foe('bal_f', 'flayed', 'balcony', 30, 12, { dormant: true }),

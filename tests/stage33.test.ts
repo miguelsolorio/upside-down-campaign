@@ -150,17 +150,16 @@ test('stage 3.3: the start and every spawn, item and patrol point is on open gro
 test('stage 3.3: the roster is worth 270 to 320 XP, in its groups, with the crowd and the balcony asleep in the goo and the bosses in the court', () => {
   const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
   assert.ok(xp >= 270 && xp <= 320, `stage XP ${xp}`);
-  assert.equal(xp, 289);
+  assert.equal(xp, 278);
   const kind = (k: string): number => enemies.filter((e) => e.type === k).length;
   assert.deepEqual([kind('melter'), kind('flayed'), kind('billy'), kind('flayer'), kind('flayerleg')], [8, 6, 1, 1, 4]);
   assert.ok(enemies.every((e) => ['melter', 'flayed', 'billy', 'flayer', 'flayerleg'].includes(e.type)), 'only the chapter 3 enemies, and the bosses');
-  assert.equal(enemies.filter((e) => e.tier === 'elite').length, 1, 'one elite, a Flayed');
-  assert.ok(enemies.filter((e) => e.tier === 'elite').every((e) => e.type === 'flayed' && e.group === 'crowd'));
+  assert.equal(enemies.filter((e) => e.tier === 'elite').length, 0, 'no elites: the crowd lost its own in tuning');
   const groups = (g: string): typeof enemies => enemies.filter((e) => e.group === g);
   assert.deepEqual([...new Set(enemies.map((e) => e.group))].sort(), ['balcony', 'boss', 'crowd', 'flayer', 'kitchen']);
   assert.ok(groups('kitchen').length === 5 && groups('kitchen').every((e) => e.type === 'melter' && !e.dormant && inRoom('kitchens', e.tx, e.ty)), 'five melting rats among the fryers, awake');
   const crowd = groups('crowd');
-  assert.ok(crowd.length === 5 && crowd.filter((e) => e.tier !== 'elite').length === 4 && crowd.every((e) => e.type === 'flayed' && e.dormant && inRoom('concourse', e.tx, e.ty) && ch(e.tx, e.ty) === '¨'), 'four Flayed and an elite in the concourse, puddles in the goo');
+  assert.ok(crowd.length === 5 && crowd.every((e) => e.type === 'flayed' && e.dormant && inRoom('concourse', e.tx, e.ty) && ch(e.tx, e.ty) === '¨'), 'five Flayed in the concourse, puddles in the goo');
   const balcony = groups('balcony');
   assert.ok(balcony.length === 4 && balcony.filter((e) => e.type === 'melter').length === 3 && balcony.filter((e) => e.type === 'flayed').length === 1, 'three melting rats and a Flayed');
   assert.ok(balcony.every((e) => e.dormant && inRoom('balcony', e.tx, e.ty) && e.tx < rectOf('balcony').tx), 'dormant on the balcony, west of its beat');
@@ -318,7 +317,7 @@ test('stage 3.3: the bot clears the stage on kid with the party a real run bring
     assert.ok(run.done && !run.allDown, `seed ${seed} clears`);
     assert.deepEqual(run.said, order, `seed ${seed}: every beat, in order`);
     assert.deepEqual(run.steps, ['open door1', 'open door2'], 'the bot opens no gate by the director and the clear opens the doors');
-    assert.ok(run.xp >= 289, `seed ${seed}: ${run.xp} XP, with the Flayed it called on top`);
+    assert.ok(run.xp >= 278, `seed ${seed}: ${run.xp} XP, with the Flayed it called on top`);
     assert.ok(run.frames > 60 * 60 && run.frames < 60 * 480, `seed ${seed}: ${(run.frames / 60).toFixed(0)} s`);
   }
 });

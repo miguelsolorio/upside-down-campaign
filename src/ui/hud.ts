@@ -142,14 +142,26 @@ function drawMeter(ctx: Ctx, hud: HudView, t: number, mx: number): void {
   }
 }
 
+const BAR_W = 176;
+
 function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>): void {
-  const w = 176, x = (SCREEN_W - w) / 2, y = VIEW_TOP + 2;
+  const w = BAR_W, x = (SCREEN_W - w) / 2, y = VIEW_TOP + 2;
   outline(ctx, x - 1, y - 1, w + 2, 11, 'ink');
   drawBar(ctx, x, y, w, 9, boss.hpMax > 0 ? boss.hp / boss.hpMax : 0, 'red', 'blood0');
   drawText(ctx, boss.name, SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
 }
 
-/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, quarters, d20 Crit meter, bench faces, boss bar.
+/** The defense (docs/level-6.md): the ward's bar where the boss bar goes, in the same style and as still. Her name on the left,
+ * the seconds left on the right. Under the boss bar if both are up, which the level doesn't ask for. */
+function drawWard(ctx: Ctx, ward: NonNullable<HudView['ward']>, below: boolean): void {
+  const w = BAR_W, x = (SCREEN_W - w) / 2, y = VIEW_TOP + 2 + (below ? 12 : 0);
+  outline(ctx, x - 1, y - 1, w + 2, 11, 'ink');
+  drawBar(ctx, x, y, w, 9, ward.hpMax > 0 ? ward.hp / ward.hpMax : 0, 'red', 'blood0');
+  drawText(ctx, ward.name, x + 3, y + 1, 'white', { shadow: true });
+  drawText(ctx, `${Math.max(0, Math.ceil(ward.left / 60))}S`, x + w - 3, y + 1, 'white', { align: 'right', shadow: true });
+}
+
+/** Top strip (VIEW_TOP px tall): active hero HP bar, MP, XP, quarters, d20 Crit meter, bench faces, boss bar, and the defense's ward bar.
  * Every portrait shows the key that picks it, and the bench shows how far the swap has recharged. The same
  * rectangles (`slotRects`) answer clicks, so a portrait is a button. */
 export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, o: HudOpts = {}): void {
@@ -178,4 +190,5 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   drawMeter(ctx, hud, t, METER_X + rightShift(band));
   ctx.restore();
   if (hud.boss) drawBoss(ctx, hud.boss);
+  if (hud.ward) drawWard(ctx, hud.ward, !!hud.boss);
 }

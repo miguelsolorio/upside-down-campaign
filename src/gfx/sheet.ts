@@ -8,8 +8,10 @@ import { PAGES_B } from './sheet_b.ts';
 import { PAGES_C } from './sheet_foes.ts';
 import { PAGES_D } from './sheet_school.ts';
 import { PAGES_E } from './sheet_patch.ts';
+import { L56_PAGES } from './sheet_l56.ts';
+import { L56B_PAGES } from './sheet_l56b.ts';
 
-const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D, ...PAGES_E];
+const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D, ...PAGES_E, ...L56_PAGES, ...L56B_PAGES];
 
 function startPage(): { page: number; sub: number } {
   const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();

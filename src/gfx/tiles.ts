@@ -1,5 +1,6 @@
 // Stage baking and drawing. bakeStage paints every static tile into one big canvas; drawStage blits the
-// visible part and then draws the animated water on top. A night stage is baked from the night art (night.ts).
+// visible part and then draws the animated water on top, and the veins and tears of the tunnels and the overrun Lab at the step of their
+// pulse. A night stage is baked from the night art (night.ts).
 // The day painters always run first, so a night tile is the same tile in a night palette with a few extras.
 import type { TileName } from '../core/tiles.ts';
 import { TILES } from '../core/tiles.ts';
@@ -11,6 +12,8 @@ import { bankMask, groundTile, waterTile } from './tile_ground.ts';
 import type { Near, TileCtx } from './tile_ground.ts';
 import { objectTile } from './tile_objects.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
+import { tunnelTile } from './tile_tunnel.ts';
+import { fleshTile } from './tile_flesh.ts';
 
 /** A point in world px. */
 export interface Spot { readonly x: number; readonly y: number }
@@ -22,11 +25,35 @@ export interface Spot { readonly x: number; readonly y: number }
 export interface BakedStage { readonly w: number; readonly h: number; readonly night: boolean; readonly windows: readonly Spot[] }
 
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
-interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[] }
+/** A tile whose light moves: the tunnels' veins and the Gate's tears. They are baked at their first step and drawn over at the others. */
+interface PulseSpot { tx: number; ty: number; name: TileName; near: Near }
+interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[]; pulses: PulseSpot[] }
 
 const T = 16;
 const WATER_TICKS = 16;
+/** Frames each step of a pulse lasts: the veins and the tears move through four steps. */
+const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
+const pulseCache = new Map<string, HTMLCanvasElement>();
+
+const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear';
+
+/** The pixels of a pulsing tile at a step of its pulse. */
+function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
+  return (name === 'veins' ? tunnelTile(name, c, phase) : fleshTile(name, c, phase)) as Px;
+}
+
+function pulseCanvas(s: PulseSpot, phase: number, night: boolean): HTMLCanvasElement {
+  const key = `${night ? 'n' : 'd'}:${s.name}:${s.tx}:${s.ty}:${phase}`;
+  let c = pulseCache.get(key);
+  if (!c) {
+    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near };
+    const day = pulsePx(s.name, tc, phase);
+    c = (night ? nightTile(day, s.name, tc) : day).toCanvas();
+    pulseCache.set(key, c);
+  }
+  return c;
+}
 
 function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasElement {
   const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
@@ -53,6 +80,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
   const W = Math.max(1, cols * T), H = Math.max(1, nrows * T);
   const px = new Uint32Array(W * H);
   const water: WaterSpot[] = [];
+  const pulses: PulseSpot[] = [];
   const windows: Spot[] = [];
   const at = (x: number, y: number, self: TileName): TileName => (x < 0 || y < 0 || x >= cols || y >= nrows ? self : (names[y * cols + x] as TileName));
   for (let ty = 0; ty < nrows; ty++) {
@@ -64,6 +92,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
         continue;
       }
       const tc: TileCtx = { tx, ty, near };
+      if (isPulse(name)) pulses.push({ tx, ty, name, near });
       const day = staticTile(name, tc);
       const tile = night ? nightTile(day, name, tc) : day;
       if (night && litWindow(day, name)) windows.push({ x: tx * T + 8, y: ty * T + 16 });
@@ -73,7 +102,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
       }
     }
   }
-  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), water };
+  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), water, pulses };
   return data;
 }
 
@@ -91,9 +120,34 @@ export function drawStage(ctx: Ctx, stage: BakedStage, camX: number, camY: numbe
     if (px + T <= x0 || px >= x1 || py + T <= y0 || py >= y1) continue;
     ctx.drawImage(waterCanvas(w, frame, s.night), px, py);
   }
+  const phase = ((t / PULSE_TICKS) | 0) & 3;
+  if (phase === 0) return;
+  for (const p of s.pulses) {
+    const px = p.tx * T, py = p.ty * T;
+    if (px + T <= x0 || px >= x1 || py + T <= y0 || py >= y1) continue;
+    ctx.drawImage(pulseCanvas(p, phase, s.night), px, py);
+  }
 }
 
 // ---------------------------------------------------------------- single tiles, for the sheet
+/** The tunnels' and the overrun Lab's tiles at their best: v 0 in a run, v 1 beside a wall, v 2 at the end of one. */
+function l56Near(name: TileName, v: number, near: Near): Near {
+  const all = (n: TileName): Near => ({ n, e: n, s: n, w: n });
+  switch (name) {
+    case 'tunnelfloor': return v === 0 ? all(name) : v === 1 ? { n: 'tunnelwall', e: name, s: name, w: name } : { n: 'tunnelwall', e: name, s: name, w: 'tunnelcap' };
+    case 'tunnelcap': return v === 0 ? all(name) : v === 1 ? { n: name, e: name, s: 'tunnelwall', w: name } : { n: 'tunnelwall', e: 'tunnelfloor', s: name, w: 'tunnelfloor' };
+    case 'tunnelwall': return v === 0 ? { n: 'tunnelcap', e: name, s: 'tunnelfloor', w: name } : v === 1 ? { n: 'tunnelcap', e: name, s: 'roots', w: name } : { n: 'tunnelcap', e: 'tunnelfloor', s: 'tunnelfloor', w: name };
+    case 'roots': return v === 0 ? { n: 'tunnelwall', e: name, s: 'tunnelfloor', w: name } : v === 1 ? { n: name, e: 'tunnelfloor', s: name, w: 'tunnelwall' } : { n: 'tunnelwall', e: name, s: name, w: 'tunnelfloor' };
+    case 'veins': return v === 0 ? all(name) : v === 1 ? { n: name, e: name, s: 'tunnelfloor', w: 'tunnelfloor' } : { n: 'tunnelfloor', e: 'nest', s: name, w: name };
+    case 'nest': return v === 0 ? all(name) : v === 1 ? { n: name, e: 'tunnelfloor', s: name, w: 'tunnelfloor' } : { n: 'tunnelfloor', e: 'tunnelfloor', s: name, w: 'tunnelwall' };
+    case 'ladder': return all('tunnelfloor');
+    case 'fleshfloor': return v === 0 ? all(name) : v === 1 ? { n: 'fleshwall', e: name, s: name, w: name } : { n: name, e: 'labfloor', s: 'tear', w: name };
+    case 'fleshwall': return v === 0 ? { n: 'labcap', e: name, s: 'fleshfloor', w: name } : v === 1 ? { n: 'labcap', e: 'labwall', s: 'fleshfloor', w: name } : { n: 'labcap', e: name, s: 'labfloor', w: 'labwall' };
+    case 'tear': return v === 0 ? { n: 'fleshfloor', e: name, s: 'fleshfloor', w: name } : v === 1 ? { n: name, e: 'fleshfloor', s: name, w: 'fleshfloor' } : { n: 'fleshfloor', e: 'fleshfloor', s: name, w: 'fleshfloor' };
+    default: return near;
+  }
+}
+
 const sampleCache = new Map<string, HTMLCanvasElement>();
 
 /** Neighbours that show a lab tile at its best: v 0 sits in a run, v 1 at an end, v 2 beside a wall. */
@@ -182,7 +236,7 @@ export function samplePx(name: TileName, v: number): Px {
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))));
+  near = l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near)))));
   return staticTile(name, { tx, ty, near });
 }
 

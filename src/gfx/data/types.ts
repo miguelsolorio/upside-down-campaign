@@ -19,13 +19,14 @@ export interface BodyDef {
 }
 
 export type TorsoPattern = 'plain' | 'stripes' | 'plaid' | 'cardigan' | 'dress';
-export type WeaponKind = 'none' | 'bat' | 'sling' | 'candy' | 'gun';
+export type WeaponKind = 'none' | 'bat' | 'sling' | 'candy' | 'gun' | 'nailbat' | 'board';
 
 export interface HairLayers { down: Part[]; up: Part[]; side: Part[] }
 
 export interface CharSpec {
   id: string;
-  body: 'kid' | 'adult' | 'agent';
+  /** big is Hopper's: a ten pixel torso, three pixel legs and arms drawn two pixels thick. */
+  body: 'kid' | 'adult' | 'agent' | 'big';
   /** Role letter to palette color. */
   pal: Record<string, ColorName>;
   hair: HairLayers;
@@ -33,4 +34,8 @@ export interface CharSpec {
   weapon: WeaponKind;
   /** Extra layers drawn over the torso (collar, belt, walkie). */
   trim?: HairLayers;
+  /** The role letter a sleeve is drawn in. Default 'a', the torso. A letterman jacket has its own. */
+  sleeve?: string;
+  /** A held thing shown at rest (Max's board stands at her side). It is left out when the weapon itself is drawn: the swing and the dash. */
+  carry?: HairLayers;
 }

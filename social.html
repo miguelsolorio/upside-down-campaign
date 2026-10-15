@@ -288,7 +288,13 @@ function fightCard(ctx, w, h) {
     items: [{ kind: 'quarter', x: 650, y: low + 2, t: 0 }, { kind: 'eggo', x: 536, y: ty(6) - 2, t: 0 }],
   };
   view.hud = { ...base.hud, quarters: 7, burst: 0.8, burstReady: false, swapReady: 1 };
-  view.hud.party = view.hud.party.map((p) => ({ ...p, hp: Math.round(p.hpMax * (p.active ? 0.75 : 0.9)), mp: Math.round(p.mpMax * 0.6), xp: Math.round(p.xpNext * 0.4) }));
+  // Health is the bar over each hero's head, not the strip. Mike is hurt a little and Eleven is past half, so green and yellow both show.
+  const HEALTH = { mike: 0.75, dustin: 0.9, lucas: 0.6, eleven: 0.4 };
+  view.hud.party = view.hud.party.map((p) => ({ ...p, hp: Math.round(p.hpMax * HEALTH[p.id]), mp: Math.round(p.mpMax * 0.6), xp: Math.round(p.xpNext * 0.4) }));
+  for (const a of view.actors) {
+    const m = a.kind === 'hero' ? view.hud.party.find((p) => p.id === a.id) : null;
+    if (m) a.bar = { hp: m.hp, hpMax: m.hpMax };
+  }
 
   // The world: the camera puts the road a third of the way down, under the HUD.
   const camX = stage.wPx - w, camY = 0;

@@ -94,7 +94,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 
 **Bonds** give small bonuses when both heroes are in the party: Friends don't lie (Mike + Eleven, +10% ATK, the DM screen covers her too), Party of four (Mike, Dustin, Lucas, Will, +8% DEF), Chief and kid (Hopper + Eleven, +10% DEF), Mad Max (Lucas + Max, +10% SPD), Babysitter's club (Steve + Dustin, Babysit also heals Dustin), Scoops troop (Steve + Robin, +10% crit), Hellfire (Eddie + Dustin, solo lasts 2 s longer).
 
-**NPCs.** Joyce keeps the Christmas lights (checkpoints). Erica runs the ice cream cart and sells Eggos at triple price. Jonathan, Murray and Bob hand out hints. Dr. Brenner, Dr. Kay and Lt. Akers appear in cutscenes. Easter eggs: Barb's glasses and a MADMAX high score, both in 2.1.
+**NPCs.** Joyce keeps the Christmas lights (checkpoints). Erica runs the ice cream cart and sells Eggos at triple price. Jonathan, Murray and Bob hand out hints. Dr. Brenner, Dr. Kay and Lt. Akers appear in cutscenes. Easter eggs: Barb's glasses and a MADMAX high score, both in 2.1. Every cabinet in the Palace plays (Dig Dug, Centipede, Dragon's Lair, Galaga, Pac-Man, Ms. Pac-Man), and beating MADMAX at Dig Dug puts your name on her board and pays the party.
 
 ## Combat and leveling
 
@@ -307,7 +307,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - **I can't hear the music.** See the audio note above.
 - **Flashing lights.** The show leans on them, so there's a reduce-flashing setting and the flicker is rate-limited.
 - **Dustin's hairspray flamethrower isn't a scene I could confirm.** It's a gag built on Steve's Farrah spray from season 2, not a claim about an episode.
-- **Out of scope:** alternate costumes, a Dig Dug-style arcade minigame, relics, a GitHub Pages workflow. I won't publish or deploy anything without your say.
+- **Out of scope:** alternate costumes, relics, a GitHub Pages workflow. The arcade minigames were out of scope and are now in 2.1 (`docs/level-4.md`, "The arcade"). I won't publish or deploy anything without your say.
 
 ## Sources
 

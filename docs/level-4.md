@@ -20,7 +20,7 @@ One stage, five to eight minutes, and the start of chapter 2 (Halloween 1984). E
 
 | Room | Floor | Dressing | What happens |
 |---|---|---|---|
-| The Palace | `arcadecarpet` | `arcadewall`, rows of `arcade` cabinets (props), the Dig Dug cabinet with MADMAX on its high-score screen, a prize counter | Start, `lights_palace`. Max (npc `max`) stands at Dig Dug. Nothing hostile |
+| The Palace | `arcadecarpet` | `arcadewall`, rows of `arcade` cabinets (props), the Dig Dug cabinet with MADMAX on its high-score screen, a prize counter | Start, `lights_palace`. Max (npc `max`) stands at Dig Dug. Nothing hostile. Every cabinet plays (see "The arcade") |
 | Main Street | `sidewalk`, `road`, `roadline` | `storefront`s, `brick`, lamps, parked bikes | A few rats out of a drain. The `dart` beat at a trash can |
 | The patch gate | `dirt`, `grass` | `fence`, `haybale`s, a farm stand of pumpkins | `vines1` across the gate |
 | Pumpkin rows | `furrow` | `pumpkin` and `rotpumpkin` rows, `rot` patches spreading | Vines (enemy) and pods in the rot. The barn |
@@ -59,6 +59,24 @@ Scripts: `l4_start`, `l4_max`, `l4_street`, `l4_dart`, `l4_vines_hint`, `l4_vine
 - `vines1`: prop `vines`, `hitBy: 'burn'`, as in 1.3.
 - `target1`: prop `target`, `hitBy: 'shoot'`, the loft door of the barn, above a solid wall. Same as 1.1's shot gate. `gate1` is a prop `gate`, opened by the `open` step.
 - `hidden1`: prop `hidden`, `hitBy: 'sense'`, 16 by 32, in a corn wall. It's solid and drawn as corn. When the active hero has the `sense` utility (Will) and stands within 40 px of it, it plays `reveal` and a `reveal` fx, emits `propCleared`, and turns open and walkable. A wrong hero pushing against it or hitting it is a `poked`.
+
+## The arcade
+
+Every cabinet in the Palace is playable. Space at a cabinet opens its game over the frozen level (`arcade/scene.ts`), and leaving comes straight back. Play is free. The games are small takes on the ones the show puts in the Palace, drawn fresh in the house palette, each on a 168 px square field.
+
+| Cabinet | Game | What it is |
+|---|---|---|
+| `digdug` | DIG DUG | Tunnel through four strata, pump Pookas and Fygars until they pop, drop rocks on them. Fygars breathe fire through the dirt. The last one runs for the surface |
+| `cab3`, `cab6` | CENTIPEDE | A shooter in the bottom rows, a mushroom field, a centipede that splits where it's shot, a spider |
+| `cab4` | DRAGON'S LAIR | Quick-time scenes: answer each flashing arrow or sword in time (a second at first), or Dirk dies. The first scene opens on a how-to. The dragon's fire is the last one |
+| `cab1`, `cab8` | GALAGA | A formation that flies in, sways and dives |
+| `cab2` | PAC-MAN | Dots, power pellets, four ghosts |
+| `cab5`, `cab7` | MS. PAC-MAN | The same game in its own maze |
+
+- **Boards:** five rows a game, saved in the browser (`upside-down:arcade:v1`). They start with names from the show: MADMAX over Dustin at Dig Dug, Dustin still first at Centipede, Keith at Dragon's Lair. A finished run goes on the board under the active hero's name. A run left halfway isn't posted.
+- **The easter egg:** a Dig Dug run over MADMAX's 6,150 takes the top of her board, and the Dig Dug cabinet in the world scrolls the new name instead of hers. Back in the level, Max has a line, and the party gets 25 XP (shared as for a kill) and five quarters. It pays once a visit.
+- **Screens in the world:** each cabinet's 10 by 8 attract loop is its own game (`gfx/props_town.ts`).
+- The bot never opens a cabinet, and no cabinet answers while a beat's dialogue runs.
 
 ## Will
 
@@ -103,7 +121,7 @@ The first numbers in this spec were 34, 12 and 2 for the demodog, 30, 9 and 2 fo
 That's 11 demodogs (99), five vines (25), four pods (12) and six rats (24): 160 XP at most. Pods that burst give less. A test keeps the total between 130 and 170. Items: three Eggos, two Cokes, 12 quarters. Props:
 - lights: `lights_palace`, `lights_patch`, `lights_field`
 - gates: `vines1`, `target1`, `gate1`, `hidden1`
-- dressing: about eight `arcade` cabinets, including `digdug`
+- dressing: nine `arcade` cabinets, `cab1` to `cab8` and `digdug`, all playable
 - npc: `max` (her npc id is `max`)
 
 ## Targets
@@ -118,7 +136,7 @@ The bot opens `vines1`, `gate1` and `hidden1` by flag. The ambush is real.
 
 - The 13 tiles in `core/tiles.ts` (`arcadecarpet` to `hole`), day art, with variants.
 - Props:
-  - `arcade`: a cabinet with a live attract screen; `digdug` shows a high-score table with MADMAX on top
+  - `arcade`: a cabinet with a live attract screen of the game it plays; `digdug` shows a high-score table with the board's top name, MADMAX until someone beats her
   - `hidden`: corn, then a dark gap
   - `vines` and `target`: from 1.3 and 1.1
 - Actors:

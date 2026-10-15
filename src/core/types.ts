@@ -372,6 +372,8 @@ export interface Sim {
   /** Starts the stage's defense (SimOptions.defense). Does nothing without one, or once it has started. */
   defend(): void;
   healParty(frac: number): void;
+  /** A prize outside a fight (the arcade's high score): XP shared the usual way, quarters, and floaters over the hero. */
+  bonus(xp: number, quarters: number): void;
   heroPos(): Vec2;
   party(): HeroSnapshot[];
   stats(): RunStats;

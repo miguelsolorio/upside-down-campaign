@@ -25,6 +25,9 @@ import { isLoss, lossReason } from './loss.ts';
 import { createDirector, musicAfter } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
+import { nearUsable } from './interact.ts';
+import { TITLES, arcadeBoard, createArcadeScene, gameFor, postScore } from '../arcade/index.ts';
+import type { ArcadeVisit } from '../arcade/index.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
@@ -33,8 +36,6 @@ const IDLE: SimInput = {
   mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false,
   swapDelta: 0, swapTo: -1, burstPressed: false,
 };
-/** Interact reaches this far (px) from the hero's feet to a lights prop. */
-const LIGHT_REACH = 20;
 const SPEECH_FRAMES = 90;
 /** How far (px) from the start the party goes before the controls in the corner start to fade, and how long the fade takes. */
 const HOME_RADIUS = 120;
@@ -43,6 +44,12 @@ const WIPE_FRAMES = 100;
 const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
+/** The prize for beating MADMAX at Dig Dug. Max's line waits for the prize floaters to clear, then shows a while. */
+const MADMAX_XP = 25;
+const MADMAX_QUARTERS = 5;
+const MAX_LINE = "Beginner's luck. Rematch tomorrow.";
+const MAX_LINE_FROM = 80;
+const MAX_LINE_TO = 290;
 /** Props that stay open across a retry or a load. */
 /** The prop is inside the camera's clear band, so a caret over it can be seen. */
 const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
@@ -77,9 +84,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let unmountDev: (() => void) | null = null;
   let overlay: Scene | null = null;
   let checkpoint: Checkpoint = { x: stage.start.x, y: stage.start.y, state: { fired: [], cleared: [] } };
+  /** What Space would use this tick: unlit lights or a cabinet. */
   let prompt: PropView | null = null;
   /** The crit is ready and the party is free to use it, so its key shows over the active hero. Not next to
-   * lights, where Space lights them instead. */
+   * lights or a cabinet, where Space uses them instead. */
   let burstCall = false;
   let speech: { who: HeroId; text: string; t: number } | null = null;
   /** Set once the party has walked away from the yard it starts in. The corner controls fade after that. */
@@ -99,6 +107,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let swapAge: number | null = null;
   /** The screen width the camera last framed. A resize snaps the camera instead of letting it drift over. */
   let camW = SCREEN_W;
+  /** The MADMAX prize is paid once a visit. Frames since it was paid, for Max's line, or -1. */
+  let madmaxPaid = false;
+  let maxLine = -1;
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -167,7 +178,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
   }
 
   /** window.__ud is created after the first scene starts, so this runs again on every tick until it sticks. */
-  const play = { get sim() { return sim; }, get stage() { return stage; }, get director() { return director; } };
+  const play = {
+    get sim() { return sim; }, get stage() { return stage; }, get director() { return director; },
+    /** Dev only: finishes a run at a cabinet with this score, as if it had been played, to check the board and the prize. */
+    arcade(cabinet: string, score: number): void {
+      if (!game.flags.dev) return;
+      const r = postScore(arcadeBoard(), gameFor(cabinet), playerName(), score);
+      arcadeDone({ game: r.game, runs: [r], beatMadmax: r.beatMadmax });
+    },
+  };
   function expose(): void {
     const ud = (globalThis as unknown as { __ud?: Record<string, unknown> }).__ud;
     if (ud && ud.play !== play) ud.play = play;
@@ -280,7 +299,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   /** The keys and pad, plus a click on a HUD portrait, which is a swap to that hero. */
   function playerInput(g: Game): SimInput {
-    // Space lights the lights in reach, and with none in reach it's the burst key. `prompt` is last tick's, the one on screen.
+    // Space uses the lights or cabinet in reach, and with none in reach it's the burst key. `prompt` is last tick's, the one on screen.
     const keys = toSimInput(g.input, !prompt);
     const click = g.input.clicked();
     const slot = click ? slotAt(view.hud.party, click.x, click.y) : -1;
@@ -307,14 +326,33 @@ export function createPlayScene(opts: PlayOptions): Scene {
     director.events(ev);
   }
 
-  function nearLights(): PropView | null {
-    const p = sim.heroPos();
-    for (const pr of view.props) {
-      if (pr.kind !== 'lights' || pr.state === 'open' || pr.state === 'lit') continue;
-      const qx = Math.max(pr.x, Math.min(p.x, pr.x + pr.w)), qy = Math.max(pr.y, Math.min(p.y, pr.y + pr.h));
-      if (Math.hypot(p.x - qx, p.y - qy) <= LIGHT_REACH) return pr;
-    }
-    return null;
+  // ---------------------------------------------------------------- the arcade
+  /** The name a high score goes under: the hero at the cabinet. */
+  function playerName(): string {
+    return (view.hud.party.find((m) => m.active)?.id ?? 'mike').toUpperCase();
+  }
+
+  /** The cabinet's game over the frozen level. Leaving it comes straight back to play. */
+  function openArcade(pr: PropView): void {
+    const sc = createArcadeScene({
+      game: gameFor(pr.id), player: playerName(), board: arcadeBoard(),
+      onExit: (visit) => { closeOverlay(sc); arcadeDone(visit); },
+    });
+    overlay = sc;
+    game.scenes.push(sc);
+  }
+
+  /** Beating MADMAX pays the party once a visit, and Max has something to say about it. */
+  function arcadeDone(visit: ArcadeVisit): void {
+    if (!visit.beatMadmax || madmaxPaid) return;
+    madmaxPaid = true;
+    sim.bonus(MADMAX_XP, MADMAX_QUARTERS);
+    maxLine = 0;
+  }
+
+  /** The callout over a usable prop: the key alone at the lights, the key and the game at a cabinet. */
+  function promptText(pr: PropView): string {
+    return pr.kind === 'arcade' ? `${labelOf('interact')}: ${TITLES[gameFor(pr.id)]}` : labelOf('interact');
   }
 
   function lightUp(pr: PropView): void {
@@ -405,10 +443,12 @@ export function createPlayScene(opts: PlayOptions): Scene {
         });
       }
       if (scare) stepScare(scare);
-      // No lighting mid-boss or mid-defense: the save would hold a fired beat for a fight the retry puts back to sleep.
-      prompt = frozen || director.busy() || view.hud.boss || view.hud.ward ? null : nearLights();
+      // No lighting or cabinets mid-boss or mid-defense: the save would hold a fired beat for a fight the retry puts back to sleep.
+      prompt = frozen || director.busy() || view.hud.boss || view.hud.ward ? null : nearUsable(view.props, sim.heroPos());
       burstCall = !frozen && !director.busy() && !prompt && view.hud.burstReady;
-      if (prompt && !bot && g.input.pressed('interact')) lightUp(prompt);
+      if (prompt && !bot && g.input.pressed('interact')) {
+        if (prompt.kind === 'arcade') openArcade(prompt); else lightUp(prompt);
+      }
       if (wipeT >= 0 && ++wipeT === WIPE_FRAMES) pushGameOver();
       if (clearT >= 0 && ++clearT === CLEAR_FRAMES) opts.onClear({ stats: sim.stats(), party: sim.party() });
 
@@ -421,6 +461,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       levelFx.tick();
       if (swapAge !== null) swapAge++;
       if (saved && ++saved.t > SAVED_FRAMES) saved = null;
+      if (maxLine >= 0 && ++maxLine > MAX_LINE_TO) maxLine = -1;
       const me = view.hud.party.find((m) => m.active);
       if (me && !me.ko && me.hp / me.hpMax < 0.25 && g.frame % 60 === 0) speak(me.id, 'lowHp');
     },
@@ -456,12 +497,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const hover = at ? slotAt(view.hud.party, at.x, at.y) : -1;
       const levelHot = !!at && onLevel(view.hud.party, at.x, at.y);
       drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, levelHot, device: g.input.device() });
-      if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
+      // The prize floaters and Max's line sit over the cabinets, so the cabinet's prompt waits until they're done.
+      if (prompt && maxLine < 0) drawCallout(ctx, promptText(prompt), prompt.x + prompt.w / 2, prompt.y - (prompt.kind === 'arcade' ? 10 : 2), cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
       if (speech) {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
+      const max = maxLine >= MAX_LINE_FROM ? view.actors.find((m) => m.kind === 'npc' && m.id === 'max') : undefined;
+      if (max) drawCallout(ctx, MAX_LINE, max.x, max.y - 38, cam, 'pink', 18);
       // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
       if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
       // The subtitle sits where the corner controls do, so it replaces them while it shows.

@@ -50,8 +50,15 @@ export function mountTouchUi(): TouchUi {
   addEventListener('pointercancel', (e) => pad.up(e.pointerId));
   addEventListener('blur', () => pad.reset());
   document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') pad.reset(); });
-  // touch-action covers panning and pinching. iOS still zooms on a double tap and offers a callout on a long press.
+  // touch-action covers panning and pinching. iOS still zooms on a double tap, offers a callout on a long press, and
+  // raises its text selection bubble under a thumb held on the stick unless the touch itself is cancelled. The input
+  // reads pointer events and sound unlocks on touchend, so neither needs the touch's default. The dev panel's buttons
+  // and fields keep theirs, so they still take a tap.
+  const native = (t: EventTarget | null): boolean => t instanceof Element && !!t.closest('button, input, select, textarea');
+  document.addEventListener('touchstart', (e) => { if (shown && !native(e.target)) e.preventDefault(); }, { passive: false });
   document.addEventListener('touchmove', (e) => { if (shown) e.preventDefault(); }, { passive: false });
+  // Nothing in the game is text to select.
+  document.addEventListener('selectstart', (e) => { if (!native(e.target)) e.preventDefault(); });
   document.addEventListener('dblclick', (e) => { if (shown) e.preventDefault(); });
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('contextmenu', (e) => { if (shown) e.preventDefault(); });

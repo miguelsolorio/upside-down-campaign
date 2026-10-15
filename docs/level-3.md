@@ -175,3 +175,7 @@ Three rough edges went with it:
 - **The van is parked in the lot.** The side door is two tiles tall now, and `van1` is a full-size van standing across it on the lot side, not a short one squeezed into the wall.
 - **The scare is by position**, mid-room in the cafeteria, as the beat table says. It used to wait for the rats to die, because a scare froze the party and the rats kept biting. Now the whole level holds still while it plays, as it does for dialogue.
 - **The court lines follow the court.** The gym floor paints a boundary 2 px in from the court's edges and a half-court line down its middle (`findCourts` in `gfx/tile_school.ts` finds the court when the stage is baked). Vines and growth paint over the lines instead of boxing them in, and the vines in the school grow over the school's floors, not the Lab's.
+
+## After the balance pass
+
+Measured again, nothing moved. Cleared out of 20 and out of 100: chief 20 and 98, careless 14 and 67, kid 20 and 100, upside 12 and 51, none stuck. Chief's damage is 234, KOs 0.96, lowest party HP 38% and time 97 s. Chief's 98 of 100 is above the 100-seed line of 95 that the balance pass held 2.1 to 2.3 to; it wasn't one of the gaps and the factor stays at 1.5.

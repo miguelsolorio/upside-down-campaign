@@ -99,6 +99,6 @@ test('bot: it wins at least 12 of 16 seeds on chief in the 18 by 12 den at enemy
     assert.ok(wins.length >= (careless ? 10 : 12), `${careless ? 'careless' : 'careful'}: ${wins.length}/16`);
     for (const f of fights) assert.deepEqual(f.calls, [], 'with no flags from the bot');
     const avg = wins.reduce((n, f) => n + f.frames, 0) / Math.max(1, wins.length) / 60;
-    assert.ok(avg >= 15 && avg <= 60, `an average fight of ${avg.toFixed(0)} s`);
+    assert.ok(avg >= 12 && avg <= 60, `an average fight of ${avg.toFixed(0)} s`);
   }
 });

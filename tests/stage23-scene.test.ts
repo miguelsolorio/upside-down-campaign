@@ -151,11 +151,11 @@ test('scene: a retry from lights_gate runs the defense again from the start, wit
 });
 
 test('scene: with the bot on (?bot=1) a loss retries at once and the bot walks the whole route again, not from where it left off', () => {
-  // Seed 16 is a run on which Eleven falls (node scripts/measure-stage.ts 2.3 chief 40). The retry keeps the party's levels, so the
+  // Seed 15 is a run on which Eleven falls (node scripts/measure-stage.ts 2.3 chief 100). The retry keeps the party's levels, so the
   // second attempt can go either way, but it has to get to the den and the defense: a bot that kept its old route would stand idle.
   const flags = game.flags as unknown as { bot: boolean; seed: number };
   flags.bot = true;
-  flags.seed = 16;
+  flags.seed = 15;
   let cleared = false;
   const botPlay = createPlayScene({
     stageId: '2.3', party: [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],

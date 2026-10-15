@@ -289,3 +289,13 @@ The Lab pays 146 XP now, not 360, and a `?stage=1.2` jump starts Mike at Lv 3 an
 
 The careful bot is where it was. The careless one clears less (78 of 100, it was 20 of 20): the bench walks in a level lower, and the stage no longer takes the party to Lv 5 on the way.
 
+
+## After the balance pass
+
+Measured again, nothing moved (`TODO.md`, "Balance pass"). Cleared out of 20 and out of 100:
+
+| | Chief | Careless, chief | Kid | Upside |
+|---|---|---|---|---|
+| Before and after | 19 and 97 | 16 and 78 | 20 and 100 | 6 and 46 |
+
+The careless bot's 78 of 100 (it was 20 of 20) is the difficulty, not a stall. Over 300 seeds it clears 241, none stuck. Of the 59 losses, 58 are in the records wing at the Warden (tiles 42 to 46), at 86 to 117 s, so none ran long, and in 51 of the 59 the Warden alone did 100 or more of the damage (156 on average). The bot that never dodges walks into every slam and bash. What changed since 20 of 20 is the pace pass: the party arrives at Mike 3 and the rest 2 (it was all 3) and the stage pays 146 XP (it was 360), so the party reaches the Warden a level lower. The factor stays at 1.3.

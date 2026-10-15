@@ -31,6 +31,59 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] 1.3: the van is parked in the lot across a two-tile side door, the scare fires mid-room (the level holds still while it plays), and the gym's lines frame the court
 - [x] Verified: typecheck clean, 1053 tests pass, the production build passes. Merged into main
 
+## Balance pass (the gaps the pace pass left)
+
+Everything measured headless with `scripts/measure-stage.ts` (20, 100 and 300 seeds, chief unless said) and `scripts/measure-campaign.ts`. Before is the tree at `5e6cb9c`. Stages 1.1 to 1.3 and 2.2 come out exactly as they were.
+
+- [x] **2.1, careless beats careful**: the careful bot never dodges a demodog. Its only dodges in 2.1 are backing off a vine's lash and a pod's swell, and a hit breaks a wind-up, so backing off costs time, pod XP (a pod that bursts pays nothing) and, with a pack circling, bites. Before the ambush it took 97 damage and 0.54 KOs to the careless bot's 69 and 0.13. Every wipe is in the ambush, where the two bots play alike. Fixed the bot: it doesn't back off a lash or a swell while a demodog is within 240 px (`combat/bot_threat.ts`). Now 278 of 300 careful to 276 careless (was 261 to 273): a tie, not a gap. See "For the owner to decide" for why it can't be more
+- [x] **2.1, upside**: 18 to 35 of 100 (58 to 89 of 300, 2 to 5 of 20). The same bot fix did it: upside runs died to a pack that closed in while the bot backed off a pod. The factor moved from 1.15 to 1.153 only to put the first twenty chief seeds at 19 clears instead of 20
+- [x] **2.3, chief**: 98 to 89 of 100 (297 to 262 of 300, 20 to 19 of 20). Eleven's HP 160 to 95 (she falls in 10 of 100 chief runs, was 1; 1 of the first 20, the band says at most 3) and the Alpha 700 to 560 HP so upside stays at its floor (24 of 100, 60 of 300, 7 of 20). Eleven's HP alone moved upside as much as chief (chief 99 to 92 cost upside 23 to 14 percent); a lower factor wrecks the KO band; the Alpha's ATK does nothing for upside
+- [x] **Lab, careless bot**: not a stall. 300 seeds: 241 clear, none stuck, 58 of the 59 losses are in the records wing at the Warden, at 86 to 117 s, and in 51 of the 59 the Warden alone did 100 or more of the damage (156 on average). The careless bot never sidesteps a slam or a bash. "Down from 20 of 20" is the pace pass: the party arrives at Mike 3 and the rest 2 (was all 3) and the stage pays 146 XP (was 360). No change
+- [x] Recruits: written up below, nothing changed (`joinLevel` and `ARRIVAL` as they were)
+- [x] Moved the vine, pod and slam checks out of `combat/bot.ts` into `combat/bot_threat.ts` (the bot was 503 lines, now 487). `tests/bot-threat.test.ts`, and the tests that pinned the Alpha's 700 HP, a 15 s Alpha fight and the retry seed (16 is now 15) are updated. Typecheck clean, 1061 tests pass, `tests/pace.test.ts` untouched and green
+
+Cleared out of 20 / out of 100, 20 seeds / 100 seeds. Chief, careless (the bot that never dodges), kid, upside:
+
+| Stage | | Chief | Careless | Kid | Upside |
+|---|---|---|---|---|---|
+| 1.1 | before and after | 20 / 100 | 20 / 100 | 20 / 100 | 20 / 100 |
+| 1.2 | before and after | 19 / 97 | 16 / 78 | 20 / 100 | 6 / 46 |
+| 1.3 | before and after | 20 / 98 | 14 / 67 | 20 / 100 | 12 / 51 |
+| 2.1 | before | 18 / 83 | 17 / 88 | 20 / 100 | 2 / 18 |
+| 2.1 | after | 19 / 92 | 17 / 92 | 20 / 100 | 5 / 35 |
+| 2.2 | before and after | 19 / 93 | 19 / 92 | 20 / 100 | 5 / 27 |
+| 2.3 | before | 20 / 98 | 20 / 99 | 20 / 100 | 8 / 28 |
+| 2.3 | after | 19 / 89 | 18 / 87 | 20 / 100 | 7 / 24 |
+
+Over 300 seeds (chief, careless, upside): 2.1 was 261, 273 and 58, is 278, 276 and 89; 2.2 is 276, 282 and 84 either way; 2.3 was 297, 298 and 89, is 262, 268 and 60. None stuck in any of them.
+
+Chief's damage, KOs, lowest party HP and time, 100 seeds. 2.1: 234, 1.74, 33%, 103 s to 216, 1.33, 40%, 98 s. 2.3: 416, 0.63, 39%, 116 s to 404, 0.57, 41%, 112 s (Eleven fell 1 time, now 10). 1.1 to 1.3 and 2.2 are unchanged (`docs/level-*.md`, "After the pace pass").
+
+### For the owner to decide
+
+**1. Make the careful bot dodge demodogs, and move `ARRIVAL`.** I couldn't make careful beat careless without it, and I couldn't ship it without breaking your rule on `ARRIVAL`. What I built and measured, then took out:
+
+- The bot backs away from a demodog's wind-up (after watching the "!" for 14 frames, like a player) and through its lunge. The dog stands still while it winds up and its line is fixed at the end, so a dog that starts at its usual 48 to 64 px falls short. A lunge that touched nothing leaves the dog winded: 45 frames of recovery, not 30, and half again as much damage taken (a `WINDED` floater, `enemies/dog_hit.ts`). It stays off while the party guards Eleven or fights the Alpha, where the ward and the howl come first.
+- It works: 2.1 chief 83 to 99 of 100, upside 18 to 78, the careless bot unchanged at 87. Then chief is a walk (damage 118, lowest HP 59%), so 2.1 needs a factor near 1.6 and 2.2 near 1.62 to get back into the bands. At 1.6, chief 271 of 300 (damage 193, KOs 1.3, lowest HP 35%), careless 209 (70%), upside 188 (63%). At 1.62, 2.2 chief 272, careless 193 (64%), lowest HP 42%.
+- Dogs whose lunge can't be broken by a hit (poise) make the same point from the other side: with the dodging bot, chief 97 and careless 69 of 100.
+- The catch is the carried run. The careful bot keeps Mike healthier, so he swaps out less and XP moves between Mike and Dustin. `tests/pace.test.ts` ("a ?stage= jump walks in with the party a real run brings") allows 40 XP between `ARRIVAL` and the run's median. It is at 25 now. With the dodge it is 48 at the old factors, and over a grid of 16 factor pairs (2.1 at 1.35 to 1.65, 2.2 at 1.45 to 1.7) it is 70 to 103 in all but one pair, which sits at exactly 40. Partial dodges (only when hurt, only in a pack, a late reaction) are 58 to 70 and still make chief too easy.
+- So it needs `ARRIVAL` regenerated (`node scripts/measure-campaign.ts chief 40` prints the lines): levels about the same (Mike 6, Dustin 5 to 6), the XP split moved, and chapter 3's session told. If you say yes I can do it: it's the bot, `enemies/dog_hit.ts`, two factors, `ARRIVAL` and the docs. The prototype is saved as `dog-dodge.patch` in the shared session notes folder.
+
+**2. Recruits.** The rule (`joinLevel` in `core/campaign.ts`) is the floor of the average level of the met heroes in the stage's pool, minus one. The pace pass put the whole party a level lower, so the minus one lands on an average that is already low: Will joins 2.1 at Lv 2 (a bite takes 29 of his 46 HP), Max and Steve join 2.2 at Lv 3 beside a lead at 5. I'd drop the minus one: `Math.floor(avg)`. Will joins at 3, Max and Steve at 4. Carried run, chief, 20 seeds, default picks, level after each stage:
+
+| | Will after 2.1 | Max, Steve after 2.2 | Max, Steve after 2.3 | Mike, Dustin after 2.3 | Party average after 2.3 |
+|---|---|---|---|---|---|
+| Now | 3.4 | 4.0, 4.0 | 4.0, 4.0 | 6.0, 5.3 | 4.85 |
+| No minus one | 4.0 | 4.0 (4 to 5), 4.0 | 5.0, 5.0 | 6.0, 5.2 | 5.29 |
+
+The lead and Dustin don't move and nothing wipes more. With the recruits a level up the stages stay in their bands: 2.1 with Will at 3, chief 278 of 300 (was 272 at the same seeds with him at 2), upside 94 (89); 2.2 with Max and Steve at 4, chief 267 (276), careless 258 (282), upside 119 (84). What it touches:
+
+- `ARRIVAL`: Will 2 to 3 for 2.1, Max and Steve 3 to 4 for 2.2, and their 2.3 levels. That's the part you asked me to leave.
+- `tests/pace.test.ts` asks that Max and Steve gain a level in their two stages, and at Lv 4 some don't (4 to 5 in the table).
+- Chapter 3: Robin and Nancy join 3.1 at the same rule, so Lv 4, not 3. That moves 3.1 and 3.2's sizing.
+- If chapter 3 is already sized on the old rule, the smaller change is a floor for these three (Will 3, Max 4, Steve 4) and the rule untouched for Robin and Nancy. Same numbers for chapter 2.
+- With the default picks Lucas and Will still sit out 2.2 and 2.3 and end chapter 2 at 4.2 and 4.0 (3.4 now). Dropping the minus one doesn't change who plays.
+
 ## Dark Game Boy (touch screen)
 
 - [x] Five dark shells on `shell-variations.html`. The owner picked 1, Play It Loud: the 1995 black Game Boy
@@ -69,11 +122,11 @@ New with Levels 3 and 4:
 
 - Nobody has heard `upside`, `clock` or `hawkins`. Metrics only (peaks 0.52 to 0.77, no limiting, no clipping). Upside is dissonant on purpose in places, and the clock's bell bars sit about 4 dB under the rest.
 - In 2.1 only the demodogs ever hit the bot. The vine and pod numbers are sized by sums against the Lv 5 party, not by measurement. Nobody has fought them, or the dogs, by hand.
-- In 2.1 the careless bot clears more often than the careful one (88 of 100 to 83 since the pace pass, 20 of 20 to 17 before). Dogs that die in a few hits reward trading blows over dodging.
+- In 2.1 the careful and the careless bot clear about equally (278 and 276 of 300). Neither dodges a demodog lunge, and a hit breaks a wind-up, so trading blows is as good as anything. A bot that dodges them is built and measured but not in (it moves the carried run past `ARRIVAL`): see "Balance pass".
 - The street rats in 2.1 keep their chapter 1 numbers and die in one hit. If a later stage needs a chapter 1 enemy at full strength, give it its own kind with chapter 2 numbers rather than a factor.
 - The bot dodges the Demogorgon better than a person will (it reacts a frame late to the charge). The careless bot is the better guide. Nobody has fought it by hand.
-- The pace holds (`docs/pace.md`), with these gaps: 2.1 on upside clears 18 of 100, under its floor of 4 of 20, because the party arrives a level lower; 2.3 on chief clears 98 of 100, at the top of its band (97 before); a careless bot clears the Lab 78 of 100, down from 20 of 20.
-- Recruits join low: Will at Lv 2 in 2.1, Max and Steve at Lv 3 in 2.2 (the average minus one of a party now a level lower). With the default picks Lucas and Will sit out 2.2 and 2.3.
+- The pace holds (`docs/pace.md`). The gaps it left are closed ("Balance pass"): 2.1 upside 35 of 100, 2.3 chief 89 of 100, and the Lab's careless 78 of 100 is the Warden, not a stall. Not in that list and still above the 100-seed band of 95: 1.2 chief (97) and 1.3 chief (98).
+- Recruits join low: Will at Lv 2 in 2.1, Max and Steve at Lv 3 in 2.2 (the average minus one of a party now a level lower). With the default picks Lucas and Will sit out 2.2 and 2.3. A fix is written up under "Balance pass", for you to decide.
 - Nobody has played a carried run by hand, and the bot never swaps for a puzzle, so a person's lead takes less of the XP than the bot's.
 - The map, CONTINUE into the map and replays are covered by unit tests and one bot run through the map. Nobody has played title to 2.1 by hand with saves.
 - The `l3_*` and `l4_*` scripts have only had the mechanical copy checks.

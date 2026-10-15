@@ -4,9 +4,10 @@
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
 // Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's
 // Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
-// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). Against the Alpha it steps off the lunge
-// line and the marks and hits it while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and
-// casts Babysit with Steve when two are on her (bot_ward.ts). It ignores hazards and cameras.
+// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a
+// pod's swell unless a demodog is closing in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it
+// while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
+// are on her (bot_ward.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -19,6 +20,7 @@ import { createBossSense } from './bot_boss.ts';
 import { createDashCross } from './bot_dash.ts';
 import { createAlphaSense, howlFirst } from './bot_alpha.ts';
 import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
+import { backOffFrom, slamThreat } from './bot_threat.ts';
 
 export interface BotWaypoint extends Vec2 {
   /** Prop id to open when reached. */ open?: string;
@@ -255,23 +257,6 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return null;
   }
 
-  /** A wind-up whose reach the hero is in: the vine's lash or the pod's swell. */
-function reachThreatOf(f: Foe): boolean {
-  if (f.kind === 'vine') return f.d <= ENEMY_DEFS.vine.x.reach + 10;
-  if (f.kind === 'pod') return f.d <= ENEMY_DEFS.pod.x.cloud + 10;
-  return false;
-}
-
-/** A Warden winding up a slam close enough to reach the hero: the growing ring is on it. */
-  function slamThreat(v: SimView, foes: Foe[]): Foe | null {
-    const w = ENEMY_DEFS.warden.x;
-    for (const f of foes) {
-      if (f.kind !== 'warden' || !f.windup || f.d > w.slamRadius + 12) continue;
-      if (v.fx.some((r) => r.kind === 'ring' && r.life === w.slamWindup && Math.hypot(r.x - f.x, r.y - f.y) < 8)) return f;
-    }
-    return null;
-  }
-
   /** A step straight away from a foe, bending around walls. */
   function awayFrom(f: Foe, hx: number, hy: number): [number, number] {
     const a = Math.atan2(hy - f.y, hx - f.x);
@@ -395,7 +380,7 @@ function reachThreatOf(f: Foe): boolean {
       const bash = dodged || careless ? null : foes.find((f) => isGuard(f.kind) && f.windup && f.up && f.d <= defOf(f.kind).x.reach + 8 && inArc(f, hx, hy));
       if (!dodged && bash) { [mx, my] = awayFrom(bash, hx, hy); dodged = true; }
       // A vine's lash reaches 34 px and a swelling pod's cloud 28: back out of it.
-      const near2 = dodged || careless ? null : foes.find((f) => f.windup && reachThreatOf(f));
+      const near2 = dodged || careless ? null : backOffFrom(foes);
       if (!dodged && near2) { [mx, my] = awayFrom(near2, hx, hy); dodged = true; }
       if (!dodged) {
         const a8 = snap8(near.ang);

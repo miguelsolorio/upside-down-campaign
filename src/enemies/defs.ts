@@ -110,7 +110,8 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // The chapter 2 boss (docs/level-6.md, "Demodog Alpha", enemies/alpha.ts). Walk, windup, power and cooldown are the bite's. HP and
   // ATK are down from the spec's 1100 and 34: the fight's danger is its pack of nine and the pounce, and at the spec's numbers it was a
   // cliff (the bot won 35 of 40 at an effective factor of 1.0 and 4 of 40 at 1.1), so stage 2.3 had to sit at 0.7 for upside to clear
-  // at all. At 700 and 16 the stage runs at 1.0 and the fight takes about 17 s on chief (measured with measure-stage 2.3).
+  // at all. At 700 and 16 the stage ran at 1.0 and the fight took about 17 s on chief (measured with measure-stage 2.3). The pace pass left chief
+  // at 98 of 100 and upside at the floor; 560 HP shortens the fight for upside, and Eleven's HP (stage23_data.ts) brings chief back down.
   // reach, arc (half angle in degrees), kb: the bite. range: px at which it commits to one. recover: frames after it. hold: px it
   // stops short of the hero.
   // lungeEvery: frames between lunges, counted from the end of the last. lungeMin and lungeMax: the hero's distance band in px.
@@ -120,7 +121,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // howl1 to howl3: the HP shares that start each howl. howlT: frames stopped, howlMul: damage taken meanwhile, howlRing: the ring's
   // diameter, pack: demodogs it calls.
   alpha: {
-    kind: 'alpha', name: 'Demodog Alpha', hp: 700, atk: 16, def: 6, speed: 1.1, xp: 70, aggro: 200,
+    kind: 'alpha', name: 'Demodog Alpha', hp: 560, atk: 16, def: 6, speed: 1.1, xp: 70, aggro: 200,
     windup: 24, power: 1, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 28, arc: 70, kb: 4, range: 26, recover: 20, hold: 14,

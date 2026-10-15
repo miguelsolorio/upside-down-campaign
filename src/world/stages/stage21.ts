@@ -128,9 +128,9 @@ export const STAGE_21: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
-  // Nearly all the damage here is the demodogs' bites, and the whole stage is a warm-up for them: this is what it takes for a bot
-  // that dodges the vines and the pods to clear 19 of 20 for about 200 damage, and one that does not to clear 15 (measured with
-  // node scripts/measure-stage.ts 2.1 chief 20 [--careless]). The spec's 1.15 cost the bot 15 damage.
-  enemyMult: 3.15,
+  // The chapter 2 enemies carry their own numbers for a Lv 5 party (enemies/defs.ts), so this is the spec's 1.15. All the damage
+  // the bot takes here is demodog bites: a careful bot clears 17 of 20 for about 240 damage, a careless one all 20 (measured
+  // with node scripts/measure-stage.ts 2.1 chief 20 [--careless]).
+  enemyMult: 1.15,
   waypoints: WAYPOINTS,
 };

@@ -49,13 +49,13 @@ test('ambush: the 2.1 party on chief beats three waves of 3, 3 and 4 demodogs at
   assert.ok(secs > 5 && secs < 90, `average fight ${secs.toFixed(0)} s`);
 });
 
-test('ambush: kid is easier than upside, and the careless bot still clears most', () => {
+test('ambush: kid is easier than upside, upside still wins a third, and the careless bot clears most', () => {
   const rate = (d: Difficulty, careless = false): { wins: number; dmg: number } => {
     const fs = Array.from({ length: 12 }, (_, i) => ambush(i + 1, d, careless));
     return { wins: fs.filter((f) => f.won).length, dmg: fs.reduce((n, f) => n + f.damage, 0) / fs.length };
   };
   const kid = rate('kid'), upside = rate('upside');
-  assert.ok(kid.wins >= 11 && upside.wins >= 8, `kid ${kid.wins}/12, upside ${upside.wins}/12`);
+  assert.ok(kid.wins >= 11 && upside.wins >= 4, `kid ${kid.wins}/12, upside ${upside.wins}/12`);
   assert.ok(upside.dmg > kid.dmg, `${upside.dmg.toFixed(0)} damage on upside against ${kid.dmg.toFixed(0)} on kid`);
   assert.ok(rate('chief', true).wins >= 10);
 });

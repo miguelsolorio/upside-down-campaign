@@ -10,7 +10,7 @@ import type { Hero, Prop, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, footBlocked, nearestOnRect, rectsOverlap } from './space.ts';
-import { HERO_DEFS } from '../heroes/defs.ts';
+import { utilitiesAt } from '../heroes/defs.ts';
 import { fireBoxes } from './powerbox.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
@@ -88,7 +88,7 @@ function revealHidden(s: S, p: Prop): void {
 /** A hero who has the utility the prop asks for (Will's `sense`, Robin's `read`), alive and active, and within 40 px of it. */
 function sensed(s: S, p: Prop, fallback: Utility = 'sense'): boolean {
   const h = activeHero(s);
-  if (h.ko || !HERO_DEFS[h.id].utilities.includes(p.hitBy ?? fallback)) return false;
+  if (h.ko || !utilitiesAt(h.id, h.level).includes(p.hitBy ?? fallback)) return false;
   const q = nearestOnRect(p, h.x, h.y - 2);
   return Math.hypot(q.x - h.x, q.y - (h.y - 2)) <= SENSE_RANGE;
 }

@@ -16,6 +16,9 @@ import { grigoriPose } from '../enemies/grigori_hit.ts';
 import { flayedPose } from '../enemies/flayed.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
+import { chargeOf } from '../heroes/hold.ts';
+import { camoHides } from '../heroes/camo.ts';
+import { petBiting } from '../heroes/dart.ts';
 
 let shakeScale = 1;
 let reduceFlash = false;
@@ -26,12 +29,17 @@ export function setShakeScale(n: number): void { shakeScale = Math.max(0, Math.m
 export function setReduceFlashing(on: boolean): void { reduceFlash = on; }
 
 function heroView(s: S, h: Hero, active: boolean): ActorView {
-  return {
+  const v: ActorView = {
     kind: 'hero', id: h.id, x: h.x, y: h.y, dir: h.dir, anim: h.anim, t: h.animT, flash: h.flash,
     blink: active && h.blink && h.invuln > 0 && ((s.frame >> 1) & 1) === 0,
     strained: h.id === 'eleven' && h.mp < h.st.mp * 0.25,
     tint: s.inspire > 0 ? 'yellow' : h.stat.slow > 0 ? 'purple' : null, alert: false, z: h.z, bar: { hp: Math.max(1, Math.ceil(h.hp)), hpMax: h.st.hp },
   };
+  // Lucas under his Camo is drawn faint, and a held Special shows its ring. Neither is set otherwise.
+  if (active && camoHides(s, h)) v.hidden = true;
+  const charge = active ? chargeOf(h) : 0;
+  if (charge > 0) v.charge = charge;
+  return v;
 }
 
 function enemyView(s: S, e: Enemy): ActorView {
@@ -103,7 +111,8 @@ function projFx(p: Proj): FxView {
     const t = Math.min(1, p.age / p.life);
     const arc = 4 * 20 * t * (1 - t);
     // A scoop in flight is a 6 wide 'scoop' fx, h its height off the ground. The splat (heroes/robin.ts) is the same kind, w its diameter.
-    return { kind: p.kind === 'scoop' ? 'scoop' : 'candy', x: p.x, y: p.y - arc - BODY_Y * (1 - t) - 2, dir: 'down', angle: 0, t: p.age, life: p.life, w: 6, h: Math.round(arc) };
+    // Nancy's Molotov flies the same way as a 'bottle'.
+    return { kind: p.kind === 'scoop' || p.kind === 'bottle' ? p.kind : 'candy', x: p.x, y: p.y - arc - BODY_Y * (1 - t) - 2, dir: 'down', angle: 0, t: p.age, life: p.life, w: 6, h: Math.round(arc) };
   }
   // A fireball is drawn as a small flame pointing the way it flies (w its reach, h its width).
   if (p.kind === 'fireball') return { kind: 'flame', x: p.x, y: p.y, dir: dirOfVec(p.vx, p.vy, 'right'), angle, t: p.age, life: p.life, w: 12, h: 10 };
@@ -129,10 +138,14 @@ function fxList(s: S): FxView[] {
   for (const p of s.projs) out.push(projFx(p));
   for (const g of s.globs) out.push(globFx(g));
   for (const z of s.zones) {
+    // A full circle is the Molotov's pool: 'fire' on the floor, w its diameter. A cone is a spray: 'flame', w its reach.
+    if (z.half >= Math.PI) { out.push({ kind: 'fire', x: z.x, y: z.y + BODY_Y, dir: 'down', angle: 0, t: z.age, life: z.life, w: z.r * 2, h: z.r }); continue; }
     out.push({ kind: 'flame', x: z.x, y: z.y, dir: dirOfVec(Math.cos(z.angle), Math.sin(z.angle), 'right'), angle: z.angle, t: z.age, life: z.life, w: z.r, h: Math.round(2 * z.r * Math.sin(z.half)) });
   }
   // A bear trap on the floor: one 'trap' fx for as long as it lasts, w by h its size. It is gone once an enemy springs it.
   for (const t of s.traps) out.push({ kind: 'trap', x: t.x, y: t.y, dir: 'down', angle: 0, t: t.age, life: t.life, w: 14, h: 8 });
+  const pet = s.t6.dart;
+  if (pet) out.push({ kind: 'pet', x: pet.x, y: pet.y, dir: pet.dir, angle: 0, t: pet.t, life: pet.life, w: petBiting(pet) ? 1 : 0, h: 0 });
   if (s.lure) out.push({ kind: 'candy', x: s.lure.x, y: s.lure.y - 2, dir: 'down', angle: 0, t: s.lure.age, life: s.lure.life, w: 8, h: 0 });
   if (s.shield) {
     const sh = s.shield;

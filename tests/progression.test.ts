@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MAX_LEVEL, STAT_KEYS, xpToNext, xpForLevel, xpShare, addXp, rollD20, bonusPoints, rollLevelUp, emptyStats,
-  TALENTS, TALENT_TEXT_MAX, hasTalent, talentGainedAt,
+  TALENTS, TALENT_TEXT_MAX, LV6, hasTalent, talentGainedAt,
 } from '../src/progression/index.ts';
 import type { Stats } from '../src/progression/index.ts';
 import { createRng } from '../src/core/rng.ts';
@@ -117,19 +117,21 @@ test('bonus points follow the weights and are never negative', () => {
   assert.ok(Math.abs(points / N - 1.75) < 0.12, `avg points ${points / N}`);
 });
 
-test('every hero has a Lv 3 talent with one short line and no em dash', () => {
+test('every hero has a Lv 3 and a Lv 6 talent, each with one short line and no em dash', () => {
   for (const id of HERO_IDS) {
-    const t = TALENTS[id];
-    assert.equal(t.level, 3);
-    assert.ok(t.name.length > 0);
-    assert.ok(t.text.length > 0 && t.text.length <= TALENT_TEXT_MAX, `${id}: ${t.text.length}`);
-    assert.ok(!t.text.includes('\n'));
-    assert.ok(!hasEmDash(t.text) && !hasEmDash(t.name));
-    assert.equal(hasTalent(id, 2), false);
+    assert.deepEqual(TALENTS[id].map((t) => t.level), [3, LV6], id);
+    for (const t of TALENTS[id]) {
+      assert.ok(t.name.length > 0);
+      assert.ok(t.text.length > 0 && t.text.length <= TALENT_TEXT_MAX, `${id} ${t.name}: ${t.text.length}`);
+      assert.ok(!t.text.includes('\n'));
+      assert.ok(!hasEmDash(t.text) && !hasEmDash(t.name));
+      assert.equal(talentGainedAt(id, t.level), t);
+      assert.equal(hasTalent(id, t.level - 1, t.level), false);
+      assert.equal(hasTalent(id, t.level, t.level), true);
+      assert.equal(hasTalent(id, 12, t.level), true);
+    }
+    assert.equal(hasTalent(id, 2), false, 'the Lv 3 one when no level is named');
     assert.equal(hasTalent(id, 3), true);
-    assert.equal(hasTalent(id, 12), true);
-    assert.equal(talentGainedAt(id, 3), t);
-    assert.equal(talentGainedAt(id, 2), null);
-    assert.equal(talentGainedAt(id, 4), null);
+    for (const l of [1, 2, 4, 5, 7, 8]) assert.equal(talentGainedAt(id, l), null, `${id} gains nothing at ${l}`);
   }
 });

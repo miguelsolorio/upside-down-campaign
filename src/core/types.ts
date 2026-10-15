@@ -69,8 +69,10 @@ export interface ActorView {
   pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab';
   /** The Demogorgon's head petals are open (below 60% HP). */
   petals?: boolean;
-  /** A hidden enemy that only Will's Cold spot shows. gfx draws it faint or not at all. */
+  /** A hidden enemy that only Will's Cold spot shows, or Lucas under his Camo. gfx draws it faint or not at all. */
   hidden?: boolean;
+  /** A held Special filling toward its Lv 6 variant, 0..1 (heroes/hold.ts). gfx draws a ring round the hero. */
+  charge?: number;
   /** An enemy confused by Robin's Word vomit: it fights the other enemies. gfx draws a swirl over its head. */
   confused?: boolean;
   /** A dormant Flayed, waiting as a goo puddle until its group wakes. */
@@ -89,7 +91,10 @@ export type FxKind =
   /** scoop: Robin's ice cream in flight and its splat. babble: her Word vomit cone, w its reach. bullet: a pistol or rifle round
    *  in flight. goo: a melting rat's burst, w its diameter. trap: one of Nancy's bear traps on the floor. arcs: the power box
    *  firing, w and h its size. */
-  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs';
+  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs'
+  /** pet: Dustin's Dart, w 1 while he bites. bottle: Nancy's Molotov in flight, h its height off the ground. fire: its pool on the
+   *  floor, w the diameter. */
+  | 'pet' | 'bottle' | 'fire';
 
 export interface FxView {
   kind: FxKind;

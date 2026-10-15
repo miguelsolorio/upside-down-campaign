@@ -4,6 +4,7 @@ import type {
   RunStats, SimEvent, SfxId, Utility, Burrow, DefenseDef, DefenseWave, Stash,
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
+import type { TalentState } from './talent_state.ts';
 
 export type { Rng, Stats };
 
@@ -62,6 +63,8 @@ export interface Hero {
   dash: Dash | null;
   /** Frames since this hero last took a hit, capped at 600. Steve's Hair of steel reads it. */
   unhurt: number;
+  /** Frames Special has been held toward a Lv 6 variant (heroes/hold.ts), 0 when it isn't. -1 after the variant fired, until the key comes up. */
+  holdT: number;
 }
 
 export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'recover' | 'lured';
@@ -248,7 +251,7 @@ export interface Defense {
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet' | 'bottle';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;
@@ -278,6 +281,8 @@ export interface Zone {
   angle: number; r: number; half: number;
   age: number; life: number; tick: number;
   power: number; burn: number; burnTick: number;
+  /** Knockback of each hit, and each burn tick's share of the caster's ATK. */
+  kb: number; burnAtk: number;
   by: HeroId;
   cds: Map<number, number>;
 }
@@ -393,6 +398,8 @@ export interface S {
   armed: boolean;
   /** Frames of Steve's Babysit left: he takes less damage and the whole party's DEF is up. */
   babysit: number;
+  /** The Lv 6 talents' timers, Dart and the Ahoy leap (combat/talent_state.ts). */
+  t6: TalentState;
   over: boolean;
   nextUid: number;
   nextDrop: number;

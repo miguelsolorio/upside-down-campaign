@@ -38,7 +38,7 @@ test('every damage line is the formula at the hero\'s ATK, for every hero and le
       const atk = statsAt(def, level).atk;
       const s = heroSheet(id, level);
       assert.equal(s.stats.atk, atk);
-      const flip = id === 'eleven' && level >= TALENTS.eleven.level ? (def.basic.x.flipPower as number) : 1;
+      const flip = id === 'eleven' && level >= (TALENTS.eleven[0]?.level ?? 3) ? (def.basic.x.flipPower as number) : 1;
       assert.deepEqual(move(id, level, 'basic').dmg, damageRange(def.basic.power * flip, atk, 0), `${id} L${level} basic`);
       if (def.special.power > 0) assert.deepEqual(move(id, level, 'special').dmg, damageRange(def.special.power, atk, 0), `${id} L${level} special`);
       assert.deepEqual(move(id, level, 'crit').dmg, damageRange(BURST_POWER, atk, 0), `${id} L${level} Crit`);
@@ -80,15 +80,18 @@ test('crit chance: 5 percent, Lucas and Eleven a little more, and Sharp eye adds
   assert.equal(Math.round(heroSheet('eleven', 1).crit * 100), 7);
 });
 
-test('the talent line is locked until its level', () => {
+test('each talent line is locked until its level, Lv 3 then Lv 6', () => {
+  const talentRows = (id: HeroId, level: number): SheetMove[] => heroSheet(id, level).moves.filter((m) => m.kind === 'talent');
   for (const id of HERO_IDS) {
-    const t = TALENTS[id];
-    const below = move(id, t.level - 1, 'talent'), at = move(id, t.level, 'talent');
-    assert.equal(below.locked, true);
-    assert.equal(at.locked, false);
-    assert.equal(at.name, t.name);
-    assert.equal(at.note, t.text);
-    assert.equal(at.level, t.level);
+    TALENTS[id].forEach((t, i) => {
+      const below = talentRows(id, t.level - 1)[i] as SheetMove, at = talentRows(id, t.level)[i] as SheetMove;
+      assert.equal(below.locked, true, `${id} ${t.name} below`);
+      assert.equal(at.locked, false, `${id} ${t.name} at`);
+      assert.equal(at.name, t.name);
+      assert.equal(at.note, t.text);
+      assert.equal(at.level, t.level);
+    });
+    assert.equal(talentRows(id, 1).length, 2, `${id} shows both talents from Lv 1`);
   }
 });
 

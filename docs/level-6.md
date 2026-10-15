@@ -146,7 +146,7 @@ The measure script counts `wardDown` as a loss.
 
 ## What Art draws for this level
 
-Art builds only after the owner picks from the variation sheets.
+Art builds only after the owner picks from the variation sheets. The owner picked **Stalker** for the Alpha and **Uniform** for Hopper (`src/gfx/var/`).
 
 - The three flesh tiles in `core/tiles.ts` (`fleshfloor`, `fleshwall`, `tear`), night art, with variants. The lab tiles exist.
 - Props:

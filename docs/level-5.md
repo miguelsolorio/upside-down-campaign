@@ -128,7 +128,7 @@ The same bands as `docs/level-3.md`, "Targets", measured with `node scripts/meas
 
 ## What Art draws for this level
 
-Art builds only after the owner picks from the variation sheets (see "Variation sheets").
+Art builds only after the owner picks from the variation sheets (see "Variation sheets"). The owner picked **Walkman** for Max, **Letterman** for Steve and **Roots** for the tunnels (`src/gfx/var/`).
 
 - The seven tunnel tiles in `core/tiles.ts` (`tunnelfloor` to `ladder`), night art, with variants so the halls don't look stamped. They must survive the night remap (`tests/night.test.ts` runs every tile name through it). The placeholders in `gfx/tile_objects.ts` (`PLACEHOLDER`) go once each tile is painted.
 - Props:

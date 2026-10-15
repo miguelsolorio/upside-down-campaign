@@ -17,7 +17,7 @@ Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy 
 - [x] Pace: `xpMult` 2, the lead Lv 8 after chapter 3 in nine runs of ten, the tenth 27 XP short; `ARRIVAL['3.3']` Mike 7, Dustin 6, Robin 4, Eleven 4; `pace.test.ts` checks chapter 3
 - [x] Art build: Lifeguard Billy (his own frames, the veins fading as Eleven reaches him, slumped once free) and his portrait, the Meat Spider and its legs, the Neon Strip tiles, the sweep, the pools, a FOOD COURT plate on the map, sheet pages 35 to 37. The `crack`, `crate`, `door` and `lights` props keep their old colors
 - [x] Verified: typecheck clean, every test passes, the production build passes. In the browser (muted): a save with 3.2 cleared opens the map on THE FOOD COURT, open; the picks panel locks Eleven and shows her at Lv 4; the bot clears 3.3 (1:44: BILLY, the reach, MIND FLAYER with its leg pips, Billy slumped in the corner); with the story on, Hopper's letter plays over Eleven's room and skips to CHAPTER THREE CLEAR with the feedback note; the map after it has every stage cleared. No console errors
-- [x] Merged into main by the lead at the owner's word (main merged in three times, the bands checked on HARD, typecheck and tests rerun on main). Not pushed
+- [ ] Merged into main (main merged into the branch three times, the bands checked on HARD). The merge into main needs the owner's go-ahead in this session. Never pushed
 - [ ] Feedback on Level 9
 
 ## Levels 7 and 8 (merged)

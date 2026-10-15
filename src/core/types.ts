@@ -101,8 +101,9 @@ export type FxKind =
    *  firing, w and h its size. */
   | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs'
   /** slam: a Mind Flayer leg striking the floor, w its reach. glass: the skylight shattering as the Mind Flayer comes in,
-   *  w the spread. */
-  | 'slam' | 'glass';
+   *  w the spread. sweep: a Mind Flayer leg sweeping a band across the arena: x, y its top-left, w and h its size, t < 40 the
+   *  warning, then the strike. */
+  | 'slam' | 'glass' | 'sweep';
 
 export interface FxView {
   kind: FxKind;

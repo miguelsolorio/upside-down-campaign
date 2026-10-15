@@ -212,17 +212,40 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       reachR: 32, reachRise: 60, reachFall: 120, pokeGap: 45, reviveHp: 0.3,
     },
   },
-  // Stand-ins for the Mind Flayer and its legs until Sim builds them (docs/level-9.md): the stats are the spec's starting numbers, and x is
-  // the agent's, so the agent's brain in ai.ts can run them.
+  // The Mind Flayer, phase two of the 3.3 boss (docs/level-9.md, "The Mind Flayer", enemies/flayer.ts, flayer_hit.ts), and its four legs
+  // (enemies/flayer_legs.ts). Both are rooted: speed 0 and the weight of a wall. ATK, DEF and XP are the spec's starting numbers (the legs
+  // give 0 XP and init.ts keeps it 0). HP is down from the spec's 1600 and 180 to 1200 and 140: the careful bot dodges nearly every line, so
+  // the fight is all HP against how fast it can cut four legs, walk to the head and cut it down before the legs grow back, and at the spec's
+  // numbers it took ten rounds of that and the Flayed waves wore the party out first. On a 22 by 14 court at enemyMult 1 the bot now wins
+  // 19 of 20 on chief in about two minutes and 20 of 20 on kid, and a bot that never dodges loses every time to the lines. On upside it wins
+  // none: the waves are most of the damage (with no waves it wins 20 of 20 having taken 72). The body's windup, power and cooldown are not
+  // used: its legs have them.
+  // riseT: frames coming in through the skylight, hit by nothing. downT: frames the head is on the floor, downMul: damage it takes then.
+  // slamFirst, slamEvery and slamRegrow: frames before the first slam, between two slams, and after the legs grow back. phaseAt: the HP share
+  // that starts phase two, where two legs slam at once. sweepFirst and sweepEvery: frames before the first sweep and between sweeps (phase
+  // two only). waveFirst, waveEvery, waveN and waveMax: the Flayed waves, while the head is up: frames before the first, between two, how many
+  // come and how many may be alive.
   flayer: {
-    kind: 'flayer', name: 'Mind Flayer', hp: 1600, atk: 30, def: 6, speed: 0, xp: 120, aggro: 400,
-    windup: 40, power: 1.2, cooldown: 90, drop: 1, weight: 99,
-    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
+    kind: 'flayer', name: 'Mind Flayer', hp: 1200, atk: 30, def: 6, speed: 0, xp: 120, aggro: 400,
+    windup: 40, power: 1.2, cooldown: 70, drop: 1, weight: 99,
+    x: {
+      riseT: 40, downT: 300, downMul: 1.5, slamFirst: 90, slamEvery: 70, slamRegrow: 90, phaseAt: 0.5, sweepFirst: 240, sweepEvery: 480,
+      waveFirst: 300, waveEvery: 540, waveN: 2, waveMax: 3,
+    },
   },
+  // A leg. Windup is the warn, power the slam's. warn and warnLow (phase two): frames the line is shown. slamT: frames of the strike. rest:
+  // frames its tip lies on the floor after it. len: the line's length in px, halfW: how far either side of it a hero is hit, kb: the shove.
+  // restLen: how far in front of its root a leg's tip lies before its first slam and after it grows back. daze: frames Word vomit holds it.
+  // The sweep: sweepWarn and sweepPower and sweepKb, bandH: the band's height in px. The pools its tip leaves (combat/pools.ts): poolR and
+  // poolLife, poolMax (a fifth replaces the oldest), poolPower and poolEvery (frames between stings), poolSlow (frames of slow it renews).
   flayerleg: {
-    kind: 'flayerleg', name: 'Mind Flayer leg', hp: 180, atk: 30, def: 4, speed: 0, xp: 0, aggro: 400,
-    windup: 40, power: 1.2, cooldown: 90, drop: 0, weight: 99,
-    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
+    kind: 'flayerleg', name: 'Mind Flayer leg', hp: 140, atk: 30, def: 4, speed: 0, xp: 0, aggro: 400,
+    windup: 40, power: 1.2, cooldown: 70, drop: 0, weight: 99,
+    x: {
+      warn: 40, warnLow: 28, slamT: 12, rest: 30, len: 150, halfW: 12, kb: 5, restLen: 56, daze: 30,
+      sweepWarn: 40, sweepPower: 1, sweepKb: 4, bandH: 24,
+      poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.15, poolEvery: 30, poolSlow: 20,
+    },
   },
 };
 

@@ -19,6 +19,9 @@ import { soldierUpdate } from './soldier.ts';
 import { grigoriUpdate } from './grigori.ts';
 import { billyUpdate } from './billy.ts';
 import { billyReach, isBillyPinned } from './billy_hit.ts';
+import { flayerUpdate } from './flayer.ts';
+import { legUpdate, legWait } from './flayer_legs.ts';
+import { flayerRooted } from './flayer_hit.ts';
 import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
@@ -41,7 +44,7 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   }
   // The reach of a pinned Billy climbs and falls whatever else is going on (a hero down, say): it is Eleven's to hold.
   if (isBillyPinned(e)) { billyReach(s, e, hero); return; }
-  if (e.stagger > 0) { e.stagger--; setEnemyAnim(e, 'hurt'); return; }
+  if (e.stagger > 0) { e.stagger--; legWait(e); setEnemyAnim(e, 'hurt'); return; }
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   if (s.over || hero.ko) { setEnemyAnim(e, 'idle'); return; }
 
@@ -52,6 +55,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.alpha) { alphaUpdate(s, e, hero); return; }
   if (e.grigori) { grigoriUpdate(s, e, hero); return; }
   if (e.billy) { billyUpdate(s, e, hero); return; }
+  if (e.flayer) { flayerUpdate(s, e, hero); return; }
+  if (e.leg) { legUpdate(s, e, hero); return; }
   // The vine and the pod are rooted: no lure moves them.
   if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
   if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }
@@ -83,7 +88,7 @@ function unhide(e: Enemy): void {
   if (e.hidden && (e.mode === 'windup' || e.mode === 'lunge')) e.hidden = false;
 }
 
-const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e);
+const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e) || flayerRooted(e);
 
 function separate(s: S): void {
   const list = s.enemies.filter((e) => !e.dead && !e.dormant);

@@ -25,13 +25,15 @@ const BUMP_RANGE = 18;
 const BUMP_SLACK = 6;
 const BUMP_KB = 2;
 
-/** A boss: the Demogorgon, the Alpha, Grigori, Billy, or any spawn in group `boss`. */
+/** A boss: the Demogorgon, the Alpha, Grigori, Billy, the Mind Flayer or one of its legs, or any spawn in group `boss`. */
 export function isBoss(e: Enemy): boolean {
-  return e.demo !== null || e.alpha !== null || e.kind === 'grigori' || e.billy !== null || e.group === 'boss';
+  return e.demo !== null || e.alpha !== null || e.kind === 'grigori' || e.billy !== null || e.flayer !== null || e.leg !== null || e.group === 'boss';
 }
 
 /** A boss caught in the cone staggers for a moment. Not while it is in the air or charging, where it would hang in mid-move. */
 function stagger(s: S, e: Enemy): void {
+  // Nothing moves the Mind Flayer's body. A leg staggers unless it is striking, and its slam waits.
+  if (e.flayer || e.leg?.move === 'slam') return;
   const move = e.demo?.move ?? e.alpha?.move ?? e.grigori?.move ?? e.billy?.move;
   // Not in the air, charging or lunging, and not while stunned on the power box or against a wall: there it would hang in mid-move.
   if (move === 'air' || move === 'run' || (e.grigori && (move === 'lunge' || move === 'stun')) || (e.billy && (move === 'stun' || move === 'pinned'))) return;

@@ -15,6 +15,8 @@ import { alphaPose } from '../enemies/alpha_hit.ts';
 import { grigoriPose } from '../enemies/grigori_hit.ts';
 import { billyK, billyPose, isBillyPinned } from '../enemies/billy_hit.ts';
 import { flayedPose } from '../enemies/flayed.ts';
+import { flayerPose, legPose } from '../enemies/flayer_hit.ts';
+import { poolViews } from './pools.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
 
@@ -75,6 +77,17 @@ function enemyView(s: S, e: Enemy): ActorView {
     const pose = flayedPose(e.flayed);
     if (pose) v.pose = pose;
   }
+  if (e.flayer && !e.dead) {
+    const pose = flayerPose(e.flayer);
+    if (pose) v.pose = pose;
+  }
+  // A leg is drawn from its root to its tip: x, y is the root, aim the tip (where the enemy stands and is hit).
+  if (e.leg) {
+    v.x = e.leg.rx; v.y = e.leg.ry;
+    v.aim = { x: e.x, y: e.y };
+    const pose = e.dead ? undefined : legPose(e.leg);
+    if (pose) v.pose = pose;
+  }
   return v;
 }
 
@@ -99,10 +112,13 @@ const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', de
   billy: 'BILLY', flayer: 'MIND FLAYER' };
 
 /** The first Warden, Demogorgon, Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
-function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
+function bossBar(s: S): { name: string; hp: number; hpMax: number; parts?: number[] } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
-    if (name && !e.dormant && !e.dead && e.hp > 0 && !isBillyPinned(e)) return { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
+    if (!name || e.dormant || e.dead || e.hp <= 0 || isBillyPinned(e)) continue;
+    const bar = { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
+    // The Mind Flayer's four legs, as the share of HP each has left: 0 for a severed one. The legs never fill the bar themselves.
+    return e.flayer ? { ...bar, parts: e.flayer.legs.map((l) => (l.dead || l.hp <= 0 ? 0 : Math.min(1, l.hp / l.hpMax))) } : bar;
   }
   return null;
 }
@@ -187,8 +203,7 @@ export function buildView(s: S): SimView {
     items: s.items.map((it) => ({ kind: it.kind, x: it.x, y: it.y, t: it.t })),
     props: s.props.map((p) => propView(s, p)),
     hazards: hazardViews(s),
-    // The Mind Flayer's goo pools (docs/level-9.md). Sim B fills this from its state.
-    pools: [],
+    pools: poolViews(s),
     floaters: s.floaters.slice(),
     hud: {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,

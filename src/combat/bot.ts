@@ -10,8 +10,9 @@
 // are on her (bot_ward.ts). Robin casts Word vomit with three foes within 56 px and Nancy her Shotgun with one within 40. Rifle
 // bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
 // recovers, with the power box when there is a shooter (bot_grigori.ts). Billy's charge and grab are stepped out of, his wall stun is hit
-// and Eleven is walked up to him once he kneels (bot_billy.ts). It ignores hazards and cameras.
-import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
+// and Eleven is walked up to him once he kneels (bot_billy.ts). Against the Mind Flayer it steps off a warned line, band or pool and hits the
+// nearest leg, then the head when it is down (bot_flayer.ts). It ignores hazards and cameras.
+import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import type { EnemyDef } from '../enemies/defs.ts';
@@ -25,6 +26,8 @@ import { createAlphaSense, howlFirst } from './bot_alpha.ts';
 import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 import { createGrigoriSense } from './bot_grigori.ts';
 import { createBillySense } from './bot_billy.ts';
+import { createFlayerSense } from './bot_flayer.ts';
+import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
 import { backOffFrom, slamThreat } from './bot_threat.ts';
@@ -63,19 +66,6 @@ const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden'
 const defOf = (kind: string): EnemyDef => ENEMY_DEFS[kind as EnemyKind];
 /** How far past the shield's edge the bot circles to, so the guard's slow turn has not caught up. */
 const FLANK_MARGIN = (40 * Math.PI) / 180;
-
-/** How each hero likes to fight: stand `hold` px from the target and act within `reach`. */
-const STYLE: Record<HeroId, { hold: number; reach: number }> = {
-  mike: { hold: 20, reach: 34 },
-  eleven: { hold: 26, reach: 38 },
-  dustin: { hold: 70, reach: 110 },
-  lucas: { hold: 92, reach: 140 },
-  will: { hold: 80, reach: 120 },
-  max: { hold: 18, reach: 30 },
-  steve: { hold: 20, reach: 34 },
-  robin: { hold: 64, reach: 90 },
-  nancy: { hold: 90, reach: 150 },
-};
 
 /** Just above the sim's 0.15 dead zone: turns the hero to face a target without walking anywhere. */
 const NUDGE = 0.2;
@@ -167,7 +157,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     const out: Foe[] = [];
     for (const a of v.actors) {
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
-      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise') continue;
+      // The Mind Flayer's body and legs are the plan's (bot_flayer.ts), not the nearest foe.
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.id === 'flayer' || a.id === 'flayerleg') continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -239,9 +230,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return best;
   }
 
-  const walkable = (x: number, y: number): boolean => {
+  const walkable = (x: number, y: number, n: Nav = nav): boolean => {
     const t = tileOf(x, y);
-    return t.x >= 0 && t.y >= 0 && t.x < nav.w && t.y < nav.h && nav.blocked[t.y * nav.w + t.x] === 0;
+    return t.x >= 0 && t.y >= 0 && t.x < n.w && t.y < n.h && n.blocked[t.y * n.w + t.x] === 0;
   };
 
   /** True when the hero stands in front of the guard's shield. */
@@ -282,6 +273,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   const guardWard = createWardSense();
   const grig = createGrigoriSense({ walkable, walkTo });
   const bil = createBillySense({ walkable, walkTo });
+  // The Mind Flayer's plan reads the map as built, not the tiles the stuck check has learned to avoid.
+  const fl = createFlayerSense({ walkable: (x, y) => walkable(x, y, base), walkTo, careless });
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -334,9 +327,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     }
 
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
-    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy);
+    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy);
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style);
-    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style));
+    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
     const ward = guardWard.read(v);
@@ -385,6 +378,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (fin.swapTo >= 0) out.swapTo = fin.swapTo;
       out.specialPressed = fin.cast;
       out.attackHeld = fin.attack === true;
+      if (fin.burst) { out.burstPressed = true; frozenUntil = frame + 170; }
     } else if (fighting && near) {
       // Inbound dart: step aside.
       const threat = desperate || careless ? null : dartThreat(v, hx, hy);

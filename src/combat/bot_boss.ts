@@ -37,6 +37,8 @@ export interface Finish {
   cast: boolean;
   /** Swing or fire the basic attack (Grigori's plan, bot_grigori.ts). */
   attack?: boolean;
+  /** Set off the crit meter if it is full (the Mind Flayer's plan, bot_flayer.ts). */
+  burst?: boolean;
 }
 
 export interface BossSense {

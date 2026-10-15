@@ -14,9 +14,11 @@ import { updateItems, updateStash } from './pickups.ts';
 import { closePropById, openPropById, updateProps } from './props.ts';
 import { updatePowerboxes } from './powerbox.ts';
 import { wakeFlayed } from '../enemies/flayed.ts';
+import { wakeFlayer } from '../enemies/flayer.ts';
 import { startDefense, updateDefense } from './defense.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
+import { updatePools } from './pools.ts';
 import { stepBurst, tryBurst } from './burst.ts';
 import { dust, floater, sfx } from './fx.ts';
 import { updateTraps } from '../heroes/nancy.ts';
@@ -106,6 +108,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   updatePowerboxes(s);
   updateCameras(s);
   updateHazards(s);
+  updatePools(s);
   regen(s);
   reapEnemies(s);
   reapHeroes(s);
@@ -152,6 +155,7 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
         alertEnemy(s, e);
         // A Flayed comes up out of its puddle before it hunts.
         wakeFlayed(e);
+        wakeFlayer(s, e);
       }
     },
     openProp: (id) => openPropById(s, id),

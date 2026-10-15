@@ -52,5 +52,10 @@ export function updateHolds(s: S): void {
   if (gone || disabled) s.hold = null; else hold.t++;
 }
 
-/** True while the enemy is coming up out of the goo: it can't be hit or confused and it doesn't attack. */
-export const untouchable = (e: Enemy): boolean => e.flayed !== null && e.flayed.move === 'rise';
+/**
+ * True while the enemy is coming up out of the goo, or is the Mind Flayer coming in through the skylight (and its legs with it), or is a
+ * severed leg: it can't be hit or confused and it doesn't attack.
+ */
+export const untouchable = (e: Enemy): boolean =>
+  (e.flayed !== null && e.flayed.move === 'rise') || (e.flayer !== null && e.flayer.move === 'rise') ||
+  (e.leg !== null && (e.leg.move === 'severed' || e.leg.body?.flayer?.move === 'rise'));

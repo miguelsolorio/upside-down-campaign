@@ -77,7 +77,7 @@ test('enemy numbers match the spec', () => {
   assert.equal(ENEMY_DEFS.agent.x.far, 100);
   assert.equal(ENEMY_DEFS.agent.aggro, 90);
   assert.ok(ENEMY_DEFS.rat.speed > 1.1, 'rats are fast chasers');
-  assert.deepEqual(DIFFICULTY_MULT, { kid: 0.7, chief: 1, upside: 1.4 });
+  assert.deepEqual(DIFFICULTY_MULT, { kid: 0.7, normal: 0.85, chief: 1, upside: 1.4 });
   // 8 rats and 14 agents are worth 144 XP, inside the 130 to 175 budget.
   const total = 8 * ENEMY_DEFS.rat.xp + 14 * ENEMY_DEFS.agent.xp;
   assert.ok(total >= 130 && total <= 175, `stage XP ${total}`);

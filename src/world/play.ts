@@ -259,7 +259,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   function pause(): void {
     const sc = createPauseScene({
-      onResume: () => closeOverlay(sc), onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver(), party: sheetParty,
+      onResume: () => { sim.setDifficulty(game.settings.difficulty); closeOverlay(sc); }, onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver(), party: sheetParty,
     });
     overlay = sc;
     game.scenes.push(sc);

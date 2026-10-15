@@ -26,6 +26,7 @@ import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
+import { lostHim } from '../heroes/camo.ts';
 
 const FRICTION = 0.78;
 const SEPARATION = 9;
@@ -46,7 +47,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (isBillyPinned(e)) { billyReach(s, e, hero); return; }
   if (e.stagger > 0) { e.stagger--; legWait(e); setEnemyAnim(e, 'hurt'); return; }
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
-  if (s.over || hero.ko) { setEnemyAnim(e, 'idle'); return; }
+  // A foe that has lost Lucas to his Camo stands and looks round (heroes/camo.ts).
+  if (s.over || hero.ko || lostHim(s, e, hero)) { setEnemyAnim(e, 'idle'); return; }
 
   // A confused enemy (Robin's Word vomit) runs the shared brain in combat/confuse.ts, whatever its kind.
   if (e.stat.confuse > 0) { confusedUpdate(s, e); return; }

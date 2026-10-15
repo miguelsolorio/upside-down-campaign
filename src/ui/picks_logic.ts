@@ -8,6 +8,7 @@ import { PARTY_SIZE } from '../core/campaign.ts';
 import type { PromptDevice } from '../core/bindings.ts';
 import type { Rect } from '../core/pointer.ts';
 import { BAND_Y, TOP_H } from '../gfx/map_geo.ts';
+import { utilitiesAt } from '../heroes/defs.ts';
 
 /** Cards per row in the Grid layout. */
 export const COLS = 3;
@@ -16,6 +17,12 @@ export const COLS = 3;
 const GATES: Partial<Record<HeroId, string>> = {
   dustin: 'BURN', lucas: 'SHOOT', will: 'SENSE', max: 'DASH', steve: 'SMASH', eleven: 'PUSH', robin: 'READ', nancy: 'SHOOT',
 };
+
+/** The card's gate word. Nancy's Lv 6 Molotov burns, so from then her card says BURN too. */
+function gateWord(id: HeroId, level: number): string {
+  const word = GATES[id] ?? '';
+  return id === 'nancy' && utilitiesAt(id, level).includes('burn') ? `${word} BURN` : word;
+}
 
 export interface PicksState {
   /** Everyone in the stage's pool, in order, with the level they would play at. */
@@ -35,7 +42,7 @@ export interface PickRow {
   id: HeroId;
   name: string;
   level: number;
-  /** DASH, SMASH, BURN, SHOOT, SENSE, PUSH or READ, or empty. */
+  /** DASH, SMASH, BURN, SHOOT, SENSE, PUSH or READ, SHOOT BURN for Nancy from Lv 6, or empty. */
   gate: string;
   /** 1 to 4 in party order, 0 on the bench. Slot 1 is the lead. */
   slot: number;
@@ -76,7 +83,7 @@ export const result = (s: PicksState): HeroId[] | null => (ready(s) ? [...s.pick
 export function rowOf(s: PicksState, i: number): PickRow {
   const p = s.pool[i] as PartySeed;
   return {
-    id: p.id, name: CHAR_NAMES[p.id], level: p.level ?? 1, gate: GATES[p.id] ?? '',
+    id: p.id, name: CHAR_NAMES[p.id], level: p.level ?? 1, gate: gateWord(p.id, p.level ?? 1),
     slot: s.picked.indexOf(p.id) + 1, locked: s.locked.includes(p.id),
   };
 }

@@ -9,8 +9,9 @@
 // 'dash' for the roll.
 import { HERO_DEFS } from './defs.ts';
 import type { Hero, S } from '../combat/state.ts';
-import { BODY_Y, distToSegment, footBlocked, gapsUnder } from '../combat/space.ts';
-import { addFx, sfx } from '../combat/fx.ts';
+import { BODY_Y, dist, distToSegment, footBlocked, gapsUnder } from '../combat/space.ts';
+import { LV6, hasTalent } from '../progression/talents.ts';
+import { addFx, dust, sfx } from '../combat/fx.ts';
 import { hitEnemy } from '../combat/damage.ts';
 import { crossGap } from '../combat/props.ts';
 import { beginAct } from './common.ts';
@@ -73,11 +74,27 @@ export function stepDash(s: S, h: Hero): void {
   }
 }
 
-/** The roll is over (her action timer ran out): she lands, and every gap she crossed opens. A roll cut short opens none. */
+/** Kickflip (Lv 6): she lands with a shockwave that hits everything round her. */
+function kickflip(s: S, h: Hero): void {
+  const d = HERO_DEFS.max.special;
+  addFx(s, 'nova', h.x, h.y, h.dir, 0, 14, d.x.kickR * 2, d.x.kickR);
+  dust(s, h.x, h.y, 4);
+  sfx(s, 'push');
+  for (const e of s.enemies) {
+    if (e.dead || e.dormant || e.hp <= 0 || dist(h.x, h.y, e.x, e.y) > d.x.kickR + 4) continue;
+    hitEnemy(s, h, e, { power: d.x.kickPower, kb: d.x.kickKb, angle: Math.atan2(e.y - h.y, e.x - h.x), stagger: 12, hitstop: 1 });
+  }
+}
+
+/**
+ * The roll is over (her action timer ran out): she lands, and every gap she crossed opens. A roll cut short opens none. From Lv 6
+ * the landing is a Kickflip, wherever it is.
+ */
 export function endDash(s: S, h: Hero): void {
   const dash = h.dash;
   if (!dash) return;
   h.dash = null;
+  if (!h.ko && hasTalent('max', h.level, LV6)) kickflip(s, h);
   if (dash.gone < dash.len - 0.01) return;
   for (const id of dash.gaps) {
     const p = s.props.find((q) => q.id === id);

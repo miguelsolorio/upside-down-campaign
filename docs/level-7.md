@@ -91,6 +91,7 @@ Robin is a Rogue, in `heroes/robin.ts`, and `HERO_DEFS.robin` replaces the stand
   - A boss (Grigori, any spawn in group `boss`) isn't confused. It staggers for 30 frames instead.
   - Hurting a confused enemy doesn't wake it up.
 - **Linguist** (Lv 3 talent): confusion lasts 240 frames. Reading cipher doors is her `read` utility, not the talent.
+- **Triple scoop** (Lv 6 talent): each toss throws two more scoops, 10 degrees either side of where the first went and as far, at 60 percent of its power. Each splashes and slows as the first does.
 - **Utility:** `read`. **Crit signature:** a wide `babble`.
 - **Bot style:** a mid-range hero (hold about 64, reach about 90). It casts Word vomit when three or more enemies are within 56 px.
 
@@ -103,7 +104,9 @@ Nancy is a Gunslinger, in `heroes/nancy.ts`, and `HERO_DEFS.nancy` replaces the 
 - **Trap kit** (Lv 3 talent): the design's version drops a trap on a dash, and the game has no dash. Instead, each Shotgun also drops a bear trap at her feet.
   - It lasts 600 frames, at most two at once, drawn as a `trap` fx.
   - The first non-boss enemy to step on it is held for 120 frames (it can't move or attack) and takes power 0.8.
-- **Utility:** `shoot`. The design also gives her `burn`, from the Lv 6 Molotov. No hero has Lv 6 talents yet, so it waits for them.
+- **Molotov** (Lv 6 talent, `heroes/molotov.ts`): holding Special for 24 frames (`heroes/hold.ts`) lobs a bottle for 8 MP, 22 frames to a spot up to 64 px out, aim-assisted like the scoop. It leaves a pool of fire 24 px round for 240 frames that hits each foe in it every 20 frames for power 0.25 and sets it burning (120 frames, each tick 0.22 of her ATK), and burns away any vines it reaches. A tap still fires the Shotgun.
+- **Utility:** `shoot`, and `burn` from Lv 6 (`utilitiesAt`), so her picks card says SHOOT BURN from then.
+- **Bot:** from Lv 6 it holds Special for the Molotov when two foes stand within 24 px of each other, 30 to 64 px out.
 - **Crit signature:** a long `bullet` streak.
 - **Bot style:** a ranged hero (hold about 90, reach about 150). It casts Shotgun when an enemy is within 40 px.
 
@@ -241,3 +244,19 @@ Over 20 seeds at 1.15: HARD 19 of 20 (259 damage, 1.6 KOs, 40% lowest, 83 s), ca
 - **Why 1.15.** It is the smallest cut that brings the clears and lowest HP back in line, and it keeps HARD over the cliff with some margin (a party a level up could tip 1.1 under it). 1.2 cleared 90 of 100 with 36% lowest. The KOs (1.51) stay over chapter 2's, since that is the grab.
 - **NORMAL plays the mall as a walk.** At 1.15 times 0.85, about 0.98, NORMAL sits under the cliff. NORMAL with the factor left at 1.4 (about 1.19) would have changed almost nothing: 93 of 100 and 258 damage. Smoothing the cliff (the grab's damage, or the Flayed's HP against a combo) is a call for the Flayed's numbers in `enemies/defs.ts`, not made here.
 - **The time band slips.** The foes fall sooner, so clears run 78 s and up and 84 s on average, under the 90 to 150 s band (91 s at 1.4). `tests/stage31-sim.test.ts` floors a clear at 75 s, not 80.
+
+### After the Lv 6 talents
+
+Mike is Lv 6 here, so the bot's DM screen is also Rally. The factor stays at 1.15 and every band still holds. Measured with `node scripts/measure-stage.ts 3.1 chief 100 [--careless]`, and `normal` for NORMAL:
+
+| 100 seeds | HARD before | HARD after | Careless, HARD before | Careless, HARD after | NORMAL before | NORMAL after |
+|---|---|---|---|---|---|---|
+| Cleared | 96 | 97, none stuck | 94 | 79 | 100 | 100 |
+| Damage taken | 260 | 257 | 221 | 208 | 78 | 182 |
+| KOs | 1.51 | 1.38 | 1.60 | 1.61 | 0.16 | 0.37 |
+| Lowest party HP | 41% | 39% | 43% | 43% | 81% | 59% |
+
+Over 20 seeds: HARD 20 of 20 (252 damage, 1.35 KOs, 40% lowest, 84 s), careless 16, kid 20, upside 18 (75 of 100), NORMAL 20 for 179 damage.
+
+- **The careless bot clears 79 of 100, not 94.** That is still inside its band (at least 12 of 20, and chapters 1 and 2 clear 14 to 20 on HARD), so the factor stays.
+- **NORMAL is no longer a walk.** The bot casts the screen when two foes are within 60 px, and the cast slows Mike. On NORMAL, under the Flayed's grab cliff, that lets grabs land: with Mike's special switched off in the bot, NORMAL takes 75 damage and keeps 82% lowest HP, with it 182 and 59%. On HARD, over the cliff, it changes nothing (262 damage without it, 257 with). The cause is the bot's rule in `combat/bot_talents.ts`, not the stage, and NORMAL still clears 100 of 100.

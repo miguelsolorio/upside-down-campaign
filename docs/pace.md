@@ -95,3 +95,35 @@ The run now carries on through 3.1 and 3.2 (`docs/level-7.md`, `docs/level-8.md`
 - **Arrival:** 3.1 is Mike 6, Dustin 5, Robin 3, Nancy 3. 3.2 is Mike 7, Dustin 6, Robin 3, Nancy 3.
 - **Pace:** the lead ends 3.2 at Lv 7, the party at 5.3 on average. The target is Lv 8 after chapter 3, so 3.3 has a level to give.
 
+
+## Lv 6 talents
+
+The heroes' Lv 6 talents (`docs/game-design.md`) and the bot's use of them change what a Lv 6 hero does inside a stage, so every stage and the carried run were measured again. Only a stage with a hero at Lv 6 or more can move: 2.2 (Mike gets there late), 2.3, 3.1 and 3.2. Robin, Nancy, Eleven, Will, Max and Steve are under Lv 6 in every stage built so far, and 1.1 to 2.1 came back to the digit.
+
+Over 100 seeds, the bot keeping the lead (`node scripts/measure-stage.ts <stage> chief 100 [--careless]`):
+
+| Stage | Chief before, after | Careless before, after | What was done |
+|---|---|---|---|
+| 2.2 | 93, 93 | 92, 91 | Nothing moved |
+| 2.3 | 89, 76 | 87, 89 | Eleven's HP 95 to 110: chief 87 (`docs/level-6.md`) |
+| 3.1 | 96, 97 | 94, 79 | Nothing: every band holds, NORMAL took more damage (`docs/level-7.md`) |
+| 3.2 | 97, 98 | 80, 95 | `enemyMult` 1.1 to 1.15: chief 97, careless 81 (`docs/level-8.md`) |
+
+The carried run (`node scripts/measure-campaign.ts chief 20`, the bot keeping the lead), level after each stage as a mean, with the lead's level after each chapter:
+
+| Stage | XP earned | Wipes | Mike | Dustin | Party average |
+|---|---|---|---|---|---|
+| 1.1 | 144 | 0.0 | 3 | 2 | 2.25 |
+| 1.2 | 144 | 0.0 | 4 | 3 | 3.26 |
+| 1.3 | 101 | 0.0 | 4 | 3.7 | 3.59 |
+| 2.1 | 248 | 0.0 | 5 | 4.4 | 4.24 |
+| 2.2 | 238 | 0.0 | 5.6 | 5 | 4.65 |
+| 2.3 | 212 | 0.1 | 6 | 5.3 | 4.85 |
+| 3.1 | 207 | 0.0 | 6.5 | 6 | 4.74 |
+| 3.2 | 238 | 0.0 | 7 | 6 | 5.25 |
+
+- **Keeping the lead,** the lead is Lv 4 after chapter 1, 6 after chapter 2 and 7 after chapter 3.
+- **Sharing it** (`--rotate=20`), the best hero is Lv 4, 6 and 6.5 (6 to 7), with the party at 3.98, 4.96 and 5.14 on average. Chapter 2 is Lv 6 in all 20 runs, where it was 19 of 20.
+- **`ARRIVAL` stays.** Every median is within 26 XP of `ARRIVAL` (the most is Mike into 3.1: 224 against 198), under the test's 40, so nothing is pasted. `tests/pace.test.ts` is green.
+- **A carried run on NORMAL** (`measure-campaign.ts normal 10`) clears every stage with no wipes, with the same lead: 4, 6 and 7.
+- **Chapter 3 still ends a level short of 8:** the lead is Lv 7 after 3.2.

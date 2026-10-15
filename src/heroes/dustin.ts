@@ -1,5 +1,5 @@
 // Dustin, the Bard. Basic: a lobbed candy bar that blasts on landing and then lures enemies for three seconds.
-// Special: Farrah spray, a burning cone.
+// Special: Farrah spray, a burning cone. From Lv 6 it calls Dart (dart.ts).
 import { HERO_DEFS } from './defs.ts';
 import type { Enemy, Hero, Pos, S } from '../combat/state.ts';
 import { angleDiff, dist, pointSolid } from '../combat/space.ts';
@@ -7,6 +7,7 @@ import { addFx, dust, sfx } from '../combat/fx.ts';
 import { hitEnemy } from '../combat/damage.ts';
 import { newProj } from '../combat/proj.ts';
 import { beginAct, later, rad } from './common.ts';
+import { callDart } from './dart.ts';
 
 /** Walks from (ox, oy) toward (tx, ty) and stops at the last open point, so a throw never lands in a tree. */
 export function clipThrow(s: S, ox: number, oy: number, tx: number, ty: number): Pos {
@@ -65,8 +66,9 @@ export function dustinSpecial(s: S, h: Hero): void {
   later(s, h, d.at, () => {
     s.zones.push({
       x: h.x + Math.cos(aim) * 4, y: h.y - 7 + Math.sin(aim) * 4, angle: aim, r: d.reach, half: rad(d.x.half),
-      age: 0, life: d.x.life, tick: d.x.tick, power: d.power, burn: d.x.burn, burnTick: d.x.burnTick,
+      age: 0, life: d.x.life, tick: d.x.tick, power: d.power, burn: d.x.burn, burnTick: d.x.burnTick, kb: d.kb, burnAtk: d.x.burnAtk,
       by: h.id, cds: new Map(),
     });
+    callDart(s, h);
   });
 }

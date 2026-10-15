@@ -8,6 +8,7 @@ import type { Defense, Enemy, S, Stats } from './state.ts';
 import { noStatus } from './state.ts';
 import { makeHero } from './party.ts';
 import { hazardAt } from './hazards.ts';
+import { newTalentState } from './talent_state.ts';
 import { newDemo } from '../enemies/demo_hit.ts';
 import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
@@ -121,7 +122,7 @@ export function createState(opts: SimOptions): S {
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
     purse: Math.max(0, Math.floor(opts.purse ?? 0)), stash: { eggo: opts.stash?.eggo ?? 0, coke: opts.stash?.coke ?? 0 }, eggoAt: -9999,
-    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
+    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, t6: newTalentState(), over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
     },

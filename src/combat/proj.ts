@@ -107,8 +107,8 @@ function updateZone(s: S, z: Zone): void {
     if (d > z.r + 6 || (d >= 9 && angleDiff(Math.atan2(dy, dx), z.angle) > z.half)) continue;
     z.cds.set(e.uid, z.tick);
     hitEnemy(s, by, e, {
-      power: z.power, kb: HERO_DEFS.dustin.special.kb, angle: Math.atan2(dy, dx), stagger: 4, hitstop: 0, shake: 0,
-      burn: { frames: z.burn, tick: BURN_PERIOD, dmg: Math.max(1, Math.round(heroAtk(s, by) * HERO_DEFS.dustin.special.x.burnAtk)) }, noCrit: true,
+      power: z.power, kb: z.kb, angle: Math.atan2(dy, dx), stagger: 4, hitstop: 0, shake: 0,
+      burn: { frames: z.burn, tick: BURN_PERIOD, dmg: Math.max(1, Math.round(heroAtk(s, by) * z.burnAtk)) }, noCrit: true,
     });
   }
   // Fire lights anything that asks to be burned. Sprayed from flush against a prop's top edge, the cone starts inside it and

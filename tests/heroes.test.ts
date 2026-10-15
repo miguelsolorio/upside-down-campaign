@@ -19,8 +19,8 @@ test('the four Level 1 heroes each define basic, special and a Lv 3 talent', () 
     }
     assert.equal(d.basic.mp, 0, `${id} basic is free`);
     assert.ok(d.special.mp > 0, `${id} special costs MP`);
-    assert.equal(d.talent.level, 3);
-    assert.ok(d.talent.name.length > 0 && d.talent.text.length <= 32);
+    assert.deepEqual(d.talents.map((t) => t.level), [3, 6]);
+    for (const t of d.talents) assert.ok(t.name.length > 0 && t.text.length <= 32);
   }
 });
 

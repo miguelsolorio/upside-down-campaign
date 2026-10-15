@@ -13,6 +13,7 @@ import { smashAimed } from './props.ts';
 import { drinkCoke } from './pickups.ts';
 import { endDash, stepDash } from '../heroes/skate.ts';
 import { isHeld } from '../enemies/hold.ts';
+import { holdsSpecial, readHold, useVariant, variantMp, variantReady } from '../heroes/hold.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -39,9 +40,33 @@ function checkNosebleed(s: S, h: Hero): void {
   h.nosebled = low;
 }
 
+/** A held Special has filled its ring (heroes/hold.ts): the variant, through the same MP and Coke path as the Special. */
+function castVariant(s: S, h: Hero): void {
+  h.holdT = -1;
+  if (!variantReady(s, h)) {
+    sfx(s, 'noMp');
+    floater(s, 'NOT YET', h.x, h.y - 18, 'mist', false, 28);
+    return;
+  }
+  const cost = variantMp(h);
+  if (h.mp < cost) drinkCoke(s, h);
+  if (h.mp < cost) {
+    sfx(s, 'noMp');
+    floater(s, 'NO MP', h.x, h.y - 18, 'mist', false, 28);
+    return;
+  }
+  h.mp -= cost;
+  useVariant(s, h);
+  checkNosebleed(s, h);
+}
+
 function tryActions(s: S, h: Hero, input: SimInput): void {
   const def = HERO_DEFS[h.id];
   const casting = h.act === 'special' && h.actT > 0;
+  if (holdsSpecial(h) && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
+    castVariant(s, h);
+    return;
+  }
   if (!casting && s.buf.special > 0 && h.cdSpecial <= 0) {
     s.buf.special = 0;
     // Short of MP with a Coke in the stash: drink it, and the special fires on this press if that was enough.

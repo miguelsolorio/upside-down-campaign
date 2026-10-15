@@ -414,8 +414,8 @@ test('level-up: the Lv 3 talent shows up exactly once, at level 3', () => {
     const ups = levelUps(sim.step(inp())).filter((u) => u.hero === id);
     assert.deepEqual(ups.map((u) => u.to), [2, 3]);
     assert.equal(ups[0]?.talent, null);
-    assert.equal(ups[1]?.talent?.name, HERO_DEFS[id].talent.name);
-    assert.equal(ups[1]?.talent?.text, HERO_DEFS[id].talent.text);
+    assert.equal(ups[1]?.talent?.name, HERO_DEFS[id].talents[0]?.name);
+    assert.equal(ups[1]?.talent?.text, HERO_DEFS[id].talents[0]?.text);
     const more = levelUps((sim.dev.giveXp(117), sim.step(inp()))).filter((u) => u.hero === id);
     assert.equal(more[0]?.talent, null);
   }

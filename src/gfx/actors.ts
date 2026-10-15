@@ -1,5 +1,5 @@
 // Actor sprites: one atlas canvas per character (13 frames by 4 directions), plus flash and tint variants.
-// Overlays (shadow, nosebleed, "!", the swirl of a confused enemy and HP bar) are drawn with plain rects around the sprite. A cell is
+// Overlays (shadow, charge ring, nosebleed, "!", the swirl of a confused enemy and HP bar) are drawn with plain rects around the sprite. A cell is
 // 16 by 16, or 24 by 24 for the warden and Grigori. A guard with its shield down and an elite enemy each have an atlas of their own.
 // Which frame of the atlas a view asks for is actor_pick.ts. A dormant Flayed is a puddle and a rising one comes up out of it
 // (actor_goo.ts). The Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts,
@@ -18,6 +18,8 @@ import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
 import { ALPHA_H, ALPHA_W, alphaFrame } from './actor_alpha.ts';
 import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
 import type { Frame } from './actor_kit.ts';
+import { ghostKeep } from './actor_kit.ts';
+import { chargeRing } from './fx_l6.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
 import { MAX } from './data/max.ts';
@@ -50,6 +52,8 @@ interface Sheet {
   pal: Record<string, ColorName>;
   main?: HTMLCanvasElement;
   white?: HTMLCanvasElement;
+  /** A hero hidden under Camo: half dither, the outline kept. */
+  faint?: HTMLCanvasElement;
   tints: Map<ColorName, HTMLCanvasElement>;
 }
 
@@ -114,7 +118,7 @@ function keyOf(id: string, guarding: boolean | undefined, elite: boolean | undef
   return id + (foe && guarding === false ? ':low' : '') + (elite && kind === 'enemy' ? ':elite' : '');
 }
 
-type Mode = 'main' | 'white' | ColorName;
+type Mode = 'main' | 'white' | 'faint' | ColorName;
 
 function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
   const C = sh.cell;
@@ -124,7 +128,7 @@ function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
   for (const k of Object.keys(sh.pal)) own[k.charCodeAt(0)] = px32(sh.pal[k] as ColorName);
   own[107] = px32('ink');
   const white = px32('white');
-  const tint = mode === 'main' || mode === 'white' ? 0 : px32(mode);
+  const tint = mode === 'main' || mode === 'white' || mode === 'faint' ? 0 : px32(mode);
   sh.roles.forEach((buf, idx) => {
     const ox = (idx % FRAME_COUNT) * C, oy = ((idx / FRAME_COUNT) | 0) * C;
     for (let y = 0; y < C; y++) {
@@ -132,6 +136,7 @@ function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
         const v = buf[y * C + x] as number;
         if (!v) continue;
         let c = own[v] || white;
+        if (mode === 'faint' && !ghostKeep(true, x, y, c === own[107])) continue;
         if (mode === 'white') c = white;
         else if (tint && v !== 107 && ((x + y) & 1) === 0) c = tint;
         px[(oy + y) * W + ox + x] = c;
@@ -142,6 +147,7 @@ function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
 }
 
 function atlasFor(sh: Sheet, v: ActorView): HTMLCanvasElement {
+  if (v.hidden && v.kind === 'hero') return sh.faint ?? (sh.faint = render(sh, 'faint'));
   if (v.flash > 0.6) return sh.white ?? (sh.white = render(sh, 'white'));
   const tint: ColorName | null = v.flash > 0.25 ? 'white' : v.tint;
   if (tint) {
@@ -324,6 +330,7 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
   const bar = v.bar && v.kind === 'enemy';
   if (!v.blink) {
     drawShadow(ctx, cx, cy, z, C > CELL);
+    if (v.charge !== undefined && v.charge > 0 && v.kind === 'hero') chargeRing(ctx, cx, cy, v.charge, v.t);
     const [anim, frame] = slotOf(v);
     ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[anim] + frame) * C, row * C, C, C, ox, oy, C, C);
     if (v.strained) drawNosebleed(ctx, v, ox, oy, frame);

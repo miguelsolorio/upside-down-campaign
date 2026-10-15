@@ -8,7 +8,7 @@
 import type { HeroId, PropKind, Utility } from '../core/types.ts';
 import type { Hero, Prop, S } from './state.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './space.ts';
-import { HERO_DEFS } from '../heroes/defs.ts';
+import { HERO_DEFS, utilitiesAt } from '../heroes/defs.ts';
 
 /** Props that can be a puzzle. A crate, van or lantern only counts if it asks for something: a decor crate does not. */
 const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack', 'shutter', 'cipher', 'breaker']);
@@ -34,7 +34,8 @@ function shut(p: Prop): boolean {
 
 function report(s: S, p: Prop, hero: HeroId): void {
   if (p.pokeCd > 0) return;
-  if (SOLVED_BY_TRY.has(p.kind) && p.hitBy !== undefined && HERO_DEFS[hero].utilities.includes(p.hitBy)) return;
+  const level = s.heroes.find((h) => h.id === hero)?.level ?? 1;
+  if (SOLVED_BY_TRY.has(p.kind) && p.hitBy !== undefined && utilitiesAt(hero, level).includes(p.hitBy)) return;
   p.pokeCd = POKE_GAP;
   s.events.push({ t: 'poked', propId: p.id, hero });
   standFor(s, p);
@@ -65,7 +66,7 @@ export function standHero(s: S, h: Hero, share = STAND_HP): void {
 function standFor(s: S, p: Prop): void {
   const util = needs(p);
   if (util === undefined) return;
-  const able = s.heroes.filter((h) => HERO_DEFS[h.id].utilities.includes(util));
+  const able = s.heroes.filter((h) => utilitiesAt(h.id, h.level).includes(util));
   const h = able[0];
   if (!h || able.some((a) => !a.ko)) return;
   standHero(s, h);

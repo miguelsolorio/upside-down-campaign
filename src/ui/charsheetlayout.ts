@@ -37,9 +37,10 @@ export const STAT_ROWS = [80, 90] as const;
 export const STAT_VALUE_DX = 30;
 export const RULE_Y = 101;
 
-/** One move per MOVE_PITCH: the kind and name, its cost and damage, and a note line NOTE_DY under it. */
+/** One move per MOVE_PITCH: the kind and name, its cost and damage, and a note line NOTE_DY under it. Five rows (basic, special,
+ *  Crit and two talents) end above FOOT_Y. */
 export const MOVES_Y = 106;
-export const MOVE_PITCH = 24;
+export const MOVE_PITCH = 20;
 export const NOTE_DY = 10;
 
 /** The footer: how to switch heroes on the left, the back button on the right. */

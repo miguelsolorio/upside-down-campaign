@@ -194,11 +194,14 @@ test('nine heroes: the pool is the whole chapter, in order, with Robin locked in
   assert.equal(rowsOf(s).length, 9);
 });
 
-test('Eleven opens PUSH, Robin READ and Nancy SHOOT, beside the gate words the others had', () => {
+test('Eleven opens PUSH, Robin READ and Nancy SHOOT, and BURN too from her Lv 6 Molotov', () => {
   const s = open9();
   assert.equal(rowOf(s, at9(s, 'eleven')).gate, 'PUSH');
   assert.equal(rowOf(s, at9(s, 'robin')).gate, 'READ');
-  assert.equal(rowOf(s, at9(s, 'nancy')).gate, 'SHOOT');
+  assert.equal(s.pool[at9(s, 'nancy')]?.level, 6);
+  assert.equal(rowOf(s, at9(s, 'nancy')).gate, 'SHOOT BURN');
+  const five = createPicks(poolFor('3.2', NINE.map((id) => ({ id, level: 5 }))), requiredFor('3.2'), ['mike', 'dustin', 'robin', 'nancy']);
+  assert.equal(rowOf(five, at9(five, 'nancy')).gate, 'SHOOT');
   assert.equal(rowOf(s, at9(s, 'lucas')).gate, 'SHOOT');
   assert.equal(rowOf(s, at9(s, 'mike')).gate, '');
   assert.deepEqual(rowOf(s, at9(s, 'robin')), { id: 'robin', name: 'Robin', level: rowOf(s, at9(s, 'robin')).level, gate: 'READ', slot: 3, locked: true });

@@ -138,7 +138,10 @@ export const STAGE_32: StageData = {
   // recovers, softer hits, two soldiers called at half HP; rifle rounds at power 0.3), with the party a real run brings (Mike 7,
   // Dustin 6, Robin and Nancy at 3). At 1.25 the careless bot cleared 60 of 100, under chapters 1 and 2, so the difficulty pass eased
   // it to 1.1 (docs/level-8.md, "Result"). Chief clears 18 of 20 (97 of 100, none stuck) for about 279 damage, 0.55 KOs, 49% lowest HP
-  // and 106 s, the fight 43% of it; careless 16 (80 of 100), kid 20, upside 13, normal 20 of 20 for 220 damage.
-  enemyMult: 1.1,
+  // and 106 s, the fight 43% of it; careless 16 (80 of 100), kid 20, upside 13, normal 20 of 20 for 220 damage. The Lv 6 talents (Mike's
+  // Rally, Dustin's Dart) made the stage easier at 1.1: chief KOs 0.35, lowest HP 52%, careless 95 of 100. Back at 1.15 it is where it
+  // was: chief clears 97 of 100 (20 of 20) for about 273 damage, 0.44 KOs, 49% lowest HP and 109 s, careless 81 (17 of 20), kid 20,
+  // upside 11 of 20 (51 of 100), normal 20 of 20 for 211 damage. 1.2 would put the KOs (0.59) in band with careless at 83.
+  enemyMult: 1.15,
   waypoints: WAYPOINTS,
 };

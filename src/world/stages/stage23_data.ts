@@ -67,13 +67,15 @@ export const BURROWS: Burrow[] = [
   { tx: 35, ty: 4 }, { tx: 44, ty: 4 }, { tx: 36, ty: 10 }, { tx: 44, ty: 10 },
 ];
 
-// Eleven's HP is the lever that makes chief lose now and then: at 95 she falls in about one chief run in ten (at 160, one in thirty).
+// Eleven's HP is the lever that makes chief lose now and then: at 110 she falls in about one chief run in nine (at 160, one in thirty).
+// It was 95 until the Lv 6 talents: with Mike's Rally the careful bot fell 23 times in 100 at 95, and 12 at 110 (docs/level-6.md). The
+// retry scene test needs seed 15 to be a fall, which it stays up to 112.
 // The Alpha's 560 HP (enemies/defs.ts) keeps upside above its floor while she does. Her damage scales
 // with the difficulty and enemyMult, so upside is harder on her too. The waves are sparse on purpose: 17 demodogs, one elite, no wave
 // bigger than three, so the party can keep up. The spec's 23 piled up faster than they died and made the defense a cliff.
 const S = 60;
 export const DEFENSE: DefenseDef = {
-  npc: 'eleven', hp: 95, frames: 45 * S, prop: 'rift',
+  npc: 'eleven', hp: 110, frames: 45 * S, prop: 'rift',
   waves: [
     { at: 0, n: 2, type: 'demodog' }, { at: 6 * S, n: 2, type: 'demodog' }, { at: 12 * S, n: 3, type: 'demodog' },
     { at: 18 * S, n: 2, type: 'demodog' }, { at: 24 * S, n: 2, type: 'demodog' }, { at: 24 * S, n: 1, type: 'demodog', tier: 'elite' },

@@ -6,6 +6,7 @@ import { activeHero } from './state.ts';
 import { createState, setDifficulty } from './init.ts';
 import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
+import { updateTalents } from '../heroes/talents6.ts';
 import { ageBodies, awardXp, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
 import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
@@ -94,6 +95,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   }
   runTimers(s);
   updateActive(s, input);
+  updateTalents(s);
   updateFollowers(s);
   tickEnemyStatus(s);
   tickHeroStatus(s);

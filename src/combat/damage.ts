@@ -15,6 +15,7 @@ import { HOLD_BREAK_KB, isHolding, releaseHold, untouchable } from '../enemies/h
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
+import { rallyMul } from '../heroes/rally.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
 import { dist, distToSegment, BODY_Y } from './space.ts';
@@ -41,7 +42,7 @@ export function spreadRoll(rng: Rng): number {
 
 /** A hero's ATK right now, with Inspiration. */
 export function heroAtk(s: S, h: Hero): number {
-  return h.st.atk * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1);
+  return h.st.atk * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s);
 }
 
 export interface HitOpts {

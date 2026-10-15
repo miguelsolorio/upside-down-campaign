@@ -217,3 +217,20 @@ Over 20 seeds at 1.1: HARD 18 of 20 (279 damage, 0.55 KOs, 49% lowest, 106 s, th
 - **Against the curve.** The careless bot clears chapters 1 and 2 on HARD 14 to 20 times in 20 (70% to 100%), and takes 342 at most outside 2.3's defense (399). Here it cleared 60 of 100 (12 of 20) for 542 damage. The careful bot was in line.
 - **Why 1.1.** Careless clears over 100 seeds: 55 at 1.2, 65 at 1.15, 80 at 1.1. 1.1 is the first that is back in line, level with 1.2's 16 of 20. The cost falls on the careful bot: its lowest HP is 49%, over the band's "under 45%", and its KOs 0.42 are under 0.5.
 - **Careless damage stays near 500.** It is 439 even at 1.0. A bot that never dodges stands in front of Grigori for a minute, and the damage counted grows as fewer runs wipe early. That is the fight's length, not the factor, so the clears and the lowest HP are the numbers that moved.
+
+### After the Lv 6 talents
+
+Mike (Lv 7) rallies the party and Dustin (Lv 6) calls Dart, so the stage got easier at 1.1: the careful bot lost its KOs and the careless one cleared 95 of 100, where the difficulty pass had settled on 80. The factor went from 1.1 to 1.15, which puts the stage back where it was. Measured with `node scripts/measure-stage.ts 3.2 chief 100 [--careless]`, and `normal` for NORMAL:
+
+| 100 seeds | HARD, no talents (1.1) | HARD, talents (1.1) | HARD, talents (1.15) | Careless, no talents (1.1) | Careless, talents (1.1) | Careless, talents (1.15) | NORMAL (1.15) |
+|---|---|---|---|---|---|---|---|
+| Cleared | 97 | 98 | 97, none stuck | 80 | 95 | 81 | 100 |
+| Damage taken | 275 | 252 | 273 | 503 | 461 | 492 | 228 |
+| KOs | 0.42 | 0.35 | 0.44 | 1.07 | 0.44 | 0.94 | 0.16 |
+| Lowest party HP | 49% | 52% | 49% | 31% | 42% | 35% | 57% |
+| Time | 109 s | 107 s | 109 s | 118 s | 118 s | 117 s | 100 s |
+
+Over 20 seeds at 1.15: HARD 20 of 20 (246 damage, 0.20 KOs, 54% lowest, 106 s), careless 17, kid 20, upside 11 (51 of 100), NORMAL 20 for 211 damage.
+
+- **The two bands the difficulty pass left out stay out.** The careful bot's KOs (0.44, band 0.5 to 2.5) and lowest HP (49%, band under 45%) are where they were, and the factor is the same lever that costs the careless bot. At 1.2 the careful bot is inside both (0.59 KOs, 45% lowest HP, 288 damage, 94 of 100) and the careless bot clears 83, but that is a harder Starcourt on HARD than the owner approved, so it is left for a decision.
+- **Why not 1.1.** The careless bot is the guide the difficulty pass used: 80 of 100 was in line with chapters 1 and 2. At 1.1 the talents lifted it to 95.

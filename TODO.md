@@ -1,6 +1,6 @@
 # TODO
 
-Scope for this pass: Level 2, stage 1.2 Hawkins Lab, and the plumbing that leads Level 1 into it. Everything else waits for feedback.
+Scope for the latest pass: Level 3 (stage 1.3, the middle school and the Demogorgon), Level 4 (stage 2.1, the arcade and the pumpkin patch), and the Hawkins map between stages. Everything else waits for feedback.
 
 ## Status
 
@@ -14,9 +14,34 @@ Scope for this pass: Level 2, stage 1.2 Hawkins Lab, and the plumbing that leads
 - [x] Second pass on the Lab (it played too easy and looked plain). Harder: riot guards with a frontal shield, elites, the Warden mini-boss with a boss bar, electric and steam hazards, sweeping cameras that wake reinforcements, 36 enemies in place of 14, and a stage factor `enemyMult: 1.3` on top of the difficulty setting. Richer: 13 new dressing tiles, tanks, server racks, generators, cameras, a different floor and furniture in every room, Upside Down growth creeping in toward the records wing. See the end of `docs/level-2.md`
 - [x] Measured with the bot on chief over 20 seeds: the Lab went from 13 damage taken to 237 (careful bot) and 292 (a bot that never dodges), with the party falling to 47% and 35% health. Kid clears 20 of 20, upside only 11 of 20. 100 seeds on chief: none stuck, none wiped
 - [x] Verified, and again after merging the latest `main` (new controls, no dash, highlight-only hints): typecheck clean, 309 tests pass (the earlier count; 426 after the second pass). The bot clears 1.2 in the browser (21 kills, 124 XP, 0 KOs, lead Lv 4, bench Lv 3). The gates work with real key events (Dustin burns the sensor, Lucas shoots the relay through the glass, Eleven pushes the crate and Mike's bat does not). Before the merge, 1.1 chained into 1.2 with the party carried, and CONTINUE and START OVER on 1.2 worked. After it, the burn gate and the 30 second hint highlight were re-checked by hand. No console errors
-- [ ] Feedback on Levels 1 and 2, then the rest
+- [x] Level 3 (stage 1.3 Hawkins Middle School). See `docs/level-3.md`
+  - Night school: lot, hall, science room, cafeteria, gym. Eleven flips the van, Dustin burns the vines, Lucas shoots the fire box
+  - The Demogorgon: charges into walls and stuns itself, petals and acid at 60 percent, shadow-mark leaps at 30 percent, pinned after three stuns until Eleven's Mind Blast finishes it. Boss bar, `clock` track
+  - Bot on chief at `enemyMult` 1.7: careful clears 19 of 20 (238 damage, 39% low), careless 12 of 20, kid 20, upside 9. 100 seeds: none stuck. Stage XP 140
+- [x] Level 4 (stage 2.1, the Palace and the patch). See `docs/level-4.md`
+  - Chapter 2 starts here: Eleven is gone and Will joins at the others' average level minus one (`partyFor` in `core/campaign.ts`)
+  - Will: Sketch bolt, a d20-sized Fireball (1 fizzles, 20 doubles), Cold spot shows hidden enemies. New foes: young demodogs, vines, spore pods. Max is an npc at Dig Dug with MADMAX on the board. Will opens the hidden corn path (`sense`)
+  - Bot on chief at `enemyMult` 3.15: careful 17 of 20 (211 damage, 41% low), careless 14 of 20, kid 20, upside 5. 300 seeds: none stuck. Stage XP 166
+- [x] The Hawkins map (`docs/map-screen.md`): results lead to the map, the map enters the next stage or replays a cleared one, chapter cards on a chapter's first visit, CONTINUE opens the map when no stage is in progress. Campaign progress is `core/progress.ts`
+- [x] Music: `upside` (1.3), `clock` (every boss), `hawkins` (map and 2.1), each with base and combat layers. Eight new effects and Will's stinger
+- [x] Verified: typecheck clean, 704 tests pass. In the browser the bot clears 1.3 (1:40, 140 XP), the map shows chapter two with Will in the party, and the bot clears 2.1 (1:45, 157 XP). No console errors on the title, 1.3 or 2.1
+- [ ] Feedback on Levels 1 to 4, then the rest
 
 ## Known rough edges
+
+New with Levels 3 and 4:
+
+- Nobody has heard `upside`, `clock` or `hawkins`. Metrics only (peaks 0.52 to 0.77, no limiting, no clipping). Upside is dissonant on purpose in places, and the clock's bell bars sit about 4 dB under the rest.
+- Stage 2.1 needs `enemyMult` 3.15 because the enemy base numbers are set for chapter 1 and the party arrives at Lv 5. Chapter 2 enemies should get their own numbers in `enemies/defs.ts` so the factor can come back near 1.
+- The bot dodges the Demogorgon better than a person will (it reacts a frame late to the charge). The careless bot is the better guide. Nobody has fought it by hand.
+- No level-ups happened in the bot runs of 1.3 and 2.1: the lead stays Lv 5. The plan's "Lv 6 after chapter 2" now depends on 2.2 and 2.3.
+- A `?stage=` jump seeds levels but no XP, so it arrives a little behind a real run.
+- The map, CONTINUE into the map and replays are covered by unit tests and one bot run through the map. Nobody has played title to 2.1 by hand with saves.
+- 1.3: the side door is a one-tile tunnel, so the van sits in a vertical wall. The scare fires when the cafeteria rats are cleared, not by position. The gym's court lines don't follow the arena.
+- The `l3_*` and `l4_*` scripts have only had the mechanical copy checks.
+- No shop yet (Erica, chapter 3) and no party picks (they wait until there are more than four heroes).
+
+From Levels 1 and 2:
 
 - Nobody has heard the music. The Lab track is checked by metrics only (base peak 0.49, combat peak 0.79, no limiter reduction, no clipping). The 7/8 bars are checked by tests and by comparing the live scheduler to the compiled notes, not by ear.
 - The bot opens gates and the crate by flag. The Dustin burn, the Lucas relay shot and the Eleven push are covered by unit tests and one by-hand browser run, not by a full human run of the stage. Nobody has played 1.2 start to finish by hand.
@@ -39,8 +64,8 @@ Scope for this pass: Level 2, stage 1.2 Hawkins Lab, and the plumbing that leads
 
 1. Read `docs/technical-architecture.md`, `docs/level-1.md` and `docs/level-2.md`.
 2. Typecheck and run the tests (commands are in the architecture doc). To see how hard a stage is, run `node scripts/measure-stage.ts 1.2 chief 20` (see "Measuring" in `docs/level-2.md`).
-3. `src/core/campaign.ts` holds the stage order. To add stage 1.3: add its data under `src/world/stages/`, register it in `src/world/stage.ts`, add it to `STAGE_ORDER` and give it an arrival party in `campaign.ts`.
+3. `src/core/campaign.ts` holds the stage order and who plays each stage. To add stage 2.2: add its data under `src/world/stages/`, register it in `src/world/stage.ts`, add it to `STAGE_ORDER`, give it a `ROSTER` and an `ARRIVAL` entry, and move it out of `STAGES_AHEAD`. The map node is already in `core/mapdata.ts`.
 
 ## Later (after feedback)
 
-Stage 1.3 (the middle school) and the Demogorgon. Its XP budget should stay under about 110 so the party is Lv 4 after chapter 1 and not Lv 5. After that: chapters 2 to 5, the other seven heroes, the map screen and shop, bonds, difficulty, the remaining tracks, docs polish.
+Stages 2.2 (the tunnels, `upside` track) and 2.3 (the Gate and the Demodog Alpha), with Max joining in 2.2. Chapter 2 enemy numbers. Then chapters 3 to 5, the other heroes, the shop and party picks, bonds, the remaining tracks, docs polish.

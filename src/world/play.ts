@@ -13,14 +13,16 @@ import { createSim, setReduceFlashing, setShakeScale } from '../combat/index.ts'
 import { createBot } from '../combat/bot.ts';
 import type { Bot } from '../combat/bot.ts';
 import { HERO_IDS } from '../heroes/index.ts';
+import { emptyStats, xpToNext } from '../progression/index.ts';
 import { audio } from '../audio/index.ts';
 import { SCRIPTS, bark } from '../story/index.ts';
-import { createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
-import { slotAt } from '../ui/hudlayout.ts';
+import { createCharSheetScene, createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
+import type { CharSheetHero } from '../ui/index.ts';
+import { onLevel, slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
 import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
-import { createPuzzleTracker, isNear } from './puzzles.ts';
+import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
@@ -44,7 +46,7 @@ const SAVED_FRAMES = 120;
 const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
   p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
 
-const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera']);
+const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden']);
 
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
@@ -63,6 +65,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const levelFx = createLevelFx();
   /** Counts the time spent near each unsolved puzzle, to know when to point at it. */
   const puzzles = createPuzzleTracker(stage.puzzles);
+  /** The enemy kind behind each puzzle that watches a spawn (the pinned boss). Empty on 1.1 and 1.2. */
+  const foes = foeKinds(stage.puzzles, stage.spawns);
   let game!: Game;
   let sim!: Sim;
   let view!: SimView;
@@ -124,6 +128,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       sim.openProp(prop);
     },
     alarm() { audio.sfx('klaxon'); },
+    music: (track) => audio.music(track),
     jingle: (id) => audio.jingle(id),
     finish() { audio.jingle('clear'); clearT = 0; },
   };
@@ -225,9 +230,35 @@ export function createPlayScene(opts: PlayOptions): Scene {
   }
 
   function pause(): void {
-    const sc = createPauseScene({ onResume: () => closeOverlay(sc), onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver() });
+    const sc = createPauseScene({
+      onResume: () => closeOverlay(sc), onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver(), party: sheetParty,
+    });
     overlay = sc;
     game.scenes.push(sc);
+  }
+
+  /** Every hero for the character sheet. Those in the party come with their level, XP and d20 bonus. A hero who
+   * isn't in the party comes in at Lv 1. */
+  function sheetParty(): CharSheetHero[] {
+    const live = sim.party();
+    return HERO_IDS.map((id): CharSheetHero => {
+      const slot = live.findIndex((m) => m.id === id);
+      const p = live[slot];
+      const hud = view.hud.party.find((m) => m.id === id);
+      if (!p) return { id, level: 1, xp: 0, xpNext: xpToNext(1), bonus: emptyStats(), joined: false, active: false, slot: -1 };
+      return {
+        id, level: p.level, xp: p.xp, xpNext: hud?.xpNext ?? xpToNext(p.level), bonus: { ...emptyStats(), ...p.bonus },
+        joined: true, active: hud?.active ?? false, slot,
+      };
+    });
+  }
+
+  /** The character sheet over the frozen level, open on this hero. Closing it goes straight back to play. */
+  function openSheet(id: HeroId): void {
+    const sc = createCharSheetScene({ heroes: sheetParty, start: id, onBack: () => closeOverlay(sc) });
+    overlay = sc;
+    game.scenes.push(sc);
+    audio.sfx('pause');
   }
 
   /** The keys and pad, plus a click on a HUD portrait, which is a swap to that hero. */
@@ -333,23 +364,28 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (!bot && wipeT < 0 && clearT < 0 && g.input.pressed('pause')) { pause(); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
+      // A click on the active hero's name and level opens their character sheet. The view is last tick's, the one on screen.
+      const click = g.input.clicked();
+      const lead = view.hud.party.find((m) => m.active);
+      if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
       forward(sim.step(input));
       view = sim.view();
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
-      // A benched hero's face under the mouse is a button.
+      // A benched hero's face under the mouse is a button, and so is the active hero's name and level.
       const ptr = g.input.hover();
-      if (ptr && !bot && slotAt(view.hud.party, ptr.x, ptr.y) >= 0) g.input.point();
+      if (ptr && !bot && (slotAt(view.hud.party, ptr.x, ptr.y) >= 0 || onLevel(view.hud.party, ptr.x, ptr.y))) g.input.point();
 
       if (!frozen) {
         const p = sim.heroPos();
         director.tick((p.x / TILE) | 0, ((p.y - 4) / TILE) | 0);
         if (!leftHome && Math.hypot(p.x - stage.start.x, p.y - stage.start.y) > HOME_RADIUS) leftHome = true;
-        puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: view.props, hero: p });
+        puzzles.tick({ hasFired: director.hasFired, busy: director.busy(), props: puzzleProps(stage.puzzles, view.props, view.actors, foes), hero: p });
       }
       if (scare) stepScare(scare);
-      prompt = frozen || director.busy() ? null : nearLights();
+      // No lighting mid-boss: the save would hold a fired beat for a fight the retry puts back to sleep.
+      prompt = frozen || director.busy() || view.hud.boss ? null : nearLights();
       burstCall = !frozen && !director.busy() && !prompt && view.hud.burstReady;
       if (prompt && !bot && g.input.pressed('interact')) lightUp(prompt);
       if (wipeT >= 0 && ++wipeT === WIPE_FRAMES) pushGameOver();
@@ -380,12 +416,13 @@ export function createPlayScene(opts: PlayOptions): Scene {
       drawLevelFx(ctx, levelFx.list(), view, cam);
       // While the party is at a puzzle it's stuck on, the caret points at the prop and a subtitle says who to try.
       const stuck = puzzles.highlight();
-      const stuckProp = stuck && view.props.find((p) => p.id === stuck.prop);
+      const watched = stuck ? puzzleProps(stage.puzzles, view.props, view.actors, foes) : view.props;
+      const stuckProp = stuck && watched.find((p) => p.id === stuck.prop);
       // A hint from trying a gate or door is shown where the party stands, which can be far from the puzzle's own prop
       // (the sensor, the lantern): the subtitle shows near either one, and the caret goes on the puzzle's prop when it
       // is in view, else on the gate or door that was tried.
       const triedId = stuck ? puzzles.triedProp(stuck) : null;
-      const triedProp = triedId ? view.props.find((p) => p.id === triedId) : undefined;
+      const triedProp = triedId ? watched.find((p) => p.id === triedId) : undefined;
       const hero = sim.heroPos();
       const atHint = stuckProp && (isNear(stuckProp, hero) || (triedProp && isNear(triedProp, hero)));
       const caretOn = stuckProp && (triedProp && !inView(stuckProp, cam) ? triedProp : stuckProp);
@@ -394,8 +431,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
       const ptr = g.input.hover();
-      const hover = ptr && !overlay && !dialog.active && !bot ? slotAt(view.hud.party, ptr.x, ptr.y) : -1;
-      drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, device: g.input.device() });
+      const at = ptr && !overlay && !dialog.active && !bot ? ptr : null;
+      const hover = at ? slotAt(view.hud.party, at.x, at.y) : -1;
+      const levelHot = !!at && onLevel(view.hud.party, at.x, at.y);
+      drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, levelHot, device: g.input.device() });
       if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
       if (speech) {

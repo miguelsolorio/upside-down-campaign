@@ -11,7 +11,8 @@ import { chaseHero, faceHero, setEnemyAnim, stepToward } from './steer.ts';
 const WANDER_SPEED = 0.35;
 const WANDER_RANGE = 40;
 
-function wander(s: S, e: Enemy): void {
+/** Idles about its spot, a few steps at a time. The demodog does the same until it notices the hero. */
+export function wander(s: S, e: Enemy): void {
   setEnemyAnim(e, 'idle');
   if (--e.wanderT <= 0) {
     if (s.rng() < 0.45) { e.wanderA = Number.NaN; e.wanderT = 40 + Math.floor(s.rng() * 80); }

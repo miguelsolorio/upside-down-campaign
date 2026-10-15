@@ -123,6 +123,11 @@ const LEVEL_UP: Record<HeroId, LevelUpSet> = {
     three: "I feel it. I'm stronger now.",
     other: "I'm stronger. I can do more now.",
   },
+  will: {
+    two: 'Okay. I feel steadier now.',
+    three: 'Level three. I can tell when it is close.',
+    other: 'Stronger. It is not getting me again.',
+  },
 };
 const ELEVEN_FULL = "I'm stronger now, and I won't let anything happen to them.";
 

@@ -86,7 +86,7 @@ export const EXPR: Record<Expr, Part[]> = {
 };
 
 // ---------------------------------------------------------------- characters
-export const PORTRAITS: Record<CharId, PortraitSpec> = {
+const BASE_PORTRAITS = {
   mike: {
     bg: 'teal0', shirt: 'stripes',
     pal: { s: 'skin0', d: 'skin1', h: 'soil1', i: 'soil2', j: 'soil0', a: 'red', b: 'dusk', c: 'red' },
@@ -220,4 +220,47 @@ export const PORTRAITS: Record<CharId, PortraitSpec> = {
     ] }],
     trim: [],
   },
-};
+  max: {
+    bg: 'purple', shirt: 'plain',
+    pal: { s: 'skin0', d: 'skin1', h: 'orange', i: 'amber', j: 'red', g: 'cyan', G: 'ink', H: 'bone', a: 'teal1', b: 'cyan', c: 'teal1' },
+    back: [
+      { y: 7, rows: [
+        '....................H.H.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................gGg.',
+        '....................H.H.',
+      ] },
+      { y: 12, rows: [
+        '...hhh..........hhh.....',
+        '...hhh..........hhh.....',
+        '....hh..........hh......',
+      ] },
+    ],
+    front: [{ y: 2, rows: [
+      '.......hhhhhhhhhh.......',
+      '.....hhhhhhihhhhhhh.....',
+      '....hhhhhiiihhhhhhhh....',
+      '....hhhhhhhhhhhhhhhh....',
+      '....hhjhhhhhhhhhhjhh....',
+      '....hhh.hhhhhhh.hhhh....',
+      '....hh............hh....',
+      '....hh............hh....',
+      '....hhh..........hhh....',
+      '....hh............hh....',
+    ] }],
+    trim: [],
+    grin: [{ y: 13, rows: [
+      '........eeeeeeee........',
+      '........ewweewwe........',
+      '.........eeeeee.........',
+    ] }],
+  },
+} satisfies Record<CharId, PortraitSpec>;
+
+export const PORTRAITS: Record<CharId, PortraitSpec> = BASE_PORTRAITS;

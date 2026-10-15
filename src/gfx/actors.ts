@@ -1,13 +1,19 @@
 // Actor sprites: one atlas canvas per character (13 frames by 4 directions), plus flash and tint variants.
 // Overlays (shadow, nosebleed, "!" and HP bar) are drawn with plain rects around the sprite. A cell is 16 by 16, or
-// 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own.
+// 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own. The
+// Demogorgon, the demodog, the vine and the pod are drawn from frames of their own (actor_demo.ts, actor_dog.ts, actor_plant.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
 import { ANIM_ORDER, CELL, POSES, bodyShift, composeFrame, composeRat } from './actor_pose.ts';
 import { composeGuard, composeWarden, FOE_CELL } from './actor_foes.ts';
+import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
+import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
+import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
+import type { Frame } from './actor_kit.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
+import { MAX } from './data/max.ts';
 import { AGENT, RAT_PAL } from './data/foes.ts';
 import { PALS, TRIM } from './data/guard.ts';
 import { canvasFromPixels, mirrorRoles, px32, rect } from './canvas.ts';
@@ -44,7 +50,7 @@ interface Sheet {
 }
 
 const specs = new Map<string, CharSpec>();
-for (const s of [...KIDS, ...ADULTS, AGENT]) specs.set(s.id, s);
+for (const s of [...KIDS, ...ADULTS, MAX, AGENT]) specs.set(s.id, s);
 const sheets = new Map<string, Sheet>();
 
 /** The red band of an elite: the second row of the sprite, across the head. */
@@ -242,8 +248,27 @@ function drawNosebleed(ctx: Ctx, v: ActorView, ox: number, oy: number, frame: nu
   if (phase >= 34 && phase < 44) rect(ctx, px, y0 + 4, 1, 1, 'red');
 }
 
+/** An actor drawn from a frame of its own (actor_kit.ts), cw by ch with its feet on the bottom, with the same shadow, bar and "!" as the others. */
+function drawFramed(ctx: Ctx, v: ActorView, f: Frame, cw: number, ch: number, shadow: 'none' | 'small' | 'big'): void {
+  const cx = Math.round(v.x), cy = Math.round(v.y), z = Math.max(0, Math.round(v.z));
+  const oy = cy - ch - z, head = oy + f.top;
+  if (!v.blink) {
+    if (shadow !== 'none' && !v.hidden) drawShadow(ctx, cx, cy, z, shadow === 'big');
+    ctx.drawImage(f.img, cx - (cw >> 1), oy);
+    if (v.bar && !v.hidden) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
+  }
+  if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar ? 15 : 10) + ((v.t >> 2) & 1));
+}
+
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
 export function drawActor(ctx: Ctx, v: ActorView): void {
+  switch (v.id) {
+    case 'demogorgon': drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big'); return;
+    case 'demodog': drawFramed(ctx, v, dogFrame(v), DOG_W, DOG_H, 'big'); return;
+    case 'vine': drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return;
+    case 'pod': drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none'); return;
+    default: break;
+  }
   const sh = sheetOf(keyOf(v.id, v.guarding, v.elite, v.kind));
   const C = sh.cell;
   const cx = Math.round(v.x), cy = Math.round(v.y);
@@ -264,7 +289,7 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
 
 /** Builds every sheet and the main atlases up front. */
 export function warmActors(): void {
-  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'agent', 'rat', 'guard', 'warden']) {
+  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'agent', 'rat', 'guard', 'warden']) {
     const sh = sheetOf(id);
     sh.main = render(sh, 'main');
   }

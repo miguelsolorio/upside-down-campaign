@@ -39,7 +39,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?stage=1.2` | Jump to a stage (`1.1` or `1.2`) with the party a normal run brings: three kids for Mirkwood, all four at Lv 3 for the Lab |
+| `?stage=1.2` | Jump to a stage (`1.1`, `1.2`, `1.3` or `2.1`) with the party a normal run brings: three kids for Mirkwood, all four at Lv 3 for the Lab, Lv 5 and 4 for the school, and Will in place of Eleven for 2.1 |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
@@ -78,11 +78,11 @@ src/combat      the simulation, enemy AI, the bot
 src/heroes      hero stats, abilities, growth
 src/enemies     enemy stats and behavior
 src/progression XP curve, the d20 level-up
-src/world       stages 1.1 and 1.2 and the play scene
+src/world       stages 1.1 to 2.1 and the play scene
 src/ui          HUD, dialogue, title, menus
 src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy
-docs            game design, architecture, Level 1 and Level 2 specs, screenshots
+docs            game design, architecture, specs for Levels 1 to 4 and the map, screenshots
 music           rendered WAVs of the tracks
 public/social   the link preview and README images, drawn by social.html
 public/icons    the app icon, with public/favicon.ico, drawn by social.html
@@ -96,6 +96,7 @@ Besides `index.html`, the HTML pages at the root are dev-only review pages that 
 - `darkness-variations.html` holds the night tileset options.
 - `hud-variations.html` holds the HUD options.
 - `header-variations.html` holds eight layouts for the active hero's name, XP, MP, coins and Crit meter.
+- `map-variations.html` holds the five Hawkins map designs; design 4, Two Hawkins, is the one in the game.
 - `touch-controls.html` shows the touch controls on phone frames.
 
 The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.

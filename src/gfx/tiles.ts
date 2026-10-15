@@ -133,6 +133,46 @@ function lab2Near(name: TileName, v: number, near: Near): Near {
   }
 }
 
+/** The school's tiles at their best: v 0 in a run, v 1 at one end of it, v 2 at the other or against a wall. */
+function schoolNear(name: TileName, v: number, near: Near): Near {
+  const all = (n: TileName): Near => ({ n, e: n, s: n, w: n });
+  const run = (self: TileName, floor: TileName, wall: TileName): Near => v === 0 ? { n: wall, e: self, s: floor, w: self }
+    : v === 1 ? { n: wall, e: self, s: floor, w: floor } : { n: wall, e: floor, s: floor, w: self };
+  switch (name) {
+    case 'schoolfloor': case 'checker': return v === 0 ? all(name) : v === 1 ? { n: 'schoolwall', e: name, s: name, w: name } : { n: 'schoolwall', e: name, s: name, w: 'lockerwall' };
+    case 'gymfloor': return v === 0 ? all(name) : v === 1 ? { n: 'bleachers', e: name, s: name, w: name } : { n: name, e: 'schoolwall', s: 'schoolwall', w: name };
+    case 'schoolwall': case 'lockerwall': case 'chalkboard': case 'trophy': return run(name, 'schoolfloor', 'schoolcap');
+    case 'schoolcap': return v === 0 ? { n: name, e: name, s: 'schoolwall', w: name } : v === 1 ? { n: 'schoolfloor', e: 'schoolfloor', s: 'schoolwall', w: name } : { n: 'schoolfloor', e: name, s: 'schoolfloor', w: 'schoolfloor' };
+    case 'brick': return v === 0 ? { n: 'schoolcap', e: name, s: 'gravel', w: name } : v === 1 ? { n: name, e: name, s: 'gravel', w: name } : { n: 'schoolcap', e: name, s: name, w: name };
+    case 'desk': return run(name, 'schoolfloor', 'schoolwall');
+    case 'table': case 'counter': return run(name, 'checker', 'schoolwall');
+    case 'bleachers': return run(name, 'gymfloor', 'schoolwall');
+    default: return near;
+  }
+}
+
+/** The street, the patch and the barn at their best: v 0 in a run, v 1 at an edge, v 2 beside something else they meet. */
+function patchNear(name: TileName, v: number, near: Near): Near {
+  const all = (n: TileName): Near => ({ n, e: n, s: n, w: n });
+  const run = (self: TileName, floor: TileName, wall: TileName): Near => v === 0 ? { n: wall, e: self, s: floor, w: self }
+    : v === 1 ? { n: wall, e: self, s: floor, w: floor } : { n: wall, e: floor, s: floor, w: self };
+  switch (name) {
+    case 'arcadecarpet': return v === 0 ? all(name) : v === 1 ? { n: 'arcadewall', e: name, s: name, w: name } : { n: 'arcadewall', e: name, s: name, w: 'arcadewall' };
+    case 'arcadewall': return run(name, 'arcadecarpet', 'arcadewall');
+    case 'sidewalk': return v === 0 ? { n: 'storefront', e: name, s: 'road', w: name } : v === 1 ? all(name) : { n: 'grass', e: name, s: 'road', w: 'grass' };
+    case 'storefront': return run(name, 'sidewalk', 'brick');
+    case 'furrow': return v === 0 ? all(name) : v === 1 ? { n: name, e: 'rot', s: name, w: name } : { n: 'rot', e: name, s: name, w: 'haybale' };
+    case 'pumpkin': case 'rotpumpkin': return all('furrow');
+    case 'haybale': return v === 0 ? { n: 'dirt', e: name, s: 'dirt', w: name } : v === 1 ? { n: name, e: name, s: 'dirt', w: name } : { n: 'dirt', e: 'dirt', s: 'dirt', w: name };
+    case 'rot': return v === 0 ? all(name) : v === 1 ? { n: 'furrow', e: name, s: name, w: name } : { n: name, e: 'dirt', s: name, w: name };
+    case 'hole': return v === 0 ? all(name) : v === 1 ? { n: 'rot', e: name, s: name, w: name } : all('rot');
+    case 'barnwall': return run(name, 'dirt', 'barnroof');
+    case 'barnroof': return v === 0 ? { n: name, e: name, s: 'barnwall', w: name } : v === 1 ? { n: 'grass', e: name, s: name, w: name } : { n: name, e: 'grass', s: 'barnwall', w: name };
+    case 'corn': return v === 0 ? all(name) : v === 1 ? { n: 'furrow', e: name, s: 'furrow', w: name } : { n: name, e: 'hole', s: name, w: name };
+    default: return near;
+  }
+}
+
 /** The pixels of one tile on its own, beside the neighbours that show it at its best. Water is not here: see tileSample. */
 export function samplePx(name: TileName, v: number): Px {
   const tx = 5 + v * 3, ty = 4 + v * 7;
@@ -142,7 +182,7 @@ export function samplePx(name: TileName, v: number): Px {
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = lab2Near(name, v, labNear(name, v, near));
+  near = patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))));
   return staticTile(name, { tx, ty, near });
 }
 

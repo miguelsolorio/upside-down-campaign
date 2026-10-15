@@ -14,7 +14,7 @@ import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
-import { CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, hudBand, leftShift, slotRects } from './hudlayout.ts';
+import { CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, hudBand, leftShift, levelDx, slotRects } from './hudlayout.ts';
 import type { SlotRect } from './hudlayout.ts';
 
 /** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
@@ -43,6 +43,8 @@ export interface HudOpts {
   swapAge?: number | null;
   /** Party index under the pointer, or -1, so that portrait can light up as a button. */
   hover?: number;
+  /** The pointer is on the active hero's name and level, which open the character sheet. They light up as a link. */
+  levelHot?: boolean;
   /** Which swap keys to print. Keyboard is the default, and only a keyboard has them. */
   device?: PromptDevice;
 }
@@ -58,7 +60,10 @@ function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, o: HudOpts): void {
   // The key that picks this hero sits just left of the name, quietly, like the ones on the bench.
   if ((o.device ?? 'keyboard') === 'keyboard') drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
   drawText(ctx, p.name, LEFT_X, 1, 'white');
-  drawText(ctx, `LV${p.level}`, LEFT_X + p.name.length * 6 + 6, 1, up ? 'white' : 'yellow');
+  const lv = `LV${p.level}`;
+  drawText(ctx, lv, LEFT_X + levelDx(p.name), 1, up || o.levelHot ? 'white' : 'yellow');
+  // The name and level open the character sheet. Under the mouse they get an underline, like a link.
+  if (o.levelHot) box(ctx, LEFT_X, 8, levelDx(p.name) + lv.length * 6 - 1, 1, 'yellow');
 
   // XP is ten yellow notches, 5 px thick, under the name: as yellow as the level beside it. An empty notch is a step
   // lighter than the strip, because with no frame it would not read otherwise.

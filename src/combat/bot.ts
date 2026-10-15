@@ -3,7 +3,8 @@
 // inbound darts, swap when the active hero is low. Gates are skipped: the bot calls sim.openProp itself when it
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
 // Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's
-// Push break them, hits them while they recover, and steps out of the Warden's slam. It ignores hazards and cameras.
+// Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
+// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -12,6 +13,7 @@ import { DIR_ANGLE } from '../enemies/shield.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
+import { createBossSense } from './bot_boss.ts';
 
 export interface BotWaypoint extends Vec2 { /** Prop id to open when reached. */ open?: string; /** Group to wake when reached. */ wake?: string }
 
@@ -29,10 +31,12 @@ interface Foe {
   /** In a wind-up, under the red "!". */
   windup: boolean;
   burning: boolean;
+  /** The Demogorgon's pose. */
+  pose: string | undefined;
 }
 
 /** Furniture that never moves. The bot's map treats it as wall, so it does not walk into it and learn the hard way. */
-const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator']);
+const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator', 'arcade']);
 const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
 const defOf = (kind: string): EnemyDef => ENEMY_DEFS[kind as EnemyKind];
 /** How far past the shield's edge the bot circles to, so the guard's slow turn has not caught up. */
@@ -44,6 +48,7 @@ const STYLE: Record<HeroId, { hold: number; reach: number }> = {
   eleven: { hold: 26, reach: 38 },
   dustin: { hold: 70, reach: 110 },
   lucas: { hold: 92, reach: 140 },
+  will: { hold: 80, reach: 120 },
 };
 
 /** Just above the sim's 0.15 dead zone: turns the hero to face a target without walking anywhere. */
@@ -81,6 +86,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   let lastSwap = -999, lastSpecial = -999;
   let dealt = 0, dealtAt = 0;
   let stillT = 0;
+  /** The party burst freezes the whole field for about 150 frames: a hero who does not move then is not stuck. */
+  let frozenUntil = -1;
   let lastX = Number.NaN, lastY = Number.NaN;
   let lastMag = 0;
 
@@ -131,10 +138,11 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   function foesOf(v: SimView, hx: number, hy: number): Foe[] {
     const out: Foe[] = [];
     for (const a of v.actors) {
-      if (a.kind !== 'enemy' || a.anim === 'ko') continue;
+      // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true) continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
-        dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange',
+        dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
       });
     }
     return out.sort((p, q) => p.d - q.d);
@@ -226,7 +234,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return null;
   }
 
-  /** A Warden winding up a slam close enough to reach the hero: the growing ring is on it. */
+  /** A wind-up whose reach the hero is in: the vine's lash or the pod's swell. */
+function reachThreatOf(f: Foe): boolean {
+  if (f.kind === 'vine') return f.d <= ENEMY_DEFS.vine.x.reach + 10;
+  if (f.kind === 'pod') return f.d <= ENEMY_DEFS.pod.x.cloud + 10;
+  return false;
+}
+
+/** A Warden winding up a slam close enough to reach the hero: the growing ring is on it. */
   function slamThreat(v: SimView, foes: Foe[]): Foe | null {
     const w = ENEMY_DEFS.warden.x;
     for (const f of foes) {
@@ -245,6 +260,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     }
     return [Math.cos(a), Math.sin(a)];
   }
+
+  const boss = createBossSense({ walkable, clearLine, walkTo });
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -290,6 +307,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       wp = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
     }
 
+    // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
+    const leave = boss.dodge(v, hx, hy);
+    const fin = boss.finish(v, hx, hy);
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     const near = foes[0];
     // An idle enemy the bot cannot see (behind a wall, say) does not pull it into a fight: at the engage radius that
@@ -298,14 +318,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     const fighting = near !== undefined && ((near.d < ENGAGE && seen) || (sim.aggro() && near.d < CHASE));
 
     // Stuck detection: learn the tile ahead is blocked and route around it.
-    if (lastMag > 0.3 && dist(hx, hy, lastX, lastY) < 0.05) stillT++; else stillT = 0;
-    lastX = hx; lastY = hy;
+    // Stuck means going nowhere: within 3 px of where it was for the whole spell, even if corner assist rocks it back and forth.
+    if (frame < frozenUntil || lastMag <= 0.3 || dist(hx, hy, lastX, lastY) > 3) { stillT = 0; lastX = hx; lastY = hy; } else stillT++;
 
     let mx = 0, my = 0;
     const hpFrac = me.hp / me.hpMax;
 
     // Swap out a hurt hero for the healthiest bench hero.
-    if (hpFrac < 0.35 && frame - lastSwap > 100) {
+    if (hpFrac < 0.35 && frame - lastSwap > 100 && !fin) {
       let best = -1, bestFrac = hpFrac + 0.3;
       v.hud.party.forEach((p, i) => {
         if (!p.ko && !p.active && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
@@ -321,7 +341,12 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     if (!fighting) dealtAt = frame;
     const desperate = frame - dealtAt > 300;
 
-    if (fighting && near) {
+    if (fin) {
+      // Pinned: Eleven's Mind Blast is the only thing that hurts it. Swap to her, walk up and fire.
+      [mx, my] = fin.mv;
+      out.swapTo = fin.swapTo;
+      out.specialPressed = fin.cast;
+    } else if (fighting && near) {
       // Inbound dart: step aside.
       const threat = desperate || careless ? null : dartThreat(v, hx, hy);
       let dodged = false;
@@ -331,11 +356,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (!dodged && slam) { [mx, my] = awayFrom(slam, hx, hy); dodged = true; }
       const bash = dodged || careless ? null : foes.find((f) => isGuard(f.kind) && f.windup && f.up && f.d <= defOf(f.kind).x.reach + 8 && inArc(f, hx, hy));
       if (!dodged && bash) { [mx, my] = awayFrom(bash, hx, hy); dodged = true; }
+      // A vine's lash reaches 34 px and a swelling pod's cloud 28: back out of it.
+      const near2 = dodged || careless ? null : foes.find((f) => f.windup && reachThreatOf(f));
+      if (!dodged && near2) { [mx, my] = awayFrom(near2, hx, hy); dodged = true; }
       if (!dodged) {
         const a8 = snap8(near.ang);
         const miss = near.d * Math.sin(angDiff(near.ang, a8));
         // Rockets need a line within a body width; Push, bat and spray cover wide cones.
-        const aligned = desperate || me.id !== 'lucas' || miss < 9;
+        const aligned = desperate || (me.id !== 'lucas' && me.id !== 'will') || miss < 9;
         const hold = desperate ? 16 : style.hold;
         // A guard with its shield up and the hero in front of it: Dustin burns it, Eleven's Push breaks it, the rest circle
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
@@ -365,16 +393,28 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
             let use = false;
             if (me.id === 'lucas') use = near.d > 28 && me.mp >= cost;
             else if (me.id === 'dustin') use = (near.d < 50 || group >= 2) && me.mp >= cost && !(isGuard(near.kind) && near.burning);
+            else if (me.id === 'will') use = near.d > 26 && me.mp >= cost && (foes.filter((f) => dist(f.x, f.y, near.x, near.y) < 36).length >= 2 || me.mp >= me.mpMax * 0.6);
             else if (me.id === 'eleven') use = near.d < 120 && me.mp >= cost && miss < 12 && (group >= 2 || near.kind === 'agent' || shielded);
             if (use) { out.specialPressed = true; lastSpecial = frame; }
           }
         }
       }
-      if (v.hud.burstReady && foes.filter((f) => f.d < 190).length >= 2) out.burstPressed = true;
+      if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => f.pose === 'stun' && f.d < 190))) {
+        out.burstPressed = true;
+        frozenUntil = frame + 170;
+      }
     } else if (wp) {
       const item = pickupGoal(v, hx, hy, hpFrac, me.mp / me.mpMax);
       const goal = item ?? wp;
       [mx, my] = walkTo(hx, hy, goal.x, goal.y);
+    }
+
+    // Off a mark, out of the charge line, out of the swipe: that comes before whatever else the bot was doing.
+    if (leave && !careless && !fin) {
+      [mx, my] = leave;
+      // A hero swinging at the bat moves at a third of his pace. Dodging means moving.
+      out.attackHeld = false;
+      out.specialPressed = false;
     }
 
     // Anything still pinned against a wall for half a second: mark the tile ahead as blocked and replan.

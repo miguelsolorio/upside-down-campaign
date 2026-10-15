@@ -10,12 +10,16 @@ export interface Vec2 { x: number; y: number }
 export interface Rect { x: number; y: number; w: number; h: number }
 
 // ---------------------------------------------------------------- identity
-/** Playable in Level 1. Later: will, max, steve, nancy, hopper, robin, eddie. */
-export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven';
-/** Anything with a hero-style sprite and portrait, playable or not. */
-export type CharId = HeroId | 'will' | 'joyce';
-/** guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard. */
-export type EnemyKind = 'agent' | 'rat' | 'guard' | 'warden';
+/** Playable so far. Will joins in chapter 2. Later: max, steve, nancy, hopper, robin, eddie. */
+export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will';
+/** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1. */
+export type CharId = HeroId | 'joyce' | 'max';
+/**
+ * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
+ * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
+ * vine: a rooted tendril that lashes and slows. pod: a rooted spore pod that bursts into a slowing cloud. Both burn.
+ */
+export type EnemyKind = 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -53,11 +57,20 @@ export interface ActorView {
   elite?: boolean;
   /** A guard or warden whose shield is up. It stops hits from the front, so gfx can show the shield raised or dropped. */
   guarding?: boolean;
+  /** The Demogorgon's pose, when it is doing something other than walking (docs/level-3.md, "Demogorgon"). */
+  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned';
+  /** The Demogorgon's head petals are open (below 60% HP). */
+  petals?: boolean;
+  /** A hidden enemy that only Will's Cold spot shows. gfx draws it faint or not at all. */
+  hidden?: boolean;
 }
 
 export type FxKind =
   | 'slash' | 'push' | 'beam' | 'flame' | 'shield' | 'nova' | 'spark' | 'dust'
-  | 'rock' | 'candy' | 'dart' | 'blast' | 'heal' | 'ring' | 'spore';
+  | 'rock' | 'candy' | 'dart' | 'blast' | 'heal' | 'ring' | 'spore'
+  /** acid: a Demogorgon spit glob in flight and its splash. mark: a shadow mark on the floor where it will land.
+   *  bolt: Will's sketch bolt. reveal: a hidden path showing itself. */
+  | 'acid' | 'mark' | 'bolt' | 'reveal';
 
 export interface FxView {
   kind: FxKind;
@@ -77,10 +90,14 @@ export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
 /**
  * camera: a sweeping security camera (see CamDef). Shooting it lights it, which switches it off.
  * tank, rack, generator: animated lab furniture the sim treats as plain solid blocks.
+ * vines: a wall of Upside Down vines across a doorway. hitBy 'burn' burns it away (propCleared).
+ * firebox: a red fire-door release box on a wall. hitBy 'shoot' lights it (targetHit), like a console.
+ * hidden: a hidden path, solid and drawn as plain wall until a hero with `sense` stands near it (hitBy 'sense').
+ * arcade: an arcade cabinet with a live screen, solid furniture.
  */
 export type PropKind =
   | 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console'
-  | 'camera' | 'tank' | 'rack' | 'generator';
+  | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade';
 /** alert: a camera that has just spotted the party. */
 export type PropState = 'closed' | 'open' | 'lit' | 'off' | 'alert';
 export interface PropView {
@@ -191,6 +208,9 @@ export type SfxId =
   /** zap: an electric panel firing. steam: a vent venting. spotted: a camera sees you. block: a shield stops a hit.
    *  bash: a guard's swing. slam: the Warden's ground slam. */
   | 'zap' | 'steam' | 'spotted' | 'block' | 'bash' | 'slam'
+  /** roar: the Demogorgon's call. acid: a spit. lunge: a charge or demodog lunge. petals: the head opening.
+   *  chomp: a bite landing. thud: a charge hitting a wall. reveal: a hidden path showing. sizzle: vines burning away. */
+  | 'roar' | 'acid' | 'lunge' | 'petals' | 'chomp' | 'thud' | 'reveal' | 'sizzle'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
@@ -219,11 +239,14 @@ export type SimEvent =
   | { t: 'spotted'; propId: string }
   /** A hero tried a gate, door, log, crate, lantern or console that is still shut: swung or fired at it, or pushed against it. */
   | { t: 'poked'; propId: string; hero: HeroId }
+  /** The Demogorgon hit 0 HP and is pinned: only Eleven's Mind Blast finishes it. spawnId is the boss's spawn. */
+  | { t: 'pinned'; spawnId: string }
   | { t: 'burst' }
   | { t: 'natTwenty'; hero: HeroId; source: 'crit' | 'levelUp' };
 
 export type SimSpawn =
-  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir }
+  /** hidden: drawn faint until Will's Cold spot shows it or it attacks (docs/level-4.md). */
+  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
   /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. */
   | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; cam?: CamDef }
@@ -326,7 +349,8 @@ export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 
 // ---------------------------------------------------------------- audio vocabulary
-export type TrackId = 'static' | 'mirkwood' | 'lab';
+/** upside: 1.3's halls (and 2.2 later). clock: every boss fight. hawkins: the map screen and 2.1. */
+export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins';
 export type JingleId = 'levelUp' | 'recruit' | 'clear' | 'gameOver' | 'item' | 'dice';
 export type StingerId = 'scare' | HeroId;
 export interface AudioMetrics {

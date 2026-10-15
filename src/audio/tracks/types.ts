@@ -7,7 +7,7 @@ export type Slot = PitchedSlot | 'noi';
 export type LayerId = 'base' | 'combat';
 /** Pulse at 12.5, 25 and 50 percent duty, or the stepped triangle. */
 export type Wave = 'p12' | 'p25' | 'p50' | 'tri';
-export type Drum = 'kick' | 'snare' | 'hat' | 'ohat' | 'tick' | 'tock' | 'swell' | 'crack';
+export type Drum = 'kick' | 'snare' | 'hat' | 'ohat' | 'tick' | 'tock' | 'swell' | 'crack' | 'wind';
 export type ModeName = 'minor' | 'phrygian' | 'dorian' | 'major' | 'whole' | 'chromatic';
 
 /** Seconds. s is the sustain level, 0..1. exp makes the decay exponential. */
@@ -23,6 +23,8 @@ export interface Inst {
   /** Fraction of a note's length the key stays down. The rest is room for the release. */
   gate: number;
   vib?: Vib;
+  /** Cents off pitch for the whole note. Two voices on one line at +9 and -9 beat against each other. */
+  detune?: number;
   /** How much of this voice feeds the track's echo, 0..1. */
   send?: number;
 }

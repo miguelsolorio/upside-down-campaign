@@ -189,11 +189,11 @@ export function lineBars(prog: readonly string[], o: { win: readonly [number, nu
 
 /** How long each noise drum rings, in seconds. The sequencer and the compiler both read this. */
 export const DRUM_SECONDS: Record<Drum, number> = {
-  kick: 0.15, snare: 0.14, hat: 0.04, ohat: 0.15, tick: 0.03, tock: 0.035, swell: 2.2, crack: 0.02,
+  kick: 0.15, snare: 0.14, hat: 0.04, ohat: 0.15, tick: 0.03, tock: 0.035, swell: 2.2, crack: 0.02, wind: 1.7,
 };
 
 // When two rows claim the same step, the earlier drum in this list wins. The noise voice plays one hit at a time.
-const PRIORITY: Drum[] = ['kick', 'snare', 'ohat', 'hat', 'crack', 'tick', 'tock', 'swell'];
+const PRIORITY: Drum[] = ['kick', 'snare', 'ohat', 'hat', 'crack', 'tick', 'tock', 'swell', 'wind'];
 
 /**
  * A one-bar drum pattern from rows of up to sixteen characters.

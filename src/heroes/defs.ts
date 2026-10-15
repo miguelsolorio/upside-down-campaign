@@ -84,7 +84,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'Farrah spray', mp: 8, cd: 40, power: 0.45, dur: 30, at: 8, lock: 0.25, reach: 54, kb: 0.6, sfx: 'flame',
       // half: cone half angle in degrees. life and tick in frames. burn: burn frames. burnTick: frames between burn ticks.
-      x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30 },
+      // burnAtk: each burn tick deals this much of Dustin's ATK, ignoring DEF.
+      x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30, burnAtk: 0.22 },
     },
     talent: TALENTS.dustin,
   },
@@ -120,9 +121,26 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     talent: TALENTS.eleven,
   },
+  // Will joins in chapter 2 (docs/level-4.md, "Will"). Wizard: a slow bolt that reaches, and a Fireball sized by a d20.
+  will: {
+    id: 'will', name: CHAR_NAMES.will, role: 'Wizard',
+    base: st(36, 26, 8, 2, 8), growth: st(5, 3.2, 1.4, 0.6, 0.4), weights: st(2, 3, 3, 1, 1),
+    speed: 0.9, crit: 0.02, utilities: ['sense'],
+    basic: {
+      name: 'Sketch bolt', mp: 0, cd: 30, power: 1.3, dur: 14, at: 6, lock: 0.5, reach: 120, kb: 1.6, sfx: 'rock',
+      // speed: px per frame. r: hit radius px.
+      x: { speed: 2.2, r: 6 },
+    },
+    special: {
+      name: 'Fireball', mp: 10, cd: 50, power: 2, dur: 24, at: 10, lock: 0.2, reach: 96, kb: 3, sfx: 'flame',
+      // speed: px per frame. r: the ball's size. base: the burst's radius in px before the d20 is added.
+      x: { speed: 2.6, r: 4, base: 16 },
+    },
+    talent: TALENTS.will,
+  },
 };
 
-export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
+export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will'];
 
 /** The stat at `level`: base, plus floored fixed growth, plus the d20 bonus received so far (in stat units). */
 export function statsAt(def: HeroDef, level: number, bonus: Stats = emptyStats()): Stats {

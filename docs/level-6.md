@@ -44,7 +44,7 @@ The flesh grows thicker toward the Gate: lab tiles at the mouth, flesh in patche
 | `den` | outside the loading bay | `l6_den` | `lights_den` is the second save point |
 | `alpha` | arena rect, needs `den` | `l6_alpha` | `close` `seal1`, `close` `seal2`, `music` `clock`, the script, `wake` `boss` |
 | `alpha_down` | cleared `boss` | `l6_alpha_down` | `open` `seal1`, `open` `seal2`, the script |
-| `gate` | the Gate chamber doorway, needs `alpha_down` | `l6_gate` | Eleven and Hopper are there. The script tells the party to light the lights |
+| `gate` | the Gate chamber doorway, needs `alpha_down` | `l6_gate` | Eleven and Hopper are there. Hopper strung the lights: the `light` step lights `lights_gate` for the party (the save point and the heal), so a failed defense always comes back to the Gate |
 | `defend` | rect in front of the rift, needs `gate` | `l6_defend` | The script, then `defend` |
 | `level_clear` | event `defended` | `l6_clear` | `finish`. Eleven shuts the Gate and comes home with them |
 

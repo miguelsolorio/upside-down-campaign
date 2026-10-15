@@ -107,9 +107,10 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 40, power: 0.6, cooldown: 160, drop: 0.1, weight: 99,
     x: { cloud: 28, slowT: 90, cloudT: 50, kb: 1.5 },
   },
-  // The chapter 2 boss (docs/level-6.md, "Demodog Alpha", enemies/alpha.ts). Walk, windup, power and cooldown are the bite's. ATK is
-  // down from the spec's 34 and the bite's cooldown is 100 rather than 70: in the den's court at enemyMult 1 the bot, which trades
-  // blows with the bite, clears 19 of 20 (careless 19) and takes about 280 damage, 1.2 KOs, in about 29 s. At 34 it never won.
+  // The chapter 2 boss (docs/level-6.md, "Demodog Alpha", enemies/alpha.ts). Walk, windup, power and cooldown are the bite's. HP and
+  // ATK are down from the spec's 1100 and 34: the fight's danger is its pack of nine and the pounce, and at the spec's numbers it was a
+  // cliff (the bot won 35 of 40 at an effective factor of 1.0 and 4 of 40 at 1.1), so stage 2.3 had to sit at 0.7 for upside to clear
+  // at all. At 700 and 16 the stage runs at 1.0 and the fight takes about 17 s on chief (measured with measure-stage 2.3).
   // reach, arc (half angle in degrees), kb: the bite. range: px at which it commits to one. recover: frames after it. hold: px it
   // stops short of the hero.
   // lungeEvery: frames between lunges, counted from the end of the last. lungeMin and lungeMax: the hero's distance band in px.
@@ -119,7 +120,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // howl1 to howl3: the HP shares that start each howl. howlT: frames stopped, howlMul: damage taken meanwhile, howlRing: the ring's
   // diameter, pack: demodogs it calls.
   alpha: {
-    kind: 'alpha', name: 'Demodog Alpha', hp: 1100, atk: 26, def: 6, speed: 1.1, xp: 70, aggro: 200,
+    kind: 'alpha', name: 'Demodog Alpha', hp: 700, atk: 16, def: 6, speed: 1.1, xp: 70, aggro: 200,
     windup: 24, power: 1, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 28, arc: 70, kb: 4, range: 26, recover: 20, hold: 14,

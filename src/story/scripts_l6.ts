@@ -98,7 +98,7 @@ const L6_GATE = script('l6_gate', [
   line('hopper', "Kid's holding the Gate shut. Barely. Don't hug her yet.", 'determined'),
   line('eleven', 'I can close it. I need time.', 'determined'),
   line('hopper', 'Forty-five seconds. Keep them off her.'),
-  line('steve', "Light the string behind us first. If she goes down, we come back here."),
+  line('hopper', "I strung lights by the door. If she goes down, we start here."),
 ]);
 
 /** In front of the rift. The defense starts when it ends. */

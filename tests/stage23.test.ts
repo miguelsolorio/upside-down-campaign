@@ -150,7 +150,7 @@ test('stage 2.3: the roster is in the spec\'s groups, and the stage pays 150 to 
   const pups = 3 * ENEMY_DEFS.alpha.x.pack + DEFENSE.waves.reduce((sum, w) => sum + w.n, 0);
   const total = hallXp + pups;
   assert.ok(total >= 150 && total <= 200, `stage XP ${total} (${hallXp} in the halls and the Alpha, ${pups} in run-time pups)`);
-  assert.equal(total, 160);
+  assert.equal(total, 156);
   const k = (n: string): number => items.filter((i) => i.item === n).length;
   assert.deepEqual([k('eggo'), k('coke'), k('quarter')], [4, 3, 12]);
   const cache = items.filter((i) => inRoom('cache', i.tx, i.ty));
@@ -301,12 +301,12 @@ test('stage 2.3: the defense is the spec\'s, 45 seconds on Eleven, with its wave
   assert.ok(DEFENSE.hp >= 80 && DEFENSE.hp <= 500, `Eleven's HP ${DEFENSE.hp}`);
   const ats = DEFENSE.waves.map((w) => w.at / 60);
   assert.deepEqual([...ats], [...ats].sort((x, y) => x - y), 'in order');
-  assert.deepEqual([...new Set(ats)], [0, 7, 14, 22, 30, 37], 'at 0, 7, 14, 22, 30 and 37 seconds');
+  assert.deepEqual([...new Set(ats)], [0, 6, 12, 18, 24, 31, 38], 'at 0, 6, 12, 18, 24, 31 and 38 seconds');
   assert.ok(DEFENSE.waves.every((w) => w.type === 'demodog' && w.at < DEFENSE.frames), 'demodogs, all before the clock runs out');
   assert.equal(DEFENSE.waves.filter((w) => w.tier === 'elite').length, 1, 'one elite');
-  assert.equal(DEFENSE.waves.find((w) => w.tier === 'elite')?.at, 22 * 60, 'at 22 seconds');
-  assert.ok(DEFENSE.waves.reduce((n, w) => n + w.n, 0) >= 20, 'twenty or more in all');
-  assert.ok(DEFENSE.waves.every((w) => w.n >= 1 && w.n <= 6), 'a wave never fills the chamber');
+  assert.equal(DEFENSE.waves.find((w) => w.tier === 'elite')?.at, 24 * 60, 'at 24 seconds');
+  assert.equal(DEFENSE.waves.reduce((n, w) => n + w.n, 0), 17, 'seventeen in all: sparse, so the party keeps up');
+  assert.ok(DEFENSE.waves.every((w) => w.n >= 1 && w.n <= 3), 'no wave bigger than three');
 });
 
 test('stage 2.3: three checkpoints beside their lights, on open floor, clear of the beats that a retry must not set off', () => {

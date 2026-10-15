@@ -36,6 +36,9 @@ export type BeatStep =
   | { t: 'close'; prop: string }
   /** Starts the stage's defense (Sim.defend). It does not wait: a `defended` beat follows when the clock runs out. */
   | { t: 'defend' }
+  /** Lights a lights prop as if the party had: a save point and the heal (Hopper strung the lights at the Gate). It does
+   *  not wait, and does nothing if it is already lit. */
+  | { t: 'light'; prop: string }
   /** Switches the stage music, such as to `clock` when a boss wakes. It does not wait. */
   | { t: 'music'; track: TrackId }
   | { t: 'finish' };

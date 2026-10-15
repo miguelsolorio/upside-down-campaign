@@ -63,8 +63,9 @@ test('stage 2.3: every beat has a trigger and a real script, in the spec\'s orde
   ]);
   assert.deepEqual(steps('alpha_down'), [{ t: 'open', prop: 'seal1' }, { t: 'open', prop: 'seal2' }, { t: 'say', script: 'l6_alpha_down' }]);
   assert.deepEqual(steps('defend'), [{ t: 'say', script: 'l6_defend' }, { t: 'defend' }]);
+  assert.deepEqual(steps('gate'), [{ t: 'say', script: 'l6_gate' }, { t: 'light', prop: 'lights_gate' }], 'Hopper strung the lights: the gate lights them');
   assert.deepEqual(steps('level_clear'), [{ t: 'say', script: 'l6_clear' }, { t: 'finish' }]);
-  for (const id of ['start', 'crack_hint', 'crack_open', 'storage', 'gap_hint', 'gap_crossed', 'den', 'gate']) {
+  for (const id of ['start', 'crack_hint', 'crack_open', 'storage', 'gap_hint', 'gap_crossed', 'den']) {
     assert.equal(steps(id).length, 1, `${id} is a script and nothing else`);
   }
   assert.ok(S.beats.every((b) => b.steps.every((st) => st.t !== 'scare' && st.t !== 'alarm' && st.t !== 'waves' && st.t !== 'recruit')), 'no scare, alarm, ambush waves or recruit');

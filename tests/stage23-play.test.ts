@@ -153,10 +153,12 @@ test('whole run: the bot breaks the crack, beats the Alpha, defends Eleven and c
     if (r.fell) falls++;
     if (!r.done) continue;
     clears++;
-    assert.deepEqual(r.said, ROUTE, `seed ${seed}: the scripts play in route order, the cache never opened`);
+    // A fight can push the bot past the gap's hint rect, which only plays a script. The gap itself never opens.
+    assert.deepEqual(r.said.filter((id) => id !== 'l6_gap_hint'), ROUTE, `seed ${seed}: the scripts play in route order, the cache never opened`);
     assert.ok(r.xp >= 100 && r.xp <= 160, `seed ${seed}: the run pays ${r.xp} XP`);
     assert.ok(r.frames >= 60 * 85 && r.frames <= 60 * 150, `seed ${seed}: ${(r.frames / 60).toFixed(0)} s`);
-    assert.ok(r.damage >= 20 && r.damage <= 450, `seed ${seed}: ${r.damage.toFixed(0)} damage`);
+    // The 45 s defense comes on top of a whole stage, so a clear takes more than the 1.3 band's 300: about 425 on average.
+    assert.ok(r.damage >= 20 && r.damage <= 600, `seed ${seed}: ${r.damage.toFixed(0)} damage`);
   }
   assert.ok(clears >= 15 && clears <= 19, `cleared ${clears} of 20: the stage is neither a walk nor a wall`);
   assert.ok(falls <= 3, `Eleven fell in ${falls} of 20 careful runs`);

@@ -83,7 +83,9 @@ const BEATS: Beat[] = [
     steps: [{ t: 'close', prop: 'seal1' }, { t: 'close', prop: 'seal2' }, { t: 'music', track: 'clock' }, say('l6_alpha'), { t: 'wake', group: 'boss' }],
   },
   { id: 'alpha_down', when: { cleared: 'boss' }, steps: [{ t: 'open', prop: 'seal1' }, { t: 'open', prop: 'seal2' }, say('l6_alpha_down')] },
-  { id: 'gate', when: { rect: rect(32, 8, 2, 2), needs: 'alpha_down' }, steps: [say('l6_gate')] },
+  // Hopper strung the lights at the Gate: the beat lights lights_gate for the party, so a defense that fails always comes
+  // back to the Gate with the party healed, never to the den.
+  { id: 'gate', when: { rect: rect(32, 8, 2, 2), needs: 'alpha_down' }, steps: [say('l6_gate'), { t: 'light', prop: 'lights_gate' }] },
   { id: 'defend', when: { rect: rect(36, 7, 6, 3), needs: 'gate' }, steps: [say('l6_defend'), { t: 'defend' }] },
   { id: 'level_clear', when: { event: 'defended' }, steps: [say('l6_clear'), { t: 'finish' }] },
 ];
@@ -131,12 +133,10 @@ export const STAGE_23: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(4), y: fy(33) }, to: { x: px(4), y: fy(33) }, frames: 1 },
-  // Measured with node scripts/measure-stage.ts 2.3 chief 20 [--careless]: chief clears 18 of 20 (86 of 100, none stuck) for about 215
-  // damage in 108 s, careless 17, kid 20, upside 8 (25 of 100). Every chief loss is Eleven falling at her 90 HP: the party is never
-  // wiped. The Alpha is a wall in the effective factor (this times the difficulty's): the bot beats it 35 times in 40 at 1.0 and 4 in
-  // 40 at 1.1, so upside, which is 1.4 times, needs 0.7 here for the stage to be clearable at all. KOs (0.0) and the lowest party HP
-  // (65 percent) sit outside their bands for that reason: a chief factor that hurt the party enough would leave upside no clears.
-  enemyMult: 0.7,
+  // Measured with node scripts/measure-stage.ts 2.3 chief 20 [--careless]. The gate beat lights lights_gate, so the party goes into
+  // the defense healed and a failed defense comes back to the Gate. With the softer Alpha and the sparse defense (stage23_data.ts) the
+  // stage runs at 1.0: see "Result" in docs/level-6.md for the numbers.
+  enemyMult: 1,
   burrows: BURROWS,
   defense: DEFENSE,
   waypoints: WAYPOINTS,

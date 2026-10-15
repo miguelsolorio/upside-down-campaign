@@ -131,6 +131,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
     },
     alarm() { audio.sfx('klaxon'); },
     music: (track) => audio.music(track),
+    // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
+    light(prop) {
+      const pr = view.props.find((p) => p.id === prop && p.kind === 'lights');
+      if (pr && pr.state !== 'lit') lightUp(pr);
+    },
     jingle: (id) => audio.jingle(id),
     finish() { audio.jingle('clear'); clearT = 0; },
   };

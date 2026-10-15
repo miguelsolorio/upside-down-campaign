@@ -66,15 +66,16 @@ export const BURROWS: Burrow[] = [
   { tx: 35, ty: 4 }, { tx: 44, ty: 4 }, { tx: 36, ty: 10 }, { tx: 44, ty: 10 },
 ];
 
-// Eleven's HP is the lever that makes chief lose now and then (docs/level-6.md starts it at 400, which the bot never comes near): at 90
-// she falls in about one chief run in seven. Her damage scales with the difficulty and enemyMult, so upside is harder on her too.
+// Eleven's HP is the lever that makes chief lose now and then: at 160 she falls in about one chief run in twenty. Her damage scales
+// with the difficulty and enemyMult, so upside is harder on her too. The waves are sparse on purpose: 17 demodogs, one elite, no wave
+// bigger than three, so the party can keep up. The spec's 23 piled up faster than they died and made the defense a cliff.
 const S = 60;
 export const DEFENSE: DefenseDef = {
-  npc: 'eleven', hp: 90, frames: 45 * S, prop: 'rift',
+  npc: 'eleven', hp: 160, frames: 45 * S, prop: 'rift',
   waves: [
-    { at: 0, n: 3, type: 'demodog' }, { at: 7 * S, n: 3, type: 'demodog' }, { at: 14 * S, n: 4, type: 'demodog' },
-    { at: 22 * S, n: 3, type: 'demodog' }, { at: 22 * S, n: 1, type: 'demodog', tier: 'elite' },
-    { at: 30 * S, n: 4, type: 'demodog' }, { at: 37 * S, n: 3, type: 'demodog' },
+    { at: 0, n: 2, type: 'demodog' }, { at: 6 * S, n: 2, type: 'demodog' }, { at: 12 * S, n: 3, type: 'demodog' },
+    { at: 18 * S, n: 2, type: 'demodog' }, { at: 24 * S, n: 2, type: 'demodog' }, { at: 24 * S, n: 1, type: 'demodog', tier: 'elite' },
+    { at: 31 * S, n: 2, type: 'demodog' }, { at: 38 * S, n: 3, type: 'demodog' },
   ],
 };
 

@@ -16,6 +16,8 @@ export interface DirectorEnv {
   alarm?(): void;
   /** Switches the stage music, such as to `clock` when a boss wakes. Optional so a stand-in env can leave it out. */
   music?(track: TrackId): void;
+  /** Lights a lights prop the way the player does: the save point and the heal. Optional like music. */
+  light?(prop: string): void;
   jingle(id: JingleId): void;
   /** The level-clear beat reached its last step. */
   finish(): void;
@@ -120,6 +122,7 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
       case 'open': env.open(s.prop); break;
       case 'close': env.sim().closeProp(s.prop); break;
       case 'defend': env.sim().defend(); break;
+      case 'light': env.light?.(s.prop); break;
       case 'finish': over = true; env.finish(); break;
       case 'end': completed.add(s.id); for (const b of beats) if ('after' in b.when && b.when.after === s.id) fire(b); break;
     }

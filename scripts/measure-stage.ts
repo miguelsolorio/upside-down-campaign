@@ -52,6 +52,8 @@ for (let seed = 1; seed <= N; seed++) {
   const dir = createDirector(S.beats, S.waves, {
     sim: () => sim, say: (_i, done) => done(), scare: (done) => done(), open: (id) => sim.openProp(id),
     alarm: () => undefined, jingle: () => undefined, finish: () => undefined,
+    // A beat that lights a string does what the play scene's lightUp does to the party.
+    light: (id) => { sim.openProp(id); sim.healParty(0.5); },
   });
   let allDown = false, f = 0, lowest = 1, bossAt = -1, wardDown = false;
   for (; f < 30000 && !dir.finished() && !allDown; f++) {

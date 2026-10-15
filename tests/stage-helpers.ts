@@ -230,6 +230,8 @@ export function playStage(S: StageData, seed: number, party: PartySeed[], maxFra
     scare: (done) => done(),
     open: (id) => { steps.push(`open ${id}`); sim.openProp(id); },
     alarm: () => { steps.push('alarm'); },
+    // What the play scene's lightUp does to the party when a beat lights a string (2.3's Gate).
+    light: (id) => { steps.push(`light ${id}`); sim.openProp(id); sim.healParty(0.5); },
     jingle: () => undefined,
     finish: () => undefined,
   });

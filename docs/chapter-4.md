@@ -39,7 +39,9 @@ The owner's call: the solo plays as a retro Guitar Hero. While Eddie plays, a no
 - **Layout: The neck** (owner's pick, `solo-variations.html`). The highway is the neck of his Flying V, coming out from under him toward the player in perspective: dark wood, fret wires that scroll, inlay dots, three lanes. Notes start small at the far end and grow as they come, and hit three strum targets on a bone line near the bottom of the screen. The streak counter sits to the left of the neck, HIT over the struck target.
 - **Lanes and inputs.** Three lanes on Attack, Special and Crit (keys Z, X, Space; pad A, X, Y; touch A, B and the d20), colored like the HUD: Attack red, Special blue like the MP bar, Crit gold like the d20. Eddie is planted while he plays, so movement does nothing during the solo; a rebinding of the three actions moves the lanes with it.
 - **The chart comes from the music.** The sequencer schedules one bar at a time, so the solo's notes can be read off the same bar the audio plays, and the highway is always in time with what you hear. The solo's track is original, like everything else (no borrowed songs).
-- **Open:** the timing window (frames either side of the beat for a hit and for a perfect), how many notes a 6 s solo has, what a miss costs beyond the ring, and how the bot plays it for the tests.
+- **The timing window is forgiving** (the owner's call). A note struck within 6 frames of its beat (100 ms at 60 fps) is a hit, within 2 frames (33 ms) a perfect. Touch and wireless pads add lag, so the window leans wide, and a perfect still takes timing.
+- **What a miss costs.** A miss shrinks the ring a step and resets the streak. Three misses in a row cut the solo short with a squeal of feedback, and the 9 MP is spent. On the 4.3 rooftop each miss also lets a demobat through to dive at the party, so the song's misses are its damage.
+- **Open:** how many notes a 6 s solo has, and how the bot plays it for the tests.
 
 ### Haunted mirrors (the riff gate)
 
@@ -51,7 +53,7 @@ The Creel ghouls (4.2) step out of mirrors in the dark. A mirror is a gate: the 
 - **The Creel House: one tile set, three skins, one per time.** The owner's call: Abandoned is the house now, Upside Down is the house in the Upside Down, and Blood red is the house in memory. They share the room letters, the mirrors, the clock and the props, and differ only in paint, the way a night stage repaints its tiles, so the build paints the house once.
   - **Abandoned (1986)** is 4.2: peeling blue-grey paper over lath, boarded windows with moonlight through the gaps, dusty boards and rubble, a moth-eaten rug. The mirrors here are Eddie's gate.
   - **Upside Down** is 4.4, Vecna's lair: the same rooms rotted and overgrown, red veins across the floor, a window flashing red, spores.
-  - **Blood red** is the house in 1959, in Vecna's memory: deep red damask, near-black wood, candlelight. It's used for memory scenes, not a stage of its own. The proposal: the 4.2 beat that teaches the curse turns the room Blood red while the four chimes count, and back to Abandoned when the curse is broken, so the curse shows as a place; Victor Creel's story (the flashback to the family's last night) plays in it; and Vecna's speeches between his phases in 4.4 cut to it. Open: whether a curse in 4.3 and 4.4 also tints the room, or only the cursed hero.
+  - **Blood red** is the house in 1959, in Vecna's memory: deep red damask, near-black wood, candlelight. It's used for memory scenes, not a stage of its own. The 4.2 beat that teaches the curse turns the room Blood red while the four chimes count, and back to Abandoned when the curse is broken, so the curse shows as a place; Victor Creel's story (the flashback to the family's last night) plays in it; and Vecna's speeches between his phases in 4.4 cut to it. **Only that beat turns the room** (the owner's call): later curses in 4.3 and 4.4 show on the cursed hero alone, so Blue storm and the lair stay readable.
 - **Upside Down Hawkins (4.3): Blue storm**, the owner's mix of Blue night and Red storm (`src/gfx/var/hawkinsud_mix.ts`, image `docs/screenshots/ch4-hawkinsud-mix.png`). Blue night between bolts: blue black roofs, lawns and road, red veins, pale spores, and rain, so the asphalt holds dim red reflections. Every 6 to 10 s a bolt floods the lit edges (roof lips, curb tops, slab bevels, door frames) red and the wet road streaks bright, then it fades back to blue over a step. The night pass leaves reds alone, so the flash reads on the dark. To fix on the build: the house fronts read as flat bands, and the car is small at 1x.
 
 ## The clock curse
@@ -64,19 +66,21 @@ It builds over the chapter.
 
 **What a curse does.** A clock appears over the cursed hero with four chime pips under it. The hero rises off the floor as the chimes count down, as in the show. On the fourth chime they are KO'd and drop out like any KO, and the next light brings them back. A benched hero can be cursed too, so swapping away does not save them.
 
-**The ways out.** Max's Walkman (below), anywhere. The marked memory orb, in the Vecna fight. Open: what breaks a curse in 4.3 for a party without Max (a proposal: smash or riff the clock that chimed).
+**The ways out.** Max's Walkman (below), anywhere. The marked memory orb, in the Vecna fight. **In 4.3, the clock that chimed** (the owner's call): it becomes a target until the fourth chime. Eddie's riff shatters it at once, and since he is locked in for 4.3 every party has him; any hero can also break it with a few hits. A broken clock lifts its curse and doesn't chime again.
 
 **The look** of the clock mark follows the Vecna pick: Rooted's is a dark red rim, a bone face and red for the sounded chimes.
 
 ### Max's Walkman
 
-A story item from 4.2, not her Lv 9 talent, since the pace puts Max near Lv 8 in chapter 4. Max gets her Walkman back in a 4.2 beat. With Max in the party, swapping to her plays it: 8 s in which the party ignores the curse, and any curse already counting is cleared. Then a cooldown (open: about 30 s). Her Lv 9 talent needs a new idea (open).
+A story item from 4.2, not her Lv 9 talent, since the pace puts Max near Lv 8 in chapter 4. Max gets her Walkman back in a 4.2 beat. With Max in the party, swapping to her plays it: 8 s in which the party ignores the curse, and any curse already counting is cleared. Then a 30 s cooldown (a placeholder until chapter 3's numbers land); in Vecna's Burn phase the clock chimes faster than that, so the orbs still matter.
+
+**Max's talents, rearranged** (the owner's call). `docs/game-design.md` had High score (Lv 3), Walkman (Lv 6), Kickflip (Lv 9). With the Walkman a story item, Kickflip (the dash leaves a shockwave) moves up to Lv 6, and her new Lv 9 is **Extra life**: once per stage, a KO, a curse's included, leaves her at 1 HP with 2 s of invulnerability instead. The arcade's 1UP, and a nod to her outlasting Vecna once. `docs/game-design.md` still shows the old row until the build.
 
 ## Bosses
 
 ### The Demogorgon pit (4.1, mini-boss)
 
-Hopper alone against a Demogorgon in a pit under the prison, with only his haymaker and ground slam. It uses the 1.3 Demogorgon's moves, sized for one hero: the charge that stuns it on the wall, the acid arcs from 60%, the leap onto shadow marks from 30%. Three stuns and a slam put it down. Open: the design doc calls it smaller than the 1.3 one; the sheet shows the game's own sprite, so a smaller frame is still to draw if the owner wants one. Look: **Mine shaft** (owner's pick, `pit-variations.html`): an old shaft under the camp, rough rock walls held up by timber, a plank barricade nailed over the beast's tunnel, a dirt floor with stains, bones, a drain and a chain, and lanterns on hooks for the only light.
+Hopper alone against a Demogorgon in a pit under the prison, with only his haymaker and ground slam. It uses the 1.3 Demogorgon's moves, sized for one hero: the charge that stuns it on the wall, the acid arcs from 60%, the leap onto shadow marks from 30%. Three stuns and a slam put it down. **It is the 1.3 sprite as it is** (the owner's call): the design doc's "smaller" means its HP and damage are sized for one hero, not a smaller frame, so all twelve poses carry over. Hopper's big body already narrows the gap between them. Look: **Mine shaft** (owner's pick, `pit-variations.html`): an old shaft under the camp, rough rock walls held up by timber, a plank barricade nailed over the beast's tunnel, a dirt floor with stains, bones, a drain and a chain, and lanterns on hooks for the only light.
 
 ### Vecna (4.4)
 
@@ -120,9 +124,6 @@ Each sheet is drawn by the game's own code, and its image is in `docs/screenshot
 - **Numbers.** Party levels into 4.1 to 4.4, `enemyMult` and `xpMult` per stage, Eddie's stats, Vecna's and the pit Demogorgon's HP. All wait on chapter 3's measured run (`docs/pace.md`). The pace target is Lv 10 for the lead after chapter 4.
 - **The shop.** What Erica sells in chapter 4, and whether she is reachable while the party is split between Kamchatka and Hawkins.
 - **Hopper in 4.1.** His level and gear when he comes back, and whether 4.1 is replayable for XP like any stage.
-- **The solo.** The timing window, notes per solo, the cost of a miss, the bot's play.
-- **The curse in 4.3** without Max, and the Walkman's cooldown.
-- **Max's Lv 9 talent**, now that the Walkman is a story item.
+- **The solo.** Notes per solo and the bot's play.
 - **The Hellfire Club room** has no look sheet yet. Vecna's lair is the Creel House's Upside Down skin; its attic, where he fights, still needs a room.
-- **The pit Demogorgon's size.**
 - **Chapter 5.** No Eddie there, so no mirrors and no riff gates.

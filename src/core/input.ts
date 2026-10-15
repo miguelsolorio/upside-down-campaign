@@ -31,6 +31,11 @@ export interface InputState {
   held(a: Action): boolean;
   /** True on the first tick after the button went down. Short taps are never lost. */
   pressed(a: Action): boolean;
+  /**
+   * True on the first tick after this physical key went down, whatever it is bound to, for a screen that must tell keys apart
+   * where actions can't: Backspace and Esc are both cancel, but only Backspace clears a slot in CONTROLS.
+   */
+  keyPressed(code: string): boolean;
   released(a: Action): boolean;
   /** Movement vector, length <= 1. */
   axis(): Vec2;
@@ -77,6 +82,9 @@ export function createInput(opts: InputOptions = {}): InputState {
   let stickWas = false;
   let pressedNow = new Set<Action>();
   let releasedNow = new Set<Action>();
+  /** Physical keys that went down since the last tick, and the ones that went down in the tick being read. */
+  let typedLatch = new Set<string>();
+  let typedNow = new Set<string>();
   let analog: Vec2 = { x: 0, y: 0 };
   let device: Device = opts.startDevice ?? 'keyboard';
   let touchPrev = new Set<Action>();
@@ -111,6 +119,7 @@ export function createInput(opts: InputOptions = {}): InputState {
       cb(e.code);
       return;
     }
+    if (!e.repeat) typedLatch.add(e.code);
     const acts = actionsForCode(e.code);
     if (acts.length === 0) return;
     e.preventDefault();
@@ -240,6 +249,8 @@ export function createInput(opts: InputOptions = {}): InputState {
       for (const a of latch) pressedNow.add(a);
       for (const a of prev) if (!now.has(a)) releasedNow.add(a);
       latch.clear();
+      typedNow = typedLatch;
+      typedLatch = new Set<string>();
       clickNow = clickLatch;
       clickLatch = null;
       movedNow = moveLatch;
@@ -257,6 +268,7 @@ export function createInput(opts: InputOptions = {}): InputState {
     },
     held: (a) => now.has(a),
     pressed: (a) => pressedNow.has(a),
+    keyPressed: (code) => typedNow.has(code),
     released: (a) => releasedNow.has(a),
     axis() {
       // Held movement keys win over the stick. The stick is already past its deadzone and clamped to length one.

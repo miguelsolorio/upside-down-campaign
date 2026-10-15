@@ -28,15 +28,24 @@ export function entrySave(stage: string, party: PartySeed[]): SaveData {
   return { v: 1, stage, party: seeds, checkpoint: { x: at.x, y: at.y, state: { fired: [], cleared: [] } }, killed: [], openProps: [] };
 }
 
+/**
+ * The progress a debug run (?bot, ?god, a forced ?level or ?party, a ?stage= jump) keeps in memory: the stages before a jump
+ * count as cleared, so the map after it looks like a real run's. A run from the first stage has none to start with.
+ */
+export function debugProgress(jump: string): Progress | null {
+  const before = STAGE_ORDER.slice(0, STAGE_ORDER.indexOf(jump));
+  return before.length ? { v: 1, cleared: before, heroes: [] } : null;
+}
+
 export function startGame(g: Game): void {
   // ?stage= jumps to any stage with the party a normal run would bring. Unknown ids mean the first stage.
   const jump = STAGE_ORDER.includes(flags.stage) ? flags.stage : FIRST;
   /** What the stage on screen was entered with, so START OVER can put the party back as it walked in. */
   let entry: PartySeed[] = defaultParty(jump);
-  /** Campaign progress. A debug run (?bot, a forced ?level, ...) keeps its own in memory and never reads the real one, and
-   *  counts the stages before a ?stage jump as cleared, so the map after it looks like a real run's. */
-  const before = STAGE_ORDER.slice(0, STAGE_ORDER.indexOf(jump));
-  let progress: Progress | null = savingAllowed() ? loadProgress() : before.length ? { v: 1, cleared: before, heroes: [] } : null;
+  /** Campaign progress. A debug run (?bot, a forced ?level, a ?stage= jump...) keeps its own in memory and never writes the
+   *  real one, so a new game starts it again from `debugProgress`, not from nothing. */
+  const fresh = (): Progress | null => (savingAllowed() ? null : debugProgress(jump));
+  let progress: Progress | null = savingAllowed() ? loadProgress() : fresh();
   const known = (): PartySeed[] => progress?.heroes ?? [];
 
   // CONTINUE picks up at the saved lights, or opens the map when there is no stage in progress. A new game wipes both;
@@ -51,7 +60,7 @@ export function startGame(g: Game): void {
       }
       clearSave();
       clearProgress();
-      progress = null;
+      progress = fresh();
       if (skipsDialogue()) toPlay(jump, defaultParty(jump)); else toPrologue();
     },
   }));

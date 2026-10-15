@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamchatka Looks</title>
+<meta name="description" content="Four looks for stage 4.1, the Kamchatka prison camp: the snow yard inside the wire and the prison block. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for Kamchatka</h1>
+  <p>Stage 4.1 opens the chapter: Hopper alone in a Soviet prison camp, with no one to swap to. Each card is one sample room, 16 by 10 tiles: the snow yard inside the wire on the left, and the prison block through an open doorway on the right, with a hall and the row of barred cell doors along a corridor. The stage ends in the Demogorgon pit, which has its own sheet.</p>
+  <p class="muted">The big picture is 3x. The same room at its real size, every tile and the props are on the right of each card. Fire and lamps flicker.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Flicker</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The looks</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { KAMCHATKA_OPTS, KAMCHATKA_ROOM } from '/src/gfx/var/kamchatka.ts';
+import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: KAMCHATKA_OPTS, width: LOOK_W, title: 'Chapter 4: Kamchatka, four looks', file: 'ch4-kamchatka', tick: 300,
+  make: (o) => lookCard(KAMCHATKA_ROOM, o, 'kamchatka'),
+});
+</script>
+</body>
+</html>

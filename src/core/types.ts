@@ -35,7 +35,8 @@ export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
 export type StatKey = 'hp' | 'mp' | 'atk' | 'def' | 'spd';
 export type StatusId = 'burn' | 'stun' | 'slow' | 'confuse' | 'curse';
-export type Difficulty = 'kid' | 'chief' | 'upside';
+/** normal and chief are the player's NORMAL and HARD. kid and upside are for the measure scripts and the tests, in no menu. */
+export type Difficulty = 'kid' | 'normal' | 'chief' | 'upside';
 
 // ---------------------------------------------------------------- what gets drawn
 // The sim produces these each frame (Sim.view()). gfx draws them. Nobody else invents draw state.
@@ -438,6 +439,8 @@ export interface Sim {
   /** Starts the stage's defense (SimOptions.defense). Does nothing without one, or once it has started. */
   defend(): void;
   healParty(frac: number): void;
+  /** Switches the difficulty mid-stage: hits land at the new factor at once, and each living enemy keeps its share of HP. */
+  setDifficulty(d: Difficulty): void;
   /** A prize outside a fight (the arcade's high score): XP shared the usual way, quarters, and floaters over the hero. */
   bonus(xp: number, quarters: number): void;
   heroPos(): Vec2;

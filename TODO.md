@@ -35,6 +35,19 @@ Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy 
 - [x] Merged into main with the owner's go-ahead (76c3904): typecheck clean, 1432 tests pass on main. Not pushed
 - [ ] Feedback on Levels 7 and 8
 
+## Difficulty pass (NORMAL and HARD, Starcourt eased)
+
+- [x] Owner's calls (2026-10-15): NORMAL is easier and the default, HARD is today's balance (`chief`), unchanged. Starcourt is eased only where it spikes against the chapter 1 and 2 curve
+- [x] NORMAL is `normal`, enemy HP and damage at 0.85, set by measurement: the careful bot clears every stage 20 of 20 and the careless bot takes 15 to 40% less than on HARD. 0.9 left 2.2's careless damage at 235 against 242. `kid` and `upside` stay for the scripts and tests. See `docs/difficulty.md`
+- [x] A DIFFICULTY row leads the options on the title and the pause menu (QA-5). It applies at once: picked in the pause menu, it takes hold as play resumes (`Sim.setDifficulty`, living enemies keep their share of HP). A settings v1 save's `chief` loads once as NORMAL, and a bad value loads as NORMAL
+- [x] 3.1 from `enemyMult` 1.4 to 1.15: HARD cleared 85 of 100 with 1.82 KOs, now 96 with 1.51. Most of its damage is the Flayed's grab, which only lands over an effective factor of about 1.05, so NORMAL plays the mall as a walk (`docs/level-7.md`, "The difficulty pass")
+- [x] 3.2 from 1.25 to 1.1: the careless bot cleared 60 of 100 on HARD, now 80. The careful bot's lowest HP is 49%, a little over the band (`docs/level-8.md`, "The difficulty pass")
+- [x] Bands for new stages (3.3 on) stay measured on HARD (`chief`); a hand-over note went to the Level 9 session
+- [x] Verified: typecheck clean, 1442 tests pass (6 new), the production build passes. In the browser (muted): the row on the title and the pause menu, HARD kept over a reload, an old `chief` save loading as NORMAL, 13 pause rows with a controller, a hurt rat going from 27/57 to 23/49 on a switch mid-stage, and the in-game bot matching the measure script seed for seed. No console errors
+- [x] Merged into main (70be7a7) under the owner's standing go-ahead. Not pushed
+- [ ] Owner plays 3.1 and 3.2 on NORMAL and on HARD
+- [ ] The Flayed's grab cliff in 3.1: under it the mall is a walk, over it the grab does most of the damage. A call for the Flayed's numbers, not made here
+
 ## Levels 5 and 6 (merged)
 
 - [x] Owner's calls: Max and Steve join in 2.2, Hopper is an npc at the Gate. Party picks lock the heroes a stage's gates need (Max for 2.2, Steve for 2.3) and remember the last party. Eleven can fall in the defense, and a retry starts the defense again. Variation sheets first for the Alpha, the picks panel, the tunnels and the new heroes
@@ -165,6 +178,7 @@ The lead and Dustin don't move and nothing wipes more. With the recruits a level
 - [x] Music: `upside` (1.3), `clock` (every boss), `hawkins` (map and 2.1), each with base and combat layers. Eight new effects and Will's stinger
 - [x] Verified: typecheck clean, 704 tests pass. In the browser the bot clears 1.3 (1:40, 140 XP), the map shows chapter two with Will in the party, and the bot clears 2.1 (1:45, 157 XP). No console errors on the title, 1.3 or 2.1
 - [x] Chapter 2 enemy numbers: the demodog, vine and pod are sized for a Lv 5 party in `enemies/defs.ts`, and 2.1's `enemyMult` is back to 1.15 from 3.15. Chapter 1 enemies and stages are unchanged. Typecheck clean, 777 tests pass, and the bot clears 2.1 in the browser (1:55, 157 XP). See `docs/level-4.md`, "New enemies" and "Result"
+- [x] README brought up to date with main before the next deploy (Levels 1 to 8, nine heroes and the picks, Erica's cart, controller rebinding and rumble, the dark Game Boy, pausing on focus loss), with two real screenshots, `public/social/starcourt.png` and `picks.png`, and the stale lines in `docs/development.md` fixed
 - [ ] Feedback on Levels 1 to 4, then the rest
 
 ## Known rough edges

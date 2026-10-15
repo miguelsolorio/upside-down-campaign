@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demogorgon Pit Looks</title>
+<meta name="description" content="Four looks for the Demogorgon pit at the end of stage 4.1, where Hopper fights alone. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for the Demogorgon pit</h1>
+  <p>Stage 4.1 ends in a pit under the prison, where Hopper fights a Demogorgon alone with only his haymaker and ground slam. Each card is the pit from above, 16 by 10 tiles: the rim, the north wall two tiles deep with the beast's gate in it, the floor with stains, bones, a drain and a chain, and the gap in the south rim where Hopper was pushed in. The Demogorgon and Hopper stand in it as the game draws them now.</p>
+  <p class="muted">The big picture is 3x. The same room at its real size, every tile and the props are on the right of each card. The torches flicker.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Flicker</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The pits</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { PIT_OPTS, PIT_ROOM } from '/src/gfx/var/pit.ts';
+import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: PIT_OPTS, width: LOOK_W, title: 'Chapter 4: the Demogorgon pit, four looks', file: 'ch4-pit', tick: 300,
+  make: (o) => lookCard(PIT_ROOM, o, 'pit'),
+});
+</script>
+</body>
+</html>

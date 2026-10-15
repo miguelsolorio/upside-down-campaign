@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creel House Looks</title>
+<meta name="description" content="Four looks for the Creel House in stage 4.2: wallpaper, floorboards, the grandfather clock and the haunted mirrors Eddie's riff shatters. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for the Creel House</h1>
+  <p>The second half of stage 4.2 is the Creel House, where the clock curse is taught and the Creel ghouls step out of the mirrors. A haunted mirror is Eddie's gate: the riff shatters it, which stops its ghouls and opens the way behind. Each card is one sample room, 16 by 10 tiles: a parlor with a rug, the hall below it through a doorway, mirrors whole and shattered, a window, holes in the floor, and the grandfather clock whose chime is the curse. Vecna's lair in 4.4 is this house in the Upside Down, so the pick also sets where the lair starts from.</p>
+  <p class="muted">The big picture is 3x. The same room at its real size, every tile and the props are on the right of each card. Lamps and mirrors flicker.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Flicker</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The looks</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { CREEL_OPTS, CREEL_ROOM } from '/src/gfx/var/creel.ts';
+import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: CREEL_OPTS, width: LOOK_W, title: 'Chapter 4: the Creel House, four looks', file: 'ch4-creel', tick: 300,
+  make: (o) => lookCard(CREEL_ROOM, o, 'creel'),
+});
+</script>
+</body>
+</html>

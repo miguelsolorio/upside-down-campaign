@@ -13,11 +13,11 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] Audio: `starcourt` (C Lydian, 118, base peak 0.48, combat 0.75, no limiting), ten effects, Robin's and Nancy's stingers, blips for Robin, Nancy and Erica. WAVs sent to the owner
 - [x] Art build: the picks, the foes, the 23 tiles, the props, fx, sheet pages 25 to 34, Starcourt on the map
 - [x] World 3.1: the mall, beats, `l7_*` scripts, alt hints, the purse and stash in the play scene. The first chapter 3 numbers needed a factor of 3.3, so the lead retuned the rat, the Flayed (it now shambles through light hits) and the soldier: 3.1 sits at 1.7. Chief 18 of 20 (262 damage, 1.6 KOs, 36% low, 98 s), 100 seeds 86 and none stuck, careless 18, kid 20, upside 8
-- [x] World 3.2: the base, cipher doors, the Key chamber, `l8_*` scripts. Tuned by the lead: the careless bot cleared it 0 times in 20 against the spec's Grigori, so his guard drops while he recovers, his hits are softer, he calls two soldiers at rage, and rifle rounds are power 0.3. 3.2 sits at 1 with a chained run's party (Mike 6, Eleven 5, Robin 4, Nancy 4): chief 16 of 20 (282 damage, 1.15 KOs, 37% low, 101 s, the fight 43%), 100 seeds 90 and none stuck, careless 17, kid 20, upside 7, no shooter 19 of 20 in about 160 s. 3.1 moved to 1.75 with the softer rounds: chief 17 of 20 (234 damage, 1.65 KOs, 38% low, 101 s), careless 19, kid 19, upside 8. Typecheck clean, 1324 tests pass
-- [x] Paused at 86% of the 5-hour window (10:00 PT), resuming after the 10:40 reset
-- [x] UI: Erica's cart, picks three by three, the stash and purse in the HUD
-- [ ] Flow: the purse on a clear, the stash written on `stashUsed`, the cart from the map
-- [ ] Verified: typecheck, tests, the bot clears 3.1 and 3.2 inside the targets, the map chains 2.3 to 3.1 to 3.2 with the chapter three card, no console errors
+- [x] World 3.2: the base, cipher doors, the Key chamber, `l8_*` scripts. Tuned by the lead: the careless bot cleared it 0 times in 20 against the spec's Grigori, so his guard drops while he recovers, his hits are softer, he calls two soldiers at rage, and rifle rounds are power 0.3
+- [x] Paused at 86% of the 5-hour window (10:00 PT); the owner said to keep going
+- [x] Merged main in (the pace pass, the QA pass, controller rebinding, the pause on focus loss). The campaign run now plays through 3.2. Robin and Nancy walk into 3.1 on their first visit (`JOINS` in `core/campaign.ts`), and the arrivals come from the run: 3.1 Mike 6, Dustin 5, Robin 3, Nancy 3; 3.2 Mike 7, Dustin 6, Robin 3, Nancy 3. The lead ends 3.2 at Lv 7, a level short of the chapter 3 target with 3.3 still to come
+- [x] Retuned to those parties. 3.1 at 1.4: chief 16 of 20 (239 damage, 1.75 KOs, 40% low, 92 s), 100 seeds 85 and none stuck, careless 18, kid 20, upside 13. 3.2 at 1.25: chief 19 of 20 (291 damage, 0.55 KOs, 47% low, 118 s, the fight 45%), 100 seeds 89 (303 damage, 42% low) and none stuck, careless 12, kid 20, upside 7
+- [x] Verified: typecheck clean, 1429 tests pass, the production build passes. In the browser (muted): the map opens on Chapter three with Starcourt open and the base and food court locked; X opens Erica's cart, an Eggo buys for 15 and is saved; the picks panel shows nine with Robin and Nancy in on the first visit; the chapter three card shows (with SKIP STORY off, as every chapter card does); with 3.1 cleared the map opens on the base and Robin is locked; the bot clears 3.1 (1:41) and 3.2 (1:47, the feedback note after it). No console errors
 - [ ] Owner asked before merging into main
 
 ## Levels 5 and 6 (merged)
@@ -71,7 +71,7 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] The one hook into world code: a call to `rumble(ev)` at the top of `forward()` in `world/play.ts`. Nothing in combat, enemies or the HUD changed
 - [x] The options rebuild their rows when the input changes (picking up a pad with the menu open), keeping the cursor on its row
 - [x] Verified: typecheck clean, 1149 tests pass (58 new), the production build passes. In the browser with `?mute=1` and a simulated pad: RUMBLE shows and saves, the GAMEPAD page rebinds by pad and by mouse, B binds without backing out, Start cancels, View clears, the level's hints and the pause menu follow the new buttons, and a bot run buzzes the fake pad's motor on hits and level-ups
-- [ ] The picks screen's controller legend still prints `X LEAD` whatever SPECIAL is bound to (`legend()` in `ui/picks_logic.ts`, left alone while chapter 3 works in it). Its `A PICK` and `B BACK` are right, since A and B are fixed
+- [x] The picks screen's controller legend names Special from the bindings now (`legend()` in `ui/picks_logic.ts`), fixed in the Levels 7 and 8 pass
 
 ## Status
 

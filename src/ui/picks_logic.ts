@@ -193,7 +193,8 @@ export function markRect(l: PicksLayout, i: number): Rect {
  * card, and its B leads, and PAUSE goes back, since its B is also the special key.
  */
 export function legend(device: PromptDevice, attack: string, special: string): string[] {
-  if (device === 'gamepad') return ['STICK MOVE', 'A PICK', 'X LEAD', 'B BACK'];
+  // A picks and B backs out on every controller. Special can be rebound, so it is named from the bindings like the keys are.
+  if (device === 'gamepad') return ['STICK MOVE', 'A PICK', `${special} LEAD`, 'B BACK'];
   if (device === 'touch') return ['TAP PICK', `${special} LEAD`, 'PAUSE BACK'];
   return ['ARROWS MOVE', `${attack} PICK`, `${special} LEAD`, 'ESC BACK'];
 }

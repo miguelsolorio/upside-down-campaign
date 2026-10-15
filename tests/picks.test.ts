@@ -175,6 +175,7 @@ test('moving to a place out of range, or the one the cursor is on, is refused', 
 test('the legend names the device: arrows and Esc, the stick and buttons, or taps and the pause button', () => {
   assert.deepEqual(legend('keyboard', 'Z', 'X'), ['ARROWS MOVE', 'Z PICK', 'X LEAD', 'ESC BACK']);
   assert.deepEqual(legend('gamepad', 'A', 'X'), ['STICK MOVE', 'A PICK', 'X LEAD', 'B BACK']);
+  assert.deepEqual(legend('gamepad', 'A', 'Y'), ['STICK MOVE', 'A PICK', 'Y LEAD', 'B BACK'], 'Special rebound to Y on the controller');
   assert.deepEqual(legend('touch', 'A', 'B'), ['TAP PICK', 'B LEAD', 'PAUSE BACK']);
 });
 

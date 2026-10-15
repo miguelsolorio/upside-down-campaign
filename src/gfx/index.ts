@@ -2,7 +2,7 @@
 //
 // Conventions: all draw functions take a 2D context. World-space functions (drawStage, drawActor,
 // drawFx, drawItem, drawProp) assume the caller already did ctx.translate(-camX, VIEW_TOP - camY).
-// Screen-space functions (everything else) use raw 256x224 pixels.
+// Screen-space functions (everything else) use raw screen pixels: SCREEN_W wide (live) by SCREEN_H.
 //
 // Sizes the UI can rely on: icons are 8x8, portraits 24x24, the title logo LOGO_SIZE (with its subtitle),
 // the alphabet wall WALL_SIZE. Actors are 16x16 cells with the feet at bottom center.
@@ -14,11 +14,12 @@ import { warmUi } from './ui.ts';
 export type { BakedStage, Spot } from './tiles.ts';
 export { drawText, textWidth, drawTinyText, tinyWidth, TINY_H } from './font.ts';
 export { bakeStage, drawStage } from './tiles.ts';
-export { drawActor } from './actors.ts';
+export { drawActor, drawHeroBar } from './actors.ts';
 export { drawFx } from './fx.ts';
 export { drawItem, drawProp } from './props.ts';
 export { drawCamCone, drawHazard } from './overlays.ts';
 export { paintGlow } from './glow.ts';
+export { drawSideFade, FADE_W } from './edges.ts';
 export type { Glow } from './glow.ts';
 export { drawPortrait, drawIcon, drawPanel, drawBar, drawBarV } from './ui.ts';
 export { drawLogo, drawAlphabetWall, LOGO_SIZE, WALL_SIZE } from './logo.ts';

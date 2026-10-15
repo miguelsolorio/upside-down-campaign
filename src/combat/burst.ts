@@ -1,4 +1,4 @@
-// Party burst. The d20 meter fills from hits dealt, hits taken and kills. At full, burst starts a 90-frame freeze,
+// Crit (called burst in the code). The d20 meter fills from hits dealt, hits taken and kills. At full, it starts a 90-frame freeze,
 // then each living hero's signature effect sweeps every enemy within 200 px for about 3x that hero's ATK.
 import type { FxKind } from '../core/types.ts';
 import type { Hero, S } from './state.ts';

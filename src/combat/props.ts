@@ -1,17 +1,22 @@
 // Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
-// Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again.
+// Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
+// for any hero who swings at it from up close.
 import type { Utility } from '../core/types.ts';
-import type { Prop, S } from './state.ts';
+import type { Hero, Prop, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
-import { nearestOnRect } from './space.ts';
+import { angleDiff, dist, nearestOnRect } from './space.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
 /** How close a hero who can sense it must stand to show a hidden path, in px from the nearest point of the prop. */
 export const SENSE_RANGE = 40;
+/** How close a basic attack has to start to smash a prop, in px from the hero's feet to the nearest edge of it. */
+const SMASH_REACH = 18;
+/** How wide a cone a close swing covers, either side of the aim. The same as a swing that tries a door (pokes.ts). */
+const SMASH_HALF = 0.96;
 
 export function isPushable(p: Prop): boolean {
   return p.state !== 'open' && (p.pushBy === 'push' || (p.kind === 'log' && p.pushBy === undefined));
@@ -75,6 +80,20 @@ function sensed(s: S, p: Prop): boolean {
   if (h.ko || !HERO_DEFS[h.id].utilities.includes(p.hitBy ?? 'sense')) return false;
   const q = nearestOnRect(p, h.x, h.y - 2);
   return Math.hypot(q.x - h.x, q.y - (h.y - 2)) <= SENSE_RANGE;
+}
+
+/** A hero starts a basic attack. Every unlit `smash` prop within arm's reach in front of him lights, whoever he is. */
+export function smashAimed(s: S, h: Hero): void {
+  const hy = h.y - 2;
+  for (const p of s.props) {
+    if (!p.smash || p.state === 'lit') continue;
+    // The nearest point of the prop to his feet, as in pokes.ts: a prop in a wall face is a few px above them.
+    const nx = Math.max(p.x, Math.min(h.x, p.x + p.w)), ny = Math.max(p.y, Math.min(hy, p.y + p.h));
+    const d = dist(h.x, hy, nx, ny);
+    if (d > SMASH_REACH) continue;
+    if (d > 2 && angleDiff(Math.atan2(ny - hy, nx - h.x), h.aim) > SMASH_HALF) continue;
+    lightTarget(s, p);
+  }
 }
 
 /** A log (or anything pushable) is shoved out of the way. */

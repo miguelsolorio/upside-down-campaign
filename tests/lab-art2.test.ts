@@ -103,7 +103,7 @@ const same = (a: FakeCanvas, b: FakeCanvas): boolean => a.px.length === b.px.len
 
 // The modules below load after the canvas exists, because the draw code builds its bitmaps through `document`.
 const { drawProp } = await import('../src/gfx/props.ts');
-const { drawActor, drawActorFrame } = await import('../src/gfx/actors.ts');
+const { drawActor, drawActorFrame, drawHeroBar } = await import('../src/gfx/actors.ts');
 const { drawCamCone, drawHazard } = await import('../src/gfx/overlays.ts');
 const { createSheetScene } = await import('../src/gfx/sheet.ts');
 
@@ -413,6 +413,27 @@ test('the guard and the warden draw for every direction and animation, shield up
       }
     }
   }
+});
+
+test('a hero\'s HP bar is the HUD color over the head, drawn by drawHeroBar and not by drawActor', () => {
+  const hero = (over: Partial<ActorView> = {}): ActorView => actor('guard', { kind: 'hero', id: 'mike', bar: { hp: 12, hpMax: 12 }, ...over });
+  const bare = painted(seen(hero({ bar: null })));
+  assert.equal(painted(seen(hero())), bare, 'drawActor leaves a hero\'s bar to the last pass');
+  const bar = (v: ActorView, color: ColorName): FakeCanvas => { const { c, g } = screen(128, 128); drawHeroBar(g as never, v, color); return c; };
+  const full = bar(hero(), 'leaf'), half = bar(hero({ bar: { hp: 6, hpMax: 12 } }), 'yellow');
+  assert.deepEqual(bounds(full), { x0: 60, y0: bounds(full).y0, x1: 67, y1: bounds(full).y0 + 3 }, 'a 6 px bar in an 8 by 4 frame, centered on the feet');
+  assert.ok(has(full, 'leaf', 'pine3') && !has(full, 'hot', 'yellow'));
+  assert.ok(has(half, 'yellow', 'amber') && has(half, 'shadow'), 'half full leaves the rest dark');
+  const fill = (c: FakeCanvas, name: ColorName): number => Array.from(c.px).filter((v) => v === px32(name)).length;
+  assert.equal(fill(full, 'leaf'), 6);
+  assert.equal(fill(half, 'yellow'), 3);
+  assert.equal(fill(bar(hero({ bar: { hp: 1, hpMax: 400 } }), 'hot'), 'hot'), 1, 'any HP at all shows a pixel');
+  assert.equal(painted(bar(hero({ bar: { hp: 0, hpMax: 12 } }), 'hot')), 8 * 4, 'no HP is an empty frame');
+  assert.equal(painted(bar(hero({ bar: null }), 'leaf')), 0);
+  const jump = bounds(bar(hero({ z: 6 }), 'leaf'));
+  assert.equal(jump.y0, bounds(full).y0 - 6, 'it rides along with a jump');
+  assert.equal(painted(bar(hero({ blink: true }), 'leaf')), painted(full), 'an invulnerability flicker does not hide it');
+  assert.ok(painted(seen(actor('guard', { bar: { hp: 5, hpMax: 10 } }))) > painted(seen(actor('guard'))), 'an enemy still draws its own bar');
 });
 
 test('every pixel of a guard or warden frame is a role the palette knows', () => {

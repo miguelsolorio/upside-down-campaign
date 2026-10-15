@@ -250,6 +250,23 @@ test('standing still, then walking again: the followers leave their spots and tr
   assert.ok(sim.view().actors.filter((a) => a.kind === 'hero' && Math.abs(a.x - lead.x) > 0.01).every((a) => a.anim === 'walk'));
 });
 
+test('every hero standing carries an HP bar for the world, the active one and the followers alike, and a hero who is down has none', () => {
+  const { sim, s } = makeWhite();
+  const bars = (): Record<string, { hp: number; hpMax: number } | null> =>
+    Object.fromEntries(sim.view().actors.filter((a) => a.kind === 'hero').map((a) => [a.id + (a.anim === 'ko' ? ':ko' : ''), a.bar]));
+  const hpMax = (s.heroes[1] as { st: { hp: number } }).st.hp;
+  assert.deepEqual(Object.keys(bars()).sort(), ['dustin', 'lucas', 'mike']);
+  assert.deepEqual(bars().dustin, { hp: hpMax, hpMax });
+  (s.heroes[1] as { hp: number }).hp = 7.2;
+  assert.deepEqual(bars().dustin, { hp: 8, hpMax }, 'rounded up, like the HUD');
+  (s.heroes[1] as { hp: number }).hp = 0.1;
+  assert.equal(bars().dustin?.hp, 1, 'alive means at least one point');
+  (s.heroes[2] as { hp: number }).hp = -5; // a bench hero regenerates, so 0 would climb back above it before the KO is noticed
+  run(sim, 8, inp());
+  assert.equal(bars().lucas, undefined, 'a downed hero is not a standing actor');
+  assert.equal(bars()['lucas:ko'], null, 'and the body that lies there has no bar');
+});
+
 test('KO: hp 0 drops the hero, the next living hero swaps in, and the last KO ends the run', () => {
   const { sim, s } = makeWhite({ party: [{ id: 'mike' }, { id: 'dustin' }] });
   const h0 = s.heroes[0];
@@ -513,6 +530,29 @@ test('pickups: eggo heals 40 percent, coke restores 50 percent MP, quarters coun
   // Eggo: +round(48 x 0.4) = 19. Coke: +round(16 x 0.5) = 8. HP and MP regen a hair on the way.
   assert.ok(mike.hp >= 29 && mike.hp < 31, `hp ${mike.hp}`);
   assert.ok(mike.mp >= 10 && mike.mp < 13, `mp ${mike.mp}`);
+});
+
+test('pickups: heal and MP floaters are whole numbers even when regen left the stat fractional', () => {
+  const { sim, s } = makeWhite({
+    party: [{ id: 'mike' }],
+    spawns: [
+      { kind: 'item', id: 'e', item: 'eggo', tx: 6, ty: 8 },
+      { kind: 'item', id: 'c', item: 'coke', tx: 7, ty: 8 },
+    ],
+  });
+  const mike = s.heroes[0];
+  assert.ok(mike);
+  // Room left for the eggo and the coke is a long decimal, so the clamp to full is what sets the gain.
+  mike.hp = mike.st.hp - 7.123456789;
+  mike.mp = mike.st.mp - 3.987654321;
+  const texts = new Set<string>();
+  for (let f = 0; f < 120; f++) {
+    sim.step(inp({ mx: 1 }));
+    for (const fl of sim.view().floaters) texts.add(fl.text);
+  }
+  const gains = [...texts].filter((t) => t.startsWith('+'));
+  assert.equal(gains.length, 2, `heal and MP floaters: ${[...texts].join(', ')}`);
+  for (const t of gains) assert.match(t, /^\+\d+$/);
 });
 
 test('pickups: a full-HP hero does not waste an eggo, the most hurt bench hero eats it', () => {

@@ -9,7 +9,9 @@ import { CHAPTERS, chapterOf } from '../core/campaign.ts';
 import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { audio } from '../audio/index.ts';
+import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { drawMapScreen } from '../gfx/index.ts';
+import { box, inFrame } from './kit.ts';
 import { hintLine, mapNodes, startHop, startNode, stepFrom, stepHop } from './map_logic.ts';
 import type { Hop } from './map_logic.ts';
 
@@ -93,7 +95,9 @@ export function createMapScene(opts: MapOpts): Scene {
         t,
         calm: settings.reduceFlashing,
       };
-      drawMapScreen(ctx, view);
+      // On a wide window the map sits in the centered 256 px frame, like every other menu screen, over ink.
+      box(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink');
+      inFrame(ctx, () => drawMapScreen(ctx, view));
     },
   };
 }

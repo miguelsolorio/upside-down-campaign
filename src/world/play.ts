@@ -3,7 +3,7 @@
 // the pools of light at night, the HUD and the dialogue. Retry rebuilds the sim from the last lit checkpoint.
 import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, DevHooks, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
-import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP } from '../core/config.ts';
+import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import { burstHint, labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
@@ -22,7 +22,7 @@ import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawWorld } from './render.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -32,8 +32,6 @@ const IDLE: SimInput = {
 /** Interact reaches this far (px) from the hero's feet to a lights prop. */
 const LIGHT_REACH = 20;
 const SPEECH_FRAMES = 90;
-/** The burst line stays on one line even with a long key name like SPACE. */
-const BURST_COLS = 32;
 /** How far (px) from the start the party goes before the controls in the corner start to fade, and how long the fade takes. */
 const HOME_RADIUS = 120;
 const HINT_FADE_FRAMES = 90;
@@ -42,9 +40,9 @@ const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
 /** Props that stay open across a retry or a load. */
-/** The prop is inside the camera's view, so a caret over it can be seen. */
+/** The prop is inside the camera's clear band, so a caret over it can be seen. */
 const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
-  p.x + p.w > cam.x && p.x < cam.x + SCREEN_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
+  p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
 
 const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden']);
 
@@ -76,7 +74,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let overlay: Scene | null = null;
   let checkpoint: Checkpoint = { x: stage.start.x, y: stage.start.y, state: { fired: [], cleared: [] } };
   let prompt: PropView | null = null;
-  /** The party burst is ready and the party is free to use it, so its key shows over the active hero. Not next to
+  /** The crit is ready and the party is free to use it, so its key shows over the active hero. Not next to
    * lights, where Space lights them instead. */
   let burstCall = false;
   let speech: { who: HeroId; text: string; t: number } | null = null;
@@ -93,6 +91,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let saved: { x: number; y: number; t: number } | null = null;
   /** Frames since the last hero swap, to flash the new active portrait. Null before the first one. */
   let swapAge: number | null = null;
+  /** The screen width the camera last framed. A resize snaps the camera instead of letting it drift over. */
+  let camW = SCREEN_W;
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -108,6 +108,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     }));
     view = sim.view();
     cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
+    camW = SCREEN_W;
   }
 
   const env: DirectorEnv = {
@@ -338,6 +339,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
       forward(sim.step(input));
       view = sim.view();
+      // Lights the burst button on a touch screen.
+      if (view.hud.burstReady && !frozen) g.input.offer('burst');
+      // A benched hero's face under the mouse is a button.
+      const ptr = g.input.hover();
+      if (ptr && !bot && slotAt(view.hud.party, ptr.x, ptr.y) >= 0) g.input.point();
 
       if (!frozen) {
         const p = sim.heroPos();
@@ -367,6 +373,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
     },
 
     draw(ctx, g) {
+      // Here rather than in update, which doesn't run under the pause menu or a dialogue.
+      if (camW !== SCREEN_W) {
+        cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
+        camW = SCREEN_W;
+      }
       const fig = figure();
       drawWorld(ctx, stage, view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
       drawFlash(ctx, view);
@@ -387,7 +398,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (hint) drawPuzzleCaret(ctx, hint.prop, cam, g.frame);
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
-      const ptr = g.input.pointer();
+      const ptr = g.input.hover();
       const hover = ptr && !overlay && !dialog.active && !bot ? slotAt(view.hud.party, ptr.x, ptr.y) : -1;
       drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, device: g.input.device() });
       if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
@@ -395,10 +406,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (speech) {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
-      } else if (burstCall) {
-        // A bark takes the spot over the hero for a moment, and the burst line comes back after it.
-        drawCallout(ctx, burstHint(), view.focus.x, view.focus.y - 24, cam, 'yellow', BURST_COLS);
       }
+      // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
+      if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
       // The subtitle sits where the corner controls do, so it replaces them while it shows.
       if (hint) drawSubtitle(ctx, hint.text);
       else drawControlsCorner(ctx, hintFade);

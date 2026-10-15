@@ -29,11 +29,11 @@ Level 1 is stage 1.1, Mirkwood, plus the title screen and the basement prologue.
 **In**
 - Title screen, then the basement prologue (Mike, Dustin, Lucas, Will's roll goes wrong), then a chapter card.
 - Stage 1.1, about 48×40 tiles, five to eight minutes. It runs from the Byers yard (Joyce's lights are the first save point) through the woods to the Lab road. Beats: a rat skirmish that teaches attack, a Lab agent patrol that teaches sidestepping darts, a shot gate only Lucas can open, a scripted scare (lights flicker, a growl, a shape crosses the trail, no fight), Eleven's recruit scene with an Eggo, a push gate only she can open, and a three-wave ambush that ends the level.
-- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, swap, the Lv 3 talent, KO and retry, and a simple party burst (all four specials at once).
+- Four heroes: Mike, Dustin, Lucas, Eleven. Basic, special, swap, the Lv 3 talent, KO and retry, and a simple Crit (all four specials at once).
 - Leveling: XP, bench XP, the d20 level-up shown as an effect in the world. A normal run ends at Lv 3, so everyone shows their first talent.
 - Enemies: Lab agent, rat. Pickups: Eggo, Coke, quarters.
 - Music: Static (title) and Mirkwood with its combat layer, jingles for level-up, recruit, clear and game over, about 20 effects, and speech blips for the four heroes plus Joyce. The scare plays the motif inverted.
-- HUD (HP bars, MP, XP, bench, d20 meter), dialogue with portraits, results screen, scanlines and reduce-flashing toggles, gamepad, `?dev=1` and `?bot=1`.
+- HUD (HP bar, MP, XP, bench, d20 meter) and an HP bar over each hero, dialogue with portraits, results screen, scanlines and reduce-flashing toggles, gamepad, `?dev=1` and `?bot=1`.
 - One autosave at each of Joyce's lights. The title offers CONTINUE and NEW GAME when a save exists, the pause menu has START OVER, and clearing the level wipes the save. `src/core/save.ts` holds it.
 
 **Out until you've played it:** the other seven heroes, chapters 2 to 5, the map screen and shop, bonds, difficulty levels, the Hawkins, Lab and Upside Down tracks, saves beyond the one autosave, and the full docs set.
@@ -104,11 +104,11 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Attack | Z / J | Hero's basic. Melee chains three hits |
 | Special | X / K | Costs MP. Hold for the Lv 6 variant where a hero has one |
 | Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
-| Party burst | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
+| Crit | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Party, items, settings |
 
-Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y bursts, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and burst.
+Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.
@@ -116,7 +116,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - Feel: 2 to 5 frames of hit-stop, screen shake, a white flash, knockback, floating numbers, pixel dust.
 - Every real enemy attack has a red "!" and a 0.4 s wind-up, and each attack has its own telegraph shape, so color is never the only cue.
 - Specials spend MP. MP regenerates 4% per second. Benched heroes regenerate 6% MP and 2% HP per second.
-- Party burst: the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR PARTY BURST shows over the active hero (the corner controls leave burst out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
+- Crit (the party move, not the per-hit crit above; the code calls it burst): the d20 meter fills from hits dealt, hits taken and kills. At full, PRESS SPACE FOR CRIT shows just under the HUD with no box behind it (the corner controls leave Crit out), and Space, U or B starts a 1.5 s freeze, portraits slam in, "ROLL FOR INITIATIVE," then each of the four heroes' signature attack sweeps the screen. Damage scales with the party's average level.
 - Status: burn, stun, slow, confuse, curse (Vecna's clock).
 - A KO'd hero drops out and the next swaps in. All four down returns you to the last light with XP kept.
 - Difficulty: Kid, Chief, Upside Down (enemy HP and damage ×0.7, ×1, ×1.4).
@@ -192,12 +192,16 @@ Jingles and stingers: level-up, victory, game over, recruit, item, dice roll, cu
 
 ## Look
 
-- 256×224 canvas, 16×16 tiles, integer-scaled and letterboxed, `image-rendering: pixelated`.
+- The canvas fills the browser window. It is always 224 px tall and as wide as the window's shape asks (256 to 1024, in steps of 8), so a bigger monitor gets bigger pixels, not more of the level. 16×16 tiles.
+- The world shows in a clear band at most 28 tiles (448 px) wide, about half a level across. A laptop or a 16:9 monitor's browser window fits inside it. On an ultrawide the world past the band fades to black in four dithered steps, so you still have to move to see more.
+- Menus, cards, dialogue and the prologue's basement are laid out for 256 px and centered. Their backgrounds, the HUD strip and the title woods run to the edges. The HUD keeps the active hero at the band's left edge and the Crit meter and bench at its right. On a screen wider than 256 the strip is 26 px tall instead of 20, with 3 px above and below its contents and 6 px in from the band's sides.
+- On a wider screen the title fills the room past its 256 px scene (`ui/title_wide.ts`): the rift's light spreads into a low red haze along the horizon so the tree line reads all the way across, telephone poles run off to the left with Will's bike in the grass and its lamp on, the Hawkins water tower and a radio tower blink red to the right over a fence strung with Christmas lights, fireflies drift over the grass and tall pines frame the edges.
+- The game draws at 1x, is blown up a whole number of times with hard edges, and the browser smooths only the last small step to the window, so every pixel comes out the same size.
 - One fixed palette of about 40 NES-style colors. Sprites use at most five. No gradients and no alpha. Pools of light at night are dithered, not blended.
 - Paper-doll sprite generator: three body templates (kid, teen, big), hair masks, accessories and a palette per hero, drawn to offscreen canvases at boot. Bosses are hand-authored grids or drawn limbs (the Mind Flayer's legs are pixel-snapped lines). 24×24 portraits come from a head template with five expressions.
 - Upside Down: palette swap to blue-black and vein red, palette cycling on the veins, drifting spores. Hawkins stays warm: sodium streetlights over teal night.
 - Night stages (Level 1 is one) repaint their tiles in a night palette and paint a pool of light around each lamp, lit window and string of bulbs. Daytime stages use the normal art with nothing over it. Christmas lights and streetlights flicker faster as danger closes in.
-- HUD: HP is a segmented bar. The active hero's runs flat under the name with a tick every 10 HP, so it grows with max HP. Each benched hero's runs upright beside the face in four quarters, with no frame. Both are green above half, yellow above 30% and red below it, and the red blinks, in step on both sides. Nothing beside HP has a frame either. XP is ten yellow notches under the HP bar, as wide as it is, in the same yellow as the level. MP is a tiny MP label and one blue segment per cast of the hero's special: a bright segment holds a whole cast and can be used now, a dim one is still charging, and a hero with more casts than the bar has room for gets one bar with a tick at every cast. Quarters are a small silver coin and a count. The party meter is a d20 that fills and glows when ready. Every hero shows the key that picks them, in quiet slate: left of the name for the active hero, and for a benched hero in a tiny 3 by 5 font to the left of their face. The bench key fills from the bottom while the swap recharges and reads as ready once it is fully lit, so it is the recharge readout too (not shown on a gamepad, which prints no keys). A hero who is down keeps the neutral face, in greys, with an empty bar. Each bench slot is also a button: hover lights it and a click swaps to that hero. The bench sits against the d20, and C and V (LB and RB on a gamepad) are not printed on the HUD. `ui/hudlayout.ts` holds the rectangles that both the drawing and the click use, and where the MP readout and the quarters sit. `ui/format.ts` holds the geometry of the XP notches and the MP segments (`notchSpans`, `mpBar`), so Node can test it. `hud-variations.html` is the sheet of ten designs this one was picked from.
+- HUD: HP is a segmented bar under the active hero's name, with a tick every 10 HP, so it grows with max HP. A benched hero has no HP in the strip, just the key and the face, because health is also the bar over every hero's head in the world (below). The HP bar is green above half, yellow above 30% and red below it, and the red blinks. Nothing beside HP has a frame either. XP is ten yellow notches under the HP bar, as wide as it is, in the same yellow as the level. MP is a tiny MP label and one blue segment per cast of the hero's special: a bright segment holds a whole cast and can be used now, a dim one is still charging, and a hero with more casts than the bar has room for gets one bar with a tick at every cast. Quarters are a small silver coin and a count. The party meter is a small d20 with a tiny CRIT label to its right, just left of the bench faces. The die fills with light from the bottom, and the die and its label glow gold when the Crit is ready. Every hero shows the key that picks them, in quiet slate: left of the name for the active hero, and for a benched hero in a tiny 3 by 5 font to the left of their face. The bench key fills from the bottom while the swap recharges and reads as ready once it is fully lit, so it is the recharge readout too (not shown on a gamepad, which prints no keys). Health is also a small bar over the head of each hero standing, so it reads on the field without a look up at the strip. It has the strip's colors and blink, from one shared `hpBarColor` in `ui/format.ts`. It is 6 px of fill in an 8 px frame, narrow on purpose because a party standing still bunches up to 7 px apart, and it is drawn after everything else in the world (`drawHeroBar`) so an enemy in front or an invulnerability flicker never hides it. A hero who is down has no bar over their head, and in the strip keeps the neutral face, in greys, with an empty bar. Each bench slot is also a button: hover lights it and a click swaps to that hero. The bench sits right of the meter in fixed slots, so nobody moves when the party grows, and C and V (LB and RB on a gamepad) are not printed on the HUD. `ui/hudlayout.ts` holds the rectangles that both the drawing and the click use, and where the MP readout, the quarters and the meter sit. `ui/format.ts` holds the geometry of the XP notches and the MP segments (`notchSpans`, `mpBar`), so Node can test it. `hud-variations.html` is the sheet of ten designs this one was picked from.
 - Title: red pixel logo with a flicker over the party at the edge of Mirkwood, the Upside Down glowing behind the trees. PRESS START (or CONTINUE and NEW GAME) and OPTIONS are menu rows, with no key hints on screen. START sends the party walking into the woods.
 - A hand-drawn 5×7 caps font. Dialogue boxes have the portrait on the left, three lines of 32 characters and typewriter text with the hero's blip.
 - Settings: music and effects volume, difficulty, scanlines, screen shake, reduce flashing.
@@ -212,7 +216,7 @@ src/
   world/             stage format, collision, interactables, gates, checkpoints, stages/*.ts
   heroes/            roster, abilities, growth, bonds, barks
   enemies/           bestiary, ai, bosses/*.ts
-  combat/            hitboxes, damage, projectiles, status, party burst
+  combat/            hitboxes, damage, projectiles, status, Crit
   progression/       xp, level-up roll, talents
   audio/             engine, synth, sequencer, tracks/*.ts, sfx, voices, render
   story/             chapters, dialogue, cutscenes
@@ -243,7 +247,7 @@ Sub-agents start with small contexts, which is cheaper than one long thread doin
 |---|---|---|
 | Art | `src/gfx/`, the `?sheet=1` page | Font, palette helpers, sprite generator, the four heroes plus Joyce, agent, rat, portraits, woods tiles by day and night, FX, light pools, bulb and d20 HUD art |
 | Audio | `src/audio/` | Engine, synth, sequencer, Static and Mirkwood, jingles, effects, blips, offline render and metrics |
-| Rules | `src/combat/`, `src/progression/`, `src/heroes/`, `src/enemies/`, their tests | Damage, XP, the d20 level-up, talents, abilities for the four heroes, agent and rat AI, party burst, status effects. Pure TypeScript, no DOM |
+| Rules | `src/combat/`, `src/progression/`, `src/heroes/`, `src/enemies/`, their tests | Damage, XP, the d20 level-up, talents, abilities for the four heroes, agent and rat AI, Crit, status effects. Pure TypeScript, no DOM |
 
 3. **Phase 2, two agents in parallel**, briefed with the real APIs from phase 1.
 
@@ -278,7 +282,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 | 2 | Art: sprite generator, portraits, tiles, enemy and boss sprites, `?sheet=1` review page | Every hero, enemy and portrait reads correctly in a screenshot of the sheet |
 | 3 | World and dialogue: stage format, collision, interactables, darkness, lights, dialogue box | 1.1 is walkable, doors and lights work, text types out with blips |
 | 4 | Combat: hitboxes, attacks, enemy AI, damage, juice, items, KO and retry | Three heroes fight agents and rats with no console errors |
-| 5 | Progression: XP, d20 level-up, talents, bench XP, catch-up, bonds, swap, all 11 specials, party burst | The bot takes a hero from Lv 1 to 4 in 1.1 and the tests pass |
+| 5 | Progression: XP, d20 level-up, talents, bench XP, catch-up, bonds, swap, all 11 specials, Crit | The bot takes a hero from Lv 1 to 4 in 1.1 and the tests pass |
 | 6 | Audio: engine, sequencer, SFX, blips, first four tracks, offline render and metrics | Title, Hawkins, Mirkwood and Lab render clean WAVs |
 | 7 | Chapter 1 end to end: prologue, three stages, Demogorgon, map screen, saves | Playable from title to the chapter 1 results screen. This is the vertical slice |
 | 8 | Chapters 2 to 5: stages, enemies, bosses, cutscenes, remaining tracks, ending | The bot clears every stage and every boss is beatable |
@@ -294,7 +298,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - Browser pane: screenshots of the title, map, every stage, dialogue, level-up and every boss; zero console errors; frame time under 4 ms.
 - Bot (`?bot=1&stage=2.2`): walks an A* path, fights, collects, and logs kills, XP and level-ups. Run on every stage.
 - Audio: every track rendered offline and checked for peak, limiter reduction and RMS. WAVs written to `music/`.
-- Manual checklist at the end: keyboard and gamepad, swap, every special, party burst, KO and retry, save and load, pause, settings.
+- Manual checklist at the end: keyboard, gamepad and touch (portrait and landscape), swap, every special, Crit, KO and retry, save and load, pause, settings.
 
 ## Risks and cut line
 
@@ -303,7 +307,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 - **I can't hear the music.** See the audio note above.
 - **Flashing lights.** The show leans on them, so there's a reduce-flashing setting and the flicker is rate-limited.
 - **Dustin's hairspray flamethrower isn't a scene I could confirm.** It's a gag built on Steve's Farrah spray from season 2, not a claim about an episode.
-- **Out of scope:** touch controls, alternate costumes, a Dig Dug-style arcade minigame, relics, a GitHub Pages workflow. I won't publish or deploy anything without your say.
+- **Out of scope:** alternate costumes, a Dig Dug-style arcade minigame, relics, a GitHub Pages workflow. I won't publish or deploy anything without your say.
 
 ## Sources
 

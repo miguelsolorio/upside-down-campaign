@@ -1,20 +1,20 @@
-import { SCREEN_W, SCREEN_H, VIEW_TOP } from './config.ts';
+import { SCREEN_H, VIEW_TOP, VIEW_W, VIEW_X } from './config.ts';
 
-/** Top-left of the view in world px. The visible world is SCREEN_W by (SCREEN_H - VIEW_TOP). */
+/** The world px drawn at the left edge of the screen and at the top of the view, under the HUD strip. The camera
+ * frames the clear band, VIEW_W wide and centered on the screen. A wider screen shows faded world on either side. */
 export interface Camera { x: number; y: number }
-
-const VIEW_H = SCREEN_H - VIEW_TOP;
 
 export function createCamera(): Camera {
   return { x: 0, y: 0 };
 }
 
 function target(fx: number, fy: number, mapW: number, mapH: number): Camera {
-  let x = fx - SCREEN_W / 2;
+  const VIEW_H = SCREEN_H - VIEW_TOP;
+  let x = fx - VIEW_W / 2;
   let y = fy - VIEW_H / 2;
-  x = mapW <= SCREEN_W ? (mapW - SCREEN_W) / 2 : Math.max(0, Math.min(mapW - SCREEN_W, x));
+  x = mapW <= VIEW_W ? (mapW - VIEW_W) / 2 : Math.max(0, Math.min(mapW - VIEW_W, x));
   y = mapH <= VIEW_H ? (mapH - VIEW_H) / 2 : Math.max(0, Math.min(mapH - VIEW_H, y));
-  return { x, y };
+  return { x: x - VIEW_X, y };
 }
 
 /** Jump straight to the focus point. */

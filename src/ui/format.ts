@@ -40,9 +40,11 @@ export function hpTone(hp: number, hpMax: number): 'leaf' | 'yellow' | 'hot' {
   return r > 0.5 ? 'leaf' : r > LOW_HP ? 'yellow' : 'hot';
 }
 
-/** How full quarter i (0..3, from the bottom) of the bench bar is, 0..1. */
-export function quarterFill(hp: number, hpMax: number, i: number): number {
-  return hpMax > 0 ? clamp01((hp / hpMax) * 4 - i) : 0;
+/** The color an HP bar shows on frame t: its tone, except that low HP blinks to a dark red. The HUD and the bars over the
+ * heroes both ask here, so they blink in step. */
+export function hpBarColor(hp: number, hpMax: number, t: number, reduceFlashing: boolean): 'leaf' | 'yellow' | 'hot' | 'blood1' {
+  if (isLowHp(hp, hpMax) && bulbDark(t, 0, true, reduceFlashing)) return 'blood1';
+  return hpTone(hp, hpMax);
 }
 
 // ---------------------------------------------------------------- XP notches and MP casts
@@ -203,6 +205,12 @@ export function stepVolume(v: number, dir: -1 | 1): number {
 }
 export function volSegments(v: number): number {
   return Math.round(clamp01(v) * 10);
+}
+/** A click on segment k (0 to 9) of a ten segment bar lights it and every one before it. A click on the top lit one turns
+ * it off, so a mouse can reach zero. */
+export function clickSegments(lit: number, k: number): number {
+  const at = Math.max(0, Math.min(9, k));
+  return lit === at + 1 ? at : at + 1;
 }
 
 const SHAKE_STEPS = [0, 0.5, 1];

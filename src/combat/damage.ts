@@ -51,7 +51,7 @@ export interface HitOpts {
   sfx?: SfxId;
   hitstop?: number;
   shake?: number;
-  /** Ignores a guard's shield: the party burst. */
+  /** Ignores a guard's shield: the crit. */
   pierce?: boolean;
   /** Eleven's Mind Blast beam: the only thing that hurts a pinned Demogorgon. */
   beam?: boolean;

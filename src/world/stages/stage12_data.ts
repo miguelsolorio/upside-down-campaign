@@ -16,7 +16,8 @@ const foe = (id: string, type: EnemyKind, group: string, tx: number, ty: number,
 const item = (id: string, kind: ItemKind, tx: number, ty: number): SimSpawn => ({ kind: 'item', id, item: kind, tx, ty });
 const prop = (id: string, kind: PropKind, tx: number, ty: number, w?: number, h?: number): SimSpawn =>
   w === undefined ? { kind: 'prop', id, prop: kind, tx, ty } : { kind: 'prop', id, prop: kind, tx, ty, w, h: h ?? 16 };
-const camera = (id: string, tx: number, ty: number, cam: CamDef): SimSpawn => ({ kind: 'prop', id, prop: 'camera', tx, ty, hitBy: 'shoot', cam });
+/** Lucas shoots a camera from anywhere, and any hero who gets right under it can smash it. */
+const camera = (id: string, tx: number, ty: number, cam: CamDef): SimSpawn => ({ kind: 'prop', id, prop: 'camera', tx, ty, hitBy: 'shoot', smash: true, cam });
 
 // ---------------------------------------------------------------- the cameras
 // Each sits in a wall and sweeps the floor below or in front of it. Range and half angle are kept small enough
@@ -114,7 +115,8 @@ const PROPS: SimSpawn[] = [
   prop('lights_hall', 'lights', 6, 11, 48, 16),
   prop('lights_records', 'lights', 29, 9, 48, 16),
   // The three gates. Both consoles sit in a wall face. The doors fill two-tile doorways, the crate the corridor.
-  { kind: 'prop', id: 'sensor1', prop: 'console', tx: 41, ty: 30, hitBy: 'burn' },
+  // Dustin burns the sensor from a step back. Anyone who crosses the panels to stand at it can smash it.
+  { kind: 'prop', id: 'sensor1', prop: 'console', tx: 41, ty: 30, hitBy: 'burn', smash: true },
   { kind: 'prop', id: 'relay1', prop: 'console', tx: 23, ty: 13, hitBy: 'shoot' },
   prop('door1', 'door', 43, 30, 32, 16),
   prop('door2', 'door', 4, 12, 32, 16),

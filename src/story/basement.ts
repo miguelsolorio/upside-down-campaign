@@ -1,14 +1,13 @@
 // The basement set for the prologue: back wall, floor and rug, a table with a map, dice and snacks, a hanging lamp
-// and the DM screen. Drawn with rectangles and the gfx font, in screen space (256 by 224, no camera).
+// and the DM screen. Drawn with rectangles and the gfx font. The set is laid out for 256 by 224 with no camera, and
+// drawn inside the centered frame (inFrame). Only the wall and floor (drawRoomShell) run to the screen's edges.
 // The dialogue box covers y 169 and below, so everything that matters sits above that.
+import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import { drawText } from '../gfx/index.ts';
 
 type Ctx = CanvasRenderingContext2D;
-
-export const SCREEN_W = 256;
-export const SCREEN_H = 224;
 
 /** Feet positions for the four kids, as drawActor wants them. */
 export const SEATS = {
@@ -34,13 +33,13 @@ function fade(ctx: Ctx, alpha: number, draw: () => void): void {
   ctx.globalAlpha = 1;
 }
 
-/** Wall, floor, rug, window, poster, the party's HP board and the stairs. struck crosses Will off the board. */
-export function drawRoom(ctx: Ctx, struck: boolean): void {
-  // Paneled wall with plank seams, a ceiling beam and a baseboard.
+/** The paneled wall with its plank seams, the ceiling beam, the baseboard and the floor, across the whole screen in
+ * screen px. The seams line up with the set's, so the wall carries on past the set without a join. */
+export function drawRoomShell(ctx: Ctx): void {
   r(ctx, 0, 0, SCREEN_W, 90, 'soil1');
-  for (let x = 0; x < SCREEN_W; x += 12) {
+  for (let x = FRAME_X - Math.ceil(FRAME_X / 12) * 12; x < SCREEN_W; x += 12) {
     r(ctx, x, 12, 1, 74, 'soil0');
-    if (((x / 12) & 1) === 0) r(ctx, x + 1, 12, 1, 74, 'soil2');
+    if ((((x - FRAME_X) / 12) & 1) === 0) r(ctx, x + 1, 12, 1, 74, 'soil2');
   }
   r(ctx, 0, 0, SCREEN_W, 10, 'ink');
   r(ctx, 0, 10, SCREEN_W, 2, 'soil0');
@@ -50,6 +49,10 @@ export function drawRoom(ctx: Ctx, struck: boolean): void {
   r(ctx, 0, 91, SCREEN_W, SCREEN_H - 91, 'shadow');
   r(ctx, 0, 91, SCREEN_W, 2, 'night');
   for (let y = 99; y < SCREEN_H; y += 8) r(ctx, 0, y, SCREEN_W, 1, 'night');
+}
+
+/** On the wall and floor: rug, window, poster, the party's HP board and the stairs. struck crosses Will off the board. */
+export function drawRoom(ctx: Ctx, struck: boolean): void {
   // Rug under the table.
   r(ctx, 52, 98, 152, 66, 'amber');
   r(ctx, 54, 100, 148, 62, 'blood1');

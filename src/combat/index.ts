@@ -52,6 +52,8 @@
 // - Level 4's enemies (enemies/demodog.ts, vine.ts, pod.ts): a demodog circles, winds up for 28 frames and lunges; only one in a pack
 //   does either at a time. Vines and pods are rooted. A vine's lash and a pod's spore cloud slow the hero (his tint is purple, his
 //   speed 0.55 for 90 frames). A pod that bursts dies for no XP; a vine takes double from fire. 'spore' fx: w the cloud's diameter.
+// - A prop spawned with smash: true (a camera, a console) also lights for any hero's basic attack that starts within
+//   18 px of it, aimed its way (props.ts), whatever its hitBy asks for.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

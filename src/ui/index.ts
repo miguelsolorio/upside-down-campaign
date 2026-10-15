@@ -10,3 +10,4 @@ export { createMapScene } from './map.ts';
 export type { MapOpts } from './map.ts';
 export { createPauseScene } from './pause.ts';
 export { mountDevPanel } from './devpanel.ts';
+export { inFrame } from './kit.ts';

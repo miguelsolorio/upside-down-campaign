@@ -125,7 +125,7 @@ const L1_AMBUSH_START = script('l1_ambush_start', [
   line('dustin', "Hear me out: they knew we'd come this way. That's not a good sign.", 'worried'),
   line('mike', 'Nobody runs. Nobody splits up. Check on each other.', 'determined'),
   line('lucas', "They'll come in waves. Watch your MP and rotate hurt kids to the bench."),
-  line('dustin', 'When the d20 meter fills, press {burst}. Party burst. It hits every enemy in range.'),
+  line('dustin', 'When the d20 meter fills, press {burst}. Crit. It hits every enemy in range.'),
   line('eleven', 'Bad.', 'determined'),
   line('mike', 'Here they come. Stay together.', 'determined'),
 ]);

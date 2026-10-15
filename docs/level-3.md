@@ -156,4 +156,4 @@ Stage XP is 140. In the browser the bot clears 1.3 in 1:40.
 
 - **The first draft's spike hits were too hard.** At the spec's numbers, an undodged charge or leap nearly killed a Lv 5 hero. A bot that never dodges wiped every time, even at a factor of 1.5. The boss now hits softer and lasts longer, so a player who dodges badly still wins about half the time.
 - **The bot dodges the boss well.** It sidesteps the charge one frame late and steps off marks three frames late. That is the careful bot's best case; the careless one is the better guide for a new player.
-- **Fixes along the way.** The bot had two stalls at the pinned boss: a false "stuck" learned during a party burst, and a boss one corner away with no line of sight. Both are fixed. If Eleven is down when the boss pins, she stands back up with enough MP for one blast, so the finisher can't soft-lock.
+- **Fixes along the way.** The bot had two stalls at the pinned boss: a false "stuck" learned during a Crit, and a boss one corner away with no line of sight. Both are fixed. If Eleven is down when the boss pins, she stands back up with enough MP for one blast, so the finisher can't soft-lock.

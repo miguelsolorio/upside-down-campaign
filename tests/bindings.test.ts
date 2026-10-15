@@ -59,7 +59,7 @@ test('a key already in use is swapped into the slot it replaces', () => {
 test('taking a key into an empty slot leaves the other action one key short', () => {
   const r = setBinding('mute', 1, 'KeyU');
   assert.equal(r.ok, true);
-  assert.match(r.note, /TAKEN FROM PARTY BURST/);
+  assert.match(r.note, /TAKEN FROM CRIT/);
   assert.deepEqual(keysOf('burst'), ['KeyB']);
   assert.deepEqual(keysOf('mute'), ['KeyM', 'KeyU']);
 });
@@ -138,18 +138,18 @@ test('the corner controls are the combat keys only, and follow a rebind', () => 
   assert.equal(controlRows()[0]?.keys, 'H');
   assert.equal(controlRows()[2]?.keys, 'N');
   const whats = controlRows().map((r) => r.what);
-  assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE', 'BURST'].some((w) => whats.includes(w)));
+  assert.ok(!['MOVE', 'PAUSE', 'PICK', 'USE', 'CRIT'].some((w) => whats.includes(w)));
 });
 
-test('the burst line over the hero names Space, follows an interact rebind, and names Y on a controller', () => {
-  assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST');
+test('the burst line under the HUD names Space, follows an interact rebind, and names Y on a controller', () => {
+  assert.equal(burstHint(), 'PRESS SPACE FOR CRIT');
   setBinding('burst', 0, 'KeyN');
-  assert.equal(burstHint(), 'PRESS SPACE FOR PARTY BURST', 'U and B still burst, but the line teaches Space');
+  assert.equal(burstHint(), 'PRESS SPACE FOR CRIT', 'U and B still burst, but the line teaches Space');
   setBinding('interact', 0, 'KeyE');
-  assert.equal(burstHint(), 'PRESS E FOR PARTY BURST');
+  assert.equal(burstHint(), 'PRESS E FOR CRIT');
   assert.equal(keyText('press {burst}'), 'press E', 'the story names the same key');
   setPromptDevice('gamepad');
-  assert.equal(burstHint(), 'PRESS Y FOR PARTY BURST');
+  assert.equal(burstHint(), 'PRESS Y FOR CRIT');
 });
 
 test('story key tokens fill in and follow rebinds', () => {
@@ -230,4 +230,37 @@ test('the same story tokens still read as keys on a keyboard', () => {
   assert.equal(keyText('Swap her in with {swapTo4}.'), 'Swap her in with 4, C or V.');
   setBinding('swap1', 0, 'KeyN');
   assert.equal(keyText('{pickHint}'), ' Or press N, 2, 3, 4 to pick.');
+});
+
+// ---------------------------------------------------------------- the touch screen's side of the prompts
+test('a touch player sees what the on-screen buttons print, and a key rebind does not touch them', () => {
+  setPromptDevice('touch');
+  const names = { attack: 'A', special: 'B', interact: 'A', pause: 'PAUSE' } as const;
+  for (const [action, name] of Object.entries(names)) assert.equal(labelOf(action as keyof typeof names), name, action);
+  setBinding('attack', 0, 'KeyH');
+  assert.equal(labelOf('attack'), 'A');
+  assert.equal(labelOf('skip'), '--', 'skip has no hint: its button lights up instead');
+  assert.equal(labelOf('mute'), '--', 'no key names on a touch screen');
+});
+
+test('the corner controls are left out on a touch screen, and the HUD shows slot numbers', () => {
+  setPromptDevice('touch');
+  assert.deepEqual(controlRows(), []);
+  setBinding('swap1', 0, 'KeyN');
+  assert.deepEqual([1, 2, 3, 4].map((n) => slotKeyLabel(n as 1 | 2 | 3 | 4)), ['1', '2', '3', '4']);
+});
+
+test('story tokens name the on-screen controls on a touch screen', () => {
+  setPromptDevice('touch');
+  assert.equal(keyText('Press {attack}.'), 'Press A.');
+  assert.equal(keyText('{special} is your special.'), 'B is your special.');
+  assert.equal(keyText('{move} to move'), 'the stick to move');
+  assert.equal(keyText('{swap} cycle through us.{pickHint}'), 'The arrows cycle through us. Or tap a face up top to pick.');
+  assert.equal(keyText('Swap me in with {swapTo3}.'), 'Swap me in with an arrow.');
+  assert.equal(keyText('press {burst}'), 'press the d20');
+});
+
+test('the burst line names the d20 on a touch screen, since its A also attacks and never bursts', () => {
+  setPromptDevice('touch');
+  assert.equal(burstHint(), 'TAP THE D20 FOR CRIT');
 });

@@ -104,7 +104,7 @@ export function createState(opts: SimOptions): S {
       const pushBy: Utility | undefined = sp.pushBy ?? (sp.prop === 'log' ? 'push' : undefined);
       s.props.push({
         id: sp.id, kind: sp.prop, x: sp.tx * TILE, y: sp.ty * TILE, w: sp.w ?? size[0], h: sp.h ?? size[1],
-        solid, state, t: 0, hitBy, pushBy, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
+        solid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
       });
     }
   }

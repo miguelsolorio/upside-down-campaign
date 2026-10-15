@@ -51,7 +51,7 @@ export interface ActorView {
   alert: boolean;
   /** Pixels above the ground (knockback arcs, leaps). */
   z: number;
-  /** Small HP bar over an enemy once it has been hit. */
+  /** Small HP bar over an enemy once it has been hit, and over a hero who is standing. */
   bar: { hp: number; hpMax: number } | null;
   /** An elite enemy: gfx draws it with its own marks (red trim, a bigger bar). Absent means a normal one. */
   elite?: boolean;
@@ -159,7 +159,7 @@ export interface PartyHud {
 }
 export interface HudView {
   party: PartyHud[];
-  /** Party burst meter, 0..1. */
+  /** Crit meter (the code calls it burst), 0..1. */
   burst: number; burstReady: boolean;
   quarters: number;
   /** Seconds of Nat 20 Inspiration left. */
@@ -248,7 +248,8 @@ export type SimSpawn =
   /** hidden: drawn faint until Will's Cold spot shows it or it attacks (docs/level-4.md). */
   | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
-  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; cam?: CamDef }
+  /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. */
+  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; cam?: CamDef }
   | { kind: 'npc'; id: CharId; tx: number; ty: number; dir: Dir };
 
 export interface PartySeed {

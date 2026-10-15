@@ -70,7 +70,7 @@ Will is Wizard, in `heroes/will.ts`, and `HERO_DEFS.will` replaces the stand-in.
   - A 20 doubles the radius and shows NAT 20.
   - The roll uses the sim's rng, so a seed replays it.
 - **Cold spot** (Lv 3 talent): while Will is the active hero, enemies spawned `hidden: true` within 72 px show (`ActorView.hidden` false), and they take 15 percent more damage from the party.
-- **Utility:** `sense`. **Party burst signature:** `blast`.
+- **Utility:** `sense`. **Crit signature:** `blast`.
 - **Bot style:** a ranged hero (hold about 80, reach about 120).
 
 ## New enemies

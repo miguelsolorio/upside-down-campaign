@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, foeLines, foeName, formatTime, hpTone, isLowHp,
-  MAX_BULBS, mpBar, notchFill, notchSpans, pagesOf, quarterFill, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
+  bulbCount, bulbDark, bulbFill, countUp, cycleShake, fadeLevel, foeLines, foeName, formatTime, hpBarColor, hpTone, isLowHp,
+  MAX_BULBS, clickSegments, mpBar, notchFill, notchSpans, pagesOf, shakeLabel, stepVolume, typeCount, typeFrames, volSegments, wallLit, wantsBlip,
   XP_NOTCHES,
 } from '../src/ui/format.ts';
 import { wrapText } from '../src/core/text.ts';
@@ -54,14 +54,18 @@ test('the HP bar is green above half, yellow above 30%, and red from 30% down, w
   for (let hp = 0; hp <= 48; hp++) assert.equal(hpTone(hp, 48) === 'hot' && hp > 0, isLowHp(hp, 48), `hp ${hp}`);
 });
 
-test('bench quarters fill from the bottom, and any HP at all lights part of the first', () => {
-  const q = (hp: number): number[] => [0, 1, 2, 3].map((i) => quarterFill(hp, 48, i));
-  assert.deepEqual(q(48), [1, 1, 1, 1]);
-  assert.deepEqual(q(24), [1, 1, 0, 0]);
-  assert.deepEqual(q(0), [0, 0, 0, 0]);
-  assert.deepEqual(q(6), [0.5, 0, 0, 0]);
-  assert.ok((q(1)[0] as number) > 0);
-  assert.deepEqual([0, 1, 2, 3].map((i) => quarterFill(5, 0, i)), [0, 0, 0, 0]);
+test('the bar over a hero takes the HUD color, and blinks to dark red only where the HUD does', () => {
+  assert.equal(hpBarColor(48, 48, 0, false), 'leaf');
+  assert.equal(hpBarColor(20, 48, 0, false), 'yellow');
+  let dark = 0;
+  for (let t = 0; t < 600; t++) {
+    const c = hpBarColor(10, 48, t, false);
+    assert.equal(c, bulbDark(t, 0, true, false) ? 'blood1' : 'hot', `t ${t}`);
+    if (c === 'blood1') dark++;
+    assert.equal(hpBarColor(10, 48, t, true), 'hot', 'never dark when flashing is reduced');
+    assert.equal(hpBarColor(40, 48, t, false), 'leaf', 'a healthy bar does not blink');
+  }
+  assert.ok(dark > 60 && dark < 180, `${dark} of 600 frames dark`);
 });
 
 test('XP notches tile the bar edge to edge with a 1 px gap, and a bar too narrow for ten gets fewer', () => {
@@ -259,4 +263,15 @@ test('the foes row lays out from the final counts, so a count that climbs never 
   assert.deepEqual(foeLines([['agent', 6], ['rat', 6]], 26, 3, () => 0), ['AGENTS x0  RATS x0']);
   assert.equal(foeName('demodog'), 'DEMODOGS');
   assert.equal(foeName('mystery'), 'MYSTERYS');
+});
+
+test('a click on a volume bar lights up to that segment, and a click on the top lit one turns it down one', () => {
+  assert.equal(clickSegments(3, 6), 7, 'up to a higher segment');
+  assert.equal(clickSegments(7, 2), 3, 'down to a lower one');
+  assert.equal(clickSegments(7, 6), 6, 'the top lit segment');
+  assert.equal(clickSegments(1, 0), 0, 'so the first segment reaches zero');
+  assert.equal(clickSegments(0, 0), 1);
+  assert.equal(clickSegments(10, 9), 9);
+  assert.equal(clickSegments(4, 12), 10, 'past the end is the last segment');
+  assert.equal(clickSegments(4, -1), 1);
 });

@@ -114,7 +114,7 @@ const L4_AMBUSH = script('l4_ambush', [
   line('dustin', "That's the hole. It goes down, and it's been breathing.", 'shocked'),
   line('will', "They're coming up. Small ones. A lot of them.", 'worried'),
   line('lucas', 'Demodogs. They circle first, and they take turns. Watch the one that crouches.', 'determined'),
-  line('mike', 'Back to back. When the d20 meter fills, press {burst}.', 'determined'),
+  line('mike', 'Back to back. When the d20 meter fills, press {burst}. Crit.', 'determined'),
   line('dustin', 'Fireballs work best when they bunch up.'),
 ]);
 

@@ -194,7 +194,11 @@ export const STINGERS: Record<StingerId, Cue> = {
     ...line(170, 'p50', 0.24, [[1, 1.1, 'D5']], { vib: true }),
     ...line(170, 'tri', 0.26, [[0, 2.1, 'D3']]),
   ], [], 3, 0.8),
-  // Robin and Nancy: stand-ins until Audio writes theirs (docs/level-7.md). Two quick notes each.
-  robin: cue(line(210, 'p25', 0.24, [[0, 0.2, 'E5'], [0.2, 0.6, 'B5']]), [], 3),
-  nancy: cue(line(150, 'tri', 0.26, [[0, 0.3, 'G4'], [0.3, 0.8, 'D5']]), [], 3),
+  // Robin: fast and chatty, high on the 25 percent pulse. A stutter of two B's and a hop up to E, then one D that
+  // drops away, like a sentence she has already started on the way in. Four notes in about a third of a second,
+  // all short and held flat, with no bass under it and no noise, so it reads as a voice and not as a weapon.
+  robin: cue(line(260, 'p25', 0.24, [[0, 0.35, 'B5'], [0.45, 0.35, 'B5'], [0.9, 0.35, 'E6'], [1.35, 0.7, 'D6']]), [], 3, 1.15),
+  // Nancy: flat and decisive, on the triangle. F, F, then C a fourth down, all level: no vibrato, no slide, the same
+  // length twice and a longer last note that sits. It lands like a hammer coming down. Triangle only, no noise.
+  nancy: cue(line(150, 'tri', 0.3, [[0, 0.4, 'F4'], [0.5, 0.4, 'F4'], [1, 0.9, 'C4']]), [], 3, 1.5),
 };

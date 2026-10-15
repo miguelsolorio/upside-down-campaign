@@ -11,7 +11,7 @@ export type LayerId = 'base' | 'combat';
  */
 export type Wave = 'p12' | 'p25' | 'p50' | 'tri' | 'saw';
 export type Drum = 'kick' | 'snare' | 'hat' | 'ohat' | 'tick' | 'tock' | 'swell' | 'crack' | 'wind';
-export type ModeName = 'minor' | 'phrygian' | 'dorian' | 'major' | 'whole' | 'chromatic';
+export type ModeName = 'minor' | 'phrygian' | 'dorian' | 'major' | 'lydian' | 'whole' | 'chromatic';
 
 /** Seconds. s is the sustain level, 0..1. exp makes the decay exponential. */
 export interface Env { a: number; d: number; s: number; r: number; exp?: boolean }

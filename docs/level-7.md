@@ -167,7 +167,7 @@ The same bands as `docs/level-3.md`, "Targets", measured with `node scripts/meas
 
 ## What Art draws for this level
 
-Art builds only after the owner picks from the variation sheets (see "Variation sheets").
+Art builds only after the owner picks from the variation sheets (see "Variation sheets"). The owner picked **Sailor** for Robin, **Overalls** for Nancy and **Boss** for Erica (`src/gfx/var/`).
 
 - The mall tiles in `core/tiles.ts` (`mallfloor` to `lift`), with variants so the concourses don't look stamped. They must survive the night remap (`tests/night.test.ts` runs every tile name through it). The stand-ins in `gfx/tile_objects.ts` (`PLACEHOLDER`) go once each tile is painted.
 - Props:

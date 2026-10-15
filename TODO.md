@@ -6,10 +6,10 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 
 - [x] Owner's calls (2026-10-15): Robin and Nancy both join in 3.1, nobody locked there, Robin locked for 3.2. Hopper stays an npc. Erica's cart lands now on the map, Eggos and Cokes at triple price, three of each carried, spent by the sim on its own (an Eggo under 25% HP, a Coke on a dry Special). Grigori is the 3.2 mini-boss as designed (flank him or zap him on the power box). Cipher doors on the 3.2 route and on a cache
 - [x] Spine: `docs/level-7.md`, `docs/level-8.md`, "Erica's cart" and "Chapter three on the map" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, 23 mall and base tiles, the nine-hero pool, `core/shop.ts`, the purse and stash in `core/progress.ts`, stand-ins, stub stages 3.1 and 3.2. Chapter 3 enemies are sized for the party a chained bot run really brings (Mike Lv 6, the bench at 4 and 5, Robin and Nancy at 3), not the design's Lv 7
-- [ ] Sim A: Robin, Nancy, confusion, the cipher door, the stash
-- [ ] Art: `heroes3-variations.html` (Robin, Nancy, Erica), `grigori-variations.html`, `mall-variations.html` (mall and base looks)
+- [x] Sim A: Robin, Nancy, confusion, the cipher door, the stash (1107 tests pass)
+- [x] Art: `heroes3-variations.html` (Robin, Nancy, Erica), `grigori-variations.html`, `mall-variations.html` (mall and base looks), sent to the owner one image per option
 - [ ] Owner picks from the three sheets
-- [ ] Sim B: the soldier, the Flayed, the melting rat, Grigori, the power box and breaker, the bot's play
+- [x] Sim B: the soldier, the Flayed, the melting rat, Grigori, the power box and breaker, the bot's play. Grigori is at 1200 HP, not the spec's 800: his bot fight takes 29 s with Nancy and 73 s without a shooter. The careless bot can't beat his front guard, so 3.2's careless target needs a look when it's tuned
 - [ ] Audio: `starcourt`, the effects, Robin's and Nancy's stingers, blips for Robin, Nancy and Erica
 - [ ] Art build: the picks, the foes, the tiles, the props, fx, sheet pages, Starcourt on the map
 - [ ] World 3.1 and World 3.2: maps, beats, `l7_*` and `l8_*` scripts, waypoints, tuned with the bot

@@ -100,6 +100,9 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
     const s = e.kind === 'key' ? CELL_X.findIndex((x) => p.x >= x && p.x < x + CELL_W) : -1;
     return { idx, slot: s };
   };
+  /** A row of keys is selected on the keys page and Backspace or Delete went down this tick. */
+  const clearsSlot = (i: Game['input']): boolean =>
+    page === 'keys' && entry().kind === 'key' && (i.keyPressed('Backspace') || i.keyPressed('Delete'));
   const upShown = (): boolean => top > 0;
   const downShown = (): boolean => top + VISIBLE < list().length;
 
@@ -211,6 +214,9 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
         return;
       }
       if (mouse(g)) return;
+      // Backspace and Delete clear the slot under the cursor, as they do while it listens. Backspace is cancel too, so this
+      // comes before the way back. On a row without keys, or on the pad page, Backspace still goes back.
+      if (clearsSlot(i)) { done(clearBinding(entry().action as BindAction, slot)); return; }
       if (i.pressed('up')) { move(-1); audio.sfx('select'); }
       if (i.pressed('down')) { move(1); audio.sfx('select'); }
       if (entry().kind === 'key') {
@@ -278,6 +284,7 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
           const hint = entry().kind === 'key' ? `${rebind}. LEFT RIGHT PICKS A SLOT.` : choose;
           drawText(ctx, hint, 128, 175, 'mist', { align: 'center' });
           if (notice) drawText(ctx, notice.text, 128, 184, notice.ok ? 'leaf' : 'hot', { align: 'center' });
+          else if (!pad && entry().kind === 'key') drawText(ctx, 'BKSP CLEARS THIS SLOT.', 128, 184, 'slate', { align: 'center' });
         }
         if (page === 'pad') {
           drawText(ctx, 'ALWAYS ON: A CONFIRMS AND USES, B BACKS', 128, 198, 'slate', { align: 'center' });

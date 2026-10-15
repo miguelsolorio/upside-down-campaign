@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { flags } from '../src/core/flags.ts';
-import { clearSave, hasSave, loadSave, parseSave, savingAllowed, writeSave } from '../src/core/save.ts';
+import { clearSave, hasSave, isStageJump, loadSave, parseSave, savingAllowed, writeSave } from '../src/core/save.ts';
 import type { SaveData } from '../src/core/save.ts';
 import { seedsFrom } from '../src/core/campaign.ts';
 import type { HeroSnapshot } from '../src/core/types.ts';
@@ -168,7 +168,7 @@ test('unknown fields are dropped and stat bonuses are kept clean', () => {
 test('debug runs leave the real save alone', () => {
   writeSave(SAVE);
   const real = loadSave();
-  for (const patch of [{ bot: true }, { god: true }, { level: 3 }, { party: ['mike'] }]) {
+  for (const patch of [{ bot: true }, { god: true }, { level: 3 }, { party: ['mike'] }, { stage: '2.2' }]) {
     const saved = { ...flags };
     Object.assign(flags, patch);
     try {
@@ -181,6 +181,19 @@ test('debug runs leave the real save alone', () => {
     }
   }
   assert.equal(savingAllowed(), true);
+});
+
+test('only a jump past the first stage is a debug run, an unknown stage id is the first stage', () => {
+  const saved = flags.stage;
+  try {
+    for (const [stage, jump] of [['1.1', false], ['zzz', false], ['', false], ['1.2', true], ['2.2', true], ['3.2', true]] as const) {
+      flags.stage = stage;
+      assert.equal(isStageJump(), jump, `stage=${stage}`);
+      assert.equal(savingAllowed(), !jump, `stage=${stage}`);
+    }
+  } finally {
+    flags.stage = saved;
+  }
 });
 
 test('blocked storage never throws', () => {

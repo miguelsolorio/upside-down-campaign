@@ -415,9 +415,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       expose();
       klaxon.tick();
       if (deferred.length > 0) for (const fn of deferred.splice(0)) fn();
+      // Esc or Start pause over a dialogue box too, so START OVER and QUIT stay in reach. The window or the controller going away holds a level only while something moves.
+      if (!bot && wipeT < 0 && clearT < 0 && (g.input.pressed('pause') || (!dialog.active && g.input.interrupted()))) { pause(); return; }
       if (dialog.active) { prompt = null; burstCall = false; dialog.update(g); return; }
-      // Esc or Start, and also the window losing focus or the controller being played with going away: the level waits for the player.
-      if (!bot && wipeT < 0 && clearT < 0 && (g.input.pressed('pause') || g.input.interrupted())) { pause(); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
       // A click on the active hero's name and level opens their character sheet. The view is last tick's, the one on screen.

@@ -17,6 +17,13 @@ import { PIT_OPTS, PIT_ROOM } from '../src/gfx/var/pit.ts';
 import { KAMCHATKA_OPTS, KAMCHATKA_ROOM } from '../src/gfx/var/kamchatka.ts';
 import { CREEL_OPTS, CREEL_ROOM } from '../src/gfx/var/creel.ts';
 import { HAWKINSUD_OPTS, HAWKINSUD_ROOM } from '../src/gfx/var/hawkinsud.ts';
+import { composeFrame } from '../src/gfx/actor_pose.ts';
+import type { AnimId } from '../src/core/types.ts';
+import type { CharSpec } from '../src/gfx/data/types.ts';
+import { HOPPER4_OPTS, colorsOf as hopperColors } from '../src/gfx/var/hopper4.ts';
+import { KGUARD_OPTS, colorsOf as guardColors } from '../src/gfx/var/kguard.ts';
+import { GHOUL_OPTS, colorsOf as ghoulColors } from '../src/gfx/var/ghoul.ts';
+import { DEMOBAT_OPTS, colorsOf as batColors } from '../src/gfx/var/demobat.ts';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 
@@ -33,6 +40,32 @@ test('every Vecna keeps to five fill colors without his fire', () => {
     const n = fills(...POSE_ORDER.filter((p) => p !== 'burn' && p !== 'whip').map((p) => o.draw(p)));
     assert.ok(n <= 5, `${o.slug} uses ${n} colors`);
   }
+});
+
+const ANIMS: [AnimId, number][] = [['idle', 2], ['walk', 4], ['attack', 2], ['hurt', 1]];
+
+test('every prisoner Hopper and Kamchatka guard keeps to five fill colors and paints every role', () => {
+  const sets: [string, { slug: string; spec: CharSpec; colors: number }[]][] = [
+    ['hopper', HOPPER4_OPTS.map((o) => ({ slug: o.slug, spec: o.spec, colors: hopperColors(o) }))],
+    ['guard', KGUARD_OPTS.map((o) => ({ slug: o.slug, spec: o.spec, colors: guardColors(o) }))],
+  ];
+  for (const [name, opts] of sets) {
+    assert.ok(opts.length >= 3 && opts.length <= 5, `${name} has ${opts.length} options`);
+    for (const o of opts) {
+      for (const view of ['down', 'up', 'side'] as const) {
+        for (const [anim, n] of ANIMS) {
+          for (let f = 0; f < n; f++) assert.deepEqual(unmapped(composeFrame(o.spec, view, anim, f), o.spec.pal), [], `${name} ${o.slug} ${view} ${anim} ${f}`);
+        }
+      }
+      assert.ok(o.colors <= 5, `${name} ${o.slug} uses ${o.colors} colors`);
+    }
+  }
+});
+
+test('every Creel ghoul and demobat keeps to five fill colors', () => {
+  for (const o of GHOUL_OPTS) assert.ok(ghoulColors(o) <= 5, `ghoul ${o.name} uses ${ghoulColors(o)} colors`);
+  for (const o of DEMOBAT_OPTS) assert.ok(batColors(o) <= 5, `demobat ${o.name} uses ${batColors(o)} colors`);
+  assert.ok(GHOUL_OPTS.length >= 3 && GHOUL_OPTS.length <= 5 && DEMOBAT_OPTS.length >= 3 && DEMOBAT_OPTS.length <= 5);
 });
 
 const SHEETS: [string, Room, StageLook[]][] = [['pit', PIT_ROOM, PIT_OPTS], ['kamchatka', KAMCHATKA_ROOM, KAMCHATKA_OPTS], ['creel', CREEL_ROOM, CREEL_OPTS], ['hawkinsud', HAWKINSUD_ROOM, HAWKINSUD_OPTS]];
@@ -58,8 +91,8 @@ test('every stage look paints each letter of its room and keeps its props inside
 
 test('the chapter 4 sheet files stay under 500 lines with no em dashes', () => {
   const VAR = join(ROOT, 'src/gfx/var');
-  const mods = readdirSync(VAR).filter((f) => /^(ch4|sheet_png|look_|eddie|solo|vecna|pit|kamchatka|creel|hawkinsud)/.test(f)).map((f) => join(VAR, f));
-  const pages = ['eddie', 'solo', 'vecna', 'pit', 'kamchatka', 'creel', 'hawkinsud'].map((s) => join(ROOT, `${s}-variations.html`));
+  const mods = readdirSync(VAR).filter((f) => /^(ch4|sheet_png|look_|eddie|solo|vecna|pit|kamchatka|creel|hawkinsud|hopper4|kguard|ghoul|demobat)/.test(f)).map((f) => join(VAR, f));
+  const pages = ['eddie', 'solo', 'vecna', 'pit', 'kamchatka', 'creel', 'hawkinsud', 'hopper4', 'guard', 'ghoul', 'demobat'].map((s) => join(ROOT, `${s}-variations.html`));
   for (const f of [...mods, ...pages, join(ROOT, 'docs/chapter-4.md')]) {
     const text = readFileSync(f, 'utf8');
     assert.ok(text.split('\n').length < 500, `${f} is 500 lines or more`);

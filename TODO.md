@@ -21,6 +21,17 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] Merged into main with the owner's go-ahead (76c3904): typecheck clean, 1432 tests pass on main. Not pushed
 - [ ] Feedback on Levels 7 and 8
 
+## Difficulty pass (NORMAL and HARD, Starcourt eased)
+
+- [x] Owner's calls (2026-10-15): NORMAL is easier and the default, HARD is today's balance (`chief`), unchanged. Starcourt is eased only where it spikes against the chapter 1 and 2 curve
+- [x] NORMAL is `normal`, enemy HP and damage at 0.85, set by measurement: the careful bot clears every stage 20 of 20 and the careless bot takes 15 to 40% less than on HARD. 0.9 left 2.2's careless damage at 235 against 242. `kid` and `upside` stay for the scripts and tests. See `docs/difficulty.md`
+- [x] A DIFFICULTY row leads the options on the title and the pause menu (QA-5). It applies at once: picked in the pause menu, it takes hold as play resumes (`Sim.setDifficulty`, living enemies keep their share of HP). A settings v1 save's `chief` loads once as NORMAL, and a bad value loads as NORMAL
+- [x] 3.1 from `enemyMult` 1.4 to 1.15: HARD cleared 85 of 100 with 1.82 KOs, now 96 with 1.51. Most of its damage is the Flayed's grab, which only lands over an effective factor of about 1.05, so NORMAL plays the mall as a walk (`docs/level-7.md`, "The difficulty pass")
+- [x] 3.2 from 1.25 to 1.1: the careless bot cleared 60 of 100 on HARD, now 80. The careful bot's lowest HP is 49%, a little over the band (`docs/level-8.md`, "The difficulty pass")
+- [x] Bands for new stages (3.3 on) stay measured on HARD (`chief`); a hand-over note went to the Level 9 session
+- [ ] Owner plays 3.1 and 3.2 on NORMAL and on HARD
+- [ ] The Flayed's grab cliff in 3.1: under it the mall is a walk, over it the grab does most of the damage. A call for the Flayed's numbers, not made here
+
 ## Levels 5 and 6 (merged)
 
 - [x] Owner's calls: Max and Steve join in 2.2, Hopper is an npc at the Gate. Party picks lock the heroes a stage's gates need (Max for 2.2, Steve for 2.3) and remember the last party. Eleven can fall in the defense, and a retry starts the defense again. Variation sheets first for the Alpha, the picks panel, the tunnels and the new heroes

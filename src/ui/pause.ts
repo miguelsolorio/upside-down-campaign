@@ -10,7 +10,7 @@ import type { Menu, SettingsKind } from './menu.ts';
 import { createCharSheetScene } from './charsheet.ts';
 import type { CharSheetHero } from './charsheet.ts';
 
-/** Overlay: resume, characters, volumes, scanlines, shake, reduce flashing, skip story, controls, start over, quit.
+/** Overlay: resume, characters, difficulty, volumes, scanlines, shake, reduce flashing, skip story, controls, start over, quit.
  * `party` feeds the character sheet. Backing out of the sheet comes back here. */
 export function createPauseScene(opts: { onResume(): void; onQuit(): void; onStartOver(): void; party(): CharSheetHero[] }): Scene {
   let t = 0;
@@ -65,8 +65,8 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
         bigText(ctx, 'PAUSED', 128, 30, 'yellow', 2, 'center', true);
         drawPanel(ctx, 36, 48, 184, 132, 'menu');
         const m = menu ?? build(g);
-        // The RUMBLE row makes a twelfth, which fits the same panel with the rows a pixel closer.
-        drawMenu(ctx, m, 48, 56, 160, t, m.items.length > 11 ? 10 : 11);
+        // DIFFICULTY makes a twelfth row and RUMBLE a thirteenth. Both fit the same panel, the rows a pixel closer for each.
+        drawMenu(ctx, m, 48, 56, 160, t, m.items.length > 12 ? 9 : m.items.length > 11 ? 10 : 11);
         // Escape always works on a keyboard. On a controller and on the touch screen's Game Boy, B does.
         const key = labelOf('pause');
         const back = getPromptDevice() === 'keyboard' ? 'ESC' : 'B';

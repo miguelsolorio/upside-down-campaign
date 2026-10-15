@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hellfire Solo Highways</title>
+<meta name="description" content="Five layouts for Eddie's Hellfire solo as a retro Guitar Hero note highway, each drawn on a game frame mid-song. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Five highways for the Hellfire solo</h1>
+  <p>When Eddie casts his special he plants his feet and plays for six seconds. Notes come down a highway, and every note he hits crits and widens the ring. On the 4.3 rooftop the same highway runs a whole song while the demobats come in. Each card is one game frame mid-solo, 256 by 224, on the trailer roof in Upside Down Hawkins, with Eddie in the Hellfire Club look you picked.</p>
+  <p class="muted">The frame is 2x. Lane colors come from the HUD: Attack red, Special blue like the MP bar, Crit gold like the d20. HIT, the streak and NAT 20 are the floaters the game already uses. The notes scroll.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Scroll the notes</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The highways</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { SOLO_OPTS, SOLO_W, soloCard } from '/src/gfx/var/solo.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({ opts: SOLO_OPTS, width: SOLO_W, title: 'Chapter 4: the Hellfire solo, five highways', file: 'ch4-solo', tick: 120, make: soloCard });
+</script>
+</body>
+</html>

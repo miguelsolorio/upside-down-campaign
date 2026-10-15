@@ -16,8 +16,9 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Paused at 84% of the 5-hour window (19:52 PT), resumed after the 20:40 reset with the UI picks sheet and World 2.3
 - [x] World 2.3, then tuned by the lead: the spec's Alpha and 23-dog defense were a cliff (stage factor 0.7, no chief KOs). Alpha 700 HP and 16 ATK, 17 defense dogs, Eleven 160 HP, and the gate beat lights `lights_gate` (a new `light` step). Chief 19 of 20 (Eleven fell once), 426 damage, 0.8 KOs, 38% low, 116 s; 100 seeds 97, none stuck; careless 20, kid 20, upside 6. Damage and the boss share (70%) are over their bands because of the 45 s defense
 - [x] Art build (Max, Steve, Hopper, the Alpha, the tunnels and flesh tiles, gap, crack, rift, the new fx, sheet pages 18 to 24), UI build (the Grid picks panel, the ward bar), Audio (six effects, two stingers, two blips, a saw voice), flow glue (picks remembered in progress)
-- [ ] Art fix for 2.3: the Gate chamber's flesh is too loud, the tears read as worms, the lab tiles are bright at night
-- [ ] Measured with the bot on chief inside the targets, map chains 2.1 to 2.2 to 2.3, typecheck and tests clean
+- [x] Art fix for 2.3: dark flesh with thin veins toward the rift, thin dark tears, dim Lab tiles at night. The other stages' tiles are unchanged (tile hashes match)
+- [x] Verified: typecheck clean, 972 tests pass, the production build passes. In the browser the map opens on The Tunnels, the Grid panel locks Max, a changed pick (Will lead, Steve out) starts 2.2 with that party and is remembered, LEVEL 5 CLEAR leads to the map, and 2.3's panel swaps Steve in for Max. The defense shows ELEVEN and the seconds left. No console errors on a clean load of the title, 2.2, 2.3 and the sheet
+- [ ] Feedback on Levels 5 and 6, then merge into main (the owner's call)
 
 ## Status
 

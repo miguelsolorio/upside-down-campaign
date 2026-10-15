@@ -31,6 +31,12 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] 1.3: the van is parked in the lot across a two-tile side door, the scare fires mid-room (the level holds still while it plays), and the gym's lines frame the court
 - [x] Verified: typecheck clean, 1053 tests pass, the production build passes. Merged into main
 
+## Dark Game Boy (touch screen)
+
+- [x] Five dark shells on `shell-variations.html`. The owner picked 1, Play It Loud: the 1995 black Game Boy
+- [x] The shell's colours are a `ShellTheme` (`ui/touchtheme.ts`), with the keys in `ui/touchkeys.ts`, so every touch file is under 500 lines. The grey shell draws as before
+- [x] The shell follows the phone's light or dark mode, even mid-game. A GAME BOY row in the options (touch only, where CONTROLS sits off touch) forces AUTO, LIGHT or DARK, and it's saved with the settings. `touch-controls.html` has a Light and Dark switch
+
 ## Status
 
 - [x] Level 1 (stage 1.1 Mirkwood, the title, the basement prologue). See `docs/level-1.md`

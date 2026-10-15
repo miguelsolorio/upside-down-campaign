@@ -1,10 +1,11 @@
 // Five dark Game Boys for the touch screen, on review in shell-variations.html. Each is a ShellTheme (touchtheme.ts);
-// three paint a pattern into the body once, when the shell is cached. No DOM at import.
+// three paint a pattern into the body once, when the shell is cached. No DOM at import. The first, Play It Loud, was
+// picked and is touchtheme.ts's DARK; the other four are kept for the record.
 import type { TouchLayout } from '../../core/touchlayout.ts';
 import { PAL } from '../../gfx/palette.ts';
 import { seeded } from '../touchshapes.ts';
 import type { C2D } from '../touchshapes.ts';
-import { LIGHT } from '../touchtheme.ts';
+import { DARK, LIGHT } from '../touchtheme.ts';
 import type { ShellTheme } from '../touchtheme.ts';
 
 export interface ShellVariant { id: number; name: string; blurb: string; theme: ShellTheme }
@@ -140,21 +141,6 @@ function stars(ctx: C2D, l: TouchLayout): void {
 }
 
 // ---------------------------------------------------------------- the five
-const PLAY_IT_LOUD: ShellTheme = {
-  ...LIGHT,
-  name: 'play-it-loud',
-  body: '#2a2a2f', bodyHi: '#35353b', bodyLo: '#1d1d21', bodyDeep: '#111114', bodyEnd: '#242428',
-  bezel: '#3e3d46', bezelHi: '#4a4953', bezelLo: '#2a2930',
-  well: '#0d0d10',
-  stripeA: '#b4306f', stripeB: '#4b52c4', stripeText: '#9897a3',
-  print: '#a3a2ae', logo: '#a3a2ae',
-  dpad: '#121214', dpadHi: '#2c2c32', dpadLo: '#050506',
-  rubber: '#4a4952', rubberHi: '#5c5b65', rubberLo: '#333239', rubberDown: '#3e3d45',
-  icon: '#1c1b21', iconDown: '#141318',
-  shade: 'rgba(0, 0, 0, 0.55)',
-  die: { center: '#7a7984', top: '#64636e', side: '#52515b', low: '#45444d', line: '#1c1b21' },
-};
-
 const UPSIDE_DOWN: ShellTheme = {
   ...LIGHT,
   name: 'upside-down',
@@ -224,7 +210,7 @@ const BLACKOUT: ShellTheme = {
 };
 
 export const SHELLS: ShellVariant[] = [
-  { id: 1, name: 'Play It Loud', theme: PLAY_IT_LOUD, blurb: 'The 1995 black Game Boy: charcoal plastic, a slate bezel, the same magenta A and B, labels in soft grey. The closest to the real thing.' },
+  { id: 1, name: 'Play It Loud', theme: DARK, blurb: 'The 1995 black Game Boy: charcoal plastic, a slate bezel, the same magenta A and B, labels in soft grey. The closest to the real thing.' },
   { id: 2, name: 'Upside Down', theme: UPSIDE_DOWN, blurb: 'The other world: maroon black plastic with dark red veins and spores, crimson stripes, the name glowing red, blood red A and B.' },
   { id: 3, name: 'Atomic Purple', theme: ATOMIC_PURPLE, blurb: 'The smoky see-through Game Boy Color: the board shows through, with chips and traces. Dark grey A and B, lavender print.' },
   { id: 4, name: 'Hawkins Night', theme: HAWKINS_NIGHT, blurb: 'The game\'s own menu colours: ink and navy plastic under pixel stars, amber trim and keys, cream print. Matches the pause menu.' },

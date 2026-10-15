@@ -1,5 +1,8 @@
 // The touch screen Game Boy's colours, as data, so the shell can come in grey plastic or a dark one. No DOM at import.
-// LIGHT is the original grey Game Boy, its colours taken off a photo. The dark designs on review are in var/shells.ts.
+// LIGHT is the original grey Game Boy, its colours taken off a photo. DARK is the black "Play It Loud" one, picked from
+// the five in shell-variations.html (the other four are in var/shells.ts). The phone's own light or dark setting picks
+// between them unless the GAME BOY option forces one.
+import type { ShellPref } from '../core/settings.ts';
 import type { TouchLayout } from '../core/touchlayout.ts';
 import { PAL } from '../gfx/palette.ts';
 
@@ -59,6 +62,27 @@ export const LIGHT: ShellTheme = {
   keys: 'plastic',
   decor: null,
 };
+
+/** The 1995 black Game Boy: charcoal plastic, a slate bezel, the same magenta A and B, and the print in soft grey. */
+export const DARK: ShellTheme = {
+  ...LIGHT,
+  name: 'dark',
+  body: '#2a2a2f', bodyHi: '#35353b', bodyLo: '#1d1d21', bodyDeep: '#111114', bodyEnd: '#242428',
+  bezel: '#3e3d46', bezelHi: '#4a4953', bezelLo: '#2a2930',
+  well: '#0d0d10',
+  stripeA: '#b4306f', stripeB: '#4b52c4', stripeText: '#9897a3',
+  print: '#a3a2ae', logo: '#a3a2ae',
+  dpad: '#121214', dpadHi: '#2c2c32', dpadLo: '#050506',
+  rubber: '#4a4952', rubberHi: '#5c5b65', rubberLo: '#333239', rubberDown: '#3e3d45',
+  icon: '#1c1b21', iconDown: '#141318',
+  shade: 'rgba(0, 0, 0, 0.55)',
+  die: { center: '#7a7984', top: '#64636e', side: '#52515b', low: '#45444d', line: '#1c1b21' },
+};
+
+/** The shell to draw: the one the GAME BOY option forces, or on AUTO the one that matches the phone. */
+export function shellTheme(pref: ShellPref, prefersDark: boolean): ShellTheme {
+  return pref === 'dark' || (pref === 'auto' && prefersDark) ? DARK : LIGHT;
+}
 
 /** `hex` (#rrggbb) at the given opacity, for gradients that fade a colour out. */
 export function alpha(hex: string, a: number): string {

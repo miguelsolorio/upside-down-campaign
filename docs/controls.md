@@ -41,7 +41,7 @@ Hints switch to button names once you touch the controller, and back to keys whe
 
 ## Touch
 
-On a phone or tablet the screen is dressed as the original grey Game Boy, with the game in its bezel. In portrait it's the Game Boy as it is. In landscape the same parts are laid out wide, like a Game Boy Advance: the D-pad, SELECT and START on the left, the face buttons on the right. The controls never cover the game.
+On a phone or tablet the screen is dressed as the original grey Game Boy, with the game in its bezel. When the phone is in dark mode it's the black Game Boy instead, and it changes over as soon as the phone does. In portrait it's the Game Boy as it is. In landscape the same parts are laid out wide, like a Game Boy Advance: the D-pad, SELECT and START on the left, the face buttons on the right. The controls never cover the game.
 
 | Control | Action |
 | --- | --- |
@@ -55,7 +55,7 @@ On a phone or tablet the screen is dressed as the original grey Game Boy, with t
 | `SELECT` | Skip dialogue. Flips SKIP STORY on the title |
 | `START` | Pause. Begins the game on the title |
 
-Hints name the Game Boy's buttons while you play by touch. A key or controller press hides the shell and puts the keyboard or controller hints back, and the next touch brings it back. Sound starts on your first tap. Phones that can buzz give a short one on each press. CONTROLS isn't in the options on a touch screen, since there are no keys to change. Add `?touch=1` to the URL to try the touch controls with a mouse.
+Hints name the Game Boy's buttons while you play by touch. A key or controller press hides the shell and puts the keyboard or controller hints back, and the next touch brings it back. Sound starts on your first tap. Phones that can buzz give a short one on each press. CONTROLS isn't in the options on a touch screen, since there are no keys to change. GAME BOY is there instead: AUTO follows the phone, and LIGHT or DARK keeps that shell whatever the phone says. Add `?touch=1` to the URL to try the touch controls with a mouse.
 
 ## Mouse
 

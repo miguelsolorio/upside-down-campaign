@@ -1,8 +1,8 @@
-// A plain vertical menu, and the five settings rows the title and the pause screen share.
+// A plain vertical menu, and the settings rows the title and the pause screen share.
 // The keys move the selection and the mouse can too: a row takes it when the mouse moves onto it, and a click picks it.
 import type { Game } from '../core/scene.ts';
 import type { InputState } from '../core/input.ts';
-import { applySettings, saveSettings } from '../core/settings.ts';
+import { applySettings, cycleShell, saveSettings } from '../core/settings.ts';
 import { hitIndex, inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
 import { audio } from '../audio/index.ts';
@@ -116,7 +116,10 @@ export function toggleSkipStory(g: Game): void {
   audio.sfx('select');
 }
 
-/** Music, sfx, scanlines, shake, reduce flashing and skip story. Every change is saved, applied and pushed to the mixer. */
+/**
+ * Music, sfx, scanlines, shake, reduce flashing and skip story, then CONTROLS, or on a touch screen GAME BOY in its
+ * place. Every change is saved, applied and pushed to the mixer.
+ */
 export function settingItems(g: Game): MenuItem[] {
   const s = g.settings;
   const commit = (): void => {
@@ -133,6 +136,7 @@ export function settingItems(g: Game): MenuItem[] {
   const volume = (key: 'musicVol' | 'sfxVol') => (dir: -1 | 1): void => setVolume(key)(stepVolume(s[key], dir));
   const flip = (key: 'scanlines' | 'reduceFlashing') => (): void => { s[key] = !s[key]; commit(); };
   const shake = (dir: -1 | 1): void => { s.shake = cycleShake(s.shake, dir); commit(); };
+  const shell = (dir: -1 | 1): void => { s.shell = cycleShell(s.shell, dir); commit(); };
   const onOff = (v: boolean): string => (v ? 'ON' : 'OFF');
   return [
     { label: 'MUSIC', level: () => s.musicVol, set: setVolume('musicVol'), adjust: volume('musicVol') },
@@ -141,8 +145,10 @@ export function settingItems(g: Game): MenuItem[] {
     { label: 'SHAKE', value: () => shakeLabel(s.shake), adjust: shake, activate: () => shake(1) },
     { label: 'REDUCE FLASH', value: () => onOff(s.reduceFlashing), adjust: flip('reduceFlashing'), activate: flip('reduceFlashing') },
     { label: 'SKIP STORY', value: () => onOff(s.skipDialogue), adjust: () => toggleSkipStory(g), activate: () => toggleSkipStory(g) },
-    // Key rebinding means nothing on a touch screen.
-    ...(g.input.device() === 'touch' ? [] : [
+    // Key rebinding means nothing on a touch screen, and the Game Boy's colour means nothing off one.
+    ...(g.input.device() === 'touch' ? [
+      { label: 'GAME BOY', value: () => s.shell.toUpperCase(), adjust: shell, activate: () => shell(1) },
+    ] : [
       { label: 'CONTROLS', value: () => 'EDIT', activate: () => g.scenes.push(createControlsScene({ onBack: () => g.scenes.pop() })) },
     ]),
   ];

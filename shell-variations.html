@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dark Game Boy Designs</title>
-<meta name="description" content="Five dark designs for the touch screen Game Boy, drawn by the game's own code on phone frames at real size, next to today's grey one.">
+<meta name="description" content="Five dark designs for the touch screen Game Boy, drawn by the game's own code on phone frames at real size, next to the grey one. Design 1, Play It Loud, was chosen and is the dark shell in the game.">
 <style>
   :root {
     color-scheme: dark;
@@ -37,6 +37,8 @@
   #cards { display: grid; gap: 26px; padding: 24px 0 64px; }
   .card { border: 2px solid var(--shadow); background: var(--night); padding: 18px 20px 22px; }
   .card.ref { border-style: dashed; }
+  .card.chosen { border-color: var(--amber); }
+  .pick { margin-left: auto; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--amber); padding: 5px 8px; align-self: center; }
   .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
   .badge { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 18px/1 var(--mono); }
   .ref .badge { background: var(--dusk); color: var(--bone); }
@@ -57,8 +59,9 @@
 <header class="hero"><div class="wrap">
   <p class="kicker">Touch review</p>
   <h1>Five dark Game Boys</h1>
-  <p>On a phone the whole screen around the game is the Game Boy's body, so in dark mode the grey plastic glares. Here are five dark shells, each drawn by the game's own code on a phone at real size, in portrait and landscape. Today's grey one is first, for comparison.</p>
-  <p>Use the bar to press keys, push the D-pad, light the Crit and change the phone. Pick the one you like, by number. The game will then follow the phone's light or dark setting, with a GAME BOY option to force either.</p>
+  <p>On a phone the whole screen around the game is the Game Boy's body, so in dark mode the grey plastic glares. Here are five dark shells, each drawn by the game's own code on a phone at real size, in portrait and landscape. The grey one is first, for comparison.</p>
+  <p><b>Chosen: 1, Play It Loud.</b> It is now the dark shell in the game, and its card here draws the game's own theme. The game follows the phone's light or dark setting, and the GAME BOY option forces either. The other four are kept for the record.</p>
+  <p>Use the bar to press keys, push the D-pad, light the Crit and change the phone.</p>
 </div></header>
 
 <div class="bar"><div class="wrap">
@@ -112,14 +115,15 @@ document.getElementById('ready').onchange = (e) => { st.ready = e.target.checked
 document.getElementById('small').onchange = (e) => document.body.classList.toggle('small', e.target.checked);
 
 const CARDS = [
-  { id: 0, name: 'Today: the grey Game Boy', theme: LIGHT, blurb: 'The shell as it ships now, for comparison.', ref: true },
+  { id: 0, name: 'The grey Game Boy', theme: LIGHT, blurb: 'The light shell, for comparison.', ref: true },
   ...SHELLS,
 ];
 const cardsEl = document.getElementById('cards');
 for (const c of CARDS) {
   const sec = document.createElement('section');
-  sec.className = 'card' + (c.ref ? ' ref' : '');
-  sec.innerHTML = `<div class="head"><span class="badge"></span><h2></h2></div><p class="note"></p>
+  const chosen = c.id === 1;
+  sec.className = 'card' + (c.ref ? ' ref' : '') + (chosen ? ' chosen' : '');
+  sec.innerHTML = `<div class="head"><span class="badge"></span><h2></h2>${chosen ? '<span class="pick">Chosen, now in the game</span>' : ''}</div><p class="note"></p>
     <div class="phones"><figure><figcaption>Portrait</figcaption><div class="phone" data-o="p"></div></figure>
     <figure><figcaption>Landscape</figcaption><div class="phone" data-o="l"></div></figure></div>`;
   sec.querySelector('.badge').textContent = c.ref ? '0' : String(c.id);

@@ -3,9 +3,9 @@
 //
 //   rise: it comes in through the skylight when its group wakes, 40 frames (pose 'rise', a 'glass' fx, the `shatter` sfx). Nothing can hit it
 //     or its legs, and nothing slams.
-//   up: about every 70 frames one idle leg is sent down a line through where the hero stands (two at once in phase two). A hit on the body does
-//     nothing while any leg stands (shielded). Every 540 frames two Flayed come up at the arena's sides, at most three alive.
-//   down: with all its legs severed its head is on the floor for 300 frames (pose 'down') and takes x1.5. Then it rises, every leg grows back
+//   up: about every 110 frames one idle leg is sent down a line through where the hero stands (two at once in phase two). A hit on the body
+//     does nothing while any leg stands (shielded). Every 600 frames a Flayed comes up at one of the arena's sides, at most two alive.
+//   down: with all its legs severed its head is on the floor for 420 frames (pose 'down') and takes x3. Then it rises, every leg grows back
 //     at full HP, and the slams start again.
 //   phase two: under half HP the legs' warning drops to 28 frames, two legs go at once, and about every 480 frames a leg sweeps: a band 24 px
 //     tall, wall to wall, along the row the hero stands on.

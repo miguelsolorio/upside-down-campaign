@@ -128,7 +128,7 @@ The first spec had 1600 and 180 HP, 30 ATK, a slam of 1.2 every 70 frames, pools
 - **The head comes down.** With all four legs severed, the body is in pose `down` for 420 frames: its head is on the floor in front of it and takes ×3. Then it rises, and every leg grows back at full HP.
 - **The body is shielded while it is up.** A hit on the body with any leg standing does nothing: a `block` spark and the `block` sfx.
 - **Flayed waves.** While the head is up, a Flayed comes in from one of the arena's sides every 600 frames (run-time spawns from `burrows`, 1 XP each), at most two alive.
-- **Under 50 percent.** The warn drops to 28 frames and two legs slam at once. About every 480 frames a leg sweeps: a band 24 px tall right across the arena is warned for 40 frames, then any hero in it takes power 1.0 and knockback 4. The view shows it as a `sweep` fx (x, y the band's top-left, w and h its size, t under 40 the warning).
+- **Under 50 percent.** The warn drops to 28 frames and two legs slam at once. About every 480 frames a leg sweeps: a band 24 px tall right across the arena is warned for 40 frames, then any hero in it takes power 0.5 and knockback 4. The view shows it as a `sweep` fx (x, y the band's top-left, w and h its size, t under 40 the warning).
 - **It dies all at once.** At 0 HP the body and all four legs die together, so `groupCleared` `flayer` fires once and a retry's kill list never holds a leg by itself.
 - **The boss rules.** Word vomit staggers a leg for 30 frames (its slam waits), and nothing confuses the body. Traps don't hold either.
 - **Boss bar.** While it's awake, `hud.boss` is `{ name: 'MIND FLAYER', hp, hpMax, parts }`. `parts` holds the four legs' HP shares, 0 when severed. The HUD draws them as four pips under the bar.
@@ -220,4 +220,24 @@ The owner picks the look before Art builds. Art makes three standalone pages at 
 
 ## Result
 
-Filled in after tuning.
+Measured with `node scripts/measure-stage.ts 3.3` on HARD (`chief`) at `enemyMult` 1.6, with the Lv 6 talents in and the party a real run brings (Mike 7, Dustin 6, Robin 4, Eleven 4). "Boss" runs from the `billy` beat to the finish.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside | NORMAL | NORMAL, careless |
+|---|---|---|---|---|---|---|---|
+| Cleared | 19 | 99, none stuck | 12 | 20 | 4 | 20 | 18 |
+| Damage taken | 274 | 314 | 467 | 146 | 455 | 227 | 350 |
+| KOs | 0.40 | 0.44 | 2.15 | 0 | 3.75 | 0.15 | 1.2 |
+| Lowest party HP | 50% | 50% | 21% | 74% | 4% | 62% | 31% |
+| Time | 119 s | 124 s | 117 s | 87 s | 120 s | 99 s | 108 s |
+| Boss time | 76 s (63%) | 80 s (65%) | 73 s | 47 s | 85 s | 59 s | 65 s |
+
+Stage XP is 278 before `xpMult` 2, so it pays 556, the Flayed the bosses call on top at 1 each.
+
+- **Two chief numbers sit outside their bands, to keep the careless floor.** KOs are 0.40 against 0.5 to 2.5, and the lowest party HP is 50% against under 45%. Every factor that pushed them in (1.65 and up) dropped the careless bot under 12 of 20.
+- **The spec's bosses were a wall for a player who doesn't dodge, and a slog for one who does.** The careless bot cleared 0 of 20 at a factor of 1: Billy took most of its HP, and nothing healed it before the Mind Flayer. The careful bot needed seven head-downs, about 150 s of Mind Flayer.
+  - Billy hits softer: 18 ATK, jabs of 0.4, a charge of 0.8, a throw of 0.7, and one Flayed at rage, not two.
+  - The Mind Flayer is a shorter, sharper fight: 800 HP and legs of 90, the head down for 420 frames at x3 (two downs or so), a slam every 110 frames at 0.8, pools of 0.07, a sweep of 0.5, and one Flayed every 600 frames, two at most. The waves were what killed the careless bot.
+  - The concourse crowd lost its elite Flayed. At the factor the stage needs, its grab wiped a careless party on the route.
+- **The fight is about two thirds of the run,** over the usual half. The route is short (about 40 s), and both phases are one fight.
+- **The Lv 6 talents moved it.** Tuned before main brought them in, the stage sat at 1.43. With Mike's and Dustin's talents the careful bot cleared 20 of 20 at 62% lowest HP there, so the factor went to 1.6.
+- **Eleven catches up** (`CATCH_UP`): she walks in at Lv 4, not 3. Only the reach needs her, so it barely moves the bands.

@@ -1,5 +1,5 @@
 // The Mind Flayer (docs/level-9.md, "The Mind Flayer"): the numbers, the rise, the shield, a leg's warning and slam, the pools, severing, the head
-// coming down and the legs growing back. Waves, phase two, the sweep, the death and the bar are in tests/flayer-phase.test.ts, the bot in
+// coming down and the legs growing back. Numbers a retune moves are read from ENEMY_DEFS; the numbers test pins the doc's. Waves, phase two, the sweep, the death and the bar are in tests/flayer-phase.test.ts, the bot in
 // tests/flayer-bot.test.ts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,12 +23,12 @@ function onLine(r: ReturnType<typeof fRig>, i: number, along: number, off = 0): 
 }
 
 test('the numbers: what docs/level-9.md says, with the HP the bot fight moved', () => {
-  assert.deepEqual([FLAYER.atk, FLAYER.def, FLAYER.xp, LEG.atk, LEG.def, LEG.xp], [30, 6, 120, 30, 4, 0]);
-  assert.deepEqual([FLAYER.hp, LEG.hp], [1200, 140], 'the spec says 1600 and 180: the bot fight needed less');
-  assert.deepEqual([FX.riseT, FX.downT, FX.downMul, FX.slamEvery, FX.phaseAt, FX.sweepEvery, FX.waveEvery, FX.waveN, FX.waveMax], [40, 300, 1.5, 70, 0.5, 480, 540, 2, 3]);
-  assert.deepEqual([LX.warn, LX.warnLow, LX.slamT, LX.rest, LX.len, LX.halfW, LEG.power, LX.kb], [40, 28, 12, 30, 150, 12, 1.2, 5]);
-  assert.deepEqual([LX.sweepWarn, LX.bandH, LX.sweepPower, LX.sweepKb], [40, 24, 1, 4]);
-  assert.deepEqual([LX.poolR, LX.poolLife, LX.poolMax, LX.poolPower, LX.poolEvery], [20, 480, 4, 0.15, 30]);
+  assert.deepEqual([FLAYER.atk, FLAYER.def, FLAYER.xp, LEG.atk, LEG.def, LEG.xp], [22, 6, 120, 22, 4, 0]);
+  assert.deepEqual([FLAYER.hp, LEG.hp], [800, 90], 'the first spec had 1600 and 180: the bot fight needed less');
+  assert.deepEqual([FX.riseT, FX.downT, FX.downMul, FX.slamEvery, FX.phaseAt, FX.sweepEvery, FX.waveEvery, FX.waveN, FX.waveMax], [40, 420, 3, 110, 0.5, 480, 600, 1, 2]);
+  assert.deepEqual([LX.warn, LX.warnLow, LX.slamT, LX.rest, LX.len, LX.halfW, LEG.power, LX.kb], [40, 28, 12, 30, 150, 12, 0.8, 5]);
+  assert.deepEqual([LX.sweepWarn, LX.bandH, LX.sweepPower, LX.sweepKb], [40, 24, 0.5, 4]);
+  assert.deepEqual([LX.poolR, LX.poolLife, LX.poolMax, LX.poolPower, LX.poolEvery], [20, 480, 4, 0.07, 30]);
   assert.equal(FLAYER.speed + LEG.speed, 0, 'rooted');
 });
 
@@ -143,10 +143,12 @@ test('line: the slam fx sits at the tip, and the tip is where the leg is hit', (
   assert.deepEqual([r.legs[0]?.x, r.legs[0]?.y], [aim.x, aim.y]);
 });
 
-test('line: a hero on the line takes power 1.2 with knockback 5 across it, once; one 12 px off it takes nothing, even in the slam', () => {
+test('line: a hero on the line takes the slam with its knockback across it, once; one past its half-width takes nothing, even in the slam', () => {
   const dmgs: number[] = [];
-  for (const off of [0, 8, 11.5]) {
+  let def = 0;
+  for (const off of [0, LX.halfW * 0.7, LX.halfW - 0.5]) {
     const r = fRig({ god: false });
+    def = r.hero.st.def;
     at(r, tc(8), tf(9));
     startLine(r.s, r.legs[0] as never, r.hero, LX.warn);
     const p = onLine(r, 1, 100, off);
@@ -157,9 +159,9 @@ test('line: a hero on the line takes power 1.2 with knockback 5 across it, once;
     dmgs.push((h[0] as { dmg: number }).dmg);
     if (off > 0) assert.ok(Math.hypot(r.hero.vx, r.hero.vy) > 0.5 || Math.hypot(r.hero.x - p.x, r.hero.y - p.y) > 2, 'and shoved');
   }
-  const range = damageRange(1.2, 30, 5);
-  assert.ok(dmgs.every((d) => d >= range.min - 4 && d <= range.max + 2), `damage ${dmgs.join(', ')} for power 1.2 of ATK 30`);
-  for (const off of [13, 20]) {
+  const range = damageRange(LEG.power, LEG.atk, def);
+  assert.ok(dmgs.every((d) => d >= range.min && d <= range.max), `damage ${dmgs.join(', ')}, not in ${range.min} to ${range.max}, for the leg's power of its ATK`);
+  for (const off of [LX.halfW + 1, LX.halfW + 8]) {
     const r = fRig({ god: false });
     at(r, tc(8), tf(9));
     startLine(r.s, r.legs[0] as never, r.hero, LX.warn);
@@ -206,7 +208,7 @@ test('line: it stops short of a wall, 150 px at most', () => {
   assert.ok(Math.hypot(a.x - rootOf(1).x, a.y - rootOf(1).y) < LX.len - 2, 'short of 150 px');
 });
 
-test('line: one leg at a time, every 70 frames or so, in phase one', () => {
+test('line: one leg at a time, about every slam gap, in phase one', () => {
   const r = fRig({ god: true }, true, false);
   const starts: number[] = [];
   let was = 0;
@@ -219,14 +221,15 @@ test('line: one leg at a time, every 70 frames or so, in phase one', () => {
     was = n;
   }
   assert.equal(most, 1, 'never two on lines');
-  assert.ok(starts.length >= 15, `${starts.length} slams in 1500 frames`);
+  // From the first slam to the end, a slam every FX.slamEvery give or take a tenth: at least most of them come.
+  assert.ok(starts.length >= (1500 - FX.riseT - FX.slamFirst) / (FX.slamEvery * 1.3), `${starts.length} slams in 1500 frames`);
   const gaps = starts.slice(1).map((s, i) => s - (starts[i] as number));
-  assert.ok(gaps.every((g) => g >= 60 && g <= 90), `gaps ${gaps.join(', ')}`);
+  assert.ok(gaps.every((g) => g >= FX.slamEvery - 10 && g <= FX.slamEvery + 20), `gaps ${gaps.join(', ')}`);
 });
 
 // ------------------------------------------------------------------ pools
 
-test('pools: where a tip lands there is a pool, 20 px across from its middle, for 480 frames', () => {
+test('pools: where a tip lands there is a pool, poolR across from its middle, for poolLife frames', () => {
   const r = fRig({ god: true });
   at(r, tc(8), tf(9));
   startLine(r.s, r.legs[0] as never, r.hero, LX.warn);
@@ -234,24 +237,24 @@ test('pools: where a tip lands there is a pool, 20 px across from its middle, fo
   const aim = legView(r, 1)?.aim as { x: number; y: number };
   run(r.sim, LX.warn);
   const [p] = r.sim.view().pools;
-  assert.deepEqual([p?.x, p?.y, p?.r, p?.life], [aim.x, aim.y, 20, 480]);
+  assert.deepEqual([p?.x, p?.y, p?.r, p?.life], [aim.x, aim.y, LX.poolR, LX.poolLife]);
   assert.equal(p?.t, 1, 'a frame old on the tick it landed');
   run(r.sim, 100);
   assert.equal(r.sim.view().pools[0]?.t, 101);
-  run(r.sim, 378);
+  run(r.sim, LX.poolLife - 102);
   assert.equal(r.sim.view().pools.length, 1);
   run(r.sim, 1);
-  assert.equal(r.sim.view().pools.length, 0, 'dry after 480');
+  assert.equal(r.sim.view().pools.length, 0, 'dry after its life');
 });
 
-test('pools: at most four, and a fifth replaces the oldest', () => {
+test('pools: at most poolMax, and one more replaces the oldest', () => {
   const r = fRig({ god: true });
-  for (let i = 0; i < 5; i++) { addPool(r.s, 100 + i * 40, 150); run(r.sim, 5); }
+  for (let i = 0; i <= LX.poolMax; i++) { addPool(r.s, 100 + i * 40, 150); run(r.sim, 5); }
   const xs = r.sim.view().pools.map((p) => p.x);
-  assert.deepEqual(xs, [140, 180, 220, 260]);
+  assert.deepEqual(xs, Array.from({ length: LX.poolMax }, (_, i) => 140 + i * 40));
 });
 
-test('pools: the active hero in one is slowed and takes power 0.15 every 30 frames; outside one, nothing', () => {
+test('pools: the active hero in one is slowed and stung every poolEvery frames; outside one, nothing', () => {
   const r = fRig({ god: false });
   addPool(r.s, tc(11), tf(8));
   at(r, tc(11) + 15, tf(8));
@@ -259,8 +262,9 @@ test('pools: the active hero in one is slowed and takes power 0.15 every 30 fram
   assert.ok(r.hero.stat.slow > 0);
   assert.equal(r.sim.view().actors.find((a) => a.id === 'mike')?.tint, 'purple');
   const hits = hurt(ev);
-  assert.equal(hits.length, 3, 'at 30, 60 and 90');
-  assert.ok(hits.every((h) => h.dmg >= 1 && h.dmg <= rollDamage(0.15, 30, 0, 1.1) + 1), `${hits.map((h) => h.dmg).join(', ')}`);
+  assert.equal(hits.length, Math.floor(100 / LX.poolEvery), 'one every poolEvery frames, from when he stepped in');
+  const sting = damageRange(LX.poolPower, LEG.atk, r.hero.st.def);
+  assert.ok(hits.every((h) => h.dmg >= sting.min && h.dmg <= sting.max), `${hits.map((h) => h.dmg).join(', ')}, not in ${sting.min} to ${sting.max}`);
   assert.ok(r.hero.hp > 880, 'a sting, not a slam');
   // 24 px from the middle is outside.
   const q = fRig({ god: false });
@@ -336,7 +340,7 @@ test('sever: cutting a leg mid-warning takes its line away', () => {
 
 // ------------------------------------------------------------------ the head
 
-test('head: with all four legs cut the body is in pose down for 300 frames, and takes x1.5', () => {
+test('head: with all four legs cut the body is in pose down for downT frames', () => {
   const r = fRig();
   r.s.rng = () => 0.5;
   cutAll(r);
@@ -344,10 +348,10 @@ test('head: with all four legs cut the body is in pose down for 300 frames, and 
   assert.ok(frames <= 8, 'down as soon as the last leg is cut');
   let down = 1;
   while (bodyView(r)?.pose === 'down') { run(r.sim, 1); down++; }
-  assert.equal(down - 1, FX.downT, 'down for 300 frames');
+  assert.equal(down - 1, FX.downT, 'down for downT frames');
 });
 
-test('head: it takes x1.5 while it is down', () => {
+test('head: it takes downMul times the damage while it is down', () => {
   const r = fRig();
   r.s.rng = () => 0.5;
   cutAll(r);
@@ -355,7 +359,7 @@ test('head: it takes x1.5 while it is down', () => {
   run(r.sim, 6);
   const hp = r.body.hp;
   const dealt = hammer(r, r.body, 2);
-  assert.equal(dealt, Math.round(rollDamage(2, r.hero.st.atk, FLAYER.def, 1) * 1.5), 'x1.5');
+  assert.equal(dealt, Math.round(rollDamage(2, r.hero.st.atk, FLAYER.def, 1) * FX.downMul), 'downMul');
   assert.equal(r.body.hp, hp - dealt);
   assert.ok(ofType(run(r.sim, 1), 'hit').some((h) => h.onEnemy));
 });
@@ -366,7 +370,7 @@ test('head: while it is down the legs stay cut and nothing slams, sweeps or warn
   cutAll(r);
   r.f.slamCd = 0; r.f.sweepCd = 0; r.f.phase2 = true;
   let worst = 0;
-  for (let f = 0; f < 290; f++) {
+  for (let f = 0; f < FX.downT - 10; f++) {
     r.sim.step(idle());
     worst = Math.max(worst, r.legs.filter((l) => ls(l).move !== 'severed').length);
   }

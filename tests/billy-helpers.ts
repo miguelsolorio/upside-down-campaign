@@ -9,8 +9,11 @@ import { arena, idle, inp, makeWhite, run, tc, tf } from './sim-helpers.ts';
 export const BILLY = ENEMY_DEFS.billy;
 export const BX = BILLY.x;
 
-/** The party a real run brings to 3.3 (core/campaign.ts): Mike (lead) at Lv 7, Dustin 6, Robin 4 and Eleven 3. */
+/** The party a real run brings to 3.3 (core/campaign.ts): Mike (lead), Dustin, Robin and Eleven. */
 export const PARTY: PartySeed[] = defaultParty('3.3');
+
+/** The lowest and highest a cooldown of `n` frames can come out at: the brain rolls it within a tenth either way (enemies/billy.ts). */
+export const jittered = (n: number): [number, number] => [Math.round(n * 0.9), Math.round(n * 1.1)];
 
 export const billyAt = (tx: number, ty: number, extra: Partial<Extract<SimSpawn, { kind: 'enemy' }>> = {}): SimSpawn =>
   ({ kind: 'enemy', id: 'billy', type: 'billy', tx, ty, group: 'boss', ...extra });
@@ -87,7 +90,7 @@ export const hammer = (r: BRig, power = 60): number => hitEnemy(r.s, r.hero, r.b
 
 /**
  * A rig whose Billy has been hit at 40 HP and is kneeling. The events of the two ticks after the hit come back. With `raged` he was below
- * half HP first, so the two Flayed he calls are on the floor too.
+ * half HP first, so the Flayed he calls are on the floor too.
  */
 export function pinnedRig(over: Parameters<typeof bRig>[0] = {}, party: PartySeed[] = PARTY, raged = false): { r: BRig; ev: SimEvent[] } {
   const r = bRig(over, true, party);

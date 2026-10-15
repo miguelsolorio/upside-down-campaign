@@ -1,5 +1,6 @@
 // The Mind Flayer's waves, phase two and the sweep, the boss rules, its death all at once, the boss bar and the XP (docs/level-9.md, "The Mind
-// Flayer"). The numbers, the legs and the head are in tests/flayer.test.ts, the bot in tests/flayer-bot.test.ts.
+// Flayer"). The numbers, the legs and the head are in tests/flayer.test.ts, the bot in tests/flayer-bot.test.ts. Numbers a retune moves are
+// read from ENEMY_DEFS.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { SimEvent } from '../src/core/types.ts';
@@ -8,7 +9,7 @@ import { damageRange, hitEnemy } from '../src/combat/damage.ts';
 import { startLine } from '../src/enemies/flayer_legs.ts';
 import type { Enemy } from '../src/combat/state.ts';
 import { idle, ofType, run, sfxIds, tc, tf, makeWhite } from './sim-helpers.ts';
-import { BURROWS, FX, LX, at, bodyView, court, cut, cutAll, fRig, flayerSpawns, hammer, hold, legView, ls, rigOf, until } from './flayer-helpers.ts';
+import { BURROWS, FLAYER, FX, LEG, LX, at, bodyView, court, cut, cutAll, fRig, flayerSpawns, hammer, hold, legView, ls, rigOf, until } from './flayer-helpers.ts';
 
 const hurt = (ev: SimEvent[]) => ofType(ev, 'hit').filter((h) => !h.onEnemy);
 const waves = (r: { s: { enemies: Enemy[] } }) => r.s.enemies.filter((e) => e.group === 'waves' && !e.dead);
@@ -17,49 +18,53 @@ const bandFx = (r: ReturnType<typeof fRig>) => r.sim.view().fx.find((f) => f.kin
 
 // ------------------------------------------------------------------ waves
 
-test('waves: two Flayed come up at the arena\'s sides, awake, worth 1 XP each, in group waves', () => {
+test('waves: a wave of Flayed comes up at the arena\'s sides, awake, worth 1 XP each, in group waves', () => {
   const r = fRig({ god: true });
   r.f.waveCd = 0;
   run(r.sim, 1);
   const w = waves(r);
-  assert.equal(w.length, 2);
+  assert.equal(w.length, FX.waveN);
   assert.ok(w.every((e) => e.kind === 'flayed' && e.aware && e.xp === 1 && e.drop === 0 && !e.dormant));
-  const xs = w.map((e) => e.x).sort((a, b) => a - b);
-  assert.ok(Math.abs((xs[0] as number) - tc(BURROWS[0]!.tx)) < 4 && Math.abs((xs[1] as number) - tc(BURROWS[1]!.tx)) < 4, `at x ${xs.join(', ')}`);
+  const sides = BURROWS.map((b) => tc(b.tx));
+  assert.ok(w.every((e) => sides.some((x) => Math.abs(e.x - x) < 4)), `at x ${w.map((e) => e.x).join(', ')}`);
+  // A wave of two or more fills both sides.
+  if (FX.waveN >= 2) assert.ok(sides.every((x) => w.some((e) => Math.abs(e.x - x) < 4)), 'one at each side');
 });
 
-test('waves: one wave every 540 frames while the head is up, the first after 300', () => {
+test('waves: one wave every waveEvery frames while the head is up, the first after waveFirst', () => {
   const r = fRig({ god: true }, true, false);
   hold(r);
   r.f.waveCd = FX.waveFirst;
   r.f.slamCd = 99999; r.f.sweepCd = 99999;
   const starts: number[] = [];
   let seen = 0;
-  for (let f = 0; f < 1500; f++) {
+  for (let f = 0; f < FX.waveFirst + FX.waveEvery * 2 + 100; f++) {
     run(r.sim, 1);
     for (const e of waves(r)) { e.dead = true; e.hp = 0; }
     if (r.f.waves !== seen) { seen = r.f.waves; starts.push(f); }
   }
   assert.equal(starts.length, 3);
-  assert.deepEqual(starts.slice(1).map((s, i) => s - (starts[i] as number)), [540, 540]);
+  assert.deepEqual(starts.slice(1).map((s, i) => s - (starts[i] as number)), [FX.waveEvery, FX.waveEvery]);
   assert.ok(Math.abs((starts[0] as number) - FX.waveFirst) <= 1);
 });
 
-test('waves: at most three alive; a wave with room for one brings one, a wave with none brings none and tries again soon', () => {
+test('waves: at most waveMax alive; a wave with room for fewer brings what fits, a wave with none brings none and tries again soon', () => {
   const r = fRig({ god: true });
-  r.f.waveCd = 0; run(r.sim, 1);
-  assert.equal(waves(r).length, 2);
-  r.f.waveCd = 0; run(r.sim, 1);
-  assert.equal(waves(r).length, 3);
+  let alive = 0;
+  while (alive < FX.waveMax) {
+    r.f.waveCd = 0; run(r.sim, 1);
+    alive = Math.min(alive + FX.waveN, FX.waveMax);
+    assert.equal(waves(r).length, alive, 'what fits comes');
+  }
   const made = r.f.waves;
   r.f.waveCd = 0; run(r.sim, 1);
-  assert.equal(waves(r).length, 3);
+  assert.equal(waves(r).length, FX.waveMax);
   assert.equal(r.f.waves, made, 'not counted');
   assert.ok(r.f.waveCd > 0 && r.f.waveCd < FX.waveEvery, 'and it tries again before a whole round');
   waves(r)[0]!.hp = 0;
   run(r.sim, 30);
   r.f.waveCd = 0; run(r.sim, 1);
-  assert.equal(waves(r).length, 3, 'a dead one makes room');
+  assert.equal(waves(r).length, FX.waveMax, 'a dead one makes room');
 });
 
 test('waves: none while the head is down, and the clock waits for it', () => {
@@ -78,7 +83,7 @@ test('waves: a stage with no burrows gets them on open floor round the hero', ()
   r.f.waveCd = 0;
   run(r.sim, 1);
   const w = waves(r);
-  assert.equal(w.length, 2);
+  assert.equal(w.length, FX.waveN);
   assert.ok(w.every((e) => Math.hypot(e.x - r.hero.x, e.y - r.hero.y) < 90));
 });
 
@@ -115,7 +120,7 @@ test('phase two: under half HP the warning drops to 28 frames and two legs go at
   assert.equal(frames, LX.warnLow, 'and the warning is 28 frames');
 });
 
-test('phase two: never more than two legs on lines, and a pair every 70 frames or so', () => {
+test('phase two: never more than two legs on lines, and a pair about every slam gap', () => {
   const r = fRig({ god: true }, true, false);
   r.body.hp = r.body.hpMax * 0.4;
   r.f.sweepCd = 99999;
@@ -129,7 +134,7 @@ test('phase two: never more than two legs on lines, and a pair every 70 frames o
     was = n;
   }
   assert.equal(most, 2);
-  assert.ok(starts.length >= 12, `${starts.length} pairs`);
+  assert.ok(starts.length >= (1400 - FX.riseT - FX.slamFirst) / (FX.slamEvery * 1.5), `${starts.length} pairs`);
 });
 
 // ------------------------------------------------------------------ the sweep
@@ -159,9 +164,11 @@ test('sweep: one fx, the band across the arena on the hero\'s row, 24 px tall, 4
   assert.equal(bandFx(r), undefined, 'and the band is gone after the strike');
 });
 
-test('sweep: a hero in the band takes power 1.0 with knockback 4 out of it, once; one outside it, or who left, takes nothing', () => {
+test('sweep: a hero in the band takes the sweep\'s power and knockback out of it, once; one outside it, or who left, takes nothing', () => {
+  let def = 0;
   const hit = (dy: number, leaves = false): { n: number; dmg: number; moved: number } => {
     const r = fRig({ god: false });
+    def = r.hero.st.def;
     r.f.phase2 = true;
     at(r, tc(11), 150);
     r.f.sweepCd = 0;
@@ -174,16 +181,16 @@ test('sweep: a hero in the band takes power 1.0 with knockback 4 out of it, once
     return { n: h.length, dmg: (h[0] as { dmg: number } | undefined)?.dmg ?? 0, moved: r.hero.y - y0 };
   };
   const inside = hit(-9);
-  const range = damageRange(1, 30, 5);
+  const range = damageRange(LX.sweepPower, LEG.atk, def);
   assert.equal(inside.n, 1);
-  assert.ok(inside.dmg >= range.min - 4 && inside.dmg <= range.max + 2, `${inside.dmg} for power 1.0`);
+  assert.ok(inside.dmg >= range.min && inside.dmg <= range.max, `${inside.dmg}, not in ${range.min} to ${range.max}, for the sweep's power of the leg's ATK`);
   assert.ok(inside.moved < -4, 'thrown up out of the band, the way he was above its middle');
   assert.equal(hit(5).n, 1, 'anywhere along it');
   assert.equal(hit(14).n, 0, 'just outside');
   assert.equal(hit(0, true).n, 0, 'who left in time');
 });
 
-test('sweep: about every 480 frames in phase two, and never in phase one', () => {
+test('sweep: about every sweepEvery frames in phase two, and never in phase one', () => {
   const r = fRig({ god: true }, true, false);
   r.f.sweepCd = FX.sweepFirst;
   const phase1 = (() => { let n = 0; for (let f = 0; f < 600; f++) { run(r.sim, 1); if (sweeper(r)) n++; } return n; })();
@@ -199,7 +206,7 @@ test('sweep: about every 480 frames in phase two, and never in phase one', () =>
   }
   assert.ok(starts.length >= 6, `${starts.length} sweeps in 3600 frames`);
   const gaps = starts.slice(1).map((s, i) => s - (starts[i] as number));
-  assert.ok(gaps.every((g) => g >= 420 && g <= 600), `gaps ${gaps.join(', ')}`);
+  assert.ok(gaps.every((g) => g >= FX.sweepEvery - 60 && g <= FX.sweepEvery + 120), `gaps ${gaps.join(', ')}`);
 });
 
 test('sweep: a lone leg sweeps, and not while a line is warned', () => {
@@ -284,19 +291,17 @@ test('death: at 0 HP the body and all four legs die in the same tick, with one g
   assert.equal(killTicks.length, 1, 'one tick');
   const kills = ofType(killTicks[0] as SimEvent[], 'kill');
   assert.deepEqual(kills.map((k) => k.spawnId).sort(), ['flayer', 'leg1', 'leg2', 'leg3', 'leg4']);
-  assert.deepEqual(kills.map((k) => [k.spawnId, k.xp]).sort().map(([, xp]) => xp).sort((a, b) => (a as number) - (b as number)), [0, 0, 0, 0, FLAYER_XP]);
+  assert.deepEqual(kills.map((k) => [k.spawnId, k.xp]).sort().map(([, xp]) => xp).sort((a, b) => (a as number) - (b as number)), [0, 0, 0, 0, FLAYER.xp]);
   assert.equal(ofType(ticks.flat(), 'groupCleared').filter((g) => g.group === 'flayer').length, 1);
-  assert.equal(r.sim.stats().xpEarned, FLAYER_XP, 'the legs give none');
+  assert.equal(r.sim.stats().xpEarned, FLAYER.xp, 'the legs give none');
   assert.equal(r.sim.enemiesAlive('flayer'), 0);
 });
-
-const FLAYER_XP = 120;
 
 test('death: standing legs go with the body too, and so do the pools and the Flayed it sent, with no kill for them', () => {
   const r = fRig({ god: true });
   r.f.waveCd = 0; run(r.sim, 1);
   r.s.pools.push({ x: 100, y: 100, age: 0 });
-  assert.equal(waves(r).length, 2);
+  assert.equal(waves(r).length, FX.waveN);
   r.sim.dev.killAll();
   const ev = run(r.sim, 8);
   const kills = ofType(ev, 'kill');
@@ -311,9 +316,9 @@ test('death: the legs\' 0 XP stays 0 under an XP factor, where every other enemy
   const { sim, s } = makeWhite({ grid: court(), spawns: flayerSpawns(false), start: { x: tc(11), y: tf(10) }, xpMult: 0.3, enemyMult: 1 });
   const r = rigOf(sim, s);
   const xps = new Map(s.enemies.map((e) => [e.id, e.xp]));
-  assert.equal(xps.get('flayer'), 36);
+  assert.equal(xps.get('flayer'), Math.round(FLAYER.xp * 0.3));
   for (const id of ['leg1', 'leg2', 'leg3', 'leg4']) assert.equal(xps.get(id), 0, id);
-  assert.equal(r.body.xp, 36);
+  assert.equal(r.body.xp, Math.round(FLAYER.xp * 0.3));
 });
 
 // ------------------------------------------------------------------ the bar
@@ -323,12 +328,12 @@ test('bar: nothing while it sleeps, then MIND FLAYER with its HP and the four le
   assert.equal(sim.view().hud.boss, null);
   sim.spawnGroup('flayer');
   const r = rigOf(sim, s);
-  assert.deepEqual(sim.view().hud.boss, { name: 'MIND FLAYER', hp: 1200, hpMax: 1200, parts: [1, 1, 1, 1] }, 'even while it rises');
+  assert.deepEqual(sim.view().hud.boss, { name: 'MIND FLAYER', hp: FLAYER.hp, hpMax: FLAYER.hp, parts: [1, 1, 1, 1] }, 'even while it rises');
   run(sim, FX.riseT + 1);
-  r.legs[1]!.hp = 70;
-  r.body.hp = 700.2;
+  r.legs[1]!.hp = LEG.hp / 2;
+  r.body.hp = FLAYER.hp * 0.6 + 0.2;
   cut(r, 3);
-  assert.deepEqual(sim.view().hud.boss, { name: 'MIND FLAYER', hp: 701, hpMax: 1200, parts: [1, 70 / 140, 0, 1] });
+  assert.deepEqual(sim.view().hud.boss, { name: 'MIND FLAYER', hp: Math.ceil(FLAYER.hp * 0.6 + 0.2), hpMax: FLAYER.hp, parts: [1, 0.5, 0, 1] });
   // Only the legs awake: no bar.
   const legs = makeWhite({ grid: court(), spawns: flayerSpawns(false).filter((sp) => sp.kind === 'enemy' && sp.type === 'flayerleg'), start: { x: tc(11), y: tf(10) } });
   assert.equal(legs.sim.view().hud.boss, null);

@@ -95,6 +95,15 @@ The run now carries on through 3.1 and 3.2 (`docs/level-7.md`, `docs/level-8.md`
 - **Arrival:** 3.1 is Mike 6, Dustin 5, Robin 3, Nancy 3. 3.2 is Mike 7, Dustin 6, Robin 3, Nancy 3.
 - **Pace:** the lead ends 3.2 at Lv 7, the party at 5.3 on average. The target is Lv 8 after chapter 3, so 3.3 has a level to give.
 
+## Chapter 3's end (Level 9)
+
+3.3 closes the chapter (`docs/level-9.md`). It pays 278 XP before its `xpMult` of 2, so 556, the most of any stage: the lead comes out of 3.2 at Lv 7 with about 1220 XP and needs 1532 for Lv 8.
+
+- **Eleven catches up.** The run plays 3.1 and 3.2 without her, so she would come back to 3.3 at the Lv 3 chapter 1 left her, locked in next to a Lv 7 Mike. She walks in at the level of the party she joins, averaged and less one (`CATCH_UP` in `core/campaign.ts`): Lv 4.
+- **Arrival:** 3.3 is Mike 7, Dustin 6, Robin 4, Eleven 4.
+- **Pace, keeping the lead** (10 seeds, the test's): the lead ends chapter 3 at Lv 8 in nine runs of ten, with 1505 to 1825 XP. The tenth is 27 XP short, a kill or two: the boss fight spreads the XP by who it leaves standing, and when Mike is down a while Dustin and Eleven take his share. `tests/pace.test.ts` asks for Lv 8 in nine of ten and never more than 30 XP short. Over 40 seeds the lead averages 7.9 and the party 6.25.
+- **Why one stage pays so much:** 3.1 and 3.2 are measured and merged at their own XP, and changing them moves both their `ARRIVAL` lines and their bands. The level chapter 3 owes is paid where it ends, the way the boss stages of chapters 1 and 2 paid the most of theirs.
+
 
 ## Lv 6 talents
 

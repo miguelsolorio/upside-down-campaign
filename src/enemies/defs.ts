@@ -184,9 +184,10 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       throwPower: 0.7, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5, call: 2,
     },
   },
-  // Flayed Billy, phase one of the 3.3 boss (docs/level-9.md, "Billy", enemies/billy.ts, billy_hit.ts). HP, ATK, DEF, walk and XP are
-  // the spec's starting numbers. Windup, power and cooldown are the jab's: a 12 frame wind-up, power 0.6 a hit, and 90 frames between
-  // the starts of two jabs. Weight 4 is the quarter knockback the spec gives a boss.
+  // Flayed Billy, phase one of the 3.3 boss (docs/level-9.md, "Billy", enemies/billy.ts, billy_hit.ts). HP, DEF, walk and XP are the
+  // spec's. The lead's pass on the stage softened his hits so a player who doesn't dodge reaches the Mind Flayer alive: 18 ATK (the spec
+  // had 30), jabs of 0.4, a charge of 0.8, a throw of 0.7 and one Flayed at rage. Windup, power and cooldown are the jab's: a 12 frame
+  // wind-up, power 0.4 a hit, and 90 frames between the starts of two jabs. Weight 4 is the quarter knockback the spec gives a boss.
   // jabReach: px at which he commits to a jab, jabHit: how far a jab still lands once it comes out. jabGap: frames between the two
   // hits, jabKb: their shove (light, so the hero is still in reach for the second), jabInvuln: the frames of invulnerability the first leaves, short of the gap so the second can land.
   // jabRecover: frames after. hold: px he stops short of the hero (a hero at his melee distance can step out of a grab's reach in time).
@@ -213,13 +214,11 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     },
   },
   // The Mind Flayer, phase two of the 3.3 boss (docs/level-9.md, "The Mind Flayer", enemies/flayer.ts, flayer_hit.ts), and its four legs
-  // (enemies/flayer_legs.ts). Both are rooted: speed 0 and the weight of a wall. ATK, DEF and XP are the spec's starting numbers (the legs
-  // give 0 XP and init.ts keeps it 0). HP is down from the spec's 1600 and 180 to 1200 and 140: the careful bot dodges nearly every line, so
-  // the fight is all HP against how fast it can cut four legs, walk to the head and cut it down before the legs grow back, and at the spec's
-  // numbers it took ten rounds of that and the Flayed waves wore the party out first. On a 22 by 14 court at enemyMult 1 the bot now wins
-  // 19 of 20 on chief in about two minutes and 20 of 20 on kid, and a bot that never dodges loses every time to the lines. On upside it wins
-  // none: the waves are most of the damage (with no waves it wins 20 of 20 having taken 72). The body's windup, power and cooldown are not
-  // used: its legs have them.
+  // (enemies/flayer_legs.ts). Both are rooted: speed 0 and the weight of a wall. The legs give 0 XP and init.ts keeps it 0. The lead's pass
+  // on the whole stage (docs/level-9.md, "Result") made it a shorter, sharper fight: 800 HP and legs of 90 (the spec had 1600 and 180), the
+  // head down for 420 frames at x3 so two downs or so finish it (it was seven), slams every 110 frames at 0.8 off 22 ATK, pools of 0.07, a
+  // sweep of 0.5, and one Flayed every 600 frames, two at most. The waves and the slams were what killed a player who doesn't dodge. The
+  // body's windup, power and cooldown are not used: its legs have them.
   // riseT: frames coming in through the skylight, hit by nothing. downT: frames the head is on the floor, downMul: damage it takes then.
   // slamFirst, slamEvery and slamRegrow: frames before the first slam, between two slams, and after the legs grow back. phaseAt: the HP share
   // that starts phase two, where two legs slam at once. sweepFirst and sweepEvery: frames before the first sweep and between sweeps (phase

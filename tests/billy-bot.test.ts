@@ -8,7 +8,7 @@ import type { Sim, SimEvent } from '../src/core/types.ts';
 import type { Hero } from '../src/combat/state.ts';
 import { arena, ofType, tc, tf } from './sim-helpers.ts';
 import type { BRig } from './billy-helpers.ts';
-import { bRig, bossView, charger, grabber, knockOut, pinnedRig, slotOf, at, until } from './billy-helpers.ts';
+import { BX, bRig, bossView, charger, grabber, knockOut, pinnedRig, slotOf, at, until } from './billy-helpers.ts';
 
 const grid = arena(22, 14);
 const bot = (careless = false) => createBot({ grid, waypoints: [{ x: tc(4), y: tf(7) }], careless });
@@ -58,7 +58,7 @@ test('bot: it beats Billy on chief in at least 9 of 10 seeds, with no flag from 
   // The charge came at least once in most fights (the first one as he closes in), and the bot lost nobody to it.
   assert.ok(fights.filter((f) => f.charges >= 1).length >= 8, `charges seen: ${fights.map((f) => f.charges).join(', ')}`);
   // He called his Flayed at half HP, and the bot dealt with them or left them to the reach.
-  assert.ok(fights.every((f) => ofType(f.ev, 'kill').filter((k) => k.group === 'billys').length <= 2));
+  assert.ok(fights.every((f) => ofType(f.ev, 'kill').filter((k) => k.group === 'billys').length <= BX.call));
 });
 
 test('bot: it steps out of the charge\'s lane, where a bot that never dodges is hit', () => {

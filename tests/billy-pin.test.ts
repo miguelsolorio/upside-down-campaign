@@ -7,7 +7,7 @@ import { hitEnemy } from '../src/combat/damage.ts';
 import type { Enemy, Hero } from '../src/combat/state.ts';
 import { idle, inp, ofType, press, run, sfxIds } from './sim-helpers.ts';
 import type { BRig } from './billy-helpers.ts';
-import { PARTY, bRig, becomeEleven, bossView, hammer, knockOut, npcView, park, pinnedRig, slotOf, standAt, until } from './billy-helpers.ts';
+import { BILLY, BX, PARTY, bRig, becomeEleven, bossView, hammer, knockOut, npcView, park, pinnedRig, slotOf, standAt, until } from './billy-helpers.ts';
 
 const pins = (ev: SimEvent[]) => ofType(ev, 'pinned');
 const pokes = (ev: SimEvent[]) => ofType(ev, 'poked').filter((p) => p.propId === 'billy');
@@ -28,7 +28,7 @@ test('pin: the hit that would take him to 0 HP leaves him kneeling, with the eve
 test('pin: his bar is empty (no boss bar, 0 over his head), and a hit on a Billy above 0 HP pins nothing', () => {
   const { r } = pinnedRig();
   assert.equal(r.sim.view().hud.boss, null);
-  assert.deepEqual(bossView(r)?.bar, { hp: 0, hpMax: 700 });
+  assert.deepEqual(bossView(r)?.bar, { hp: 0, hpMax: BILLY.hp });
   const up = bRig();
   park(up, up.boss.x, up.boss.y);
   up.boss.hp = 400;
@@ -82,7 +82,7 @@ test('pin: he lets go of a hero he held', () => {
 test('pin: the Flayed he called keep fighting, and one of them can take a hero', () => {
   const { r } = pinnedRig({ god: false }, PARTY, true);
   const flayed = r.s.enemies.filter((e) => e.group === 'billys');
-  assert.equal(flayed.length, 2);
+  assert.equal(flayed.length, BX.call);
   const f = flayed[0] as Enemy;
   r.sim.dev.teleport(f.x - 40, f.y);
   until(r, () => r.s.hold !== null, 600);
@@ -129,7 +129,7 @@ test('tries: a try is reported once and again 45 frames later, and each one soun
   assert.ok(blocks.length > n, 'every hit clinks, not only the ones that report');
 });
 
-test('tries: a knocked-out Eleven stands back up when the party tries him, with 30 percent of her HP and the MP for a special', () => {
+test('tries: a knocked-out Eleven stands back up when the party tries him, with her revive share of HP and the MP for a special', () => {
   const { r } = pinnedRig();
   knockOut(r, 'eleven');
   const el = r.s.heroes[slotOf(r, 'eleven')] as Hero;
@@ -140,7 +140,7 @@ test('tries: a knocked-out Eleven stands back up when the party tries him, with 
   const ev = press(r.sim, { mx: 0.2, attackPressed: true }, 20);
   assert.equal(pokes(ev).length, 1);
   assert.equal(el.ko, false);
-  assert.ok(Math.abs(el.hp - Math.ceil(el.st.hp * 0.3)) < 1, `${el.hp} of ${el.st.hp}`);
+  assert.ok(Math.abs(el.hp - Math.ceil(el.st.hp * BX.reviveHp)) < 1, `${el.hp} of ${el.st.hp}`);
   assert.ok(el.mp >= 8);
   assert.equal(r.s.bodies.some((b) => b.id === 'eleven'), false);
 });
@@ -289,7 +289,7 @@ test('freed: the reach sound, a reveal fx, and he dies like any enemy: the kill,
   assert.ok(fx, 'a reveal fx');
   assert.equal(kills.length, 1);
   const k = kills[0] as Extract<SimEvent, { t: 'kill' }>;
-  assert.deepEqual([k.kind, k.spawnId, k.group, k.xp, k.by], ['billy', 'billy', 'boss', 60, 'eleven']);
+  assert.deepEqual([k.kind, k.spawnId, k.group, k.xp, k.by], ['billy', 'billy', 'boss', BILLY.xp, 'eleven']);
   assert.deepEqual(ofType(all, 'groupCleared').map((g) => g.group), ['boss']);
   assert.equal(r.boss.dead, true);
   assert.equal(r.sim.view().hud.boss, null);
@@ -301,7 +301,7 @@ test('freed: his XP is paid once, when he is freed, and not when he is pinned', 
   becomeEleven(r);
   standAt(r, 24);
   until(r, () => r.boss.dead, 200);
-  assert.equal(r.sim.stats().xpEarned, 60);
+  assert.equal(r.sim.stats().xpEarned, BILLY.xp);
 });
 
 test('freed: he stays on the floor as an npc where he knelt, and the dying enemy is not drawn', () => {
@@ -323,8 +323,8 @@ test('freed: he stays on the floor as an npc where he knelt, and the dying enemy
 test('freed: the Flayed he called are still there, and keep fighting', () => {
   const { r } = freed(true);
   const left = r.s.enemies.filter((e) => e.group === 'billys' && !e.dead);
-  assert.equal(left.length, 2);
-  assert.equal(r.sim.enemiesAlive('billys'), 2);
+  assert.equal(left.length, BX.call);
+  assert.equal(r.sim.enemiesAlive('billys'), BX.call);
   assert.equal(r.sim.enemiesAlive('boss'), 0);
 });
 

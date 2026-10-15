@@ -11,7 +11,7 @@ export const LEG = ENEMY_DEFS.flayerleg;
 export const FX = FLAYER.x;
 export const LX = LEG.x;
 
-/** The party a real run brings to 3.3 (core/campaign.ts): Mike (lead) at Lv 7, Dustin 6, Robin 4 and Eleven 3. */
+/** The party a real run brings to 3.3 (core/campaign.ts): Mike (lead), Dustin, Robin and Eleven. */
 export const PARTY: PartySeed[] = defaultParty('3.3');
 
 /** The food court in miniature: 22 by 14 tiles, a row of stalls (solid) along tile row 1 with the body standing in it. */

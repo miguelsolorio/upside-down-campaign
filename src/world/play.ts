@@ -425,7 +425,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const lead = view.hud.party.find((m) => m.active);
       if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
-      forward(sim.step(input));
+      // The scare holds the whole level still, as dialogue does, so nothing lands a hit on a party that can't move.
+      if (!scare) forward(sim.step(input));
       view = sim.view();
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');

@@ -127,7 +127,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - On level-up the hero heals 50% and rolls a d20. Bonus points are `floor(roll / 5)`, spread by the hero's growth weights on top of fixed per-level gains. A 20 gives five points, a full heal and 20 s of Inspiration for the party. A 1 gives none and the next roll has advantage. Nothing here can make a hero worse.
 - A level-up never stops play. It shows as a ring and sparkles around the hero that follow them, the LEVEL UP floater, a short chime and a pulse on the HUD level and portrait. A new talent gets a callout with its name, and a Nat 20 gets a gold ring and a NAT 20 callout. The roll itself still sizes the bonus points, but the die and the stat deltas are not shown.
 - Talents arrive at levels 3, 6 and 9. Will's change from Wizard to Cleric at 6 follows the show, where his class changes between campaigns.
-- Pace target: Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4, and 12 only if you clear most of chapter 5. A balance test enforces it.
+- Pace target: Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4, and 12 only if you clear most of chapter 5. The level is the lead's, the hero with the most XP. `tests/pace.test.ts` enforces it for the stages built so far, and `docs/pace.md` has the measured run.
 
 **Puzzle gates** make the swap matter. Each hero's "Opens" tag in the table above is checked against the gate.
 

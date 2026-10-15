@@ -134,5 +134,7 @@ export const STAGE_22: StageData = {
   // 1.6 KOs and 101 s, careless 19, kid 20, upside 8. The damage is demodog bites. A Max who is down cannot cross gap3, so the
   // gaps all come before the packs the bot fights as Max.
   enemyMult: 1.25,
+  // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
+  xpMult: 1.5,
   waypoints: WAYPOINTS,
 };

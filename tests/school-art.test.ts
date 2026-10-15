@@ -13,7 +13,7 @@ import { groundTile } from '../src/gfx/tile_ground.ts';
 import type { Near, TileCtx } from '../src/gfx/tile_ground.ts';
 import { objectTile } from '../src/gfx/tile_objects.ts';
 import { litWindow, nightTile } from '../src/gfx/night.ts';
-import { SCHOOL_TILES } from '../src/gfx/tile_school.ts';
+import { SCHOOL_TILES, findCourts } from '../src/gfx/tile_school.ts';
 import { DEMO_H, DEMO_W, composeDemo, demoPx, demoSpec } from '../src/gfx/actor_demo.ts';
 import type { PoseName } from '../src/gfx/actor_demo.ts';
 import { fireboxArt, vanTippedArt, vinesArt } from '../src/gfx/props_school.ts';
@@ -67,10 +67,28 @@ test('the floors are warm, pale and slate, and board wood, and the gym has white
   const count = (px: Px, names: ColorName[]): number => { const s = new Set(names.map((n) => px32(n))); return px.d.reduce((n, v) => n + (s.has(v) ? 1 : 0), 0); };
   assert.ok(count(paint('schoolfloor', ctxAt(7, 7, around('schoolfloor'))), ['soil3', 'sand', 'soil2']) >= 200, 'brown linoleum');
   assert.ok(count(paint('checker', ctxAt(7, 7, around('checker'))), ['bone', 'slate', 'white', 'mist', 'dusk', 'grey3']) >= 230, 'bone and slate');
-  const edge = paint('gymfloor', ctxAt(7, 7, { n: 'schoolwall', e: 'gymfloor', s: 'gymfloor', w: 'gymfloor' }));
-  const inner = paint('gymfloor', ctxAt(7, 7, around('gymfloor')));
-  assert.ok(count(edge, ['white']) >= 28, 'a boundary line along the wall');
-  assert.equal(count(inner, ['white']), 0, 'no line in the middle of the court');
+  const court = { tx: 2, ty: 7, w: 18, h: 12 };
+  const on = (tx: number, ty: number, near: Near = around('gymfloor')): Px => paint('gymfloor', { tx, ty, near, court });
+  assert.ok(count(on(7, 7, { n: 'schoolwall', e: 'gymfloor', s: 'gymfloor', w: 'gymfloor' }), ['white']) >= 28, 'a boundary line along the top');
+  assert.ok(count(on(7, 7), ['white']) >= 28, 'the line follows the court, not the tiles next to it');
+  assert.equal(count(on(7, 10, { n: 'vines', e: 'vines', s: 'schoolwall', w: 'vines' }), ['white']), 0, 'no line in the middle of the court, whatever grows beside it');
+  assert.equal(count(paint('gymfloor', ctxAt(7, 7, { n: 'schoolwall', e: 'gymfloor', s: 'gymfloor', w: 'gymfloor' })), ['white']), 0, 'no court, no lines');
+  // The half-court line straddles the edge between the court's two middle columns, from the top line to the bottom one.
+  const col = (px: Px, x: number): number => [...Array(16).keys()].filter((y) => px.d[y * 16 + x] === px32('white')).length;
+  assert.equal(col(on(10, 10), 15), 16, 'the west half of it');
+  assert.equal(col(on(11, 10), 0), 16, 'the east half of it');
+  assert.equal(col(on(10, 7), 15), 14, 'it starts at the top line');
+  assert.equal(col(on(12, 10), 0) + col(on(9, 10), 15), 0, 'and nowhere else');
+});
+
+test('the gym court is found from the map: the main rectangle of gym floor and the vines on it, not the corridor off it', () => {
+  const rows = ['KKKKKKKK', 'KuuUuuuK', 'KuuuuuUK', 'KUuuuuuK', 'KKKKuKKK', 'KKKKuKKK'];
+  const names = rows.join('').split('').map((c) => (TILES[c] as { name: TileName }).name);
+  const courts = findCourts(names, 8);
+  const box = { tx: 1, ty: 1, w: 6, h: 3 };
+  for (const [x, y] of [[1, 1], [3, 1], [6, 2], [1, 3], [4, 5]] as const) assert.deepEqual(courts[y * 8 + x], box, `${x},${y} is on the court`);
+  assert.equal(courts[0], undefined, 'a wall is not');
+  assert.equal(findCourts(['vines', 'vines', 'schoolfloor', 'vines'], 2).every((c) => c === undefined), true, 'vines with no gym floor are no court');
 });
 
 test('the brick facade has lit windows that litWindow finds, and the rest do not count', () => {

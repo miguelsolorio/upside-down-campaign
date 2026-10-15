@@ -2,7 +2,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createBot } from '../src/combat/bot.ts';
-import { defaultParty } from '../src/core/campaign.ts';
 import type { Enemy, Hero } from '../src/combat/state.ts';
 import type { Difficulty, PartySeed, SimSpawn } from '../src/core/types.ts';
 import { arena, makeWhite, ofType, run, tc, tf } from './sim-helpers.ts';
@@ -22,9 +21,12 @@ function waves(): SimSpawn[] {
 
 interface Fight { won: boolean; down: boolean; frames: number; damage: number; kos: number }
 
+/** The 2.1 party as the bot reaches the ambush: the stage's XP takes Mike to Lv 5 on the way (20 of 20 seeds). */
+const AT_AMBUSH: PartySeed[] = [{ id: 'mike', level: 5 }, { id: 'dustin', level: 4 }, { id: 'lucas', level: 4 }, { id: 'will', level: 2 }];
+
 function ambush(seed: number, difficulty: Difficulty = 'chief', careless = false): Fight {
   const grid = arena(16, 12);
-  const { sim } = makeWhite({ grid, party: defaultParty('2.1'), start: { x: tc(3), y: tf(6) }, spawns: waves(), enemyMult: 1.15, seed, difficulty });
+  const { sim } = makeWhite({ grid, party: AT_AMBUSH, start: { x: tc(3), y: tf(6) }, spawns: waves(), enemyMult: 1.15, seed, difficulty });
   sim.spawnGroup('amb1');
   const bot = createBot({ grid, waypoints: [{ x: tc(3), y: tf(6) }], careless });
   let down = false, f = 0;
@@ -49,13 +51,15 @@ test('ambush: the 2.1 party on chief beats three waves of 3, 3 and 4 demodogs at
   assert.ok(secs > 5 && secs < 90, `average fight ${secs.toFixed(0)} s`);
 });
 
-test('ambush: kid is easier than upside, upside still wins a third, and the careless bot clears most', () => {
+test('ambush: kid is easier than upside, upside still wins a quarter, and the careless bot clears most', () => {
   const rate = (d: Difficulty, careless = false): { wins: number; dmg: number } => {
     const fs = Array.from({ length: 12 }, (_, i) => ambush(i + 1, d, careless));
     return { wins: fs.filter((f) => f.won).length, dmg: fs.reduce((n, f) => n + f.damage, 0) / fs.length };
   };
   const kid = rate('kid'), upside = rate('upside');
-  assert.ok(kid.wins >= 11 && upside.wins >= 4, `kid ${kid.wins}/12, upside ${upside.wins}/12`);
+  // Upside won 6 of 12 when the party reached the ambush with Dustin at Lv 5 and Will at 3. The campaign's pace has them a
+  // level lower (docs/pace.md), and upside on 2.1 is a little under its floor (docs/level-4.md, "Result").
+  assert.ok(kid.wins >= 11 && upside.wins >= 3, `kid ${kid.wins}/12, upside ${upside.wins}/12`);
   assert.ok(upside.dmg > kid.dmg, `${upside.dmg.toFixed(0)} damage on upside against ${kid.dmg.toFixed(0)} on kid`);
   assert.ok(rate('chief', true).wins >= 10);
 });

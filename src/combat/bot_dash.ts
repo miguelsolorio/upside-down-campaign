@@ -1,7 +1,8 @@
 // The bot's crossing at a waypoint flagged `dash` (bot.ts calls this). It reads only what a player sees in the view.
 // At the waypoint, on the near side of a gap, it swaps to the party hero whose utilities include 'dash', turns that hero
 // to face the next waypoint, casts the special and waits out the roll. If the roll did not carry it toward the next
-// waypoint (it landed on the near side) it tries again, a few times, then gives up and carries on.
+// waypoint (it landed on the near side) it tries again, a few times, then gives up and carries on. A dasher who is down is
+// stood back up by leaning on the gap.
 import type { SimInput, SimView, Vec2 } from '../core/types.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 
@@ -42,7 +43,12 @@ export function createDashCross(): DashCross {
       const party = v.hud.party;
       const di = party.findIndex((p) => !p.ko && HERO_DEFS[p.id].utilities.includes('dash'));
       const dasher = party[di];
-      if (!dasher || age > GIVE_UP) return finish();
+      if (age > GIVE_UP) return finish();
+      // The dasher is down: lean on the gap, which stands them back up (combat/pokes.ts), and wait for them.
+      if (!dasher) {
+        if (to) { const a = Math.atan2(to.y - hy, to.x - hx); out.mx = Math.cos(a); out.my = Math.sin(a); }
+        return false;
+      }
       // Not the one in front: tag the dasher in and wait for it.
       if (!dasher.active) { out.swapTo = di; return false; }
       const anim = v.actors.find((a) => a.kind === 'hero' && a.id === dasher.id)?.anim;

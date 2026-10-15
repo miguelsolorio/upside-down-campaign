@@ -167,9 +167,13 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
 
   /** Foes behind walls or water that no route reaches are ignored for a while, so the bot does not pace at the creek. */
   const reach = new Map<string, { ok: boolean; until: number }>();
+  /** Foes the bot swung at through a wall until it gave up, by tile, and the frame it may try them again. */
+  const givenUp = new Map<string, number>();
+  const foeKey = (f: Foe): string => `${Math.floor(f.x / TILE)},${Math.floor((f.y - 4) / TILE)}`;
   function reachable(hx: number, hy: number, f: Foe): boolean {
+    const key = foeKey(f);
+    if ((givenUp.get(key) ?? -1) > frame) return false;
     if (f.d < 36 || clearLine(hx, hy, f.x, f.y)) return true;
-    const key = `${Math.floor(f.x / TILE)},${Math.floor((f.y - 4) / TILE)}`;
     const hit = reach.get(key);
     if (hit && frame < hit.until) return hit.ok;
     const h = tileOf(hx, hy), g = tileOf(f.x, f.y);
@@ -372,6 +376,8 @@ function reachThreatOf(f: Foe): boolean {
     }
     if (!fighting) dealtAt = frame;
     const desperate = frame - dealtAt > 300;
+    // Five seconds of swinging at a foe on the far side of a wall (a pod over the nest wall, say): leave it and carry on.
+    if (desperate && fighting && near && !clearLine(hx, hy, near.x, near.y)) { givenUp.set(foeKey(near), frame + 600); dealtAt = frame; }
 
     if (fin) {
       // Pinned: Eleven's Mind Blast is the only thing that hurts it. Swap to her, walk up and fire.

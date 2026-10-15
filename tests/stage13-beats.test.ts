@@ -61,6 +61,10 @@ test('stage 1.3: every beat has a trigger, a real script, group or prop, and the
   assert.deepEqual([...said].sort(), [...SCRIPT_IDS].sort(), 'every script is played by some beat, and no other is');
   assert.deepEqual(steps('cafeteria'), [{ t: 'say', script: 'l3_cafeteria' }, { t: 'wake', group: 'rats1' }]);
   assert.deepEqual(steps('scare'), [{ t: 'scare' }, { t: 'say', script: 'l3_scare' }]);
+  assert.equal((when('scare') as { needs?: string }).needs, 'cafeteria', 'the scare is by position, once the rats are awake');
+  const scare = rectOf('scare'), caf = rectOf('cafeteria');
+  assert.ok(scare.tx > caf.tx + caf.w && scare.tx + scare.w < prop('door1').tx, 'mid-room, between the doorway and the fire door');
+  assert.ok(scare.ty <= 19 && scare.ty + scare.h - 1 >= 24, 'a band across the whole room, so the way east goes through it');
   assert.deepEqual(steps('door1_open'), [{ t: 'open', prop: 'door1' }, { t: 'say', script: 'l3_firebox_done' }]);
   assert.deepEqual(steps('demogorgon'), [{ t: 'music', track: 'clock' }, { t: 'say', script: 'l3_demogorgon' }, { t: 'wake', group: 'boss' }]);
   assert.deepEqual(steps('level_clear'), [{ t: 'say', script: 'l3_clear' }, { t: 'finish' }]);
@@ -74,7 +78,8 @@ test('stage 1.3: every beat has a trigger, a real script, group or prop, and the
   assert.ok(S.music === 'upside' && steps('demogorgon') && (steps('demogorgon') as { t: string; track?: TrackId }[])[0]?.track === 'clock');
   const through = (gates: string[], id: string): boolean => rectTiles(rectOf(id)).some(([x, y]) => at(flood(new Set(gates)), x, y) === 1);
   const behind: [string, string[], string[]][] = [
-    ['agents', ['van1'], []], ['vines_hint', ['van1'], []], ['cafeteria', ['van1', 'vines1'], ['van1']], ['gym', GATES, ['van1', 'vines1']],
+    ['agents', ['van1'], []], ['vines_hint', ['van1'], []], ['cafeteria', ['van1', 'vines1'], ['van1']], ['scare', ['van1', 'vines1'], ['van1']],
+    ['gym', GATES, ['van1', 'vines1']],
     ['demogorgon', GATES, ['van1', 'vines1']],
   ];
   for (const id of ['start', 'van_hint']) assert.ok(through([], id), `${id} is reachable at the start`);
@@ -127,9 +132,10 @@ test('director: the beats run in route order, the boss wakes with the music, and
   assert.deepEqual(run(() => tick('vines_hint')), ['say l3_vines_hint']);
   assert.deepEqual(run(() => d.events([{ t: 'propCleared', propId: 'vines1' }])), ['say l3_vines_done']);
   assert.deepEqual(run(() => tick('cafeteria')), ['say l3_cafeteria', 'wake rats1']);
+  assert.deepEqual(run(() => d.events([{ t: 'groupCleared', group: 'rats1' }])), [], 'the rats dying does not set off the scare');
+  assert.deepEqual(run(() => tick('scare')), ['scare', 'say l3_scare', 'say l3_firebox_hint'], 'mid-room does, and the shoot hint follows it');
   assert.deepEqual(run(() => tick('gym')), ['say l3_gym']);
   assert.deepEqual(run(() => tick('demogorgon')), ['music clock', 'say l3_demogorgon', 'wake boss'], 'the music changes, the script plays and the boss wakes');
-  assert.deepEqual(run(() => d.events([{ t: 'groupCleared', group: 'rats1' }])), ['scare', 'say l3_scare', 'say l3_firebox_hint'], 'the scare waits for the rats, and the shoot hint follows it');
   assert.deepEqual(run(() => d.events([{ t: 'targetHit', propId: 'firebox1' }])), ['open door1', 'say l3_firebox_done']);
   assert.deepEqual(run(() => d.events([{ t: 'pinned', spawnId: 'demo' }])), ['say l3_pinned'], 'the pin is the arrival of the finisher');
   assert.deepEqual(run(() => d.events([{ t: 'pinned', spawnId: 'other' } as SimEvent])), [], 'only the Demogorgon\'s pin counts');

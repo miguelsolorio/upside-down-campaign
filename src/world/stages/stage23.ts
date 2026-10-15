@@ -137,6 +137,8 @@ export const STAGE_23: StageData = {
   // the defense healed and a failed defense comes back to the Gate. With the softer Alpha and the sparse defense (stage23_data.ts) the
   // stage runs at 1.0: see "Result" in docs/level-6.md for the numbers.
   enemyMult: 1,
+  // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
+  xpMult: 1.6,
   burrows: BURROWS,
   defense: DEFENSE,
   waypoints: WAYPOINTS,

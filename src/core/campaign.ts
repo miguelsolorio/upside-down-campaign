@@ -65,14 +65,17 @@ const REQUIRED: Record<string, HeroId[]> = {
   '2.3': ['steve'],
 };
 
-/** What a jump straight to a stage (?stage=1.3) starts with: the roster at the levels a normal run arrives with. */
+/**
+ * What a jump straight to a stage (?stage=1.3) starts with: the party a real run walks in with, levels and XP, from the
+ * median of node scripts/measure-campaign.ts chief 40 (docs/pace.md). Rerun it when stage XP changes.
+ */
 const ARRIVAL: Record<string, PartySeed[]> = {
   '1.1': [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }],
-  '1.2': [{ id: 'mike', level: 3 }, { id: 'dustin', level: 3 }, { id: 'lucas', level: 3 }, { id: 'eleven', level: 3 }],
-  '1.3': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 4 }, { id: 'lucas', level: 4 }, { id: 'eleven', level: 4 }],
-  '2.1': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 5 }, { id: 'lucas', level: 4 }, { id: 'will', level: 3 }],
-  '2.2': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
-  '2.3': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
+  '1.2': [{ id: 'mike', level: 3, xp: 68 }, { id: 'dustin', level: 2, xp: 54 }, { id: 'lucas', level: 2, xp: 54 }, { id: 'eleven', level: 2, xp: 30 }],
+  '1.3': [{ id: 'mike', level: 4, xp: 76 }, { id: 'dustin', level: 3, xp: 77 }, { id: 'lucas', level: 3, xp: 65 }, { id: 'eleven', level: 3, xp: 41 }],
+  '2.1': [{ id: 'mike', level: 4, xp: 150 }, { id: 'dustin', level: 4, xp: 10 }, { id: 'lucas', level: 3, xp: 115 }, { id: 'will', level: 2 }],
+  '2.2': [{ id: 'mike', level: 5, xp: 116 }, { id: 'dustin', level: 4, xp: 172 }, { id: 'max', level: 3 }, { id: 'steve', level: 3 }],
+  '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 123 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

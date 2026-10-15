@@ -12,7 +12,7 @@ import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { STAGE_23 as S, ROWS } from '../src/world/stages/stage23.ts';
 import { BURROWS, DEFENSE } from '../src/world/stages/stage23_data.ts';
 import type { TileRect } from '../src/world/types.ts';
-import { botRoute, propTiles, rectTiles, stageKit, tileOf } from './stage-helpers.ts';
+import { botRoute, propTiles, rectTiles, stageKit, stageXp, tileOf } from './stage-helpers.ts';
 import type { Prop } from './stage-helpers.ts';
 
 const kit = stageKit(S);
@@ -146,11 +146,13 @@ test('stage 2.3: the roster is in the spec\'s groups, and the stage pays 150 to 
   assert.deepEqual([alpha?.id, alpha?.dormant, alpha?.group], ['alpha', true, 'boss'], 'one Alpha, id alpha, asleep');
   assert.ok(alpha && inRoom('den', alpha.tx, alpha.ty), 'in the den');
   assert.ok(enemies.filter((e) => e.type !== 'alpha').every((e) => !e.dormant && !e.hidden), 'everything else is awake');
-  const hallXp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
+  assert.equal(enemies.reduce((sum, e) => sum + xpOf(e), 0), 130, 'at the enemies\' own XP, before the stage\'s xpMult');
+  const hallXp = stageXp(S);
+  // Run-time pups stay at 1 XP each, whatever the stage's xpMult.
   const pups = 3 * ENEMY_DEFS.alpha.x.pack + DEFENSE.waves.reduce((sum, w) => sum + w.n, 0);
   const total = hallXp + pups;
-  assert.ok(total >= 150 && total <= 200, `stage XP ${total} (${hallXp} in the halls and the Alpha, ${pups} in run-time pups)`);
-  assert.equal(total, 156);
+  assert.ok(total >= 210 && total <= 250, `stage XP ${total} (${hallXp} in the halls and the Alpha, ${pups} in run-time pups)`);
+  assert.equal(total, 233);
   const k = (n: string): number => items.filter((i) => i.item === n).length;
   assert.deepEqual([k('eggo'), k('coke'), k('quarter')], [4, 3, 12]);
   const cache = items.filter((i) => inRoom('cache', i.tx, i.ty));

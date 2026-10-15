@@ -182,7 +182,7 @@ test('whole run: the bot clears the patch most of the time on chief, and the thr
     assert.ok(r.done || r.allDown, `seed ${seed} got stuck after ${r.frames} frames`);
     if (!r.done) continue;
     clears++;
-    assert.ok(r.xp >= 130 && r.xp <= 166, `seed ${seed}: the stage pays ${r.xp} XP`);
+    assert.ok(r.xp >= 230 && r.xp <= 260, `seed ${seed}: the stage pays ${r.xp} XP`);
     assert.deepEqual(r.said.filter((id) => !incidental.has(id)), ROUTE, `seed ${seed}: the scripts play in route order`);
     assert.deepEqual(r.waves, ['amb1', 'amb2', 'amb3'], `seed ${seed}: the waves come in turn`);
     assert.ok(r.frames >= 60 * 70 && r.frames <= 60 * 150, `seed ${seed}: ${(r.frames / 60).toFixed(0)} s`);
@@ -221,8 +221,9 @@ test('the carry rule: out of stage 1.3 Eleven is dropped and Will joins at the o
   const known = defaultParty('1.3');
   const party = partyFor('2.1', known);
   assert.deepEqual(party.map((p) => p.id), PARTY, 'Mike, Dustin, Lucas, Will');
-  assert.equal(party.find((p) => p.id === 'will')?.level, 3, 'Will arrives at the average minus one');
+  // Mike 4, Dustin 3 and Lucas 3 average 3.33: Will joins at Lv 2.
+  assert.equal(party.find((p) => p.id === 'will')?.level, 2, 'Will arrives at the average minus one');
   const r = play(3, party);
   assert.ok(r.done || r.allDown);
-  assert.deepEqual(defaultParty('2.1').map((p) => [p.id, p.level]), [['mike', 5], ['dustin', 5], ['lucas', 4], ['will', 3]], 'a jump straight to 2.1 starts at Lv 5, 5, 4, 3');
+  assert.deepEqual(defaultParty('2.1').map((p) => [p.id, p.level]), [['mike', 4], ['dustin', 4], ['lucas', 3], ['will', 2]], 'a jump straight to 2.1 starts at Lv 4, 4, 3, 2');
 });

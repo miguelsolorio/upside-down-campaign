@@ -13,6 +13,7 @@ import type { Near, TileCtx } from './tile_ground.ts';
 import { objectTile } from './tile_objects.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
 import { tunnelTile } from './tile_tunnel.ts';
+import { findCourts } from './tile_school.ts';
 import { fleshTile } from './tile_flesh.ts';
 
 /** A point in world px. */
@@ -83,6 +84,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
   const pulses: PulseSpot[] = [];
   const windows: Spot[] = [];
   const at = (x: number, y: number, self: TileName): TileName => (x < 0 || y < 0 || x >= cols || y >= nrows ? self : (names[y * cols + x] as TileName));
+  const courts = findCourts(names, cols);
   for (let ty = 0; ty < nrows; ty++) {
     for (let tx = 0; tx < cols; tx++) {
       const name = names[ty * cols + tx] as TileName;
@@ -91,7 +93,8 @@ export function bakeStage(rows: string[], night = false): BakedStage {
         water.push({ tx, ty, deep: name === 'creek', variant: hash2(tx, ty, 2) % 3, banks: bankMask(near) });
         continue;
       }
-      const tc: TileCtx = { tx, ty, near };
+      const court = courts[ty * cols + tx];
+      const tc: TileCtx = court ? { tx, ty, near, court } : { tx, ty, near };
       if (isPulse(name)) pulses.push({ tx, ty, name, near });
       const day = staticTile(name, tc);
       const tile = night ? nightTile(day, name, tc) : day;

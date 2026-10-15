@@ -23,10 +23,10 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, o: { w?: numbe
 };
 
 // ---------------------------------------------------------------- enemies
-// Up to 166 XP: fourteen demodogs (twelve at 9 and two elite at 18, which is 144), two vines (10) and four pods (12). A pod that
-// bursts pays nothing. The spec's eighteen demodogs, four vines and four pods come to well over the cap of 170, so the packs are
-// smaller and two of the four vines are gone. The halls, the nest and the two packs in the long hall are awake and wait where
-// they are. The three waves sleep in the hub.
+// Up to 166 XP: fourteen demodogs (twelve at 9 and two elite at 18, which is 144), two vines (10) and four pods (12), which the
+// stage's xpMult makes 258. A pod that bursts pays nothing. The spec's eighteen demodogs, four vines and four pods came to well
+// over the cap of 170 the stage was built to, so the packs are smaller and two of the four vines are gone. The halls, the nest
+// and the two packs in the long hall are awake and wait where they are. The three waves sleep in the hub.
 const ENEMIES: SimSpawn[] = [
   // The root halls: two demodogs at the west end, where the halls turn south, and a vine where the long hall above the nest turns down.
   foe('halls_dog1', 'demodog', 'halls', 6, 13), foe('halls_dog2', 'demodog', 'halls', 5, 16),

@@ -29,6 +29,7 @@ export function simOptions(data: StageData, grid: Grid, b: SimBuild): SimOptions
     spawns: data.spawns,
     hazards: data.hazards,
     enemyMult: data.enemyMult,
+    xpMult: data.xpMult,
     burrows: data.burrows,
     defense: data.defense,
     skipSpawns: b.skipSpawns,

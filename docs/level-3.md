@@ -8,8 +8,8 @@ One stage, five to eight minutes, and the end of chapter 1. Sim builds the Demog
 - Route, one main path with side corners for items: the parking lot (start, outdoors, south-west), the main hall going east, the science room, the cafeteria, then the gym (end, north-east), where the Demogorgon comes through the wall.
 - Light: `time: 'night'`. The lot's lamps and the school's lit windows get pools. Inside, the halls are dark tiles with pools at the lights props and a few `lights` entries (a vending glow, an exit sign).
 - Music: `upside` until the boss wakes, then the `music` step switches to `clock`.
-- Party: Mike (active), Dustin, Lucas, Eleven, carried from 1.2. `?stage=1.3` starts them at Lv 5, 4, 4, 4 (`defaultParty` in `core/campaign.ts`).
-- `enemyMult: 1.7` (see "Result"). Dialogue is off by default; gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
+- Party: Mike (active), Dustin, Lucas, Eleven, carried from 1.2. `?stage=1.3` starts them at Lv 4, 3, 3, 3 with the XP a run brings (`defaultParty` in `core/campaign.ts`).
+- `enemyMult: 1.5` (see "Result"). Dialogue is off by default; gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
 
 ## Rooms
 
@@ -36,7 +36,7 @@ World triggers them. Story writes the scripts.
 | `vines_hint` | science room, before `vines1` | `l3_vines_hint` | Arrival beat of the BURN puzzle |
 | `vines_cleared` | event `propCleared` on `vines1` | `l3_vines_done` | Script only |
 | `cafeteria` | cafeteria doorway | `l3_cafeteria` | Script, then `wake` `rats1` |
-| `scare` | cafeteria, mid-room | `l3_scare` | `scare` step, then the script. No fight |
+| `scare` | cafeteria, mid-room, needs `cafeteria` | `l3_scare` | `scare` step, then the script. No fight: the level holds still while it plays |
 | `firebox_hint` | after `scare` | `l3_firebox_hint` | Arrival beat of the SHOOT puzzle |
 | `door1_open` | event `targetHit` on `firebox1` | `l3_firebox_done` | `open` `door1`, then the script |
 | `gym` | gym doors | `l3_gym` | `lights_gym` is the third save point |
@@ -96,7 +96,7 @@ The spec started at 520 HP and 22 ATK with heavy spike hits. As built, the hits 
 | `rats1` | 6 rats | dormant behind the counter, woken at `cafeteria` |
 | `boss` | Demogorgon `demo` | dormant in the gym |
 
-That's 5 agents (40), an elite agent (16), six rats (24) and the boss (60): 140 XP. A test keeps it between 120 and 150. The lead arrives at Lv 5 with about 504 XP and must stay under Lv 6 (660). Items: three Eggos (one in a gym corner before the arena), two Cokes, 10 quarters. Props:
+That's 5 agents (40), an elite agent (16), six rats (24) and the boss (60): 140 XP at the enemies' own numbers. The stage's `xpMult` of 0.7 makes it 101 (`docs/pace.md`), and a test keeps it between 90 and 115. The lead arrives at Lv 4 with about 270 XP and must stay under Lv 5 (383): chapter 1 ends at Lv 4. Items: three Eggos (one in a gym corner before the arena), two Cokes, 10 quarters. Props:
 - lights: `lights_lot`, `lights_hall`, `lights_gym`
 - gates: `van1`, `vines1`, `firebox1`, `door1`
 - dressing: a second van, two bikes
@@ -157,3 +157,21 @@ Stage XP is 140. In the browser the bot clears 1.3 in 1:40.
 - **The first draft's spike hits were too hard.** At the spec's numbers, an undodged charge or leap nearly killed a Lv 5 hero. A bot that never dodges wiped every time, even at a factor of 1.5. The boss now hits softer and lasts longer, so a player who dodges badly still wins about half the time.
 - **The bot dodges the boss well.** It sidesteps the charge one frame late and steps off marks three frames late. That is the careful bot's best case; the careless one is the better guide for a new player.
 - **Fixes along the way.** The bot had two stalls at the pinned boss: a false "stuck" learned during a Crit, and a boss one corner away with no line of sight. Both are fixed. If Eleven is down when the boss pins, she stands back up with enough MP for one blast, so the finisher can't soft-lock.
+
+## After the pace pass
+
+The party walks in a level lower (Lv 4, 3, 3, 3 with the XP a run brings, was 5, 4, 4, 4) and the stage pays 101 XP (`docs/pace.md`). At 1.7 the careless bot cleared 3 of 20 and upside 3, so the factor is 1.5:
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 20 | 98, none stuck | 14 of 20 (67 of 100) | 20 | 12 (51 of 100) |
+| Damage taken | 253 | 234 | 342 | 127 | 334 |
+| KOs | 1.0 | 0.96 | 2.35 | 0.10 | 2.85 |
+| Lowest party HP | 36% | 38% | 15% | 65% | 15% |
+| Boss fight | 46 s (47%) | 46 s | 45 s | 33 s | 59 s |
+
+Three rough edges went with it:
+
+- **The van is parked in the lot.** The side door is two tiles tall now, and `van1` is a full-size van standing across it on the lot side, not a short one squeezed into the wall.
+- **The scare is by position**, mid-room in the cafeteria, as the beat table says. It used to wait for the rats to die, because a scare froze the party and the rats kept biting. Now the whole level holds still while it plays, as it does for dialogue.
+- **The court lines follow the court.** The gym floor paints a boundary 2 px in from the court's edges and a half-court line down its middle (`findCourts` in `gfx/tile_school.ts` finds the court when the stage is baked). Vines and growth paint over the lines instead of boxing them in, and the vines in the school grow over the school's floors, not the Lab's.

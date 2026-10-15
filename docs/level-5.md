@@ -16,7 +16,7 @@ One stage, five to eight minutes, under Hawkins in November 1984. Max and Steve 
 - Halls are two or three tiles wide. Chambers are bigger.
 - Light: `time: 'night'`. Pools at `lights` entries: the shaft at the drop, each cluster of glowing `veins`, and the lights props.
 - Music: `upside`.
-- Party: picked on the map from Mike, Dustin, Lucas, Will, Max and Steve (see "Party picks" in `docs/map-screen.md`). Max is locked in. `?stage=2.2` starts Mike (lead) at Lv 6, Dustin 5, Max 4, Steve 4 (`defaultParty` in `core/campaign.ts`).
+- Party: picked on the map from Mike, Dustin, Lucas, Will, Max and Steve (see "Party picks" in `docs/map-screen.md`). Max is locked in. `?stage=2.2` starts Mike (lead) at Lv 5, Dustin 4, Max 3, Steve 3, with the XP a run brings (`defaultParty` in `core/campaign.ts`).
 - `enemyMult`: start at 1 on the chapter 2 enemy numbers and set it by measuring (see "Targets").
 - Dialogue is off by default; gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
 
@@ -109,7 +109,7 @@ Steve is a Fighter, in `heroes/steve.ts`, and `HERO_DEFS.steve` replaces the sta
 | `hall3` | 2 demodogs, an elite demodog | before the hub |
 | `amb1`, `amb2`, `amb3` | 3, 4 and 4 demodogs, one of the last an elite | dormant in the hub, waves |
 
-That's about 18 demodogs, four vines and four pods. Count the XP from `ENEMY_DEFS` (the chapter 2 numbers may change it) and keep the total between 130 and 170; a test enforces it. Pods that burst give less. Items: three Eggos (one in the cache), two Cokes (one in the cache), 12 quarters (some in the cache). Props:
+That's about 18 demodogs, four vines and four pods. Count the XP from `ENEMY_DEFS` (the chapter 2 numbers may change it). The roster is worth 166, and the stage's `xpMult` of 1.5 makes it 258 (`docs/pace.md`); a test keeps it between 230 and 270. Pods that burst give less. Items: three Eggos (one in the cache), two Cokes (one in the cache), 12 quarters (some in the cache). Props:
 - lights: `lights_drop`, `lights_nest`, `lights_hub`
 - gates: `gap1`, `gap2`, `gap3`, `crack1`
 
@@ -164,9 +164,26 @@ Measured with `node scripts/measure-stage.ts 2.2` at `enemyMult` 1.25, on the ch
 | Lowest party HP | 34% | 32% | | | |
 | Time | 101 s | 102 s | | | |
 
-Stage XP is 166.
+Stage XP was 166.
 
 - **The roster is smaller than the spec's.** Its 18 demodogs came to about 220 XP, so the stage has 14 (two of them elite), two vines and four pods.
 - **A knocked-out Max soft-locked the stage at a gap.** Nobody else can cross and Eggos don't revive. Now a try at a gate that only knocked-out heroes can open stands the first of them back up (see "Puzzles"). The three gaps also come before the packs the bot fights as Max.
 - **The crack's hint beat fires when the bot walks through the junction.** The crack itself stays shut in a bot run, and the cache with it.
 - **Retries keep a crossed gap and a broken crack open**, the way they keep every other gate.
+
+## After the pace pass
+
+A real run walks in with Mike at Lv 5, Dustin 4, and Max and Steve at 3 (the old seeds had 6, 5, 4 and 4), and the stage pays 258 XP (`docs/pace.md`). The factor stays at 1.25:
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 19 | 93, none stuck | 19 of 20 (92 of 100) | 20 | 5 (27 of 100) |
+| Damage taken | 240 | 264 | 242 | 156 | 352 |
+| KOs | 1.05 | 1.50 | 1.35 | 0.20 | 3.50 |
+| Lowest party HP | 42% | 35% | 40% | 60% | 6% |
+| Time | 105 s | 105 s | 108 s | 95 s | 106 s |
+
+The weaker party showed two bot stalls on upside, both fixed:
+
+- **A knocked-out Max at the first gap.** The bot's crossing ended at once with no dasher up, so it walked into the gap for good. Now it leans on the gap, which stands her back up, and waits for her (`combat/bot_dash.ts`).
+- **A pod over the nest wall.** Within 36 px the bot took any foe as reachable, so Steve swung at a pod through the wall all run. Now five seconds of swinging at a foe with no clear line to it, without landing a hit, makes the bot leave it for ten (`combat/bot.ts`).

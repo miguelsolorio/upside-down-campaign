@@ -17,7 +17,8 @@ const npc = (id: 'eleven' | 'hopper', tx: number, ty: number, dir: Dir): SimSpaw
 
 // ---------------------------------------------------------------- enemies
 // 160 XP in all: two corridor demodogs and two vines (28), the storage pods, vine and two demodogs (32), the Alpha (70), and the
-// run-time pups (nine from the howls and 21 in the defense, at 1 XP each, which is 30). The pods that burst pay nothing. The Alpha
+// run-time pups (nine from the howls and 21 in the defense, at 1 XP each, which is 30). The stage's xpMult makes the first three
+// 207; the pups stay at 1. The pods that burst pay nothing. The Alpha
 // sleeps in the den, far from the doors, and wakes when the `alpha` beat shuts the seals behind the party.
 const ENEMIES: SimSpawn[] = [
   // The sublevel corridor: a demodog on each side of the middle, a vine on the north wall and one on the south.

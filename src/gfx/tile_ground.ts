@@ -14,7 +14,10 @@ type Rnd = () => number;
 
 /** The four neighbours of a tile. Off-map neighbours count as the tile itself. */
 export interface Near { n: TileName; e: TileName; s: TileName; w: TileName }
-export interface TileCtx { tx: number; ty: number; near: Near }
+/** A rectangle of tiles. */
+export interface TileBox { tx: number; ty: number; w: number; h: number }
+/** court: the gym court a tile is painted in (findCourts in tile_school.ts), so its lines frame the court. Absent elsewhere. */
+export interface TileCtx { tx: number; ty: number; near: Near; court?: TileBox }
 
 export const isWater = (n: TileName): boolean => n === 'shallows' || n === 'creek';
 export const isTree = (n: TileName): boolean => n === 'pine' || n === 'deadtree';

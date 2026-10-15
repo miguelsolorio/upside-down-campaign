@@ -14,6 +14,8 @@
 // --no-hazards switches off the stage's floor hazards, to see how dangerous the enemies are on their own.
 // --mult=1.5 replaces the stage's enemyMult, to try a number before it goes into the stage. A stage with a boss also
 // reports how long the boss fight took (from the beat that wakes it to the finish), the way the 1.3 targets ask.
+// --party=mike:5+65,dustin:4 replaces the ?stage= party (id:level+xp, lead first), to try arrival levels before they go
+// into campaign.ts. scripts/measure-campaign.ts prints what a real run arrives with.
 import { createSim } from '../src/combat/index.ts';
 import { createBot } from '../src/combat/bot.ts';
 import { simOptions, stageGrid } from '../src/world/options.ts';
@@ -25,7 +27,7 @@ import { STAGE_21 } from '../src/world/stages/stage21.ts';
 import { STAGE_22 } from '../src/world/stages/stage22.ts';
 import { STAGE_23 } from '../src/world/stages/stage23.ts';
 import { defaultParty } from '../src/core/campaign.ts';
-import type { Difficulty } from '../src/core/types.ts';
+import type { Difficulty, HeroId, PartySeed } from '../src/core/types.ts';
 import type { StageData } from '../src/world/types.ts';
 
 const args = process.argv.slice(2);
@@ -38,6 +40,10 @@ if (!['kid', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficult
 const mult = args.find((a) => a.startsWith('--mult='));
 const S: StageData = { ...base, ...(flag('--no-hazards') ? { hazards: [] } : {}), ...(mult ? { enemyMult: Number(mult.slice(7)) } : {}) };
 const N = Number(seedsArg);
+const partyArg = args.find((a) => a.startsWith('--party='))?.slice(8);
+const party: PartySeed[] = partyArg
+  ? partyArg.split(',').map((t) => { const [id, lv] = t.split(':'); const [level, xp] = (lv ?? '1').split('+'); return { id: id as HeroId, level: Number(level), xp: Number(xp ?? 0) }; })
+  : defaultParty(stageId);
 const careless = flag('--careless');
 const tile = (x: number, y: number): [number, number] => [Math.floor(x / 16), Math.floor((y - 4) / 16)];
 
@@ -47,7 +53,7 @@ let cleared = 0, wiped = 0, stuck = 0, dmg = 0, kos = 0, frames = 0, low = 0, bo
 const BOSS_BEAT = stageId === '2.1' || stageId === '2.2' ? 'ambush' : stageId === '2.3' ? 'alpha' : 'demogorgon';
 for (let seed = 1; seed <= N; seed++) {
   const grid = stageGrid(S);
-  const sim = createSim(simOptions(S, grid, { party: defaultParty(stageId), seed, difficulty: difficulty as Difficulty }));
+  const sim = createSim(simOptions(S, grid, { party, seed, difficulty: difficulty as Difficulty }));
   const bot = createBot({ grid, waypoints: S.waypoints, careless });
   const dir = createDirector(S.beats, S.waves, {
     sim: () => sim, say: (_i, done) => done(), scare: (done) => done(), open: (id) => sim.openProp(id),
@@ -76,6 +82,6 @@ for (let seed = 1; seed <= N; seed++) {
   rows.push(`seed ${String(seed).padStart(3)}: ${result.padEnd(5)}  damage ${String(Math.round(st.damageTaken)).padStart(4)}  KOs ${st.kos}  ${(f / 60).toFixed(0).padStart(3)} s  lowest party HP ${(lowest * 100).toFixed(0).padStart(3)}%  XP ${st.xpEarned}${bossAt >= 0 ? `  boss ${((f - bossAt) / 60).toFixed(0)} s` : ''}`);
 }
 console.log(rows.join('\n'));
-console.log(`--- ${S.id} on ${difficulty}, ${N} seeds${careless ? ', careless bot' : ''}${flag('--no-hazards') ? ', no hazards' : ''}${mult ? `, enemyMult ${S.enemyMult}` : ''}: cleared ${cleared}, wiped ${wiped}${fell > 0 ? ` (the ward fell ${fell})` : ''}, stuck ${stuck}; ` +
+console.log(`--- ${S.id} on ${difficulty}, ${N} seeds${careless ? ', careless bot' : ''}${flag('--no-hazards') ? ', no hazards' : ''}${mult ? `, enemyMult ${S.enemyMult}` : ''}${partyArg ? `, party ${partyArg}` : ''}: cleared ${cleared}, wiped ${wiped}${fell > 0 ? ` (the ward fell ${fell})` : ''}, stuck ${stuck}; ` +
   `average damage taken ${(dmg / N).toFixed(0)}, KOs ${(kos / N).toFixed(2)}, time ${(frames / N / 60).toFixed(0)} s, lowest party HP ${(low / N * 100).toFixed(0)}%` +
   (bossRuns > 0 ? `, boss fight ${(bossFrames / bossRuns / 60).toFixed(0)} s (${(100 * bossFrames / bossRuns / (frames / N)).toFixed(0)}% of the run)` : ''));

@@ -159,7 +159,7 @@ test('whole run: the bot dashes the three gaps and clears the tunnels most of th
     assert.ok(r.done || r.allDown, `seed ${seed} got stuck after ${r.frames} frames`);
     if (!r.done) continue;
     clears++;
-    assert.ok(r.xp >= 120 && r.xp <= 166, `seed ${seed}: the stage pays ${r.xp} XP`);
+    assert.ok(r.xp >= 225 && r.xp <= 258, `seed ${seed}: the stage pays ${r.xp} XP`);
     assert.deepEqual(r.said, ROUTE, `seed ${seed}: the scripts play in route order, and crack1 is never broken`);
     assert.ok(r.frames >= 60 * 70 && r.frames <= 60 * 150, `seed ${seed}: ${(r.frames / 60).toFixed(0)} s`);
     assert.ok(r.damage >= 20 && r.damage <= 450, `seed ${seed}: ${r.damage.toFixed(0)} damage`);

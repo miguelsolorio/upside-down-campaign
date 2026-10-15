@@ -7,7 +7,7 @@ import type { TileName } from '../core/tiles.ts';
 import { hash2 } from './canvas.ts';
 import type { ColorName } from './palette.ts';
 import { Px } from './px.ts';
-import type { TileCtx } from './tile_ground.ts';
+import type { TileBox, TileCtx } from './tile_ground.ts';
 
 export type Rnd = () => number;
 export const pick = (r: Rnd, lo: number, hi: number): number => lo + Math.floor(r() * (hi - lo + 1));
@@ -103,8 +103,9 @@ function checker(c: TileCtx, r: Rnd, bare = false): Px {
 
 // ---------------------------------------------------------------- gym court
 /**
- * Maple boards, 4 px wide, laid across the tile with their end joints stepping from board to board. Paint is white:
- * a boundary line 2 px in from every wall, and a half-court line down every twelfth column.
+ * Maple boards, 4 px wide, laid across the tile with their end joints stepping from board to board. Paint is white and
+ * frames the court the tile is in (c.court): a boundary line 2 px in from its edges and a half-court line down its
+ * middle. Vines and growth paint over the lines, and a tile outside a court has none.
  */
 function gymfloor(c: TileCtx, r: Rnd): Px {
   const px = new Px(16);
@@ -120,17 +121,67 @@ function gymfloor(c: TileCtx, r: Rnd): Px {
     px.rect(x, y, pick(r, 2, 4), 1, r() < 0.5 ? 'soil2' : 'sand');
   }
   schoolShadow(px, c, 'soil1');
-  const white = (x: number, y: number, w: number, h: number): void => { px.rect(x, y, w, h, 'white'); };
-  if (c.near.n !== 'gymfloor') white(0, 2, 16, 2);
-  if (c.near.s !== 'gymfloor') white(0, 12, 16, 2);
-  if (c.near.w !== 'gymfloor') white(2, 0, 2, 16);
-  if (c.near.e !== 'gymfloor') white(12, 0, 2, 16);
-  if (c.tx % 12 === 5) white(7, 0, 2, 16);
+  courtLines(px, c);
   if (hash2(c.tx, c.ty, 523) % 18 === 0) {
     const x = pick(r, 3, 9), y = pick(r, 4, 10);
     for (let i = 0; i < 5; i++) px.set(x + i, y + (i >> 1), 'soil1');
   }
   return px;
+}
+
+/** The court's paint on one tile: the boundary where the tile is on the court's edge, and the half-court line. */
+function courtLines(px: Px, c: TileCtx): void {
+  const k = c.court;
+  if (!k) return;
+  const right = k.tx + k.w - 1, bottom = k.ty + k.h - 1;
+  if (c.tx < k.tx || c.tx > right || c.ty < k.ty || c.ty > bottom) return;
+  const x0 = c.tx === k.tx ? 2 : 0, x1 = c.tx === right ? 14 : 16, y0 = c.ty === k.ty ? 2 : 0, y1 = c.ty === bottom ? 14 : 16;
+  const white = (x: number, y: number, w: number, h: number): void => { px.rect(x, y, w, h, 'white'); };
+  if (c.ty === k.ty) white(x0, 2, x1 - x0, 2);
+  if (c.ty === bottom) white(x0, 12, x1 - x0, 2);
+  if (c.tx === k.tx) white(2, y0, 2, y1 - y0);
+  if (c.tx === right) white(12, y0, 2, y1 - y0);
+  // 2 px wide on the court's middle, which is a tile edge when the court is an even number of tiles wide.
+  const mid = (k.tx * 2 + k.w) * 8 - c.tx * 16;
+  for (const x of [mid - 1, mid]) if (x >= 0 && x < 16) white(x, y0, 1, y1 - y0);
+}
+
+/**
+ * The courts on a map of tile names, `cols` wide: each run of gym floor, with the vines grown over it, cut down to its
+ * main rectangle (the rows and columns that hold at least half of the run's span), so a corridor or a doorway off the
+ * court doesn't bend its lines. Returns each tile's court, or undefined.
+ */
+export function findCourts(names: readonly TileName[], cols: number): (TileBox | undefined)[] {
+  const rows = Math.ceil(names.length / Math.max(1, cols));
+  const out: (TileBox | undefined)[] = new Array(names.length).fill(undefined);
+  const seen = new Uint8Array(names.length);
+  const on = (i: number): boolean => names[i] === 'gymfloor' || names[i] === 'vines';
+  for (let i0 = 0; i0 < names.length; i0++) {
+    if (seen[i0] || names[i0] !== 'gymfloor') continue;
+    const cells: number[] = [];
+    const stack = [i0];
+    seen[i0] = 1;
+    while (stack.length > 0) {
+      const i = stack.pop() as number;
+      cells.push(i);
+      const x = i % cols, y = Math.floor(i / cols);
+      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+        const j = ny * cols + nx;
+        if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || seen[j] || !on(j)) continue;
+        seen[j] = 1;
+        stack.push(j);
+      }
+    }
+    const xs = cells.map((i) => i % cols), ys = cells.map((i) => Math.floor(i / cols));
+    const span = (v: number[]): number => Math.max(...v) - Math.min(...v) + 1;
+    const keepRows = [...new Set(ys)].filter((y) => ys.filter((v) => v === y).length * 2 >= span(xs));
+    const inRows = cells.filter((i) => keepRows.includes(Math.floor(i / cols))).map((i) => i % cols);
+    const keepCols = [...new Set(inRows)].filter((x) => inRows.filter((v) => v === x).length * 2 >= span(keepRows));
+    if (keepRows.length === 0 || keepCols.length === 0) continue;
+    const box: TileBox = { tx: Math.min(...keepCols), ty: Math.min(...keepRows), w: span(keepCols), h: span(keepRows) };
+    for (const i of cells) out[i] = box;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- public

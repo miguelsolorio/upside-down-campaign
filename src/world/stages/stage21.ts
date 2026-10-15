@@ -132,5 +132,7 @@ export const STAGE_21: StageData = {
   // the bot takes here is demodog bites: a careful bot clears 17 of 20 for about 240 damage, a careless one all 20 (measured
   // with node scripts/measure-stage.ts 2.1 chief 20 [--careless]).
   enemyMult: 1.15,
+  // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
+  xpMult: 1.5,
   waypoints: WAYPOINTS,
 };

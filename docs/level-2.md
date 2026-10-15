@@ -8,7 +8,7 @@ One stage, five to eight minutes. World builds it, Story writes the words, Art d
 - Route: a snake in three bands. South band, going east: the loading dock (start, outdoors, south-west), corridor A, the power room. Middle band, going west: the animal lab, the observation corridor, with the server room off its south side. North band, going east: the storage hall, the crate corridor and vestibule, the records wing (end, north-east). One main path. Side corners hold the items.
 - Light: `time: 'day'`. There is no darkness and no glow pool. The lab gets its look from its own tiles, drawn in cold greys, teal and bone. The loading dock uses outdoor tiles (gravel, road, lab fence, lamps, pines), so the level begins outside and goes in.
 - Music: `lab`. The combat layer fades in while `sim.aggro()` is true.
-- Party: Mike (active), Dustin, Lucas, Eleven. They arrive from stage 1.1 with levels, XP and d20 bonus carried. There is no recruit and no `eleven` npc. A jump straight to the stage (`?stage=1.2`) starts all four at Lv 3.
+- Party: Mike (active), Dustin, Lucas, Eleven. They arrive from stage 1.1 with levels, XP and d20 bonus carried. There is no recruit and no `eleven` npc. A jump straight to the stage (`?stage=1.2`) starts them as a run out of 1.1 brings them: Mike at Lv 3, the others at Lv 2, with their XP (`defaultParty` in `core/campaign.ts`).
 - Dialogue is off by default. A player who tries a door or a puzzle with the wrong hero gets the hint at once, and nothing else. The scripts below are for players who turn story on.
 
 ## Rooms
@@ -135,11 +135,11 @@ Five steps out along a diagonal is past every camera's reach and inside Lucas's,
 | `lock2` | guard, elite guard, elite agent | dormant: a guard at the party's back in the vestibule, the elite guard and the agent at the far end |
 | `lock3` | Warden, elite agent | dormant, the Warden at the far end, the agent behind the party |
 
-That is 36 enemies: five guards (one elite), five elite agents, one Warden, eight agents, ten rats and one elite rat. XP: guard 24, elite guard 48, elite agent 16, Warden 60, agent 8, rat 4, elite rat 8, so the stage is worth 360 XP. A test keeps it between 330 and 390. `waves` is `['lock1', 'lock2', 'lock3']`, each woken by the previous `groupCleared`. Waves enter from both ends of the wing.
+That is 36 enemies: five guards (one elite), five elite agents, one Warden, eight agents, ten rats and one elite rat. XP: guard 24, elite guard 48, elite agent 16, Warden 60, agent 8, rat 4, elite rat 8, so the roster is worth 360 XP. The stage's `xpMult` of 0.4 makes that 146, for the campaign's pace (`docs/pace.md`), and a test keeps it between 130 and 160. `waves` is `['lock1', 'lock2', 'lock3']`, each woken by the previous `groupCleared`. Waves enter from both ends of the wing.
 
 `enemyMult: 1.3`: every enemy in the Lab has 30 percent more HP and hits 30 percent harder than the difficulty setting alone gives. It stacks on kid, chief and upside, and it does not touch hazards. Stage 1.1 leaves it out.
 
-The party arrives at Lv 3 and Lv 2 and levels well past that: the lead reaches Lv 4 early, then Lv 5 about two thirds of the way through, and the bench reaches Lv 3 or 4. Nobody gets near Lv 6, which needs 659 XP in all. (This breaks the original plan's "Lv 4 after chapter 1" pace. Stage 1.3 should be tuned knowing the party arrives at Lv 5.)
+The party arrives with Mike at Lv 3 and the rest at Lv 2. The stage takes Mike to Lv 4 and the others to Lv 3, and nobody reaches Lv 5. At 360 XP it took the lead to Lv 5, a level over the plan's "Lv 4 after chapter 1", until the pace pass (`docs/pace.md`).
 
 Items: four Eggos (corridor A's south-west corner, the tank room, two far corners of the records wing), two Cokes, 12 quarters. Nothing worth a detour lies within the bot's pickup reach of the route on the far side of a shut gate, because the bot walks straight at an Eggo it wants. Props: `lights_dock`, `lights_hall`, `lights_records` (lights), `sensor1`, `relay1` (console), `door1`, `door2` (door), `crate1` (crate), `cam1` to `cam3` (camera), three generators, six tanks, seven racks, the van and five plain crates. Spawn ids are unique across enemies, items, props and npcs. There are no npcs.
 
@@ -248,7 +248,7 @@ Compositions are the World pass's call, inside these rules:
 - At least one camera is on the main route, and shooting it is possible from a safe spot.
 - At least two hazard rectangles cross the main route, timed so a careful player crosses without damage.
 - Reinforcement groups woken by cameras (`reinf1`, ...) are dormant and enter from a door or a vent.
-- Stage XP lands between 330 and 390 (see "Spawns and the XP budget" above; this band replaces the 190 to 225 the first draft asked for).
+- Stage XP lands between 130 and 160 once the stage's `xpMult` is applied (see "Spawns and the XP budget" above and `docs/pace.md`). The second pass had 330 to 390, the first draft 190 to 225.
 
 ## Measuring
 
@@ -274,3 +274,18 @@ Three findings shaped the numbers:
 - **The bot hides the difficulty.** Hazards were about 75 percent of its damage on the first draft, because it walks straight through them, and it dodges telegraphed melee almost perfectly (a guard landed about one bash a run). So the careful bot is the best case. The careless bot is the better guide to how it feels.
 - **More enemies did not make it harder by themselves.** Adding fourteen mostly weak enemies made the careful bot's run easier (72 damage with no hazards, down from 93), because the extra XP levelled the party. The stage factor `enemyMult` is what made the enemies themselves dangerous, and the elite guard in the finale makes the climax the sharpest fight.
 - **The bot had two stalls**, both loops and not level traps: it flipped between "get the Coke" and "follow the route" at a pickup's reach edge, and between "fight the idle agent behind the wall" and "follow the route" at the engage radius. `combat/bot.ts` now commits to a pickup (and skips one behind a wall or one it gets pinned on) and ignores an idle enemy it cannot see.
+
+## After the pace pass
+
+The Lab pays 146 XP now, not 360, and a `?stage=1.2` jump starts Mike at Lv 3 and the rest at Lv 2, as a run out of 1.1 does (`docs/pace.md`). The factor is still 1.3. Measured again with `node scripts/measure-stage.ts 1.2`:
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 19 | 97, none stuck | 16 of 20 (78 of 100) | 20 | 6 (46 of 100) |
+| Damage taken | 237 | 234 | 318 | 145 | 398 |
+| KOs | 0.55 | 0.57 | 1.90 | 0.10 | 3.25 |
+| Lowest party HP | 44% | 45% | 17% | 62% | 7% |
+| Time | 125 s | 125 s | 101 s | 106 s | 135 s |
+
+The careful bot is where it was. The careless one clears less (78 of 100, it was 20 of 20): the bench walks in a level lower, and the stage no longer takes the party to Lv 5 on the way.
+

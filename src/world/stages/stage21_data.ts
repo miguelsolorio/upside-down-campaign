@@ -23,7 +23,8 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, o: { w?: numbe
 };
 
 // ---------------------------------------------------------------- enemies
-// Up to 166 XP: thirteen demodogs (117), five vines (25), four pods (12) and three rats (12). A pod that bursts pays nothing.
+// Up to 166 XP: thirteen demodogs (117), five vines (25), four pods (12) and three rats (12), which the stage's xpMult makes
+// 260. A pod that bursts pays nothing.
 // The spec's six rats and eleven demodogs are traded for three and thirteen: the damage in this stage is the demodogs' bites,
 // so a pack of three waits in the barn yard, before the party burst has had time to refill, and the rats make room for it
 // under the XP cap. The street, the rows, the barn and the corn are awake and wait where they are; the waves sleep in the hole.

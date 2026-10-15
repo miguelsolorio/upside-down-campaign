@@ -21,6 +21,16 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Merged into main with main's playable arcade cabinets brought in first: typecheck clean, 1046 tests pass, 2.1 to 2.3 run with no console errors
 - [ ] Feedback on Levels 5 and 6
 
+## Pace pass (levelling over the whole run)
+
+- [x] `scripts/measure-campaign.ts` plays 1.1 to 2.3 with the bot, carrying the party through `partyFor`, the picks panel and `recordClear`, lighting the lights and retrying from them, and prints each hero's level after every stage. `tests/pace.test.ts` holds the run to the pace. See `docs/pace.md`
+- [x] Measured over 20 seeds before: the lead ended chapter 1 at Lv 5 (the Lab's 360 XP), a level over, and chapter 2 at Lv 6 only when one hero kept the lead
+- [x] A stage XP factor, `xpMult`: 1.2 at 0.4, 1.3 at 0.7, 2.1 and 2.2 at 1.5, 2.3 at 1.6. The lead ends chapter 1 at Lv 4 and chapter 2 at Lv 6 in every seed; sharing the lead, chapter 1 at Lv 4 and chapter 2 at Lv 6 in 19 runs of 20
+- [x] `?stage=` seeds are the levels and XP a real run walks in with (`ARRIVAL`). Every stage measured again: 1.3's `enemyMult` went from 1.7 to 1.5, the rest kept theirs
+- [x] Two bot stalls the weaker party showed on 2.2 upside: a knocked-out Max at a gap, and a pod over a wall. Both fixed
+- [x] 1.3: the van is parked in the lot across a two-tile side door, the scare fires mid-room (the level holds still while it plays), and the gym's lines frame the court
+- [x] Verified: typecheck clean, all tests pass. Not merged; waiting on the owner
+
 ## Status
 
 - [x] Level 1 (stage 1.1 Mirkwood, the title, the basement prologue). See `docs/level-1.md`
@@ -53,13 +63,13 @@ New with Levels 3 and 4:
 
 - Nobody has heard `upside`, `clock` or `hawkins`. Metrics only (peaks 0.52 to 0.77, no limiting, no clipping). Upside is dissonant on purpose in places, and the clock's bell bars sit about 4 dB under the rest.
 - In 2.1 only the demodogs ever hit the bot. The vine and pod numbers are sized by sums against the Lv 5 party, not by measurement. Nobody has fought them, or the dogs, by hand.
-- In 2.1 the careless bot clears more often than the careful one (20 of 20 to 17). Dogs that die in a few hits reward trading blows over dodging.
+- In 2.1 the careless bot clears more often than the careful one (88 of 100 to 83 since the pace pass, 20 of 20 to 17 before). Dogs that die in a few hits reward trading blows over dodging.
 - The street rats in 2.1 keep their chapter 1 numbers and die in one hit. If a later stage needs a chapter 1 enemy at full strength, give it its own kind with chapter 2 numbers rather than a factor.
 - The bot dodges the Demogorgon better than a person will (it reacts a frame late to the charge). The careless bot is the better guide. Nobody has fought it by hand.
-- No level-ups happened in the bot runs of 1.3 and 2.1: the lead stays Lv 5. The plan's "Lv 6 after chapter 2" now depends on 2.2 and 2.3.
-- A `?stage=` jump seeds levels but no XP, so it arrives a little behind a real run.
+- The pace holds (`docs/pace.md`), with these gaps: 2.1 on upside clears 18 of 100, under its floor of 4 of 20, because the party arrives a level lower; 2.3 on chief clears 98 of 100, at the top of its band (97 before); a careless bot clears the Lab 78 of 100, down from 20 of 20.
+- Recruits join low: Will at Lv 2 in 2.1, Max and Steve at Lv 3 in 2.2 (the average minus one of a party now a level lower). With the default picks Lucas and Will sit out 2.2 and 2.3.
+- Nobody has played a carried run by hand, and the bot never swaps for a puzzle, so a person's lead takes less of the XP than the bot's.
 - The map, CONTINUE into the map and replays are covered by unit tests and one bot run through the map. Nobody has played title to 2.1 by hand with saves.
-- 1.3: the side door is a one-tile tunnel, so the van sits in a vertical wall. The scare fires when the cafeteria rats are cleared, not by position. The gym's court lines don't follow the arena.
 - The `l3_*` and `l4_*` scripts have only had the mechanical copy checks.
 - No shop yet (Erica, chapter 3) and no party picks (they wait until there are more than four heroes).
 
@@ -68,7 +78,6 @@ From Levels 1 and 2:
 - Nobody has heard the music. The Lab track is checked by metrics only (base peak 0.49, combat peak 0.79, no limiter reduction, no clipping). The 7/8 bars are checked by tests and by comparing the live scheduler to the compiled notes, not by ear.
 - The bot opens gates and the crate by flag. The Dustin burn, the Lucas relay shot and the Eleven push are covered by unit tests and one by-hand browser run, not by a full human run of the stage. Nobody has played 1.2 start to finish by hand.
 - The bot is a good dodger and flatters the difficulty: hazards were about 75 percent of its damage on the first draft, and it sidesteps almost every guard bash. `createBot({ careless: true })` is a floor for a player who is not dodging. Nobody has played the harder Lab by hand, so how it feels to a person is unknown. If it is still too easy, raise `enemyMult` in `stage12.ts`; if it is too hard, lower it. The difficulty setting stacks on top.
-- The Lab's XP (360) takes the lead to Lv 5 (the plan said Lv 4 after chapter 1), so stage 1.3 should be tuned for a party that arrives at Lv 5.
 - Two bot stalls (a pickup at its reach edge, an idle enemy at its engage radius) were fixed in `combat/bot.ts`. There may be others.
 - The cage tile (`c`) is also used for lockers and shelves in corridor A and the storage hall, so some of them read as rat cages. A separate locker tile would fix it.
 - The klaxon has a sound but no visual. The red border pulse was cut. The `alarm` step calls an optional `env.alarm`, so a visual can hang off it later.
@@ -85,7 +94,7 @@ From Levels 1 and 2:
 ## How to resume
 
 1. Read `docs/technical-architecture.md`, `docs/level-1.md` and `docs/level-2.md`.
-2. Typecheck and run the tests (commands are in the architecture doc). To see how hard a stage is, run `node scripts/measure-stage.ts 1.2 chief 20` (see "Measuring" in `docs/level-2.md`).
+2. Typecheck and run the tests (commands are in the architecture doc). To see how hard a stage is, run `node scripts/measure-stage.ts 1.2 chief 20` (see "Measuring" in `docs/level-2.md`). To see how fast the party levels over the run, run `node scripts/measure-campaign.ts chief 20` (`docs/pace.md`); a new stage needs an `xpMult` that keeps the pace and its line in `ARRIVAL`.
 3. `src/core/campaign.ts` holds the stage order and who plays each stage. To add stage 2.2: add its data under `src/world/stages/`, register it in `src/world/stage.ts`, add it to `STAGE_ORDER`, give it a `ROSTER` and an `ARRIVAL` entry, and move it out of `STAGES_AHEAD`. The map node is already in `core/mapdata.ts`.
 
 ## Later (after feedback)

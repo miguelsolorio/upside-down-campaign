@@ -34,6 +34,18 @@ test('vines: Dustin\'s spray sets them alight with a sizzle and flames, and they
   assert.equal(s.props[0]?.solid, false, 'and no longer in the way');
 });
 
+test('vines: sprayed from flush against their top edge, they still burn, and sprayed away from them they do not', () => {
+  // The 2.1 gate: Dustin walks down off the street into the vines and sprays down.
+  const burn = (my: number) => {
+    const { sim } = makeWhite({ ...lead('dustin'), spawns: [vines], start: { x: tc(9), y: tf(4) } });
+    run(sim, 60, inp({ my: 1 }));
+    assert.ok(sim.heroPos().y > 95, `flush: his feet at ${sim.heroPos().y.toFixed(1)}, the vines' top edge at 96`);
+    return ofType(press(sim, { my, specialPressed: true }, 70), 'propCleared');
+  };
+  assert.deepEqual(burn(0.2), [{ t: 'propCleared', propId: 'vines1' }]);
+  assert.deepEqual(burn(-0.2), []);
+});
+
 test('vines: while they burn they are still there, with flames drawn along them, and then the way is open', () => {
   const { sim, s } = makeWhite({ ...lead('dustin'), spawns: [vines], start: south });
   press(sim, sprayUp, 14);

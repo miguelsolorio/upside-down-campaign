@@ -110,12 +110,14 @@ function updateZone(s: S, z: Zone): void {
       burn: { frames: z.burn, tick: BURN_PERIOD, dmg: Math.max(1, Math.round(heroAtk(s, by) * HERO_DEFS.dustin.special.x.burnAtk)) }, noCrit: true,
     });
   }
-  // Fire lights anything that asks to be burned.
+  // Fire lights anything that asks to be burned. Sprayed from flush against a prop's top edge, the cone starts inside it and
+  // the nearest point has no direction, so within 2 px it counts whatever the angle, like a swing (props.ts).
   for (const pr of s.props) {
     if (!isTargetFor(pr, 'burn')) continue;
     const cx = Math.max(pr.x, Math.min(z.x, pr.x + pr.w)), cy = Math.max(pr.y, Math.min(z.y + BODY_Y, pr.y + pr.h));
     const dx = cx - z.x, dy = cy - BODY_Y - z.y;
-    if (Math.hypot(dx, dy) <= z.r && angleDiff(Math.atan2(dy, dx), z.angle) <= z.half + 0.3) hitProp(s, pr);
+    const d = Math.hypot(dx, dy);
+    if (d <= z.r && (d <= 2 || angleDiff(Math.atan2(dy, dx), z.angle) <= z.half + 0.3)) hitProp(s, pr);
   }
 }
 

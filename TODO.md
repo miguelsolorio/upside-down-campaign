@@ -15,9 +15,10 @@ Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy 
 - [x] Merged main in twice (NORMAL and HARD, then the Lv 6 talents)
 - [x] Tuned on HARD by the lead: Billy softer, the Mind Flayer shorter and sharper, the crowd without its elite, `enemyMult` 1.6. Chief 19 of 20 (99 of 100, none stuck), careless 12, kid 20, upside 4; NORMAL 20, careless 18. Chief's KOs (0.40) and lowest HP (50%) sit outside their bands to keep the careless floor
 - [x] Pace: `xpMult` 2, the lead Lv 8 after chapter 3 in nine runs of ten, the tenth 27 XP short; `ARRIVAL['3.3']` Mike 7, Dustin 6, Robin 4, Eleven 4; `pace.test.ts` checks chapter 3
-- [ ] Art build: Billy, the Mind Flayer, the Neon Strip tiles, the FOOD COURT plate, sheet pages
-- [ ] Verified: typecheck, tests, the bot clears 3.3 inside the targets, the map chains 3.2 to 3.3, the epilogue and CHAPTER THREE CLEAR, no console errors
-- [ ] Merged into main by the lead at the owner's word (main merged in first, the bands checked on HARD), never pushed
+- [x] Art build: Lifeguard Billy (his own frames, the veins fading as Eleven reaches him, slumped once free) and his portrait, the Meat Spider and its legs, the Neon Strip tiles, the sweep, the pools, a FOOD COURT plate on the map, sheet pages 35 to 37. The `crack`, `crate`, `door` and `lights` props keep their old colors
+- [x] Verified: typecheck clean, every test passes, the production build passes. In the browser (muted): a save with 3.2 cleared opens the map on THE FOOD COURT, open; the picks panel locks Eleven and shows her at Lv 4; the bot clears 3.3 (1:44: BILLY, the reach, MIND FLAYER with its leg pips, Billy slumped in the corner); with the story on, Hopper's letter plays over Eleven's room and skips to CHAPTER THREE CLEAR with the feedback note; the map after it has every stage cleared. No console errors
+- [x] Merged into main by the lead at the owner's word (main merged in three times, the bands checked on HARD, typecheck and tests rerun on main). Not pushed
+- [ ] Feedback on Level 9
 
 ## Levels 7 and 8 (merged)
 

@@ -7,5 +7,7 @@ export { createTitleScene } from './title.ts';
 export { createChapterCard, createGameOverScene } from './cards.ts';
 export { createResultsScene } from './results.ts';
 export { createPauseScene } from './pause.ts';
+export { createCharSheetScene } from './charsheet.ts';
+export type { CharSheetHero } from './charsheet.ts';
 export { mountDevPanel } from './devpanel.ts';
 export { inFrame } from './kit.ts';

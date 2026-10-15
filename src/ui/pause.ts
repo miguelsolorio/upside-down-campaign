@@ -1,4 +1,4 @@
-// The pause overlay: resume, the settings, start over and quit (both ask twice). Pause or cancel resumes.
+// The pause overlay: resume, the character sheet, the settings, start over and quit (both ask twice). Pause or cancel resumes.
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
@@ -7,15 +7,19 @@ import { drawPanel, drawText } from '../gfx/index.ts';
 import { bigText, dither, inFrame } from './kit.ts';
 import { drawMenu, settingItems, updateMenu } from './menu.ts';
 import type { Menu } from './menu.ts';
+import { createCharSheetScene } from './charsheet.ts';
+import type { CharSheetHero } from './charsheet.ts';
 
-/** Overlay: resume, volumes, scanlines, shake, reduce flashing, skip story, controls, start over, quit. */
-export function createPauseScene(opts: { onResume(): void; onQuit(): void; onStartOver(): void }): Scene {
+/** Overlay: resume, characters, volumes, scanlines, shake, reduce flashing, skip story, controls, start over, quit.
+ * `party` feeds the character sheet. Backing out of the sheet comes back here. */
+export function createPauseScene(opts: { onResume(): void; onQuit(): void; onStartOver(): void; party(): CharSheetHero[] }): Scene {
   let t = 0;
   /** The label of the row waiting for a second press, if any. */
   let armed: string | null = null;
   let menu: Menu | null = null;
   const build = (g: Game): Menu => {
     const resume = { label: 'RESUME', activate: () => opts.onResume() };
+    const characters = { label: 'CHARACTERS', activate: () => g.scenes.push(createCharSheetScene({ heroes: opts.party, onBack: () => g.scenes.pop() })) };
     // Destructive rows: the first press arms them, the second one does it.
     const twice = (label: string, go: () => void) => ({
       label,
@@ -27,7 +31,7 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
     });
     menu = {
       sel: 0,
-      items: [resume, ...settingItems(g), twice('START OVER', opts.onStartOver), twice('QUIT', opts.onQuit)],
+      items: [resume, characters, ...settingItems(g), twice('START OVER', opts.onStartOver), twice('QUIT', opts.onQuit)],
       onMove: () => { armed = null; },
     };
     return menu;

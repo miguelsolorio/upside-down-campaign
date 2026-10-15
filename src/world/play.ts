@@ -13,10 +13,12 @@ import { createSim, setReduceFlashing, setShakeScale } from '../combat/index.ts'
 import { createBot } from '../combat/bot.ts';
 import type { Bot } from '../combat/bot.ts';
 import { HERO_IDS } from '../heroes/index.ts';
+import { emptyStats, xpToNext } from '../progression/index.ts';
 import { audio } from '../audio/index.ts';
 import { SCRIPTS, bark } from '../story/index.ts';
-import { createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
-import { slotAt } from '../ui/hudlayout.ts';
+import { createCharSheetScene, createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
+import type { CharSheetHero } from '../ui/index.ts';
+import { onLevel, slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
 import { createDirector } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
@@ -225,9 +227,34 @@ export function createPlayScene(opts: PlayOptions): Scene {
   }
 
   function pause(): void {
-    const sc = createPauseScene({ onResume: () => closeOverlay(sc), onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver() });
+    const sc = createPauseScene({
+      onResume: () => closeOverlay(sc), onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver(), party: sheetParty,
+    });
     overlay = sc;
     game.scenes.push(sc);
+  }
+
+  /** All four heroes for the character sheet. Those in the party come with their level, XP and d20 bonus. A hero who
+   * hasn't joined yet comes in at Lv 1. */
+  function sheetParty(): CharSheetHero[] {
+    const live = sim.party();
+    return HERO_IDS.map((id): CharSheetHero => {
+      const p = live.find((m) => m.id === id);
+      const hud = view.hud.party.find((m) => m.id === id);
+      if (!p) return { id, level: 1, xp: 0, xpNext: xpToNext(1), bonus: emptyStats(), joined: false, active: false };
+      return {
+        id, level: p.level, xp: p.xp, xpNext: hud?.xpNext ?? xpToNext(p.level), bonus: { ...emptyStats(), ...p.bonus },
+        joined: true, active: hud?.active ?? false,
+      };
+    });
+  }
+
+  /** The character sheet over the frozen level, open on this hero. Closing it goes straight back to play. */
+  function openSheet(id: HeroId): void {
+    const sc = createCharSheetScene({ heroes: sheetParty, start: id, onBack: () => closeOverlay(sc) });
+    overlay = sc;
+    game.scenes.push(sc);
+    audio.sfx('pause');
   }
 
   /** The keys and pad, plus a click on a HUD portrait, which is a swap to that hero. */
@@ -333,14 +360,18 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (!bot && wipeT < 0 && clearT < 0 && g.input.pressed('pause')) { pause(); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
+      // A click on the active hero's name and level opens their character sheet. The view is last tick's, the one on screen.
+      const click = g.input.clicked();
+      const lead = view.hud.party.find((m) => m.active);
+      if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
       forward(sim.step(input));
       view = sim.view();
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
-      // A benched hero's face under the mouse is a button.
+      // A benched hero's face under the mouse is a button, and so is the active hero's name and level.
       const ptr = g.input.hover();
-      if (ptr && !bot && slotAt(view.hud.party, ptr.x, ptr.y) >= 0) g.input.point();
+      if (ptr && !bot && (slotAt(view.hud.party, ptr.x, ptr.y) >= 0 || onLevel(view.hud.party, ptr.x, ptr.y))) g.input.point();
 
       if (!frozen) {
         const p = sim.heroPos();
@@ -394,8 +425,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
       const ptr = g.input.hover();
-      const hover = ptr && !overlay && !dialog.active && !bot ? slotAt(view.hud.party, ptr.x, ptr.y) : -1;
-      drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, device: g.input.device() });
+      const at = ptr && !overlay && !dialog.active && !bot ? ptr : null;
+      const hover = at ? slotAt(view.hud.party, at.x, at.y) : -1;
+      const levelHot = !!at && onLevel(view.hud.party, at.x, at.y);
+      drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, levelHot, device: g.input.device() });
       if (prompt) drawCallout(ctx, labelOf('interact'), prompt.x + prompt.w / 2, prompt.y - 2, cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
       if (speech) {

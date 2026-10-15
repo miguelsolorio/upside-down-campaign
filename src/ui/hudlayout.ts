@@ -6,6 +6,7 @@
 // and everything is moved down by the band's `top` so it sits centered in the strip.
 import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud } from '../core/types.ts';
+import type { Rect } from '../core/pointer.ts';
 
 /** The width the constants below are laid out for. */
 export const STRIP_W = 256;
@@ -45,6 +46,8 @@ export const MP_BAR_W = 24;
 export const MIDDLE_X = 130;
 /** The active hero's portrait box and its click cell. */
 export const ACTIVE_CELL = { x: 0, y: 0, w: 20, h: CELL_H };
+/** The name row: the name, a 6 px gap, then LVn, all in 6 px glyphs. The level starts this far right of LEFT_X. */
+export const levelDx = (name: string): number => name.length * 6 + 6;
 
 export interface SlotRect {
   /** Position in the party, 0..3. This is what a click sends as `swapTo`. */
@@ -106,4 +109,19 @@ export function slotAt(party: readonly PartyHud[], x: number, y: number, band: H
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return r.index;
   }
   return -1;
+}
+
+/** The active hero's name and level, which together are the button that opens the character sheet. The box runs 2 px
+ * past the text on each side and stops above the HP bar. Null with no active hero. */
+export function levelRect(party: readonly PartyHud[], band: HudBand = hudBand()): Rect | null {
+  const p = party.find((m) => m.active);
+  if (!p) return null;
+  const ink = levelDx(p.name) + `LV${p.level}`.length * 6 - 1;
+  return { x: leftShift(band) + LEFT_X - 2, y: band.top, w: ink + 4, h: 9 };
+}
+
+/** True when a point in game px is on the active hero's name and level. */
+export function onLevel(party: readonly PartyHud[], x: number, y: number, band: HudBand = hudBand()): boolean {
+  const r = levelRect(party, band);
+  return !!r && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 }

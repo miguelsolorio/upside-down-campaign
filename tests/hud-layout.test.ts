@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CELL_H, LEFT_W, LEFT_X, METER_LABEL_X, METER_LEFT, METER_W, METER_X, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CELL_H, LEFT_W, LEFT_X, METER_LABEL_X, METER_LEFT, METER_W, METER_X, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { XP_NOTCHES, bulbCount, notchSpans } from '../src/ui/format.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
@@ -207,4 +207,35 @@ test('at 256 the band changes nothing', () => {
   assert.deepEqual(hudBand(), { x: 0, w: STRIP_W, top: 0, h: CELL_H });
   assert.equal(leftShift(hudBand()), 0);
   assert.equal(rightShift(hudBand()), 0);
+});
+
+test('the active hero\'s name and level are one button, over the text and clear of the portrait, the MP bar and the HP bar', () => {
+  const bands = [{ x: 0, w: 256, top: 0, h: 20 }, { x: 50, w: 436, top: 3, h: 26 }];
+  for (const band of bands) {
+    for (const d of Object.values(HERO_DEFS)) {
+      for (const level of [1, 9, 12]) {
+        const p = party(4, 1).map((m) => (m.active ? { ...m, name: d.name, level } : m));
+        const r = levelRect(p, band);
+        assert.ok(r, 'there is an active hero');
+        if (!r) continue;
+        const lx = leftShift(band);
+        const textEnd = lx + LEFT_X + levelDx(d.name) + `LV${level}`.length * 6 - 1;
+        assert.ok(r.x < lx + LEFT_X && r.x + r.w > textEnd, `${d.name} L${level}: the box covers the name and level`);
+        assert.ok(r.x + r.w <= lx + MP_LABEL_X, `${d.name} L${level}: the box ends before the MP label`);
+        assert.ok(r.x >= lx + 20, 'the box starts past the portrait cell');
+        assert.equal(r.y, band.top, 'the box starts at the top of the contents');
+        assert.ok(r.y + r.h <= band.top + 10, 'and stops above the HP bar');
+        // The text sits 1 px down from the band's top, so its middle is on the button.
+        assert.ok(onLevel(p, lx + LEFT_X + 2, band.top + 4, band));
+        assert.ok(onLevel(p, textEnd, band.top + 4, band));
+        assert.ok(!onLevel(p, lx + LEFT_X + 2, band.top + 12, band), 'the HP bar is not the button');
+        assert.ok(!onLevel(p, lx + 5, band.top + 5, band), 'the portrait is not the button');
+        for (const s of slotRects(p, band).filter((m) => !m.active)) {
+          assert.ok(s.x >= r.x + r.w, 'no bench cell overlaps it, so one click does one thing');
+        }
+      }
+    }
+  }
+  assert.equal(levelRect([]), null, 'no party, no button');
+  assert.ok(!onLevel([], 30, 4));
 });

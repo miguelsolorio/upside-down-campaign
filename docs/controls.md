@@ -13,7 +13,7 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | `1` to `4`, or click a portrait | Pick a hero |
 | `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
 | `U` or `B` | Crit, even next to the lights |
-| `Esc` or `P` | Pause and settings |
+| `Esc` or `P` | Pause, settings and the character sheet |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
 | `M` | Mute |
 
@@ -50,6 +50,7 @@ On a phone or tablet the controls are on screen. In portrait the game sits at th
 | `B` | Special. Back in menus |
 | Arrows | Back one hero and next hero |
 | A bench face in the HUD | Pick that hero |
+| The hero's name and level in the HUD | Character sheet |
 | d20 | Crit. It lights up gold when the meter is full |
 | Pause | Pause. Begins the game on the title |
 | Skip | Skip dialogue. It lights up only while there's something to skip |
@@ -58,7 +59,11 @@ Hints name the on-screen buttons while you play by touch. A key or controller pr
 
 ## Mouse
 
-Every menu works with a mouse. The row under the pointer takes the selection, and a click picks it. Click a volume bar to set it, and click its top lit segment to turn it down one. A click anywhere moves through dialogue, the chapter card and the results screen, the same as Enter. A click on SKIP above the dialogue box skips like `T`, and a click on the title's SKIP STORY line flips it. In CONTROLS, click a key slot to rebind it, scroll with the wheel or the arrows, and click anywhere to cancel. The pointer turns into a hand over anything you can click. Hover is mouse only: a tap on a touch screen still clicks, but nothing lights up under a finger.
+Every menu works with a mouse. The row under the pointer takes the selection, and a click picks it. A click on the active hero's name and level in the HUD opens the character sheet, and they underline under the pointer. Click a volume bar to set it, and click its top lit segment to turn it down one. A click anywhere moves through dialogue, the chapter card and the results screen, the same as Enter. A click on SKIP above the dialogue box skips like `T`, and a click on the title's SKIP STORY line flips it. In CONTROLS, click a key slot to rebind it, scroll with the wheel or the arrows, and click anywhere to cancel. The pointer turns into a hand over anything you can click. Hover is mouse only: a tap on a touch screen still clicks, but nothing lights up under a finger.
+
+## Character sheet
+
+Click or tap the active hero's name and level in the HUD, or pick CHARACTERS in the pause menu. Each hero gets a page with their class, level, XP, HP, MP, ATK, DEF, SPD and crit chance, and a line for every move: the basic, the special and its MP cost, their hit in a Crit, and the Lv 3 talent. A stat the d20 has raised shows the bonus in green. Damage is one hit against a foe with no armor, before crits and Inspiration, and `x3` means the move lands up to three hits. The heroes are tabs across the top. The arrows, `C` and `V`, `1` to `4`, a controller's LB and RB, or a click on a face switch between them. `Esc`, a controller's B or BACK closes it, back to the level from the HUD and back to the menu from the pause menu. The level stays frozen while it's open. A hero who hasn't joined yet shows in grey, at Lv 1.
 
 ## Story
 

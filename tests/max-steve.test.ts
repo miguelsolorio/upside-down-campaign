@@ -478,3 +478,30 @@ test('bot: Steve casts Babysit when two foes are close, and not for one', () => 
   assert.ok(run1([rat('a', 7, 8, 'g'), rat('b', 7, 9, 'g'), rat('c', 8, 8, 'g')]) >= 1);
   assert.equal(run1([rat('a', 7, 8, 'g')]), 0);
 });
+
+test('a gate never waits on a hero who is out: a try at a gap with Max down stands her up, and only then', () => {
+  const w = makeWhite({ grid: hall(), party: [{ id: 'mike' }, { id: 'max' }], start: { x: 125, y: HALL_Y }, spawns: [GAP] });
+  const max = w.s.heroes.find((h) => h.id === 'max');
+  assert.ok(max);
+  max.ko = true; max.hp = 0; max.mp = 0;
+  run(w.sim, 70, inp({ mx: 1 }));
+  assert.equal(max.ko, false, 'Mike leaning on the gap stands her up');
+  assert.ok(max.hp >= Math.ceil(max.st.hp * 0.3) && max.hp < max.st.hp, 'with a third of her HP');
+  assert.ok(max.mp >= HERO_DEFS.max.special.mp, 'and the MP for one dash');
+  // Someone who can open it is up, so nobody stands: a down Mike stays down when Max tries nothing.
+  const both = makeWhite({ grid: hall(), party: [{ id: 'mike' }, { id: 'max' }, { id: 'steve' }], start: { x: 125, y: HALL_Y }, spawns: [GAP] });
+  const steve = both.s.heroes.find((h) => h.id === 'steve');
+  assert.ok(steve);
+  steve.ko = true; steve.hp = 0;
+  run(both.sim, 70, inp({ mx: 1 }));
+  assert.equal(steve.ko, true, 'a gap does not need Steve');
+});
+
+test('a try at a crack with Steve down stands him up', () => {
+  const w = makeWhite({ party: [{ id: 'mike' }, { id: 'steve' }], start: southOfCrack, spawns: [CRACK] });
+  const steve = w.s.heroes.find((h) => h.id === 'steve');
+  assert.ok(steve);
+  steve.ko = true; steve.hp = 0;
+  run(w.sim, 70, inp({ my: -1 }));
+  assert.equal(steve.ko, false);
+});

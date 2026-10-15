@@ -63,6 +63,7 @@ Listed in `puzzles` in `stage22.ts`, in this order.
 | `gap` | `gap_hint` | `gap1` | max | MAYBE MAX SHOULD TRY HER SKATE DASH |
 | `crack` | `crack_hint` | `crack1` | steve | MAYBE STEVE SHOULD TRY HIS NAIL BAT |
 
+- **A gate never waits on a hero who is out.** A try at a prop that only knocked-out party heroes can open (Max for a gap, Steve for a crack, Dustin for vines) stands the first of them back up with 30 percent HP and the MP for one special, like Eleven at the pinned Demogorgon (`standFor` in `combat/pokes.ts`). Without it a knocked-out Max left the party stuck at a gap.
 - **A puzzle whose hero isn't in the party never shows its hint.** Max is always in 2.2's party. Steve may be benched, and then the cache stays shut and nothing nags. World adds this rule to the hint code (`world/puzzles.ts` or the play scene) for every stage.
 - `gap1`, `gap2`, `gap3`: prop `gap`, one tile deep across the hall: 32 by 16 across a hall that runs north and south, 16 by 32 across one that runs east and west. Only `gap1` has a puzzle; the first one teaches it.
   - Always solid to walking and to enemies.

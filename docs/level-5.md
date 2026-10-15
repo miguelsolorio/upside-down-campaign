@@ -187,3 +187,13 @@ The weaker party showed two bot stalls on upside, both fixed:
 
 - **A knocked-out Max at the first gap.** The bot's crossing ended at once with no dasher up, so it walked into the gap for good. Now it leans on the gap, which stands her back up, and waits for her (`combat/bot_dash.ts`).
 - **A pod over the nest wall.** Within 36 px the bot took any foe as reachable, so Steve swung at a pod through the wall all run. Now five seconds of swinging at a foe with no clear line to it, without landing a hit, makes the bot leave it for ten (`combat/bot.ts`).
+
+## After the balance pass
+
+Measured again at 20 and 100 seeds, and 300 for chief. Nothing moved: the bot change (it doesn't back off a lash or a swell while a demodog is within 240 px) never fires in the tunnels' fights. Cleared out of 20 and out of 100:
+
+| | Chief | Careless, chief | Kid | Upside |
+|---|---|---|---|---|
+| Before and after | 19 and 93 (276 of 300, none stuck) | 19 and 92 (282 of 300) | 20 and 100 | 5 and 27 (84 of 300) |
+
+Chief's damage is 264, KOs 1.50, lowest party HP 35% and time 105 s. Max and Steve join at Lv 3. At Lv 4 (the recruit rule without its minus one, `TODO.md`) chief clears 267 of 300, careless 258 and upside 119, 40 percent against 28.

@@ -2,7 +2,7 @@
 
 A browser pass over main at 352622f, on a dev server on port 5191, every URL with `?mute=1`. Nobody had played the whole run with saves before. Two bugs turned up that a unit test would not have caught, both in `flow.ts` and both fixed here. The rest is open or a note.
 
-Status: **fixed** means the fix is in this branch and was checked in the browser. **open** means it is logged for whoever owns the file.
+Status: **fixed** means the fix is in this branch and was checked in the browser. **open** means it is logged for whoever owns the file. QA-4, QA-6, QA-7 and QA-8 were fixed in a second pass, each reproduced first. QA-5, the difficulty row, was fixed by the difficulty session.
 
 ## Bugs
 
@@ -29,13 +29,16 @@ Status: **fixed** means the fix is in this branch and was checked in the browser
 
 - It said clearing Level 1 saves a fresh start at the Lab door and clearing Level 2 clears the save. The game now records every clear on the map and clears the stage save, and CONTINUE opens the map. START OVER also did not "wipe the save" on every stage. The paragraph is rewritten.
 
-### QA-4 (open): a `?stage=` jump in a normal run writes the real progress
+### QA-4 (fixed): a `?stage=` jump in a normal run writes the real progress
 
 - Steps: with empty storage, open `?mute=1&rush=1&stage=2.2`, clear the stage (or let `?bot` start it as a hybrid, see Method), press Continue on the results.
 - Expected: per the comment in `flow.ts`, a jump counts the stages before it as cleared, so the map looks like a real run's, or it stays a debug run and writes nothing.
 - Happened: only the real-storage path runs, since `savingAllowed()` (in `core/save.ts`) knows `?bot`, `?god`, `?level` and `?party` but not `?stage`. `progress.cleared` is just `["2.2"]` and the heroes are Mike, Dustin, Max and Steve. The map shows 2.2 cleared and 1.2 and 1.3 still locked, with 1.1 selected. With an existing real game the jump marks a stage cleared and moves the heroes' levels, in the player's own save.
-- Suggested fix: add `flags.stage !== '1.1'` to `savingAllowed()`, or have `startGame` seed `before` into the progress the way a debug run does. Both are in files the other sessions are changing, so not touched here.
-- URL: `http://127.0.0.1:5191/?mute=1&rush=1&stage=2.2`.
+- Reproduced again on a seeded save (1.1 cleared, Mike at Lv 3, 5 quarters): after clearing the jumped 2.2 the stored progress was `cleared: ["2.2"]` with a different party and no purse.
+- Fix: `savingAllowed()` is false for a jump past the first stage (`isStageJump()` in `core/save.ts`; an unknown id is the first stage, as `flow.ts` reads it), so a jump never writes the save or the progress. `flow.ts` keeps the jump's progress in memory, built by `debugProgress(jump)` with the stages before it cleared, and NEW GAME starts from that again instead of from nothing. `tests/save.test.ts` and `tests/flow-save.test.ts` cover the rule and that storage is untouched.
+- Checked in the browser: the same seeded save is byte for byte the same after the jumped stage is cleared and Continue is pressed, and the map shows 1.1 to 2.2 cleared with 2.3 next.
+- A jump's title still offers CONTINUE for a real save in the browser, and it reads it. It can't write it back.
+- URL: `http://127.0.0.1:5196/?mute=1&rush=1&stage=2.2`.
 
 ### QA-5 (fixed): the options have no difficulty row
 
@@ -43,22 +46,31 @@ Status: **fixed** means the fix is in this branch and was checked in the browser
 - Decision (the owner, 2026-10-15): NORMAL and HARD, NORMAL the default, HARD today's `chief`.
 - Fix: a DIFFICULTY row leads `settingItems` in `ui/menu.ts`, so it shows on the title options and the pause menu on every input, touch included. A change in the pause menu applies as play resumes. A saved `chief` from before the row loads once as NORMAL, and a bad value loads as NORMAL. See `docs/difficulty.md`. `tests/difficulty.test.ts` covers the row, the default, the migration and the switch mid-stage. Checked in the browser.
 
-### QA-6 (open, minor): in CONTROLS, Backspace leaves the screen when browsing
+### QA-6 (fixed): in CONTROLS, Backspace leaves the screen when browsing
 
 - Steps: title, OPTIONS, CONTROLS, move to ATTACK, press Backspace.
 - Expected: the slot is cleared (`docs/controls.md` says Backspace clears a slot).
 - Happened: Backspace is bound to `cancel`, so on a row it goes back to the options. It only clears a slot after Enter has started listening for a key. The screen's own hint line says ENTER REBINDS, so nothing points at the Enter-then-Backspace order.
-- URL: `http://127.0.0.1:5191/?mute=1`.
+- Fix: `createInput` gained `keyPressed(code)`, true for the tick after that physical key went down, since Backspace and Esc are both `cancel` and an action can't tell them apart. On a row of keys on the keyboard page, Backspace or Delete now clears the picked slot while browsing, as they do while listening, and Esc still goes back. On RESET ALL, GAMEPAD, BACK and the controller page Backspace still goes back. A line under the hint reads BKSP CLEARS THIS SLOT. `tests/controls-keys.test.ts` drives the real screen with key events, and `tests/input.test.ts` covers `keyPressed`.
+- Checked in the browser: Backspace on ATTACK key 1 gave `Z CLEARED FROM ATTACK`, the screen stayed, `localStorage` held `[null, "KeyJ"]`, and Esc then went back to the options.
+- URL: `http://127.0.0.1:5196/?mute=1`.
 
-### QA-7 (open, minor): the pause menu cannot be opened over a dialogue box
+### QA-7 (fixed): the pause menu cannot be opened over a dialogue box
 
 - Steps: start 1.1 with skip story off, and press Esc while Joyce's opening lines are up.
-- Expected or not: nothing opens. Esc, Start and the pause key only work once the box is closed, and T or SELECT skips the script. This matches "nothing moves over dialogue", but it also means QUIT and START OVER are out of reach for a few seconds at the start of every stage. Noted for a decision, not a defect.
+- Happened: nothing opened. Esc, Start and the pause key only worked once the box was closed, which put QUIT and START OVER out of reach for a few seconds at the start of every stage.
+- Decision: the pause key opens the menu over a box. Losing focus still doesn't, since nothing moves under a box, so a blur is not held or queued.
+- Fix: in `world/play.ts` the pause check now runs before the dialogue branch, and the focus and controller-loss signal is ignored while a box is up. The box is not updated while the menu is open, so its text waits and it is still there on resume. `tests/pause-focus.test.ts` covers Esc over a box, the box surviving, the skip key still closing it, and a blur doing nothing.
+- Checked in the browser: Esc over Joyce's first line opened PAUSED with the box under it, Esc resumed with the box still up, and T skipped it.
+- URL: `http://127.0.0.1:5196/?mute=1&skip=1&dev=1`, with skip story off.
 
-### QA-8 (open, minor, ui/picks): a fifth pick gives no sign
+### QA-8 (fixed, ui/picks): a fifth pick gives no sign
 
 - Steps: on the 2.2 picks panel with 4 OF 4, move to Lucas and press Z.
-- Expected: some answer. Happened: nothing on screen changes. The sound was off, so a sound may play. `ui/picks*` is in the off-limits list, so only logged.
+- Expected: some answer. Happened: nothing on screen changes. The refusal sound was the same `cancel` fall that Esc makes.
+- Fix: a pick the rules refuse now makes the low `noMp` buzz and flashes the cards in the way, in the `hot` red the counter already uses for a short party. A fifth hero flashes the four party cards and the `4 OF 4` counter, and taking out a locked hero flashes that hero's card alone. Three blinks over 24 frames, or one steady stretch with REDUCE FLASH on. `blockedBy()` in `ui/picks_logic.ts` names the cards, and `tests/picks.test.ts` checks that it names some exactly when `toggle` refuses.
+- Checked in the browser, with the game clock slowed (see Method): Z on Will at 4 OF 4 turned Mike, Dustin, Max and Steve and the counter red while Will's card stayed as it was, Z on Max flashed his card alone, and both settled back in a moment. Nothing changed in the party.
+- URL: `http://127.0.0.1:5196/?mute=1&dev=1` with a save that has 1.1 to 2.1 cleared, CONTINUE, then open 2.2.
 
 ### QA-9 (note): the page opens paused when the window isn't focused
 
@@ -75,7 +87,7 @@ Everything here was played or driven in the browser. I read the console after mo
 - **Stages through 2.3.** Every stage was cleared by the bot with saves on, and 1.1 (start), 2.1 (cabinets), 2.2 and 2.3 (picks, lights, START OVER) were also played by key presses.
 - **Party picks on 2.2 and 2.3.** Lead (X), toggle (Z), the 4-of-4 cap, Max locked on 2.2 and Steve locked on 2.3, the order kept in `progress.picks` and in the save, the pick carried into the stage. Esc backs out. See QA-8.
 - **Palace cabinets.** Galaga, Pac-Man, Centipede, Dragon's Lair, Ms. Pac-Man and Dig Dug all open from the prompt and run. Esc pauses and a second Esc leaves, and the level waits and resumes.
-- **New pauses.** A `blur` and a hidden tab pause the level and a cabinet run, and a second `blur` while paused does not stack a menu. A dialogue, the title, the results and the map open nothing, and a pause is not queued behind a dialogue. Both worked with the simulated events described in Method.
+- **New pauses.** A `blur` and a hidden tab pause the level and a cabinet run, and a second `blur` while paused does not stack a menu. The title, the results and the map open nothing, and neither does a dialogue for a blur, and a pause is not queued behind a dialogue. The pause key itself does open over a dialogue since QA-7. Both worked with the simulated events described in Method.
 - **Controller.** A fake standard pad: CONTROLLER CONNECTED and LOST toasts, the hints switching to `A ATTACK / X SPECIAL / LB RB SWAP` and back to keys, stick walking, RB swapping, Start pausing and resuming, B resuming, View skipping the prologue and the card, the title and pause menus from the D-pad and A. Dropping the pad in a level or a cabinet pauses. Dropping it while the keyboard was last used, or one of two pads, only shows CONTROLLER LOST.
 - **Options.** MUSIC, SFX, SCANLINES, SHAKE (all four steps), REDUCE FLASH and SKIP STORY all change and save. CONTROLS opens: rebinding, the swap of a key that is in use and RESET ALL work, and Esc cancels a listen. A mouse click picks OPTIONS on the title.
 - **Phone size.** 375 by 812 and 812 by 375, light and dark, with synthetic touch pointers. The grey and black Game Boy shells, AUTO following the phone mode (also mid-game), the GAME BOY row cycling AUTO, LIGHT and DARK and saving, the same row in the pause menu, D-pad walking, A, B, SELECT skipping dialogue, START pausing and opening the options row, the hints naming SELECT, a key press hiding the shell and bringing the keys back, a touch bringing it back, and the landscape layout.
@@ -98,4 +110,5 @@ Notes for the next pass.
 - The bot with saves on: `?bot` never saves. Start with a normal URL (`?rush=1&stage=N`), set `__ud.g.flags.bot = true`, do START OVER from the pause menu, then set it back to false. The new play scene makes the bot at enter and keeps it, and the saves and progress stay on. START OVER writes no entry save while the flag is true, so do not use this trick when that is the thing under test.
 - `await import('/src/core/save.ts')` in the page gives the same module the game uses, which is how `hasSave()` showed QA-2.
 - The browser pane only runs `requestAnimationFrame` while it is visible. With it hidden the loop stalls at frame 0 and key presses queue and fire together later, which looked like dropped Enters and wrong menu rows. `tabs_select` or a screenshot wakes it. Check that `__ud.g.frame` is moving before a sequence.
+- To catch something that lasts a few frames, slow the game clock: `const o = requestAnimationFrame.bind(window), b = performance.now(); requestAnimationFrame = (cb) => o((t) => cb(b + (t - b) / 10))`. Ticks then run at a tenth of the speed, so a 24 frame flash lasts four seconds.
 - `javascript_tool` gives up after 45 s, so long waits go in chunks. A script that times out keeps running in the page.

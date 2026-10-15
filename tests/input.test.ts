@@ -363,3 +363,26 @@ test('the hand cursor shows while a scene points at something, one tick behind',
   i.poll();
   assert.equal(c.style.cursor, '', 'gone once nothing asks');
 });
+
+test('keyPressed is true for the tick after a key went down, whatever it is bound to, and never for a held or repeated key', () => {
+  const i = make();
+  keyDown('Backspace');
+  keyDown('Delete');
+  assert.ok(!i.keyPressed('Backspace'), 'not before the tick reads it');
+  i.poll();
+  assert.ok(i.keyPressed('Backspace') && i.pressed('cancel'), 'Backspace is cancel and a key press');
+  assert.ok(i.keyPressed('Delete'), 'Delete is bound to nothing and still counts');
+  i.poll();
+  assert.ok(!i.keyPressed('Backspace') && !i.keyPressed('Delete'), 'held keys are not pressed again');
+  fire('keydown', { code: 'Backspace', repeat: true, preventDefault() {} });
+  i.poll();
+  assert.ok(!i.keyPressed('Backspace'), 'auto-repeat is not a press');
+});
+
+test('a key that went to a rebind is not also a key press', () => {
+  const i = make();
+  i.capture(() => {});
+  keyDown('Backspace');
+  i.poll();
+  assert.ok(!i.keyPressed('Backspace'));
+});

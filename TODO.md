@@ -29,6 +29,8 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] 3.1 from `enemyMult` 1.4 to 1.15: HARD cleared 85 of 100 with 1.82 KOs, now 96 with 1.51. Most of its damage is the Flayed's grab, which only lands over an effective factor of about 1.05, so NORMAL plays the mall as a walk (`docs/level-7.md`, "The difficulty pass")
 - [x] 3.2 from 1.25 to 1.1: the careless bot cleared 60 of 100 on HARD, now 80. The careful bot's lowest HP is 49%, a little over the band (`docs/level-8.md`, "The difficulty pass")
 - [x] Bands for new stages (3.3 on) stay measured on HARD (`chief`); a hand-over note went to the Level 9 session
+- [x] Verified: typecheck clean, 1442 tests pass (6 new), the production build passes. In the browser (muted): the row on the title and the pause menu, HARD kept over a reload, an old `chief` save loading as NORMAL, 13 pause rows with a controller, a hurt rat going from 27/57 to 23/49 on a switch mid-stage, and the in-game bot matching the measure script seed for seed. No console errors
+- [x] Merged into main (70be7a7) under the owner's standing go-ahead. Not pushed
 - [ ] Owner plays 3.1 and 3.2 on NORMAL and on HARD
 - [ ] The Flayed's grab cliff in 3.1: under it the mall is a walk, over it the grab does most of the damage. A call for the Flayed's numbers, not made here
 

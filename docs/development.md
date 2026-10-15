@@ -39,7 +39,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Dustin, Robin and Nancy for 3.1 and 3.2 |
+| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Dustin, Robin and Nancy for 3.1 and 3.2. A jump is a debug run: it keeps its map progress in memory, with the stages before it cleared, and never writes the real save or progress |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 

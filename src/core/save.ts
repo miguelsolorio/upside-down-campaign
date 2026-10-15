@@ -1,6 +1,7 @@
 // The one save: the party's levels and where they last lit Joyce's lights, plus what they had cleared by then.
 // Pure and DOM-free so Node tests can run it. A bad or old save reads as "no save", it never throws.
 import type { HeroId, PartySeed, StatKey } from './types.ts';
+import { STAGE_ORDER } from './campaign.ts';
 import { flags } from './flags.ts';
 import { storage } from './storage.ts';
 import { HERO_IDS } from '../heroes/index.ts';
@@ -69,9 +70,14 @@ export function loadSave(): SaveData | null {
   try { return parseSave(JSON.parse(raw)); } catch { return null; }
 }
 
-/** Debug runs (?bot, ?god, a forced ?level or ?party) never change the real save. */
+/** A `?stage=` jump past the first stage. An id the campaign doesn't know means the first stage, as flow.ts reads it. */
+export function isStageJump(stage: string = flags.stage): boolean {
+  return stage !== STAGE_ORDER[0] && STAGE_ORDER.includes(stage);
+}
+
+/** Debug runs (?bot, ?god, a forced ?level or ?party, a ?stage= jump) never change the real save or progress. */
 export function savingAllowed(): boolean {
-  return !flags.bot && !flags.god && flags.level === 0 && !flags.party;
+  return !flags.bot && !flags.god && flags.level === 0 && !flags.party && !isStageJump();
 }
 
 export function writeSave(data: SaveData): void {

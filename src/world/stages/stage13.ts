@@ -2,7 +2,7 @@
 // light are in stage13_data.ts.
 //
 // The route is a serpentine, like the Lab's, standing on its end. South band, going east: the parking lot (outdoors,
-// south-west), the one-tile side door through its east wall that van1 fills, and the main hall, four tiles wide with lockers
+// south-west), the side door through its east wall with van1 parked across it, and the main hall, four tiles wide with lockers
 // along both sides. At the hall's far end an archway climbs into the science room, which runs west to its back door
 // (vines1). The cafeteria above it runs east to the fire door (door1) in its north wall, with the serving counter and the
 // firebox that opens it at the west end, away from the gym's wall so a stray rocket from the court cannot light it. Past
@@ -58,7 +58,7 @@ export const ROWS: string[] = [
    'T=====l==============%%KnnnnnnnnnnnnnnnnnnnKKKKK', // 32
    'T==================l=%%KKKKKKKKKKKKKKKKKnnKKKKKK', // 33
    'T=__________________=%%AAAAAnAARRAAnAAAAnnAnAAKK', // 34
-   'T====================%%nnnnnnnnnnnnnnnnnnnnnnnKK', // 35
+   'T====================nnnnnnnnnnnnnnnnnnnnnnnnnKK', // 35
    'T====================nnnnnnnnnnnnnnnnnnnnnnnnnKK', // 36
    'T=gg=======l=========%%nnnnnnnnnnnnnnnnnnnnnnnKK', // 37
    'TT================gg=%%nnAAAAnnnAAAAAnnnnnAAAnKK', // 38
@@ -70,14 +70,14 @@ const say = (script: string): BeatStep => ({ t: 'say', script });
 
 const BEATS: Beat[] = [
   { id: 'start', when: { rect: rect(2, 34, 4, 3) }, steps: [say('l3_start')] },
-  { id: 'van_hint', when: { rect: rect(16, 34, 5, 5) }, steps: [say('l3_van_hint')] },
+  { id: 'van_hint', when: { rect: rect(13, 34, 5, 5) }, steps: [say('l3_van_hint')] },
   { id: 'van_cleared', when: { event: 'propCleared', prop: 'van1' }, steps: [say('l3_van_done')] },
   { id: 'agents', when: { rect: rect(23, 35, 3, 4) }, steps: [say('l3_agents')] },
   { id: 'vines_hint', when: { rect: rect(25, 27, 5, 6) }, steps: [say('l3_vines_hint')] },
   { id: 'vines_cleared', when: { event: 'propCleared', prop: 'vines1' }, steps: [say('l3_vines_done')] },
   { id: 'cafeteria', when: { rect: rect(24, 22, 3, 3) }, steps: [say('l3_cafeteria'), { t: 'wake', group: 'rats1' }] },
-  // The scare freezes the party for a moment, so it waits until the rats are dead rather than fire mid-bite.
-  { id: 'scare', when: { cleared: 'rats1' }, steps: [{ t: 'scare' }, say('l3_scare')] },
+  // Mid-room, across the way to the fire door. The level holds still while the scare plays, so a rat can't bite mid-scare.
+  { id: 'scare', when: { rect: rect(33, 19, 2, 6), needs: 'cafeteria' }, steps: [{ t: 'scare' }, say('l3_scare')] },
   { id: 'firebox_hint', when: { after: 'scare' }, steps: [say('l3_firebox_hint')] },
   { id: 'door1_open', when: { event: 'targetHit', prop: 'firebox1' }, steps: [{ t: 'open', prop: 'door1' }, say('l3_firebox_done')] },
   { id: 'gym', when: { rect: rect(43, 13, 4, 3) }, steps: [say('l3_gym')] },
@@ -99,7 +99,7 @@ const wp = (tx: number, ty: number, flags: { open?: string; wake?: string } = {}
 
 const WAYPOINTS: BotWaypoint[] = [
   // The lot, past both agents, to the side door; the van comes off it by flag.
-  wp(7, 35), wp(13, 36), wp(18, 36, { open: 'van1' }),
+  wp(7, 35), wp(13, 36), wp(16, 36, { open: 'van1' }),
   // The hall, along its south lane to the far end, then up the archway.
   wp(24, 36), wp(30, 36), wp(36, 36), wp(40, 35), wp(40, 32),
   // The science room west, along the aisle between the desks, to the back door; the vines come off by flag.
@@ -131,9 +131,12 @@ export const STAGE_13: StageData = {
   // A dark shape walks along the strip behind the serving counter, east to west, across the wall the firebox hangs on.
   scare: { from: { x: px(35), y: fy(18) + 1 }, to: { x: px(25), y: fy(18) + 1 }, frames: 96 },
   // Nearly all the damage here is the Demogorgon's. Its spike hits (charge, leap, acid) were lowered so a player who
-  // does not dodge still wins some runs, and this factor sets the rest. At 1.7, measured with
-  // node scripts/measure-stage.ts 1.3 chief 20 [--careless]: the careful bot clears 19 of 20 for 238 damage, 0.8 KOs and
-  // a party low of 39 percent, the boss about 43 s of it. The careless bot clears 12, kid 20 and upside 9.
-  enemyMult: 1.7,
+  // does not dodge still wins some runs, and this factor sets the rest. It was 1.7 for a party at Lv 5, 4, 4 and 4; the
+  // party a real run brings is a level lower. At 1.5, measured with node scripts/measure-stage.ts 1.3 chief 40 [--careless]:
+  // the careful bot clears 39 of 40 for 249 damage, 1.0 KOs and a party low of 35 percent, the boss about 46 s of it.
+  // The careless bot clears 30 of 40, upside 19 of 40, kid 20 of 20.
+  enemyMult: 1.5,
+  // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
+  xpMult: 0.7,
   waypoints: WAYPOINTS,
 };

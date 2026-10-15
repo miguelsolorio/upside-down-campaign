@@ -22,8 +22,9 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, o: { w?: numbe
 };
 
 // ---------------------------------------------------------------- enemies
-// 140 XP: five agents (40), an elite agent (16), six rats (24) and the boss (60). The lot and the hall are awake and pace;
-// the science room's agent too. The rats wait in the strip behind the serving counter, the boss in the gym.
+// 140 XP: five agents (40), an elite agent (16), six rats (24) and the boss (60), which the stage's xpMult makes 101. The lot
+// and the hall are awake and pace; the science room's agent too. The rats wait in the strip behind the serving counter, the
+// boss in the gym.
 const ENEMIES: SimSpawn[] = [
   // The lot: two agents by the vans, a long way from the start.
   foe('lot_a', 'agent', 'lot', 13, 34, { patrol: [[13, 34], [10, 36]] }),
@@ -62,9 +63,9 @@ const PROPS: SimSpawn[] = [
   prop('lights_lot', 'lights', 5, 33, { w: 48 }),
   prop('lights_hall', 'lights', 37, 35, { w: 48 }),
   prop('lights_gym', 'lights', 40, 15, { w: 48 }),
-  // The four gates. van1 fills the one-tile side door through the lot's east wall, vines1 the science room's back door,
+  // The four gates. van1 is parked across the side door in the lot's east wall, vines1 fills the science room's back door,
   // door1 the cafeteria's north doorway. firebox1 hangs on the wall face behind the serving counter.
-  { kind: 'prop', id: 'van1', prop: 'van', tx: 21, ty: 36, w: 32, h: 16, pushBy: 'push' },
+  { kind: 'prop', id: 'van1', prop: 'van', tx: 18, ty: 35, pushBy: 'push' },
   { kind: 'prop', id: 'vines1', prop: 'vines', tx: 24, ty: 26, w: 32, h: 16, hitBy: 'burn', solid: true },
   { kind: 'prop', id: 'firebox1', prop: 'firebox', tx: 27, ty: 17, hitBy: 'shoot' },
   prop('door1', 'door', 44, 17, { w: 32 }),

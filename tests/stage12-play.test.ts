@@ -155,12 +155,12 @@ test('chained run: out of stage 1.1 with the carried party, the bot clears the h
     assert.ok(r.done || r.allDown, `seed ${seed} got stuck after ${r.frames} frames`);
     if (!r.done) continue;
     clears++;
-    // The Lab is worth enough XP that the party levels well past Lv 3 (the bot swaps leaders, so the XP spreads: the
-    // best hero ends at Lv 4 or 5 and the weakest at Lv 3 or more), and nobody gets near Lv 6 (659 XP in all).
+    // The campaign's pace (docs/pace.md) has the lead at Lv 4 after chapter 1, so the Lab takes him to Lv 4
+    // and no further, and brings the rest to Lv 3.
     assert.ok(Math.max(...r.levels) >= 4, `seed ${seed}: somebody reaches Lv 4, got ${r.levels.join(',')}`);
     assert.ok(Math.min(...r.levels) >= 3, `seed ${seed}: nobody is left behind, got ${r.levels.join(',')}`);
-    assert.ok(Math.max(...r.levels) < 6, `seed ${seed}: nobody reaches Lv 6, got ${r.levels.join(',')}`);
-    assert.ok(r.xp >= 330 && r.xp <= 390, `seed ${seed}: xp ${r.xp}`);
+    assert.ok(Math.max(...r.levels) < 5, `seed ${seed}: nobody reaches Lv 5, got ${r.levels.join(',')}`);
+    assert.ok(r.xp >= 130 && r.xp <= 160, `seed ${seed}: xp ${r.xp}`);
     // A camera sighting can happen anywhere, and a fight near a console can light it by accident (Dustin's flame, Lucas's
     // shot), which plays that puzzle's "done" script early. Neither belongs to the route's order.
     const incidental = new Set(['l2_spotted', 'l2_burn_done', 'l2_relay_done']);
@@ -171,7 +171,7 @@ test('chained run: out of stage 1.1 with the carried party, the bot clears the h
   assert.ok(damage / 20 >= 150, `the Lab cost ${(damage / 20).toFixed(0)} HP on average (it cost 13 before the second pass)`);
 });
 
-test('a jump straight to stage 1.2 starts all four at Lv 3, and the bot still clears it', () => {
+test('a jump straight to stage 1.2 starts the party a run out of 1.1 brings, and the bot still clears it', () => {
   let clears = 0;
   for (const seed of [1, 2, 3, 4]) {
     const r = playStage(S, seed, defaultParty('1.2'));
@@ -194,7 +194,9 @@ test('a bot that never dodges still gets through the Lab, but it is hurt badly d
     kos += r.kos;
     lowest += r.lowestHp;
   }
-  assert.ok(clears >= 8, `cleared ${clears} of ${seeds}`);
+  // 78 of 100 at the 1.2 arrival levels (Lv 3 and three at Lv 2). It was 20 of 20 when the Lab paid 360 XP and the
+  // party levelled to 5 on the way through.
+  assert.ok(clears >= 6, `cleared ${clears} of ${seeds}`);
   assert.ok(damage / seeds >= 180, `it cost ${(damage / seeds).toFixed(0)} HP on average (before: 13)`);
   assert.ok(kos / seeds >= 0.2, `${(kos / seeds).toFixed(2)} heroes went down on average`);
   assert.ok(lowest / seeds < 0.5, `the party fell to ${(100 * lowest / seeds).toFixed(0)} percent health on average`);

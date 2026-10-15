@@ -135,9 +135,9 @@ export const STAGE_32: StageData = {
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
   // Measured with node scripts/measure-stage.ts 3.2 chief 20 [--careless] after the lead's Grigori pass (his guard drops while he
-  // recovers, softer hits, two soldiers called at half HP; rifle rounds at power 0.3), with the party a chained run brings (Mike 6,
-  // Eleven 5, Robin 4, Nancy 4). Chief clears 16 of 20 (90 of 100, none stuck) for about 282 damage, 1.15 KOs, 37% lowest HP and 101 s,
-  // the fight 44 s of it; careless 17, kid 20, upside 7. A party without a shooter clears 19 of 20 in about 160 s.
-  enemyMult: 1,
+  // recovers, softer hits, two soldiers called at half HP; rifle rounds at power 0.3), with the party a real run brings (Mike 7,
+  // Dustin 6, Robin and Nancy at 3). Chief clears 19 of 20 (89 of 100, none stuck) for about 291 damage, 0.55 KOs, 47% lowest HP (42%
+  // over 100) and 118 s, the fight 45% of it; careless 12, kid 20, upside 7.
+  enemyMult: 1.25,
   waypoints: WAYPOINTS,
 };

@@ -147,9 +147,9 @@ export const STAGE_31: StageData = {
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
   // On the spec's first chapter 3 numbers the stage needed 3.3: the rats died in two hits and no Flayed ever landed a grab. With the
-  // retuned rat, Flayed and soldier (enemies/defs.ts) it sits at 1.75, about where 1.3 is. Measured with node scripts/measure-stage.ts
-  // 3.1 chief 20 [--careless]: chief clears 17 of 20 (83 of 100, none stuck) for about 234 damage, 1.65 KOs, 38% lowest HP and 101 s;
-  // careless 19, kid 19, upside 8. The ambush is about a quarter of the run.
-  enemyMult: 1.75,
+  // retuned rat, Flayed and soldier (enemies/defs.ts) and the party a real run brings (Mike 6, Dustin 5, Robin and Nancy at 3) it sits at
+  // 1.4. Measured with node scripts/measure-stage.ts 3.1 chief 20 [--careless]: chief clears 16 of 20 (85 of 100, none stuck) for about
+  // 239 damage, 1.75 KOs, 40% lowest HP and 92 s; careless 18, kid 20, upside 13. The ambush is about a quarter of the run.
+  enemyMult: 1.4,
   waypoints: WAYPOINTS,
 };

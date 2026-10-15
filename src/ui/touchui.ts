@@ -1,13 +1,16 @@
-// The touch screen's controls on the page: the Game Boy overlay, the finger listeners and the layout.
+// The touch screen's controls on the page: the Game Boy overlay, the finger listeners and the layout. The shell is grey
+// or black by the GAME BOY setting, which on AUTO follows the phone's light or dark mode, even mid-game.
 // It touches the DOM, so main.ts mounts it once at boot. The overlay sits behind the game and never takes a pointer
 // itself, so a tap on the game still reaches the game canvas, and the listeners here only claim fingers that land on a
 // control.
 import type { PadLike } from '../core/gamepad.ts';
 import type { InputState } from '../core/input.ts';
+import { settings } from '../core/settings.ts';
 import { layoutTouch } from '../core/touchlayout.ts';
 import type { TouchButton, TouchLayout } from '../core/touchlayout.ts';
 import { createTouchPad } from '../core/touchpad.ts';
 import { drawTouch, overlaySize, pressedArms } from './touchdraw.ts';
+import { shellTheme } from './touchtheme.ts';
 
 export interface TouchUi {
   /** For createInput: the virtual controller while the controls show, else null. */
@@ -22,6 +25,7 @@ export function mountTouchUi(): TouchUi {
   canvas.setAttribute('aria-hidden', 'true');
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   // An invisible box inset by the safe area. Its rect is the one place JS can read env(safe-area-inset-*).
+  const dark = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
   const probe = document.createElement('div');
   probe.id = 'safe';
   document.body.append(canvas, probe);
@@ -98,16 +102,17 @@ export function mountTouchUi(): TouchUi {
         drawn = '';
       }
 
+      const theme = shellTheme(settings.shell, !!dark?.matches);
       const burstReady = input.offered('burst');
       const held = pad.held();
       const dpad = pad.dpad();
       // Only what shows: which buttons are down and which arms the D-pad leans on, not the thumb's exact angle.
       const arms = pressedArms(dpad).map(Number).join('');
       feel(held, arms);
-      const state = `${layoutKey}|${[...held].sort().join()}|${arms}|${burstReady}`;
+      const state = `${layoutKey}|${theme.name}|${[...held].sort().join()}|${arms}|${burstReady}`;
       if (state !== drawn) {
         drawn = state;
-        drawTouch(ctx, { layout, held, dpad, burstReady });
+        drawTouch(ctx, { layout, held, dpad, burstReady, theme });
       }
       return layout;
     },

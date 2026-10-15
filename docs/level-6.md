@@ -14,7 +14,7 @@ One stage, five to eight minutes, and the end of chapter 2. The tunnels come up 
   - the Gate chamber (end, north-east), the rift on its north wall
 - Light: `time: 'night'`. The lights props, a `lights` entry on the rift (it glows), and a few at the `tear`s.
 - Music: `lab` until the Alpha wakes, then the `music` step switches to `clock` to the end.
-- Party: picked on the map from Mike, Dustin, Lucas, Will, Max and Steve. Steve is locked in. `?stage=2.3` starts Mike (lead) at Lv 6, Dustin 5, Max 4, Steve 4.
+- Party: picked on the map from Mike, Dustin, Lucas, Will, Max and Steve. Steve is locked in. `?stage=2.3` starts Mike (lead) at Lv 6, Dustin 5, Max 4, Steve 4, with the XP a run brings.
 - `enemyMult`: start at 1 on the chapter 2 numbers and set it by measuring.
 
 ## Rooms
@@ -120,7 +120,7 @@ Scripts: `l6_start`, `l6_crack_hint`, `l6_crack_done`, `l6_storage`, `l6_gap_hin
 | `boss` | Demodog Alpha `alpha` | dormant in the den |
 | run-time | 9 howl demodogs, 23 in the defense | 1 XP each |
 
-Count the XP from `ENEMY_DEFS` and keep the total between 150 and 200; a test enforces it. Items: four Eggos (one in the cache, one in the stairwell), three Cokes, 12 quarters. Props:
+Count the XP from `ENEMY_DEFS`. The halls and the Alpha are worth 130, and the stage's `xpMult` of 1.6 makes them 207; with the 26 pups at 1 XP each the stage pays 233 (`docs/pace.md`). A test keeps it between 210 and 250. Items: four Eggos (one in the cache, one in the stairwell), three Cokes, 12 quarters. Props:
 - lights: `lights_mouth`, `lights_den`, `lights_gate`
 - gates: `crack1`, `gap1`, `seal1`, `seal2`
 - the Gate: `rift`, prop `rift`, about 64 by 48 on the north wall of the Gate chamber, solid
@@ -182,7 +182,7 @@ Measured with `node scripts/measure-stage.ts 2.3` at `enemyMult` 1. "Boss" in th
 | Time | 116 s | 116 s | | | |
 | Boss time | 81 s (69%) | | | | |
 
-Stage XP is 156, the run-time pups at 1 each.
+Stage XP was 156, the run-time pups at 1 each.
 
 - **Two bands are out.** Damage taken is about 425, not 150 to 300, because the 45 s defense comes on top of a whole stage. The boss share is about 70 percent, not half, because the defense alone is 45 of the 116 seconds. The Alpha fight itself takes about 17 s.
 - **The spec's Alpha and defense were a cliff.** At 1100 HP and 34 ATK with 23 defense dogs, the bot won 35 of 40 at an effective factor of 1.0 and 4 of 40 at 1.1. The dogs piled up faster than the party killed them, and the stage had to sit at 0.7 for upside to clear at all, which left chief with no KOs. Now:
@@ -191,3 +191,18 @@ Stage XP is 156, the run-time pups at 1 each.
   - Eleven has 160 HP
 - **The Gate lights itself.** Hopper strung the lights: the `gate` beat lights `lights_gate` with a new `light` step, the same save point and heal as a player's press. The defense always starts with the party healed, and a loss always retries at the Gate. The bot never lights anything, so without it the measure undersold what a player gets.
 - **A retry keeps the boss track and a broken crack.** A `?bot=1` run restarts from the lights after a loss.
+
+## After the pace pass
+
+The stage pays 233 XP (`docs/pace.md`). The arrival levels are the old ones, now with the XP a run brings. The factor stays at 1:
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 20 | 98, none stuck | 20 of 20 (99 of 100) | 20 | 8 (28 of 100) |
+| Eleven fell | 0 | 1 | 0 | 0 | 3 (11 of 100) |
+| Damage taken | 405 | 416 | 401 | 180 | 676 |
+| KOs | 0.60 | 0.63 | 0.30 | 0.05 | 4.25 |
+| Lowest party HP | 42% | 39% | 43% | 68% | 7% |
+| Boss time | 81 s (69%) | 81 s (70%) | | | |
+
+- **Chief sits at the top of its band**: 98 of 100, 97 before. A factor of 1.05 brings it to 96 but drops upside to 11 of 100, under its floor, so the factor stays and the whole-run test allows 20 of 20.

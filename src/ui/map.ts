@@ -72,7 +72,7 @@ export function createMapScene(opts: MapOpts): Scene {
     picks = createPicksPanel({
       pool: poolFor(id, progress?.heroes ?? []),
       locked: requiredFor(id),
-      seed: pickParty(id, progress?.picks),
+      seed: pickParty(id, progress?.picks, progress?.heroes),
       onStart: (who) => leave(() => opts.onPlay(id, who)),
       onBack: () => { picks = null; },
     });

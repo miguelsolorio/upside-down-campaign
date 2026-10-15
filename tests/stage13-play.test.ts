@@ -109,10 +109,10 @@ const right = { mx: 0.2 }, up = { my: -0.2 };
 
 test('hints: the wrong hero swinging at the van, the vines or the fire door gets the hint at once, the right one does not', () => {
   for (const hero of OTHERS('eleven')) {
-    const r = attempt({ hero, at: [19, 36], input: swing(right) });
+    const r = attempt({ hero, at: [17, 36], input: swing(right) });
     assert.deepEqual([r.puzzle, r.tried], ['van', 'van1'], `${hero} at the van`);
   }
-  const shove = attempt({ hero: 'eleven', at: [19, 36], input: swing(right) });
+  const shove = attempt({ hero: 'eleven', at: [17, 36], input: swing(right) });
   assert.equal(shove.puzzle, null);
   assert.deepEqual(shove.opened, ['van1'], 'her push clears it, with no hint');
   for (const hero of OTHERS('dustin')) {
@@ -129,8 +129,8 @@ test('hints: the wrong hero swinging at the van, the vines or the fire door gets
 
 test('hints: pushing against the van, the vines or the fire door with the wrong hero gets the hint too', () => {
   const walkInto = (mx: number, my: number) => (): Partial<SimInput> => ({ mx, my });
-  assert.equal(attempt({ hero: 'mike', at: [19, 36], input: walkInto(1, 0), frames: 80 }).puzzle, 'van');
-  assert.equal(attempt({ hero: 'eleven', at: [19, 36], input: walkInto(1, 0), frames: 80 }).puzzle, null, 'Eleven leaning on it is not a wrong try');
+  assert.equal(attempt({ hero: 'mike', at: [17, 36], input: walkInto(1, 0), frames: 80 }).puzzle, 'van');
+  assert.equal(attempt({ hero: 'eleven', at: [17, 36], input: walkInto(1, 0), frames: 80 }).puzzle, null, 'Eleven leaning on it is not a wrong try');
   assert.equal(attempt({ hero: 'lucas', at: [25, 28], input: walkInto(0, -1), frames: 80 }).puzzle, 'vines');
   assert.equal(attempt({ hero: 'mike', at: [45, 19], input: walkInto(0, -1), frames: 80 }).puzzle, 'firebox');
 });
@@ -195,13 +195,14 @@ test('whole run: the bot clears the school most of the time on chief, and the bo
     assert.ok(r.done || r.allDown, `seed ${seed} got stuck after ${r.frames} frames`);
     if (!r.done) continue;
     clears++;
-    assert.equal(r.xp, 140, `seed ${seed}: the stage pays 140 XP`);
+    assert.equal(r.xp, 101, `seed ${seed}: the stage pays 101 XP`);
     assert.ok(r.pinnedAt >= 0 && r.killAt > r.pinnedAt, `seed ${seed}: a win goes through the pin`);
     assert.equal(r.killBy, 'eleven', `seed ${seed}: and her beam does it`);
     assert.deepEqual(r.said.filter((id) => !incidental.has(id)), ROUTE, `seed ${seed}: the scripts play in route order, the boss's last`);
     assert.deepEqual(r.music, ['clock'], `seed ${seed}: the music changes once, to the boss track`);
     assert.ok(r.bossAt > r.frames * 0.4, 'the boss is the second half of the run');
-    assert.ok(Math.max(...r.levels) <= 5 && Math.min(...r.levels) >= 4, `levels ${r.levels.join(',')}`);
+    // The pace: the lead stays at Lv 4 to the end of chapter 1, and nobody drops behind Lv 3.
+    assert.ok(Math.max(...r.levels) <= 4 && Math.min(...r.levels) >= 3, `levels ${r.levels.join(',')}`);
   }
   assert.ok(clears >= 6, `cleared ${clears} of 10`);
 });
@@ -232,7 +233,7 @@ test('whole run: forty seeds on chief, the bot always ends: no run is stuck', ()
   assert.ok(wipes <= 12, `${wipes} of 40 wiped`);
 });
 
-test('chained run: out of 1.1 and 1.2 with the carried party, the bot reaches the school and nobody hits Lv 6', () => {
+test('chained run: out of 1.1 and 1.2 with the carried party, the bot reaches the school and nobody hits Lv 5', () => {
   let reached = 0;
   for (const seed of [1, 2, 3]) {
     const first = playStage(STAGE_11, seed, [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }]);
@@ -244,15 +245,15 @@ test('chained run: out of 1.1 and 1.2 with the carried party, the bot reaches th
     reached++;
     const r = play(seed, carried);
     assert.ok(r.done || r.allDown, `seed ${seed}: the school ends`);
-    assert.ok(Math.max(...r.levels) < 6, `seed ${seed}: nobody reaches Lv 6, got ${r.levels.join(',')}`);
-    if (r.done) assert.ok(r.xp === 140 && r.killBy === 'eleven');
+    assert.ok(Math.max(...r.levels) < 5, `seed ${seed}: nobody reaches Lv 5, got ${r.levels.join(',')}`);
+    if (r.done) assert.ok(r.xp === 101 && r.killBy === 'eleven');
   }
   assert.ok(reached >= 2, `${reached} of 3 got out of the Lab`);
 });
 
 test('a jump straight to stage 1.3 starts all four at their arrival levels', () => {
   const party = defaultParty('1.3');
-  assert.deepEqual(party.map((p) => [p.id, p.level]), [['mike', 5], ['dustin', 4], ['lucas', 4], ['eleven', 4]]);
+  assert.deepEqual(party.map((p) => [p.id, p.level]), [['mike', 4], ['dustin', 3], ['lucas', 3], ['eleven', 3]]);
   const r = play(2, party);
   assert.ok(r.done || r.allDown);
 });

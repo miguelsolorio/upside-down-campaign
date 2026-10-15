@@ -20,6 +20,12 @@ export interface SimBuild {
   stash?: Stash;
 }
 
+/** Props that stay open across a retry or a load, and the ones the dev panel offers to open. */
+export const KEPT_PROPS: ReadonlySet<string> = new Set([
+  'gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap',
+  'shutter', 'cipher',
+]);
+
 export function stageGrid(data: StageData): Grid {
   return buildGrid(data.rows);
 }
@@ -32,6 +38,7 @@ export function simOptions(data: StageData, grid: Grid, b: SimBuild): SimOptions
     spawns: data.spawns,
     hazards: data.hazards,
     enemyMult: data.enemyMult,
+    xpMult: data.xpMult,
     burrows: data.burrows,
     defense: data.defense,
     skipSpawns: b.skipSpawns,

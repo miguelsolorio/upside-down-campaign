@@ -11,7 +11,7 @@ import { fitsBox } from '../src/core/text.ts';
 import { STAGE_13 as S, ROWS } from '../src/world/stages/stage13.ts';
 import { LIGHTS } from '../src/world/stages/stage13_data.ts';
 import type { TileRect } from '../src/world/types.ts';
-import { botRoute, propTiles, rectTiles, stageKit, tileOf } from './stage-helpers.ts';
+import { botRoute, propTiles, rectTiles, stageKit, stageXp, tileOf } from './stage-helpers.ts';
 import type { Prop } from './stage-helpers.ts';
 
 const kit = stageKit(S);
@@ -150,10 +150,11 @@ test('stage 1.3: the start and every spawn are on walkable ground, ids are uniqu
   for (const e of enemies.filter((q) => q.patrol)) for (const p of e.patrol ?? []) assert.equal(grid.solid[idx(p.tx, p.ty)], 0, `${e.id} patrols over open ground`);
 });
 
-test('stage 1.3: the roster is five agents, an elite agent, six rats and the boss, worth 120 to 150 XP', () => {
-  const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
-  assert.ok(xp >= 120 && xp <= 150, `stage XP ${xp}`);
-  assert.equal(xp, 140);
+test('stage 1.3: the roster is five agents, an elite agent, six rats and the boss, worth 90 to 115 XP', () => {
+  assert.equal(enemies.reduce((sum, e) => sum + xpOf(e), 0), 140, 'at the enemies\' own XP, before the stage\'s xpMult');
+  const xp = stageXp(S);
+  assert.ok(xp >= 90 && xp <= 115, `stage XP ${xp}`);
+  assert.equal(xp, 101);
   const of = (type: string, elite: boolean): typeof enemies => enemies.filter((e) => e.type === type && (e.tier === 'elite') === elite);
   assert.equal(of('agent', false).length, 5);
   assert.equal(of('agent', true).length, 1);
@@ -182,11 +183,15 @@ test('stage 1.3: the roster is five agents, an elite agent, six rats and the bos
 });
 
 test('stage 1.3: props sit where the art expects them, and each gate fills its gap', () => {
-  const dressing = props.filter((p) => !['door', 'vines', 'firebox'].includes(p.prop) && p.id !== 'van1');
+  const dressing = props.filter((p) => !['door', 'vines', 'firebox'].includes(p.prop));
   for (const p of dressing) for (const [x, y] of propTiles(p)) assert.equal(grid.solid[idx(x, y)], 0, `${p.id} stands on open ground at ${x},${y}`);
   const van = prop('van1');
-  assert.deepEqual([van.prop, van.pushBy, van.w, van.h], ['van', 'push', 32, 16]);
-  for (const x of [van.tx, van.tx + 1]) assert.ok(grid.solid[idx(x, van.ty - 1)] && grid.solid[idx(x, van.ty + 1)], 'van1 fills the side door through the lot wall');
+  assert.deepEqual([van.prop, van.pushBy, van.w, van.h], ['van', 'push', undefined, undefined], 'a full-size van, like the one by the lamps');
+  // The side door is two tiles tall through the lot's two-tile wall, and the van is parked in the lot across all of it.
+  for (const y of [van.ty, van.ty + 1]) {
+    for (const x of [van.tx + 3, van.tx + 4]) assert.equal(ch(x, y), 'n', `the side door is floor at ${x},${y}`);
+  }
+  for (const x of [van.tx + 3, van.tx + 4]) assert.ok(ch(x, van.ty - 1) === '%' && ch(x, van.ty + 2) === '%', 'brick above and below the door');
   const vines = prop('vines1');
   assert.deepEqual([vines.prop, vines.hitBy, vines.w, vines.h, vines.solid], ['vines', 'burn', 32, 16, true]);
   assert.ok(grid.solid[idx(vines.tx - 1, vines.ty)] && grid.solid[idx(vines.tx + 2, vines.ty)], 'vines1 fills the back door, wall to wall');

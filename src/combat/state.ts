@@ -332,6 +332,8 @@ export interface S {
   mult: number;
   /** The stage's own enemy factor (StageData.enemyMult): enemy HP and the damage enemies deal, not hazards. 1 by default. */
   foeMult: number;
+  /** The stage's XP factor (StageData.xpMult) for the enemies it builds. 1 by default. */
+  xpMult: number;
   frame: number;
   heroes: Hero[];
   active: number;

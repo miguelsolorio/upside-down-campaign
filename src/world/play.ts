@@ -2,13 +2,14 @@
 // sim's events to audio, ui and story, fires the stage's beats, and moves the camera. draw() layers the world,
 // the pools of light at night, the HUD and the dialogue. Retry rebuilds the sim from the last lit checkpoint.
 import type { Game, Scene } from '../core/scene.ts';
-import type { BarkEvent, DevHooks, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
-import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
+import type { BarkEvent, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
+import { SCREEN_W, TILE } from '../core/config.ts';
 import { burstHint, labelOf } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
 import { toSimInput } from '../core/input.ts';
+import { rumble } from '../core/rumble.ts';
 import { createSim, setReduceFlashing, setShakeScale } from '../combat/index.ts';
 import { createBot } from '../combat/bot.ts';
 import type { Bot } from '../combat/bot.ts';
@@ -20,7 +21,7 @@ import { createCharSheetScene, createDialogueBox, createGameOverScene, createPau
 import type { CharSheetHero } from '../ui/index.ts';
 import { onLevel, slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
-import { routeFrom } from './options.ts';
+import { KEPT_PROPS, routeFrom } from './options.ts';
 import { isLoss, lossReason } from './loss.ts';
 import { createDirector, musicAfter } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
@@ -30,7 +31,9 @@ import { nearUsable } from './interact.ts';
 import { TITLES, arcadeBoard, createArcadeScene, gameFor, postScore } from '../arcade/index.ts';
 import type { ArcadeVisit } from '../arcade/index.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
+import { devHooks } from './devhooks.ts';
+import { createKlaxon } from './klaxon.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, inView, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -51,13 +54,6 @@ const MADMAX_QUARTERS = 5;
 const MAX_LINE = "Beginner's luck. Rematch tomorrow.";
 const MAX_LINE_FROM = 80;
 const MAX_LINE_TO = 290;
-/** The prop is inside the camera's clear band, so a caret over it can be seen. */
-const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
-  p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
-
-/** Props that stay open across a retry or a load. */
-const KEPT_PROPS = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap', 'shutter', 'cipher']);
-
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
 interface Progress { party: PartySeed[]; skip: string[]; open: string[] }
@@ -73,6 +69,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const deferred: (() => void)[] = [];
   /** Level-up effects playing around the heroes. They never stop the game. */
   const levelFx = createLevelFx();
+  /** The red glow along the screen's edge while the klaxon is up. */
+  const klaxon = createKlaxon();
   /** Counts the time spent near each unsolved puzzle, to know when to point at it. */
   const puzzles = createPuzzleTracker(stage.puzzles);
   /** The enemy kind behind each puzzle that watches a spawn (the pinned boss). Empty on 1.1 and 1.2. */
@@ -154,7 +152,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (view.props.some((p) => p.id === prop && (p.kind === 'gate' || p.kind === 'door' || p.kind === 'shutter'))) { audio.sfx('gateOpen'); swallow.add('gateOpen'); }
       sim.openProp(prop);
     },
-    alarm() { audio.sfx('klaxon'); },
+    alarm() { audio.sfx('klaxon'); klaxon.ring(); },
     music: (track) => audio.music(track),
     // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
     light(prop) {
@@ -164,30 +162,6 @@ export function createPlayScene(opts: PlayOptions): Scene {
     jingle: (id) => audio.jingle(id),
     finish() { audio.jingle('clear'); clearT = 0; },
   };
-
-  function devHooks(): DevHooks {
-    return {
-      get god() { return sim.dev.god; },
-      set god(v: boolean) { sim.dev.god = v; },
-      get hitboxes() { return sim.dev.hitboxes; },
-      set hitboxes(v: boolean) { sim.dev.hitboxes = v; },
-      giveXp: (n) => sim.dev.giveXp(n),
-      setLevel: (n) => sim.dev.setLevel(n),
-      killAll: () => sim.dev.killAll(),
-      teleport: (x, y) => sim.dev.teleport(x, y),
-      spawnGroup: (g) => sim.spawnGroup(g),
-      openProp: (id) => sim.openProp(id),
-      recruit: (id) => sim.recruit(id),
-      state: () => {
-        const p = sim.heroPos();
-        return {
-          tile: `${(p.x / TILE) | 0},${((p.y - 4) / TILE) | 0}`, aggro: sim.aggro(), alive: sim.enemiesAlive(),
-          beats: director.snapshot().fired.join(' '), busy: director.busy(), time: stage.time,
-          checkpoint: `${(checkpoint.x / TILE) | 0},${(checkpoint.y / TILE) | 0}`, frame: sim.stats().frames,
-        };
-      },
-    };
-  }
 
   /** window.__ud is created after the first scene starts, so this runs again on every tick until it sticks. */
   const play = {
@@ -240,6 +214,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     build(p.party, checkpoint, p.skip, p.open);
     director.restore(checkpoint.state);
     levelFx.clear();
+    klaxon.clear();
     swapAge = null;
     deferred.length = 0;
     swallow.clear();
@@ -325,6 +300,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   // ---------------------------------------------------------------- events, lights
   function forward(ev: SimEvent[]): void {
+    rumble(ev);
     for (const e of ev) {
       switch (e.t) {
         case 'sfx': if (!swallow.delete(e.id)) audio.sfx(e.id); break;
@@ -422,7 +398,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       bot = g.flags.bot ? makeBot() : null;
       audio.music(stage.music);
       audio.intensity(0);
-      if (g.flags.dev) unmountDev = mountDevPanel(devHooks());
+      if (g.flags.dev) unmountDev = mountDevPanel(devHooks({ stage, sim: () => sim, director: () => director, checkpoint: () => checkpoint }));
       expose();
     },
 
@@ -437,9 +413,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
       setShakeScale(g.settings.shake);
       setReduceFlashing(g.settings.reduceFlashing);
       expose();
+      klaxon.tick();
       if (deferred.length > 0) for (const fn of deferred.splice(0)) fn();
       if (dialog.active) { prompt = null; burstCall = false; dialog.update(g); return; }
-      if (!bot && wipeT < 0 && clearT < 0 && g.input.pressed('pause')) { pause(); return; }
+      // Esc or Start, and also the window losing focus or the controller being played with going away: the level waits for the player.
+      if (!bot && wipeT < 0 && clearT < 0 && (g.input.pressed('pause') || g.input.interrupted())) { pause(); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
       // A click on the active hero's name and level opens their character sheet. The view is last tick's, the one on screen.
@@ -447,7 +425,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const lead = view.hud.party.find((m) => m.active);
       if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
-      forward(sim.step(input));
+      // The scare holds the whole level still, as dialogue does, so nothing lands a hit on a party that can't move.
+      if (!scare) forward(sim.step(input));
       view = sim.view();
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
@@ -498,6 +477,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       drawWorld(ctx, stage, view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
       drawFlash(ctx, view);
       drawLevelFx(ctx, levelFx.list(), view, cam);
+      drawKlaxon(ctx, klaxon.level(g.settings.reduceFlashing));
       // While the party is at a puzzle it's stuck on, the caret points at the prop and a subtitle says who to try.
       const stuck = puzzles.highlight();
       const watched = stuck ? puzzleProps(stage.puzzles, view.props, view.actors, foes) : view.props;

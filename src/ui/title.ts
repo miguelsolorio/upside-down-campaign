@@ -15,7 +15,8 @@ import type { Glow } from '../gfx/index.ts';
 import { LAUNCH_FRAMES, launchLevel } from './format.ts';
 import { bigText, blinkOn, box, dither, inFrame, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
-import { drawMenu, settingItems, toggleSkipStory, updateMenu } from './menu.ts';
+import { drawMenu, reshape, settingItems, settingsKind, toggleSkipStory, updateMenu } from './menu.ts';
+import type { SettingsKind } from './menu.ts';
 import type { Menu } from './menu.ts';
 import { bigActor, sky, spores, woods } from './title_art.ts';
 import { sideGround, sideLights, sideProps, skyline } from './title_wide.ts';
@@ -69,12 +70,18 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
   let launch = 0;
   let mode: StartMode = 'new';
   let settingsMenu: Menu | null = null;
+  /** The game, kept so the options can be built fresh each time they open: RUMBLE shows only while a controller is in use. */
+  let game: Game | null = null;
+  /** The input the options rows were built for, so picking up a controller with the options open brings RUMBLE in. */
+  let builtFor: SettingsKind = 'keys';
   /** The mouse is over the skip story line. */
   let skipHot = false;
   const main: Menu = { sel: 0, items: [], onMove: () => { armed = false; } };
   const begin = (m: StartMode): void => { mode = m; launch = 1; };
-  const openOptions = (): void => { open = true; if (settingsMenu) settingsMenu.sel = 0; };
+  const openOptions = (): void => { open = true; if (game) build(game); else if (settingsMenu) settingsMenu.sel = 0; };
   const build = (g: Game): Menu => {
+    game = g;
+    builtFor = settingsKind(g);
     settingsMenu = { sel: 0, items: [...settingItems(g), { label: 'BACK', activate: () => { open = false; } }] };
     return settingsMenu;
   };
@@ -149,6 +156,10 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       const m = settingsMenu ?? build(g);
       skipHot = false;
       if (open) {
+        if (settingsKind(g) !== builtFor) {
+          reshape(m, build(g).items);
+          settingsMenu = m;
+        }
         updateMenu(m, g);
         if (i.pressed('cancel') || i.pressed('pause')) { open = false; audio.sfx('cancel'); }
         return;
@@ -211,8 +222,11 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       if (open) {
         dither(ctx, 0, 0, SCREEN_W, SCREEN_H, 'ink', 2);
         inFrame(ctx, () => {
-          drawPanel(ctx, 36, 58, 184, 92, 'menu');
-          drawMenu(ctx, settingsMenu ?? build(g), 48, 65, 160, t, 10);
+          // The panel grows around its middle with the rows: RUMBLE adds one while a controller is in use.
+          const m = settingsMenu ?? build(g);
+          const h = m.items.length * 10 + 12;
+          drawPanel(ctx, 36, 104 - (h >> 1), 184, h, 'menu');
+          drawMenu(ctx, m, 48, 111 - (h >> 1), 160, t, 10);
         });
       }
     },

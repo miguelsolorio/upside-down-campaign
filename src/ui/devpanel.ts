@@ -1,10 +1,6 @@
 // The dev panel: plain DOM in #devpanel, only mounted with ?dev=1. Buttons and inputs for the DevHooks plus a state readout.
 import type { DevHooks } from '../core/types.ts';
 
-/** Suggestions from docs/level-1.md. Any id works if you type it. */
-const GROUPS = ['rats1', 'agents1', 'rats2', 'agents2', 'ambush1', 'ambush2', 'ambush3'];
-const PROPS = ['gate1', 'log1'];
-
 type Tag = keyof HTMLElementTagNameMap;
 function h<T extends Tag>(tag: T, props: Partial<HTMLElementTagNameMap[T]> = {}, ...kids: (Node | string)[]): HTMLElementTagNameMap[T] {
   const el = Object.assign(document.createElement(tag), props);
@@ -14,7 +10,8 @@ function h<T extends Tag>(tag: T, props: Partial<HTMLElementTagNameMap[T]> = {},
 
 const row = (...kids: (Node | string)[]): HTMLDivElement => h('div', {}, ...kids);
 
-/** DOM panel in #devpanel (see index.html). Returns an unmount function. Only mounted with ?dev=1. */
+/** DOM panel in #devpanel (see index.html). Returns an unmount function. Only mounted with ?dev=1. The group and prop boxes
+ * suggest what the stage being played has (`hooks.groups` and `hooks.props`), and any id works if you type it. */
 export function mountDevPanel(hooks: DevHooks): () => void {
   const root = document.getElementById('devpanel');
   if (!root) return () => { /* no panel in this page */ };
@@ -31,7 +28,7 @@ export function mountDevPanel(hooks: DevHooks): () => void {
     if (list) el.setAttribute('list', list);
     return el;
   };
-  const options = (id: string, values: string[]): HTMLDataListElement => h('datalist', { id }, ...values.map((v) => h('option', { value: v })));
+  const options = (id: string, values: readonly string[]): HTMLDataListElement => h('datalist', { id }, ...values.map((v) => h('option', { value: v })));
   const num = (el: HTMLInputElement): number => Number(el.value) || 0;
 
   const god = h('input', { type: 'checkbox', checked: hooks.god });
@@ -40,8 +37,8 @@ export function mountDevPanel(hooks: DevHooks): () => void {
   boxes.addEventListener('change', () => { hooks.hitboxes = boxes.checked; });
 
   const level = field('5', 36, 'number');
-  const group = field('rats1', 80, 'text', 'dev-groups');
-  const prop = field('gate1', 80, 'text', 'dev-props');
+  const group = field(hooks.groups[0] ?? '', 80, 'text', 'dev-groups');
+  const prop = field(hooks.props[0] ?? '', 80, 'text', 'dev-props');
   const px = field('200', 44, 'number');
   const py = field('200', 44, 'number');
   const readout = h('pre', {});
@@ -52,8 +49,8 @@ export function mountDevPanel(hooks: DevHooks): () => void {
     row(h('label', {}, god, ' god '), h('label', {}, boxes, ' hitboxes')),
     row(button('+50 XP', () => hooks.giveXp(50)), button('kill all', () => hooks.killAll()), button('recruit eleven', () => hooks.recruit('eleven'))),
     row('level ', level, button('set', () => hooks.setLevel(num(level)))),
-    row('group ', group, button('spawn', () => hooks.spawnGroup(group.value.trim())), options('dev-groups', GROUPS)),
-    row('prop ', prop, button('open', () => hooks.openProp(prop.value.trim())), options('dev-props', PROPS)),
+    row('group ', group, button('spawn', () => hooks.spawnGroup(group.value.trim())), options('dev-groups', hooks.groups)),
+    row('prop ', prop, button('open', () => hooks.openProp(prop.value.trim())), options('dev-props', hooks.props)),
     row('x ', px, ' y ', py, button('teleport', () => hooks.teleport(num(px), num(py)))),
     readout,
   );

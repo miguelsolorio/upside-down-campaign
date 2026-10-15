@@ -348,6 +348,9 @@ export interface SimOptions {
   hazards?: HazardDef[];
   /** Scales this stage's enemies on top of the difficulty setting: their HP and the damage they deal (not hazards). 1 if left out. */
   enemyMult?: number;
+  /** Scales the XP this stage's enemies are worth, rounded per enemy and at least 1, so a stage's XP fits the campaign's
+   *  pace (docs/pace.md). Run-time spawns stay at 1. 1 if left out. */
+  xpMult?: number;
   /** Tiles the sim brings run-time enemies up from: the Alpha's howl and the defense waves. */
   burrows?: Burrow[];
   /** The stage's defense, started by Sim.defend(). */
@@ -420,6 +423,9 @@ export interface Sim {
 
 /** Hooks the dev panel gets. World builds this from Sim and its own state. */
 export interface DevHooks extends SimDev {
+  /** The enemy groups and the props the stage has, for the panel's suggestions. Any id works if you type it. */
+  groups: readonly string[];
+  props: readonly string[];
   spawnGroup(group: string): void;
   openProp(id: string): void;
   recruit(id: HeroId): void;

@@ -15,8 +15,8 @@ One stage, five to eight minutes, under Starcourt in July 1985. The freight lift
   - the Key chamber (end, south-east), an arena about 18 by 12 tiles, the machine on its north wall
 - Light: `time: 'night'`, the Brass base look: pools at the `lights` entries on the ceiling lamps, the machine's glow and the consoles, and at the lights props.
 - Music: `starcourt` until Grigori wakes, then the `music` step switches to `clock` to the end.
-- Party: picked on the map from the nine. Robin is locked in, because `cipher1` is on the route. `?stage=3.2` starts Mike (lead), Eleven, Robin and Nancy at the levels in `ARRIVAL`, set from a chained bot run through 3.1 once it exists.
-- `enemyMult: 1` (see "Result").
+- Party: picked on the map from the nine. Robin is locked in, because `cipher1` is on the route. `?stage=3.2` starts the party a real run brings: Mike (lead) at Lv 7, Dustin 6, Robin 3 and Nancy 3 (`ARRIVAL`, from `node scripts/measure-campaign.ts chief 40`).
+- `enemyMult: 1.25` (see "Result").
 
 ## Rooms
 
@@ -173,25 +173,25 @@ Art builds only after the owner picks from the variation sheets. The base look c
 
 ## Result
 
-Measured with `node scripts/measure-stage.ts 3.2` at `enemyMult` 1, with the party a chained run brings from 3.1 (Mike 6, Eleven 5, Robin 4, Nancy 4). "Boss" in the script's output runs from the `grigori` beat to the finish.
+Measured with `node scripts/measure-stage.ts 3.2` at `enemyMult` 1.25, with the party a real run brings (Mike 7, Dustin 6, Robin 3, Nancy 3). "Boss" in the script's output runs from the `grigori` beat to the finish.
 
 | | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
 |---|---|---|---|---|---|
-| Cleared | 16 | 90, none stuck | 17 | 20 | 7 |
-| Damage taken | 282 | 278 | 454 | 183 | 418 |
-| KOs | 1.15 | 0.77 | 1.1 | 0 | 3.05 |
-| Lowest party HP | 37% | 40% | 31% | 65% | 10% |
-| Time | 101 s | 109 s | 124 s | 92 s | 117 s |
-| Boss time | 44 s (43%) | 47 s | 63 s | 32 s | 56 s |
+| Cleared | 19 | 89, none stuck | 12 | 20 | 7 |
+| Damage taken | 291 | 303 | 542 | 219 | 447 |
+| KOs | 0.55 | 0.8 | 2.05 | 0.25 | 3.0 |
+| Lowest party HP | 47% | 42% | 16% | 60% | 11% |
+| Time | 118 s | 119 s | 107 s | 98 s | 119 s |
+| Boss time | 53 s (45%) | 56 s (47%) | 63 s | 39 s | 58 s |
 
 Stage XP is 236, with the two soldiers Grigori calls at 1 each.
 
-- **A party without a shooter** (Mike, Eleven, Robin, Dustin) clears 19 of 20, in about 160 s with a 95 s fight. That's a little over the 150 s band, and it's the price of having nobody to throw the breaker.
+- **Two numbers sit on a band's edge.** Lowest party HP is 47% over 20 seeds and 42% over 100, and damage is 291 and 303. Factors of 1.2 and 1.3 each missed a band by more, so 1.25 stays.
+- **A party without a shooter** (Mike, Eleven, Robin, Dustin) cleared 19 of 20 at the earlier arrival, in about 160 s with a 95 s fight. That's a little over the 150 s band, and it's the price of having nobody to throw the breaker.
 - **The spec's Grigori couldn't be beaten by a player who doesn't dodge.** The careless bot, which stands in front and swings, cleared the stage 0 times in 20 at his first numbers, and his front guard was up through his recovery. Now:
   - his guard drops while he recovers, so standing in front and punishing the swing works
   - his hits are softer (12 ATK, a haymaker of 1.0, a throw of 0.7)
   - he keeps 1200 HP, and at half of it he calls two soldiers, so the second half still presses a careful player, who sidesteps every haymaker
 - **The soldiers were too hot.** Six of them dealt three-quarters of the damage, even to the careful bot. Their rounds are power 0.3 now, not 0.45, and the bay holds two, not three.
-- **3.1 moved with them.** Softer rounds made 3.1 a touch easy, so its factor went from 1.7 to 1.75 (see `docs/level-7.md`, "Result").
-- **The arrival party is a chained run's**, not the spec's guess of Mike 7 and the rest at 5.
+- **The arrival party is the campaign run's** (`docs/pace.md`): a Lv 7 Mike and a Lv 6 Dustin carry Robin and Nancy at Lv 3. That is stronger at the top than the first guess, so the factor went from 1 to 1.25.
 

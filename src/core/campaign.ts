@@ -69,19 +69,19 @@ const REQUIRED: Record<string, HeroId[]> = {
   '3.2': ['robin'],
 };
 
-/** What a jump straight to a stage (?stage=1.3) starts with: the roster at the levels a normal run arrives with. */
+/**
+ * What a jump straight to a stage (?stage=1.3) starts with: the party a real run walks in with, levels and XP, from the
+ * median of node scripts/measure-campaign.ts chief 40 (docs/pace.md). Rerun it when stage XP changes.
+ */
 const ARRIVAL: Record<string, PartySeed[]> = {
   '1.1': [{ id: 'mike' }, { id: 'dustin' }, { id: 'lucas' }],
-  '1.2': [{ id: 'mike', level: 3 }, { id: 'dustin', level: 3 }, { id: 'lucas', level: 3 }, { id: 'eleven', level: 3 }],
-  '1.3': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 4 }, { id: 'lucas', level: 4 }, { id: 'eleven', level: 4 }],
-  '2.1': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 5 }, { id: 'lucas', level: 4 }, { id: 'will', level: 3 }],
-  '2.2': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
-  '2.3': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
-  // A chained bot run brings Mike to 3.1 at Lv 6 with the bench at 4 and 5, and the recruit rule makes Robin and Nancy Lv 3.
-  // The jump is a little ahead of that, as 2.2's is. A chained run from 3.1's jump into 3.2 keeps those levels (with more XP
-  // banked), so 3.2's jump is the same four.
-  '3.1': [{ id: 'mike', level: 6 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 4 }, { id: 'nancy', level: 4 }],
-  '3.2': [{ id: 'mike', level: 6 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 4 }, { id: 'nancy', level: 4 }],
+  '1.2': [{ id: 'mike', level: 3, xp: 68 }, { id: 'dustin', level: 2, xp: 54 }, { id: 'lucas', level: 2, xp: 54 }, { id: 'eleven', level: 2, xp: 30 }],
+  '1.3': [{ id: 'mike', level: 4, xp: 76 }, { id: 'dustin', level: 3, xp: 77 }, { id: 'lucas', level: 3, xp: 65 }, { id: 'eleven', level: 3, xp: 41 }],
+  '2.1': [{ id: 'mike', level: 4, xp: 150 }, { id: 'dustin', level: 4, xp: 10 }, { id: 'lucas', level: 3, xp: 115 }, { id: 'will', level: 2 }],
+  '2.2': [{ id: 'mike', level: 5, xp: 116 }, { id: 'dustin', level: 4, xp: 172 }, { id: 'max', level: 3 }, { id: 'steve', level: 3 }],
+  '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 123 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
+  '3.1': [{ id: 'mike', level: 6, xp: 198 }, { id: 'dustin', level: 5, xp: 257 }, { id: 'robin', level: 3 }, { id: 'nancy', level: 3 }],
+  '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 82 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */
@@ -100,17 +100,36 @@ export function needsPicks(id: string): boolean {
 }
 
 /**
- * The four heroes who play stage `id`, lead first, from the player's picks (lead first, as remembered from last time).
- * Heroes outside the stage's pool and repeats are dropped. A required hero who is missing takes the place of the last
- * pick that isn't required. Empty slots fill from the stage's default party, then from the pool, in order. No picks
- * at all is the default party. A stage without picks is just its roster.
+ * Heroes who join at a stage and walk into it on their first visit, though nothing locks them in: Robin and Nancy at the mall.
+ * Without this the picks panel opened on chapter 2's party and they only played if the player swapped them in.
  */
-export function pickParty(id: string, picks: readonly HeroId[] = []): HeroId[] {
+const JOINS: Record<string, HeroId[]> = {
+  '3.1': ['robin', 'nancy'],
+};
+
+/**
+ * The four heroes who play stage `id`, lead first, from the player's picks (lead first, as remembered from last time).
+ * Heroes outside the stage's pool and repeats are dropped. With `known` (every hero met so far), a hero who joins at this stage
+ * and hasn't been met yet takes the place of the last pick that isn't the lead or required, so the newcomers start in the party.
+ * A required hero who is missing takes the place of the last pick that isn't required. Empty slots fill from the stage's
+ * default party, then from the pool, in order. No picks at all is the default party. A stage without picks is just its roster.
+ */
+export function pickParty(id: string, picks: readonly HeroId[] = [], known?: readonly PartySeed[]): HeroId[] {
   const pool = rosterFor(id);
   if (!needsPicks(id)) return pool;
   const out: HeroId[] = [];
   const from = picks.length > 0 ? picks : defaultParty(id).map((s) => s.id);
   for (const h of from) if (pool.includes(h) && !out.includes(h) && out.length < PARTY_SIZE) out.push(h);
+  const fresh = known ? (JOINS[id] ?? []).filter((h) => pool.includes(h) && !known.some((k) => k.id === h)) : [];
+  // From the last newcomer back, so they land in the party in the order JOINS lists them.
+  for (const n of [...fresh].reverse()) {
+    if (out.includes(n)) continue;
+    if (out.length < PARTY_SIZE) { out.push(n); continue; }
+    for (let i = out.length - 1; i >= 1; i--) {
+      const h = out[i] as HeroId;
+      if (!requiredFor(id).includes(h) && !fresh.includes(h)) { out[i] = n; break; }
+    }
+  }
   for (const r of requiredFor(id)) {
     if (out.includes(r)) continue;
     if (out.length < PARTY_SIZE) { out.push(r); continue; }
@@ -172,7 +191,7 @@ const seedOf = (h: HeroId, known: PartySeed[], join: number): PartySeed => {
 export function partyFor(id: string, known: PartySeed[], picks?: readonly HeroId[]): PartySeed[] {
   const join = joinLevel(id, known);
   if (join === null) return defaultParty(id);
-  return pickParty(id, picks).map((h) => seedOf(h, known, join));
+  return pickParty(id, picks, known).map((h) => seedOf(h, known, join));
 }
 
 /**

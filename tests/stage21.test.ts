@@ -11,7 +11,7 @@ import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { fitsBox } from '../src/core/text.ts';
 import { STAGE_21 as S, ROWS, WAVES } from '../src/world/stages/stage21.ts';
 import type { TileRect } from '../src/world/types.ts';
-import { botRoute, propTiles, rectTiles, stageKit, tileOf } from './stage-helpers.ts';
+import { botRoute, propTiles, rectTiles, stageKit, stageXp, tileOf } from './stage-helpers.ts';
 import type { Prop } from './stage-helpers.ts';
 
 const kit = stageKit(S);
@@ -128,10 +128,11 @@ test('stage 2.1: the start and every spawn are on walkable ground, ids are uniqu
   for (const [x, y] of rectTiles(ROOMS.palace as TileRect)) assert.ok(!enemies.some((e) => e.tx === x && e.ty === y), 'nothing hostile in the Palace');
 });
 
-test('stage 2.1: the roster is worth 130 to 170 XP: demodogs in the barn and the hole, vines and pods in the lanes and the corn, rats on the street', () => {
-  const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
-  assert.ok(xp >= 130 && xp <= 170, `stage XP ${xp}`);
-  assert.equal(xp, 166);
+test('stage 2.1: the roster is worth 230 to 270 XP: demodogs in the barn and the hole, vines and pods in the lanes and the corn, rats on the street', () => {
+  assert.equal(enemies.reduce((sum, e) => sum + xpOf(e), 0), 166, 'at the enemies\' own XP, before the stage\'s xpMult');
+  const xp = stageXp(S);
+  assert.ok(xp >= 230 && xp <= 270, `stage XP ${xp}`);
+  assert.equal(xp, 260);
   const kind = (k: string): number => enemies.filter((e) => e.type === k).length;
   assert.deepEqual([kind('demodog'), kind('vine'), kind('pod'), kind('rat')], [13, 5, 4, 3]);
   assert.equal(enemies.length, 25);

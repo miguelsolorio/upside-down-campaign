@@ -6,6 +6,7 @@ import { astar, buildNav } from '../src/combat/nav.ts';
 import { simOptions, stageGrid } from '../src/world/options.ts';
 import { isLoss } from '../src/world/loss.ts';
 import { createDirector } from '../src/world/triggers.ts';
+import { ELITE, ENEMY_DEFS } from '../src/enemies/defs.ts';
 import type { DirectorEnv } from '../src/world/triggers.ts';
 import type { StageData, TileRect } from '../src/world/types.ts';
 import type { CamDef, Difficulty, Grid, HeroSnapshot, PartySeed, Sim, SimEvent, SimInput, SimSpawn } from '../src/core/types.ts';
@@ -252,4 +253,13 @@ export function playStage(S: StageData, seed: number, party: PartySeed[], maxFra
     done: dir.finished(), allDown, fell, frames: f, levels: snap.map((p) => p.level), xp: st.xpEarned, kos: st.kos, damage: st.damageTaken, lowestHp,
     said, party: snap, steps,
   };
+}
+
+/** What a stage's roster pays in XP, the stage's xpMult applied per enemy as combat/init.ts does. Run-time spawns are not in it. */
+export function stageXp(S: StageData): number {
+  return S.spawns.reduce((sum, e) => {
+    if (e.kind !== 'enemy') return sum;
+    const base = ENEMY_DEFS[e.type].xp * (e.tier === 'elite' ? ELITE.xp : 1);
+    return sum + Math.max(1, Math.round(base * (S.xpMult ?? 1)));
+  }, 0);
 }

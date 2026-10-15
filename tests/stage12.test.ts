@@ -11,7 +11,7 @@ import { STAGE_12 as S, ROWS, WAVES } from '../src/world/stages/stage12.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import type { TileRect } from '../src/world/types.ts';
 import type { HazardDef, SimEvent } from '../src/core/types.ts';
-import { botRoute, camCanSee, camSafeShot, fakeEnv, propTiles, rectTiles, stageKit, tileOf } from './stage-helpers.ts';
+import { botRoute, camCanSee, camSafeShot, fakeEnv, propTiles, rectTiles, stageKit, stageXp, tileOf } from './stage-helpers.ts';
 import type { Prop } from './stage-helpers.ts';
 
 const kit = stageKit(S);
@@ -120,9 +120,12 @@ test('stage 1.2: props sit where the art expects them, and the doors and crate f
 });
 
 // ---------------------------------------------------------------- the budget
-test('stage 1.2: the roster follows the encounter rules and the stage is worth 330 to 390 XP', () => {
-  const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
-  assert.ok(xp >= 330 && xp <= 390, `stage XP ${xp}`);
+test('stage 1.2: the roster follows the encounter rules and the stage is worth 130 to 160 XP', () => {
+  // The roster is worth 360 at the enemies' own XP; the stage's xpMult brings it into the campaign's pace.
+  assert.equal(enemies.reduce((sum, e) => sum + xpOf(e), 0), 360);
+  const xp = stageXp(S);
+  assert.ok(xp >= 130 && xp <= 160, `stage XP ${xp}`);
+  assert.equal(xp, 146);
   // Every room has someone in it, so no big floor is left empty: at least 24 enemies, six of them rats in the animal lab.
   assert.ok(enemies.length >= 24, `${enemies.length} enemies`);
   assert.ok(enemies.filter((e) => e.group === 'rats1').length >= 6, 'six rats wait in the animal lab');

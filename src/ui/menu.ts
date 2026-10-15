@@ -1,8 +1,9 @@
-// A plain vertical menu, and the five settings rows the title and the pause screen share.
+// A plain vertical menu, and the settings rows the title and the pause screen share.
 // The keys move the selection and the mouse can too: a row takes it when the mouse moves onto it, and a click picks it.
 import type { Game } from '../core/scene.ts';
 import type { InputState } from '../core/input.ts';
-import { applySettings, saveSettings } from '../core/settings.ts';
+import { applySettings, cycleShell, saveSettings } from '../core/settings.ts';
+import { rumbleCue } from '../core/rumble.ts';
 import { hitIndex, inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
 import { audio } from '../audio/index.ts';
@@ -116,7 +117,25 @@ export function toggleSkipStory(g: Game): void {
   audio.sfx('select');
 }
 
-/** Music, sfx, scanlines, shake, reduce flashing and skip story. Every change is saved, applied and pushed to the mixer. */
+/** Which settings rows the input in use asks for: RUMBLE with a controller, GAME BOY on touch, CONTROLS otherwise. */
+export type SettingsKind = 'pad' | 'touch' | 'keys';
+export function settingsKind(g: Game): SettingsKind {
+  const d = g.input.device();
+  return d === 'gamepad' ? 'pad' : d === 'touch' ? 'touch' : 'keys';
+}
+
+/** Swaps in a rebuilt list of rows, keeping the cursor on the same row by name when it's still there. */
+export function reshape(m: Menu, items: MenuItem[]): void {
+  const was = m.items[m.sel]?.label;
+  m.items = items;
+  const at = items.findIndex((it) => it.label === was);
+  m.sel = at >= 0 ? at : Math.max(0, Math.min(m.sel, items.length - 1));
+}
+
+/**
+ * Music, sfx, scanlines, shake, reduce flashing and skip story, then RUMBLE while a controller is the input in use, then
+ * CONTROLS, or on a touch screen GAME BOY in its place. Every change is saved, applied and pushed to the mixer.
+ */
 export function settingItems(g: Game): MenuItem[] {
   const s = g.settings;
   const commit = (): void => {
@@ -133,6 +152,9 @@ export function settingItems(g: Game): MenuItem[] {
   const volume = (key: 'musicVol' | 'sfxVol') => (dir: -1 | 1): void => setVolume(key)(stepVolume(s[key], dir));
   const flip = (key: 'scanlines' | 'reduceFlashing') => (): void => { s[key] = !s[key]; commit(); };
   const shake = (dir: -1 | 1): void => { s.shake = cycleShake(s.shake, dir); commit(); };
+  const shell = (dir: -1 | 1): void => { s.shell = cycleShell(s.shell, dir); commit(); };
+  // Switching it on gives one short pulse, so the player can feel what they asked for.
+  const rumble = (): void => { s.rumble = !s.rumble; commit(); if (s.rumble) rumbleCue('hurt'); };
   const onOff = (v: boolean): string => (v ? 'ON' : 'OFF');
   return [
     { label: 'MUSIC', level: () => s.musicVol, set: setVolume('musicVol'), adjust: volume('musicVol') },
@@ -141,8 +163,14 @@ export function settingItems(g: Game): MenuItem[] {
     { label: 'SHAKE', value: () => shakeLabel(s.shake), adjust: shake, activate: () => shake(1) },
     { label: 'REDUCE FLASH', value: () => onOff(s.reduceFlashing), adjust: flip('reduceFlashing'), activate: flip('reduceFlashing') },
     { label: 'SKIP STORY', value: () => onOff(s.skipDialogue), adjust: () => toggleSkipStory(g), activate: () => toggleSkipStory(g) },
-    // Key rebinding means nothing on a touch screen.
-    ...(g.input.device() === 'touch' ? [] : [
+    // Rumble needs a controller to buzz, so the row waits until one is the input in use.
+    ...(g.input.device() === 'gamepad' ? [
+      { label: 'RUMBLE', value: () => onOff(s.rumble), adjust: rumble, activate: rumble },
+    ] : []),
+    // Key rebinding means nothing on a touch screen, and the Game Boy's colour means nothing off one.
+    ...(g.input.device() === 'touch' ? [
+      { label: 'GAME BOY', value: () => s.shell.toUpperCase(), adjust: shell, activate: () => shell(1) },
+    ] : [
       { label: 'CONTROLS', value: () => 'EDIT', activate: () => g.scenes.push(createControlsScene({ onBack: () => g.scenes.pop() })) },
     ]),
   ];

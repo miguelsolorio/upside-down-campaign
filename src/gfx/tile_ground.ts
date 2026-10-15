@@ -16,14 +16,17 @@ type Rnd = () => number;
 
 /** The four neighbours of a tile. Off-map neighbours count as the tile itself. */
 export interface Near { n: TileName; e: TileName; s: TileName; w: TileName }
+/** A rectangle of tiles. */
+export interface TileBox { tx: number; ty: number; w: number; h: number }
 /**
  * Where a tile sits in a run of its own kind: how many of its kind lie unbroken to its west and north, and how long the run is across and
  * down. It is set for the tiles that paint one big picture over a block of them (the fountain, the lift, the machine), so each tile knows
  * which piece of the picture is its own.
  */
 export interface Block { ox: number; oy: number; w: number; h: number }
+/** court: the gym court a tile is painted in (findCourts in tile_school.ts), so its lines frame the court. Absent elsewhere. */
 export interface TileCtx {
-  tx: number; ty: number; near: Near; blk?: Block;
+  tx: number; ty: number; near: Near; court?: TileBox; blk?: Block;
   /** Set on a tile of a stage that has the mall in it: the school's checker is Scoops Ahoy's floor there, and goes as dim as the mall at night (night.ts). */
   mall?: boolean;
 }

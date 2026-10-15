@@ -120,6 +120,8 @@ export interface StageData {
   hazards?: HazardDef[];
   /** How much tougher this stage's enemies are than the difficulty setting makes them: HP and damage dealt. 1 if left out. */
   enemyMult?: number;
+  /** Scales the XP its enemies are worth, so the stage fits the campaign's pace (docs/pace.md). 1 if left out. */
+  xpMult?: number;
   /** Tiles the sim brings run-time enemies up from: the Alpha's howl and the defense waves (docs/level-6.md). */
   burrows?: Burrow[];
   /** The stage's defense, started by a `defend` beat step (docs/level-6.md, "The defense"). */

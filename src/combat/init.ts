@@ -50,7 +50,7 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     mode: patrol.length > 0 ? 'patrol' : 'idle', modeT: 0, cd: 0, stagger: 0, flash: 0, hurtSeen: false,
     anim: 'idle', animT: 0, patrol, pi: 0, wait: 0, ax: 0, ay: 0, hitDone: false, lostT: 0, backT: 0, stuckT: 0,
     lastX: f.x, lastY: f.y, wanderT: 30 + ((uid * 37) % 90), wanderA: Number.NaN, noLure: 0, by: null, stat: noStatus(),
-    xp: elite ? def.xp * ELITE.xp : def.xp, drop: elite ? def.drop * ELITE.drop : def.drop, elite,
+    xp: Math.max(1, Math.round((elite ? def.xp * ELITE.xp : def.xp) * s.xpMult)), drop: elite ? def.drop * ELITE.drop : def.drop, elite,
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
     demo: sp.type === 'demogorgon' ? newDemo() : null,
@@ -89,7 +89,7 @@ export function createState(opts: SimOptions): S {
   trailX[TRAIL - 1] = opts.start.x; trailY[TRAIL - 1] = opts.start.y;
   const s: S = {
     grid: opts.grid, rng: createRng(seed), frng: createRng((seed ^ 0x9e3779b9) >>> 0),
-    mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], foeMult: opts.enemyMult ?? 1, frame: 0,
+    mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], foeMult: opts.enemyMult ?? 1, xpMult: opts.xpMult ?? 1, frame: 0,
     heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1, standT: 0, walkDir: 'right', bump: null,
     enemies: [], globs: [], lungeEnd: -999, projs: [], zones: [], lure: null, traps: [], hold: null, zap: null, shield: null, fx: [], floaters: [], items: [], props: [],
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),

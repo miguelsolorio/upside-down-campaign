@@ -5,7 +5,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
-import { getPromptDevice } from '../core/bindings.ts';
+import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import type { BindAction } from '../core/bindings.ts';
 import { inRect } from '../core/pointer.ts';
 import type { HeroId } from '../core/types.ts';
@@ -116,7 +116,7 @@ export function createCharSheetScene(opts: { heroes: () => CharSheetHero[]; star
   };
   const switchHint = (): string => {
     const device = getPromptDevice();
-    return device === 'gamepad' ? 'LB RB PICK A HERO' : device === 'touch' ? 'TAP A FACE TO PICK' : 'ARROWS PICK A HERO';
+    return device === 'gamepad' ? `${labelOf('swapPrev')} ${labelOf('swapNext')} PICK A HERO` : device === 'touch' ? 'TAP A FACE TO PICK' : 'ARROWS PICK A HERO';
   };
 
   /** The mouse's share of a tick. Returns true when a click was used. The sheet is drawn in the centered frame. */

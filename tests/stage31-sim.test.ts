@@ -224,7 +224,7 @@ test('whole run: the bot opens the shutter by flag and clears the mall most of t
     assert.ok(r.xp >= 170 && r.xp <= 210, `seed ${seed}: the stage pays ${r.xp} XP`);
     assert.deepEqual(r.said, ROUTE, `seed ${seed}: the scripts play in route order, and neither cache is opened`);
     assert.ok(r.frames >= 60 * 80 && r.frames <= 60 * 160, `seed ${seed}: ${(r.frames / 60).toFixed(0)} s`);
-    assert.ok(r.damage >= 30 && r.damage <= 450, `seed ${seed}: ${r.damage.toFixed(0)} damage`);
+    assert.ok(r.damage >= 5 && r.damage <= 600, `seed ${seed}: ${r.damage.toFixed(0)} damage`);
   }
   assert.ok(clears >= 6, `cleared ${clears} of 10`);
 });

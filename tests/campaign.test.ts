@@ -25,11 +25,12 @@ test('stages run 1.1 to 3.2, and only the last one is final', () => {
   assert.deepEqual(STAGE_ORDER.filter(opensChapter), ['1.1', '2.1', '3.1']);
 });
 
-test('the first stage opens with three kids, the second with all four at Lv 3', () => {
+test('the first stage opens with three kids, the second with all four as a real run brings them out of it', () => {
   assert.deepEqual(defaultParty('1.1').map((s) => s.id), ['mike', 'dustin', 'lucas']);
   const two = defaultParty('1.2');
   assert.deepEqual(two.map((s) => s.id), ['mike', 'dustin', 'lucas', 'eleven']);
-  assert.ok(two.every((s) => s.level === 3));
+  assert.deepEqual(two.map((s) => s.level), [3, 2, 2, 2], 'the lead at Lv 3, the bench and Eleven at Lv 2');
+  assert.ok(two.every((s) => (s.xp ?? 0) > 0), 'each with the XP into the level a run carries');
   for (const s of two) assert.ok((HERO_IDS as string[]).includes(s.id));
   assert.deepEqual(defaultParty('9.9').map((s) => s.id), ['mike', 'dustin', 'lucas'], 'an unknown id opens like the first stage');
 });
@@ -140,7 +141,7 @@ test('the picks panel sees the whole pool at the levels they would play at', () 
   const known = [{ id: 'mike' as const, level: 7, xp: 0 }, { id: 'dustin' as const, level: 6, xp: 0 }, { id: 'lucas' as const, level: 5, xp: 0 }, { id: 'will' as const, level: 4, xp: 0 }];
   assert.deepEqual(poolFor('2.2', known).map((s) => [s.id, s.level]), [['mike', 7], ['dustin', 6], ['lucas', 5], ['will', 4], ['max', 4], ['steve', 4]]);
   assert.deepEqual(poolFor('2.2', []).map((s) => s.id), ['mike', 'dustin', 'lucas', 'will', 'max', 'steve']);
-  assert.equal(poolFor('2.2', []).find((s) => s.id === 'max')?.level, 4, 'the arrival level with nothing known');
+  assert.equal(poolFor('2.2', []).find((s) => s.id === 'max')?.level, 3, 'the arrival level with nothing known');
 });
 
 test('chapter 3 picks four from nine, with nobody locked in 3.1 and Robin locked in 3.2', () => {
@@ -152,7 +153,13 @@ test('chapter 3 picks four from nine, with nobody locked in 3.1 and Robin locked
   assert.deepEqual(requiredFor('3.2'), ['robin']);
   assert.ok(pickParty('3.2', ['mike', 'dustin', 'lucas', 'will']).includes('robin'));
   assert.deepEqual(pickParty('3.1', ['mike', 'dustin', 'lucas', 'will']), ['mike', 'dustin', 'lucas', 'will']);
-  assert.deepEqual(defaultParty('3.1').map((s) => s.id), ['mike', 'eleven', 'robin', 'nancy']);
+  assert.deepEqual(defaultParty('3.1').map((s) => s.id), ['mike', 'dustin', 'robin', 'nancy']);
+  // Robin and Nancy join at 3.1: on the first visit they walk in in place of the last two picks (not the lead), and after that
+  // they come and go like anyone else.
+  const met = [{ id: 'mike' as const, level: 6 }, { id: 'dustin' as const, level: 5 }, { id: 'max' as const, level: 4 }, { id: 'steve' as const, level: 4 }];
+  assert.deepEqual(pickParty('3.1', ['mike', 'dustin', 'max', 'steve'], met), ['mike', 'dustin', 'robin', 'nancy']);
+  assert.deepEqual(pickParty('3.1', ['mike', 'dustin', 'max', 'steve'], [...met, { id: 'robin', level: 3 }, { id: 'nancy', level: 3 }]), ['mike', 'dustin', 'max', 'steve']);
+  assert.deepEqual(pickParty('3.1', ['mike', 'dustin', 'max', 'steve']), ['mike', 'dustin', 'max', 'steve'], 'without known, picks are only fixed up');
   assert.equal(CHAPTERS[3]?.title, 'Chapter three');
   assert.deepEqual([...STAGES_AHEAD], ['3.3']);
 });

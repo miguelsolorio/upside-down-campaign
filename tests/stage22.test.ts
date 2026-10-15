@@ -15,7 +15,7 @@ import { L5_SCRIPTS } from '../src/story/scripts_l5.ts';
 import { STAGE_22 as S, ROWS, WAVES } from '../src/world/stages/stage22.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import type { TileRect } from '../src/world/types.ts';
-import { fakeEnv, propTiles, rectTiles, stageKit, tileOf } from './stage-helpers.ts';
+import { fakeEnv, propTiles, rectTiles, stageKit, stageXp, tileOf } from './stage-helpers.ts';
 import type { Prop } from './stage-helpers.ts';
 
 const kit = stageKit(S);
@@ -124,10 +124,11 @@ test('stage 2.2: the start and every spawn, item and patrol point is on open gro
   assert.equal(taken.size, enemies.length + items.length, 'nothing shares a tile');
 });
 
-test('stage 2.2: the roster is worth 130 to 170 XP, in the groups the spec names, with the waves asleep in the hub', () => {
-  const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
-  assert.ok(xp >= 130 && xp <= 170, `stage XP ${xp}`);
-  assert.equal(xp, 166);
+test('stage 2.2: the roster is worth 230 to 270 XP, in the groups the spec names, with the waves asleep in the hub', () => {
+  assert.equal(enemies.reduce((sum, e) => sum + xpOf(e), 0), 166, 'at the enemies\' own XP, before the stage\'s xpMult');
+  const xp = stageXp(S);
+  assert.ok(xp >= 230 && xp <= 270, `stage XP ${xp}`);
+  assert.equal(xp, 258);
   const kind = (k: string): number => enemies.filter((e) => e.type === k).length;
   assert.deepEqual([kind('demodog'), kind('vine'), kind('pod'), kind('rat')], [14, 2, 4, 0]);
   assert.equal(enemies.filter((e) => e.tier === 'elite').length, 2, 'two elites');

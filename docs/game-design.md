@@ -108,7 +108,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Character sheet (also a click on the HUD's name and level), settings. Items later |
 
-Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
+Gamepad uses the standard mapping, Xbox layout (rebindable in CONTROLS, with A and B fixed as confirm and back, and a short rumble on a hit): stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.
@@ -127,7 +127,7 @@ Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks,
 - On level-up the hero heals 50% and rolls a d20. Bonus points are `floor(roll / 5)`, spread by the hero's growth weights on top of fixed per-level gains. A 20 gives five points, a full heal and 20 s of Inspiration for the party. A 1 gives none and the next roll has advantage. Nothing here can make a hero worse.
 - A level-up never stops play. It shows as a ring and sparkles around the hero that follow them, the LEVEL UP floater, a short chime and a pulse on the HUD level and portrait. A new talent gets a callout with its name, and a Nat 20 gets a gold ring and a NAT 20 callout. The roll itself still sizes the bonus points, but the die and the stat deltas are not shown.
 - Talents arrive at levels 3, 6 and 9. Will's change from Wizard to Cleric at 6 follows the show, where his class changes between campaigns.
-- Pace target: Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4, and 12 only if you clear most of chapter 5. A balance test enforces it.
+- Pace target: Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4, and 12 only if you clear most of chapter 5. The level is the lead's, the hero with the most XP. `tests/pace.test.ts` enforces it for the stages built so far, and `docs/pace.md` has the measured run.
 
 **Puzzle gates** make the swap matter. Each hero's "Opens" tag in the table above is checked against the gate.
 

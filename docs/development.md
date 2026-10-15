@@ -35,11 +35,11 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?rush=1` | Skip the title, the prologue and every dialogue box, for this page load only |
 | `?skip=1` | Skip the title and prologue, but keep the in-level dialogue |
 | `?bot=1` | A bot plays the level by itself |
-| `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport |
+| `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport. The group and prop boxes suggest the current stage's own enemy groups and props (`world/devhooks.ts`), and any id works if you type it |
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings: three kids for Mirkwood, all four at Lv 3 for the Lab, Lv 5 and 4 for the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Eleven, Robin and Nancy for 3.1 and 3.2 |
+| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Eleven, Robin and Nancy for 3.1 and 3.2 |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
@@ -99,4 +99,4 @@ Besides `index.html`, the HTML pages at the root are dev-only review pages that 
 - `map-variations.html` holds the five Hawkins map designs; design 4, Two Hawkins, is the one in the game.
 - `touch-controls.html` shows the touch controls on phone frames.
 
-The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.
+The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests, and two scripts play it headlessly: `node scripts/measure-stage.ts 1.3 chief 20` measures one stage (see "Measuring" in `docs/level-2.md`), and `node scripts/measure-campaign.ts chief 20` plays the whole run with the party carried and prints the levels after each stage (`docs/pace.md`). The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.

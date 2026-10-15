@@ -211,7 +211,7 @@ test('grab: a swap frees the held hero, with no throw, and the one who comes in 
   r.sim.step(inp({ swapTo: 1 }));
   const ev = run(r.sim, 10);
   assert.equal(r.s.hold, null);
-  assert.equal(r.s.heroes[r.s.active]?.id, 'eleven');
+  assert.equal(r.s.heroes[r.s.active]?.id, r.s.heroes[1]?.id, 'the second hero came in');
   assert.ok(r.s.heroes[r.s.active]!.invuln > 0, 'invulnerable for a moment');
   assert.equal(r.hero.hp, hp, 'Mike took nothing');
   assert.deepEqual(hurt(ev), [], 'and nobody was thrown');

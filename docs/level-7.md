@@ -16,8 +16,8 @@ One stage, five to eight minutes, and the start of chapter 3 (Starcourt, July 19
 - Concourses are three or four tiles wide. The court and the dock are bigger.
 - Light: `time: 'night'`, the mall after closing (the owner picked Confetti): pools at `lights` entries on the neon shop signs, the fountain and the exit signs, and at the lights props.
 - Music: `starcourt`.
-- Party: picked on the map from Mike, Dustin, Lucas, Will, Eleven, Max, Steve, Robin and Nancy (see "Party picks" in `docs/map-screen.md`). Nobody is locked. `?stage=3.1` starts Mike (lead) at Lv 6, Eleven 5, Robin 4 and Nancy 4 (`ARRIVAL` in `core/campaign.ts`), a little ahead of a real run, as 2.2's was.
-- `enemyMult: 1.75` (see "Result").
+- Party: picked on the map from Mike, Dustin, Lucas, Will, Eleven, Max, Steve, Robin and Nancy (see "Party picks" in `docs/map-screen.md`). Nobody is locked, but Robin and Nancy walk in on their first visit: they take the last two picks that aren't the lead (`JOINS` in `core/campaign.ts`). `?stage=3.1` starts the party a real run brings, Mike (lead) at Lv 6, Dustin 5, Robin 3 and Nancy 3 (`ARRIVAL`, from `node scripts/measure-campaign.ts chief 40`, see `docs/pace.md`).
+- `enemyMult: 1.4` (see "Result").
 - Dialogue is off by default. Gate hints work as in every level (see `docs/level-1.md`, "Puzzle hints").
 
 ## Rooms
@@ -109,7 +109,7 @@ Nancy is a Gunslinger, in `heroes/nancy.ts`, and `HERO_DEFS.nancy` replaces the 
 
 ## New enemies
 
-HP, ATK and DEF are sized for the party that really arrives at chapter 3, so the factors stay near where earlier stages sit (1.75 for 3.1, 1 for 3.2). A chained bot run through 1.1 to 2.3 ends with Mike at Lv 6, Dustin and Lucas at 5, Eleven, Max and Steve at 4 and Will at 3, so the recruit rule brings Robin and Nancy in at Lv 3. A Lv 6 Mike has about 83 HP and 16 ATK. Numbers are starting points. Tune them inside "Targets", not the targets themselves.
+HP, ATK and DEF are sized for the party that really arrives at chapter 3, so the factors stay near where earlier stages sit (1.4 for 3.1, 1.25 for 3.2). A chained bot run through 1.1 to 2.3 ends with Mike at Lv 6, Dustin and Lucas at 5, Eleven, Max and Steve at 4 and Will at 3, so the recruit rule brings Robin and Nancy in at Lv 3. A Lv 6 Mike has about 83 HP and 16 ATK. Numbers are starting points. Tune them inside "Targets", not the targets themselves.
 
 | Enemy | HP | ATK | DEF | Speed | XP | Behavior |
 |---|---|---|---|---|---|---|
@@ -197,15 +197,15 @@ The owner picks the look before Art builds. Art makes three standalone pages at 
 
 ## Result
 
-Measured with `node scripts/measure-stage.ts 3.1` at `enemyMult` 1.75. "Boss" in the script's output is the ambush.
+Measured with `node scripts/measure-stage.ts 3.1` at `enemyMult` 1.4, with the party a real run brings (Mike 6, Dustin 5, Robin 3, Nancy 3). "Boss" in the script's output is the ambush.
 
 | | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
 |---|---|---|---|---|---|
-| Cleared | 17 | 83, none stuck | 19 | 19 | 8 |
-| Damage taken | 234 | 256 | 229 | 149 | 372 |
-| KOs | 1.65 | 1.76 | 1.3 | 1.1 | 3.35 |
-| Lowest party HP | 38% | 34% | 39% | 64% | 11% |
-| Time | 101 s | 100 s | 103 s | 88 s | 106 s |
+| Cleared | 16 | 85, none stuck | 18 | 20 | 13 |
+| Damage taken | 239 | 241 | 223 | 78 | 377 |
+| KOs | 1.75 | 1.82 | 1.2 | 0.2 | 3.1 |
+| Lowest party HP | 40% | 38% | 40% | 81% | 14% |
+| Time | 92 s | 91 s | 94 s | 81 s | 100 s |
 
 Stage XP is 207.
 
@@ -214,6 +214,6 @@ Stage XP is 207.
   - The rat has 50 HP and 40 ATK and lunges from 34 px.
   - The Flayed has 140 HP and 40 ATK, reaches from 30 px and shambles through light hits, so knockback really is the counter.
   - The soldier has 90 HP and 38 ATK, and fires rounds of power 0.3 (see `docs/level-8.md`, "Result").
-  - The stage sits at 1.75, about where 1.3 is.
+- **Robin and Nancy walk in.** Nobody is locked in 3.1, so the picks panel opened on chapter 2's party and they only played if the player swapped them in. Now they take the last two picks on the first visit. The campaign run (`docs/pace.md`) brings them in at Lv 3 with a Lv 6 Mike and a Lv 5 Dustin, a weaker party than the first guess (Mike 6, Eleven 5, Robin 4, Nancy 4). That moved the factor from 1.75 to 1.4.
 - **The roster is smaller than the spec's,** to keep the XP inside 170 to 210: 21 melting rats, seven Flayed and two soldiers.
 - **The ambush is about a quarter of the run,** like the other ambush stages.

@@ -143,5 +143,7 @@ export const STAGE_12: StageData = {
   // The Lab's enemies are better trained than the woods': 30 percent more HP and 30 percent harder hits than the
   // difficulty setting alone gives. Measured with a bot that never dodges, this is what keeps the Lab dangerous on chief.
   enemyMult: 1.3,
+  // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
+  xpMult: 0.4,
   waypoints: WAYPOINTS,
 };

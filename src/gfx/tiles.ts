@@ -13,6 +13,7 @@ import type { Block, Near, TileCtx } from './tile_ground.ts';
 import { objectTile, pulseTile } from './tile_objects.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
 import { tunnelTile } from './tile_tunnel.ts';
+import { findCourts } from './tile_school.ts';
 import { fleshTile } from './tile_flesh.ts';
 
 /** A point in world px. */
@@ -89,6 +90,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
   const at = (x: number, y: number, self: TileName): TileName => (x < 0 || y < 0 || x >= cols || y >= nrows ? self : (names[y * cols + x] as TileName));
   /** How far a run of this kind goes from a tile in a direction, not counting the tile. */
   const run = (x: number, y: number, dx: number, dy: number, name: TileName): number => { let n = 0; while (at(x + dx * (n + 1), y + dy * (n + 1), '' as TileName) === name) n++; return n; };
+  const courts = findCourts(names, cols);
   for (let ty = 0; ty < nrows; ty++) {
     for (let tx = 0; tx < cols; tx++) {
       const name = names[ty * cols + tx] as TileName;
@@ -99,7 +101,8 @@ export function bakeStage(rows: string[], night = false): BakedStage {
       }
       let blk: Block | undefined;
       if (isBlock(name)) { const ox = run(tx, ty, -1, 0, name), oy = run(tx, ty, 0, -1, name); blk = { ox, oy, w: ox + 1 + run(tx, ty, 1, 0, name), h: oy + 1 + run(tx, ty, 0, 1, name) }; }
-      const tc: TileCtx = { tx, ty, near, ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
+      const court = courts[ty * cols + tx];
+      const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
       if (isPulse(name)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
       const day = staticTile(name, tc);
       const tile = night ? nightTile(day, name, tc) : day;

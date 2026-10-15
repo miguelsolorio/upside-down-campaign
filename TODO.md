@@ -39,6 +39,40 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] Merged into main with main's playable arcade cabinets brought in first: typecheck clean, 1046 tests pass, 2.1 to 2.3 run with no console errors
 - [ ] Feedback on Levels 5 and 6
 
+## Pace pass (levelling over the whole run)
+
+- [x] `scripts/measure-campaign.ts` plays 1.1 to 2.3 with the bot, carrying the party through `partyFor`, the picks panel and `recordClear`, lighting the lights and retrying from them, and prints each hero's level after every stage. `tests/pace.test.ts` holds the run to the pace. See `docs/pace.md`
+- [x] Measured over 20 seeds before: the lead ended chapter 1 at Lv 5 (the Lab's 360 XP), a level over, and chapter 2 at Lv 6 only when one hero kept the lead
+- [x] A stage XP factor, `xpMult`: 1.2 at 0.4, 1.3 at 0.7, 2.1 and 2.2 at 1.5, 2.3 at 1.6. The lead ends chapter 1 at Lv 4 and chapter 2 at Lv 6 in every seed; sharing the lead, chapter 1 at Lv 4 and chapter 2 at Lv 6 in 19 runs of 20
+- [x] `?stage=` seeds are the levels and XP a real run walks in with (`ARRIVAL`). Every stage measured again: 1.3's `enemyMult` went from 1.7 to 1.5, the rest kept theirs
+- [x] Two bot stalls the weaker party showed on 2.2 upside: a knocked-out Max at a gap, and a pod over a wall. Both fixed
+- [x] 1.3: the van is parked in the lot across a two-tile side door, the scare fires mid-room (the level holds still while it plays), and the gym's lines frame the court
+- [x] Verified: typecheck clean, 1053 tests pass, the production build passes. Merged into main
+
+## Dark Game Boy (touch screen)
+
+- [x] Five dark shells on `shell-variations.html`. The owner picked 1, Play It Loud: the 1995 black Game Boy
+- [x] The shell's colours are a `ShellTheme` (`ui/touchtheme.ts`), with the keys in `ui/touchkeys.ts`, so every touch file is under 500 lines. The grey shell draws as before
+- [x] The shell follows the phone's light or dark mode, even mid-game. A GAME BOY row in the options (touch only, where CONTROLS sits off touch) forces AUTO, LIGHT or DARK, and it's saved with the settings. `touch-controls.html` has a Light and Dark switch
+
+## Rough edges pass (the code fixes from the list below)
+
+- [x] Losing focus pauses. `input.interrupted()` is true for one tick after the window blurs or the tab is hidden, and the play scene opens the pause menu on it (not for `?bot=1`, and not over dialogue, the wipe or the clear, where nothing is moving to protect). A cabinet run holds the same way. The title, the map and the menus ignore it
+- [x] A lost controller pauses. Only the pad being played with counts: one that drops while the keyboard or the touch screen has the hands, or one of two, shows CONTROLLER LOST and nothing else
+- [x] The Lab's lockers and shelves were already fixed. The second pass gave corridor A its lockers as `L` and the storage hall its shelves as `N`, and `c` is left only on the animal lab's cage wall, so this list item was stale. Swapping in 1.3's `lockerwall` would have put school lockers in the Lab. `tests/lab-furniture.test.ts` now holds the split
+- [x] The klaxon's glow: `world/klaxon.ts` and `drawKlaxon`, rung from `env.alarm`. A red edge glow that fades in over 0.6 s, breathes once every 2.5 s for 5 s and fades out over 1.5 s, under the HUD. With Reduce flashing on it holds one steady dim level and nothing breathes or blinks
+- [x] The dev panel follows the stage: its group and prop suggestions (and the two boxes' starting values) come from the stage's own spawns (`world/devhooks.ts`). `KEPT_PROPS` moved to `world/options.ts`, and `play.ts` is back under 500 lines
+- [x] Verified: typecheck clean, 1091 tests pass (38 new), the production build passes. In the browser with `?mute=1`: blur, a hidden tab and a pad pulled out each open the pause menu and hold the level, the title ignores all three, a Galaga run holds on blur, the klaxon glow breathes in 1.2 and holds steady with Reduce flashing on, and the panel's boxes list 1.2's, 2.1's and 2.3's own groups and props. No console errors on the title, 1.2, 2.1 and 2.3. A real controller and a real window switch were simulated with events, not tried by hand
+
+## Controller pass (rebinding and rumble)
+
+- [x] Controller buttons rebind. The CONTROLS screen has a GAMEPAD page (it opens first while a controller is in use): ATTACK, SPECIAL, SWAP BACK, SWAP NEXT and CRIT, each with two of the eight face, bumper and trigger buttons. A taken button swaps, every action keeps one, and A (confirm and use) and B (back) are fixed the way Enter and Esc are. Saved beside the keys in `core/padmap.ts`, and every hint that names a button follows
+- [x] Rumble: short weak pulses on the active hero's hit, a KO, a level-up and a boss slam or landing, through `vibrationActuator`, skipped quietly where it's missing. A RUMBLE ON / OFF row shows in the options only while a controller is in use, saved with the settings
+- [x] The one hook into world code: a call to `rumble(ev)` at the top of `forward()` in `world/play.ts`. Nothing in combat, enemies or the HUD changed
+- [x] The options rebuild their rows when the input changes (picking up a pad with the menu open), keeping the cursor on its row
+- [x] Verified: typecheck clean, 1149 tests pass (58 new), the production build passes. In the browser with `?mute=1` and a simulated pad: RUMBLE shows and saves, the GAMEPAD page rebinds by pad and by mouse, B binds without backing out, Start cancels, View clears, the level's hints and the pause menu follow the new buttons, and a bot run buzzes the fake pad's motor on hits and level-ups
+- [ ] The picks screen's controller legend still prints `X LEAD` whatever SPECIAL is bound to (`legend()` in `ui/picks_logic.ts`, left alone while chapter 3 works in it). Its `A PICK` and `B BACK` are right, since A and B are fixed
+
 ## Status
 
 - [x] Level 1 (stage 1.1 Mirkwood, the title, the basement prologue). See `docs/level-1.md`
@@ -71,13 +105,13 @@ New with Levels 3 and 4:
 
 - Nobody has heard `upside`, `clock` or `hawkins`. Metrics only (peaks 0.52 to 0.77, no limiting, no clipping). Upside is dissonant on purpose in places, and the clock's bell bars sit about 4 dB under the rest.
 - In 2.1 only the demodogs ever hit the bot. The vine and pod numbers are sized by sums against the Lv 5 party, not by measurement. Nobody has fought them, or the dogs, by hand.
-- In 2.1 the careless bot clears more often than the careful one (20 of 20 to 17). Dogs that die in a few hits reward trading blows over dodging.
+- In 2.1 the careless bot clears more often than the careful one (88 of 100 to 83 since the pace pass, 20 of 20 to 17 before). Dogs that die in a few hits reward trading blows over dodging.
 - The street rats in 2.1 keep their chapter 1 numbers and die in one hit. If a later stage needs a chapter 1 enemy at full strength, give it its own kind with chapter 2 numbers rather than a factor.
 - The bot dodges the Demogorgon better than a person will (it reacts a frame late to the charge). The careless bot is the better guide. Nobody has fought it by hand.
-- No level-ups happened in the bot runs of 1.3 and 2.1: the lead stays Lv 5. The plan's "Lv 6 after chapter 2" now depends on 2.2 and 2.3.
-- A `?stage=` jump seeds levels but no XP, so it arrives a little behind a real run.
+- The pace holds (`docs/pace.md`), with these gaps: 2.1 on upside clears 18 of 100, under its floor of 4 of 20, because the party arrives a level lower; 2.3 on chief clears 98 of 100, at the top of its band (97 before); a careless bot clears the Lab 78 of 100, down from 20 of 20.
+- Recruits join low: Will at Lv 2 in 2.1, Max and Steve at Lv 3 in 2.2 (the average minus one of a party now a level lower). With the default picks Lucas and Will sit out 2.2 and 2.3.
+- Nobody has played a carried run by hand, and the bot never swaps for a puzzle, so a person's lead takes less of the XP than the bot's.
 - The map, CONTINUE into the map and replays are covered by unit tests and one bot run through the map. Nobody has played title to 2.1 by hand with saves.
-- 1.3: the side door is a one-tile tunnel, so the van sits in a vertical wall. The scare fires when the cafeteria rats are cleared, not by position. The gym's court lines don't follow the arena.
 - The `l3_*` and `l4_*` scripts have only had the mechanical copy checks.
 - No shop yet (Erica, chapter 3) and no party picks (they wait until there are more than four heroes).
 
@@ -86,16 +120,11 @@ From Levels 1 and 2:
 - Nobody has heard the music. The Lab track is checked by metrics only (base peak 0.49, combat peak 0.79, no limiter reduction, no clipping). The 7/8 bars are checked by tests and by comparing the live scheduler to the compiled notes, not by ear.
 - The bot opens gates and the crate by flag. The Dustin burn, the Lucas relay shot and the Eleven push are covered by unit tests and one by-hand browser run, not by a full human run of the stage. Nobody has played 1.2 start to finish by hand.
 - The bot is a good dodger and flatters the difficulty: hazards were about 75 percent of its damage on the first draft, and it sidesteps almost every guard bash. `createBot({ careless: true })` is a floor for a player who is not dodging. Nobody has played the harder Lab by hand, so how it feels to a person is unknown. If it is still too easy, raise `enemyMult` in `stage12.ts`; if it is too hard, lower it. The difficulty setting stacks on top.
-- The Lab's XP (360) takes the lead to Lv 5 (the plan said Lv 4 after chapter 1), so stage 1.3 should be tuned for a party that arrives at Lv 5.
 - Two bot stalls (a pickup at its reach edge, an idle enemy at its engage radius) were fixed in `combat/bot.ts`. There may be others.
-- The cage tile (`c`) is also used for lockers and shelves in corridor A and the storage hall, so some of them read as rat cages. A separate locker tile would fix it.
-- The klaxon has a sound but no visual. The red border pulse was cut. The `alarm` step calls an optional `env.alarm`, so a visual can hang off it later.
-- The dev panel's group and prop suggestions are still the 1.1 ones. Use `?stage=1.2` to jump and `?dev=1` to open the panel.
 - Stage 1.2's dialogue is off by default like the rest. The `l2_*` scripts only show with SKIP STORY off, and have only had the mechanical copy checks.
-- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Its buttons can't be rebound, there's no rumble, and a lost controller doesn't pause the game. Only the standard mapping is read.
+- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Nobody has felt the rumble: the pulses are weak numbers from `core/rumble.ts` (`PULSES`), sent through the Gamepad `vibrationActuator`, and a simulated pad only proves they're asked for. Only the standard mapping is read.
 - The autosave at Joyce's lights keeps levels, kills and story beats but not health, and the results screen only times the stretch since the last Continue.
 - Keyboard rebinding is saved per browser. Arrow keys, Enter, Escape and Backspace are fixed so menus can't get stuck.
-- Losing focus silences the game but doesn't pause it, so enemies keep moving while you're away.
 - Skip story is on by default, so the level's tutorial lines never show unless the player turns it off. The combat controls sit in the bottom left corner of the level instead, and fade to grey once the party leaves the starting yard. A puzzle gets a hint the moment someone tries it with the wrong hero (swings or fires at it, or pushes against its gate or door), with a bobbing yellow caret over the prop and a subtitle that names the hero (MAYBE ELEVEN SHOULD TRY HER SHOVE), so the Lab's three gates teach nothing else in words when the story is skipped. A party that tries nothing still gets the hint after five seconds near the puzzle.
 - Only four tag-in stingers exist (one per playable hero).
 - Level 1 takes the bot 86 seconds and Level 2 takes it 58. A person should need five to eight minutes for each.
@@ -103,7 +132,7 @@ From Levels 1 and 2:
 ## How to resume
 
 1. Read `docs/technical-architecture.md`, `docs/level-1.md` and `docs/level-2.md`.
-2. Typecheck and run the tests (commands are in the architecture doc). To see how hard a stage is, run `node scripts/measure-stage.ts 1.2 chief 20` (see "Measuring" in `docs/level-2.md`).
+2. Typecheck and run the tests (commands are in the architecture doc). To see how hard a stage is, run `node scripts/measure-stage.ts 1.2 chief 20` (see "Measuring" in `docs/level-2.md`). To see how fast the party levels over the run, run `node scripts/measure-campaign.ts chief 20` (`docs/pace.md`); a new stage needs an `xpMult` that keeps the pace and its line in `ARRIVAL`.
 3. `src/core/campaign.ts` holds the stage order and who plays each stage. To add stage 2.2: add its data under `src/world/stages/`, register it in `src/world/stage.ts`, add it to `STAGE_ORDER`, give it a `ROSTER` and an `ARRIVAL` entry, and move it out of `STAGES_AHEAD`. The map node is already in `core/mapdata.ts`.
 
 ## Later (after feedback)

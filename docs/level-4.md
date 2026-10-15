@@ -13,7 +13,7 @@ One stage, five to eight minutes, and the start of chapter 2 (Halloween 1984). E
   - the hole in the ground (end, south-east)
 - Light: `time: 'day'`. No pools.
 - Music: `hawkins`.
-- Party: Mike (active), Dustin, Lucas, Will. The carry rule (`partyFor` in `core/campaign.ts`) drops Eleven and brings Will in at the others' average level minus one. `?stage=2.1` starts them at Lv 5, 5, 4, 3. There's no recruit beat.
+- Party: Mike (active), Dustin, Lucas, Will. The carry rule (`partyFor` in `core/campaign.ts`) drops Eleven and brings Will in at the others' average level minus one. `?stage=2.1` starts them at Lv 4, 4, 3, 2 with the XP a run brings. There's no recruit beat.
 - `enemyMult: 1.15`. The chapter 2 enemies carry their own numbers (see "New enemies" and "Result").
 
 ## Rooms
@@ -99,7 +99,7 @@ Will is Wizard, in `heroes/will.ts`, and `HERO_DEFS.will` replaces the stand-in.
 | Vine (`vine`) | 50 | 18 | 4 | 0 | 5 | Rooted. Lashes in a 34 px reach after a 30 frame wind-up (power 0.8, applies `slow` for 90 frames). Burn deals double damage to it. Often spawned `hidden: true` in the corn |
 | Pod (`pod`) | 28 | 16 | 2 | 0 | 3 | Rooted. A hero within 48 px starts a 40 frame swell, then it bursts into a 28 px `spore` cloud: power 0.6 and `slow`. It dies in the burst and gives no XP that way. Killed first, it's worth 3 |
 
-HP, ATK and DEF are sized for the Lv 5 party that arrives at 2.1, so chapter 2 stages keep `enemyMult` near 1 instead of scaling chapter 1 numbers. At 2.1's 1.15, against the arrival party (Mike 5, Dustin 5, Lucas 4, Will 3):
+HP, ATK and DEF are sized for a Lv 5 party, so chapter 2 stages keep `enemyMult` near 1 instead of scaling chapter 1 numbers. At 2.1's 1.15, against a party at Mike 5, Dustin 5, Lucas 4 and Will 3 (the arrival party before the pace pass; a run now gets Mike to Lv 5 inside the stage):
 
 - A demodog has 69 HP: five of a Lv 5 Mike's swings at an average roll, or three or four when his talent crits the first hit of the fight. A bite takes 26 of his 76 HP and 29 of Will's 46.
 - A vine has 57 HP, about four of Mike's swings. A lash takes 11 of his HP, 15 of Will's, and slows.
@@ -118,7 +118,7 @@ The first numbers in this spec were 34, 12 and 2 for the demodog, 30, 9 and 2 fo
 | `corn` | 2 hidden vines, a pod | the far field |
 | `amb1`, `amb2`, `amb3` | 3, 3 and 4 demodogs | dormant at the hole. Waves, each woken by the last `groupCleared` |
 
-That's 11 demodogs (99), five vines (25), four pods (12) and six rats (24): 160 XP at most. Pods that burst give less. A test keeps the total between 130 and 170. Items: three Eggos, two Cokes, 12 quarters. Props:
+That's 11 demodogs (99), five vines (25), four pods (12) and six rats (24): 160 XP at most. Pods that burst give less. The stage now has 13 demodogs and three rats, 166 XP, and its `xpMult` of 1.5 makes that 260 (`docs/pace.md`). A test keeps it between 230 and 270. Items: three Eggos, two Cokes, 12 quarters. Props:
 - lights: `lights_palace`, `lights_patch`, `lights_field`
 - gates: `vines1`, `target1`, `gate1`, `hidden1`
 - dressing: nine `arcade` cabinets, `cab1` to `cab8` and `digdug`, all playable
@@ -173,3 +173,18 @@ Stage XP is 166. In the browser the bot clears 2.1 in 1:55 for 157 XP.
 - **Demodogs replaced rats.** The barn and street rats were traded for demodogs, so the stage has 13 demodogs and three rats: a pack of three at the barn, then waves of 3, 3 and 4.
 - **The route is longer.** The pumpkin rows zigzag.
 - **Eleven is named once,** by Mike, and never explained.
+
+## After the pace pass
+
+A real run now walks in at Lv 4, 4, 3 and Will at 2, and the stage pays 260 XP (`docs/pace.md`). Mike reaches Lv 5 before the ambush in every seed (Mike 5, Dustin 4, Lucas 4, Will 2 there). The factor stays at 1.15:
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 18 | 83, none stuck | 17 of 20 (88 of 100) | 20 | 2 (18 of 100) |
+| Damage taken | 211 | 234 | 217 | 112 | 347 |
+| KOs | 1.40 | 1.74 | 1.75 | 0 | 3.85 |
+| Lowest party HP | 39% | 33% | 32% | 66% | 1% |
+| Time | 99 s | 103 s | 92 s | 88 s | 110 s |
+
+- **Upside is under its floor**: 18 of 100 against 4 of 20. A lower factor brings it back but makes chief a walk: at 1.05 chief clears 40 of 40 and the party never drops under 56 percent. Chief is in every band, so the factor stays. The arena ambush test (`tests/level4-bot.test.ts`) asks upside for 3 of 12, not 4.
+- A higher `xpMult` doesn't help upside (18 of 100 at 1.8).

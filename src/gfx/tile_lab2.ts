@@ -121,9 +121,13 @@ export function baseFloor(c: TileCtx, base: BaseFn): Px {
       case 'labfloor2': return labFloor(c, rnd, true, true);
       case 'gravel': case 'road': case 'dirt': case 'trail': { const b = base(n); if (b) return b; break; }
       case 'roadline': { const b = base('road'); if (b) return b; break; }
+      // The school's floors, so growth in the gym keeps the court's boards and lines under it.
+      case 'schoolfloor': case 'checker': case 'gymfloor': { const b = base(n); if (b) return b; break; }
       default: break;
     }
   }
+  // Growth in a thick patch on the court, with no floor beside it, still has the court under it.
+  if (c.court) { const b = base('gymfloor'); if (b) return b; }
   return labFloor(c, rnd, (hash2(c.tx, c.ty, 5) & 1) === 1, true);
 }
 

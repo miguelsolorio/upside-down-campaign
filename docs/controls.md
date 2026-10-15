@@ -13,7 +13,7 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | `1` to `4`, or click a portrait | Pick a hero |
 | `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
 | `U` or `B` | Crit, even next to the lights |
-| `Esc` or `P` | Pause and settings |
+| `Esc` or `P` | Pause, settings and the character sheet |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
 | `M` | Mute |
 
@@ -41,24 +41,29 @@ Hints switch to button names once you touch the controller, and back to keys whe
 
 ## Touch
 
-On a phone or tablet the controls are on screen. In portrait the game sits at the top with the controls under it. In landscape the game sits in the middle with the stick on the left and the buttons on the right. The controls never cover the game.
+On a phone or tablet the screen is dressed as the original grey Game Boy, with the game in its bezel. In portrait it's the Game Boy as it is. In landscape the same parts are laid out wide, like a Game Boy Advance: the D-pad, SELECT and START on the left, the face buttons on the right. The controls never cover the game.
 
 | Control | Action |
 | --- | --- |
-| Stick (left thumb, anywhere in the lower left) | Move and step through menus. The ring stays put and the knob follows your thumb. A short push is full speed |
+| D-pad | Move and step through menus. Each arm is a button. Slide your thumb and it steers like a stick, and a thumb anywhere left of the buttons grabs it |
 | `A` | Attack, talk, light Joyce's lights, confirm |
 | `B` | Special. Back in menus |
-| Arrows | Back one hero and next hero |
+| `SWAP`, the grey key over B | Next hero |
 | A bench face in the HUD | Pick that hero |
-| d20 | Crit. It lights up gold when the meter is full |
-| Pause | Pause. Begins the game on the title |
-| Skip | Skip dialogue. It lights up only while there's something to skip |
+| The hero's name and level in the HUD | Character sheet |
+| `CRIT`, the d20 key over A | Crit. It lights up gold when the meter is full |
+| `SELECT` | Skip dialogue. Flips SKIP STORY on the title |
+| `START` | Pause. Begins the game on the title |
 
-Hints name the on-screen buttons while you play by touch. A key or controller press hides the touch controls and puts the keyboard or controller hints back, and the next touch brings them back. Sound starts on your first tap. CONTROLS isn't in the options on a touch screen, since there are no keys to change. Add `?touch=1` to the URL to try the touch controls with a mouse.
+Hints name the Game Boy's buttons while you play by touch. A key or controller press hides the shell and puts the keyboard or controller hints back, and the next touch brings it back. Sound starts on your first tap. Phones that can buzz give a short one on each press. CONTROLS isn't in the options on a touch screen, since there are no keys to change. Add `?touch=1` to the URL to try the touch controls with a mouse.
 
 ## Mouse
 
-Every menu works with a mouse. The row under the pointer takes the selection, and a click picks it. Click a volume bar to set it, and click its top lit segment to turn it down one. A click anywhere moves through dialogue, the chapter card and the results screen, the same as Enter. A click on SKIP above the dialogue box skips like `T`, and a click on the title's SKIP STORY line flips it. In CONTROLS, click a key slot to rebind it, scroll with the wheel or the arrows, and click anywhere to cancel. The pointer turns into a hand over anything you can click. Hover is mouse only: a tap on a touch screen still clicks, but nothing lights up under a finger.
+Every menu works with a mouse. The row under the pointer takes the selection, and a click picks it. A click on the active hero's name and level in the HUD opens the character sheet, and they underline under the pointer. Click a volume bar to set it, and click its top lit segment to turn it down one. A click anywhere moves through dialogue, the chapter card and the results screen, the same as Enter. A click on SKIP above the dialogue box skips like `T`, and a click on the title's SKIP STORY line flips it. In CONTROLS, click a key slot to rebind it, scroll with the wheel or the arrows, and click anywhere to cancel. The pointer turns into a hand over anything you can click. Hover is mouse only: a tap on a touch screen still clicks, but nothing lights up under a finger.
+
+## Character sheet
+
+Click or tap the active hero's name and level in the HUD, or pick CHARACTERS in the pause menu. Each hero gets a page with their class, level, XP, HP, MP, ATK, DEF, SPD and crit chance, and a line for every move: the basic, the special and its MP cost, their hit in a Crit, and the Lv 3 talent. A stat the d20 has raised shows the bonus in green. Damage is one hit against a foe with no armor, before crits and Inspiration, and `x3` means the move lands up to three hits. The heroes are tabs across the top. The arrows, `C` and `V`, a controller's LB and RB, or a click on a face switch between them, and `1` to `4` pick a hero by party slot, the same as in the HUD. `Esc`, a controller's B or BACK closes it, back to the level from the HUD and back to the menu from the pause menu. The level stays frozen while it's open. A hero who isn't in the party shows in grey, at Lv 1.
 
 ## Story
 

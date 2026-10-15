@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Header Layout Variations</title>
+<meta name="description" content="Eight ways to lay out the active hero's name, level, MP, coins and Crit meter in the top strip, drawn by the game's own HUD code.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .rules { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; font: 12px/1.4 var(--mono); color: var(--mist); }
+  .rules b { color: var(--bone); font-weight: 600; }
+
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group > .lbl { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .seg { display: inline-flex; border: 2px solid var(--dusk); }
+  .seg button { border: 0; background: var(--ink); padding: 6px 12px; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .seg button + button { border-left: 2px solid var(--dusk); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--cream); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .scrub { display: inline-flex; align-items: center; gap: 8px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .scrub input { width: 110px; accent-color: var(--amber); }
+  .scrub output { min-width: 4ch; color: var(--bone); }
+
+  h2.sec { margin: 30px 0 4px; font-size: 20px; }
+  .sub { margin: 0 0 14px; color: var(--mist); font-size: 13px; max-width: 90ch; }
+
+  #overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); gap: 14px 18px; }
+  .tile { display: block; text-decoration: none; color: inherit; border: 2px solid var(--shadow); background: var(--night); padding: 8px 10px 10px; }
+  .tile:hover { border-color: var(--slate); }
+  .tile .cap { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font: 600 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--bone); }
+  .tile .cap i { font-style: normal; color: var(--ink); background: var(--amber); padding: 2px 6px; }
+  .tile.ref .cap i { background: var(--dusk); color: var(--bone); }
+  .tile canvas { width: 100%; height: auto; aspect-ratio: 192 / 20; }
+
+  #cards { display: grid; gap: 26px; padding: 8px 0 64px; }
+  .card { border: 2px solid var(--shadow); background: var(--night); padding: 18px 20px 20px; scroll-margin-top: 120px; }
+  .card.ref { border-style: dashed; }
+  .card.chosen, .tile.chosen { border-color: var(--amber); }
+  .pick { margin-left: auto; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--amber); padding: 5px 8px; }
+  .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 4px; }
+  .badge { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 18px/1 var(--mono); }
+  .ref .badge { background: var(--dusk); color: var(--bone); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .head h2 { margin: 0; font-size: 20px; }
+  .blurb { margin: 0 0 10px; max-width: 90ch; }
+  .reads { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 22px; margin: 0 0 14px; max-width: 1200px; }
+  .reads div { font-size: 13px; color: var(--mist); }
+  .reads dt { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--cream); margin-bottom: 4px; }
+  .reads dd { margin: 0; }
+  .scroll { overflow-x: auto; padding-bottom: 4px; }
+  .crop { border: 1px solid var(--shadow); width: 960px; height: 100px; }
+  .strip { border: 1px solid var(--shadow); width: 768px; height: 60px; margin-top: 10px; }
+  @media (max-width: 900px) { .reads { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">HUD review</p>
+  <h1>Header layout variations</h1>
+  <p>Eight ways to lay out what sits beside the active hero: name and level, XP, MP, coins and the Crit meter. Health is not here, since each hero wears an HP bar in the world. All of them use the space the strip has left, which is x 25 to 191, and every one is drawn by the game's own HUD code over the real bench.</p>
+  <p><b>Chosen: 8, Captions.</b> It is now in the game. The first card is the header as it was before, redrawn here so you can still compare. What it got wrong, and what the others tried to fix: the labels were 3 by 5 px and dim, the XP notches were 2 px and nearly the color of the strip, the three groups sat at uneven gaps, and the Crit die and its label were the same grey as the empty bars, so it read as switched off.</p>
+  <ul class="rules">
+    <li><b>Strip:</b> 256 by 20 px, content rows 0 to 17</li>
+    <li><b>Free:</b> x 25 to 191, the bench starts at 193</li>
+    <li><b>Widest:</b> DUSTIN LV12 ends at x 90, so columns start after 92</li>
+    <li><b>Counts:</b> up to x99 quarters</li>
+  </ul>
+</div></header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="group"><span class="lbl" id="heroLbl">Hero</span><div class="seg" id="hero" role="group" aria-labelledby="heroLbl"></div></div>
+    <div class="group"><span class="lbl" id="preLbl">State</span><div class="seg" id="preset" role="group" aria-labelledby="preLbl"></div></div>
+    <label class="scrub">Level <input id="lv" type="range" min="1" max="12" value="3" aria-label="Level"><output id="lvOut">3</output></label>
+    <label class="scrub">XP <input id="xp" type="range" min="0" max="100" value="45" aria-label="XP toward the next level"><output id="xpOut">45%</output></label>
+    <label class="scrub">MP <input id="mp" type="range" min="0" max="100" value="60" aria-label="MP"><output id="mpOut">60%</output></label>
+    <label class="scrub">Quarters <input id="qt" type="range" min="0" max="99" value="1" aria-label="Quarters"><output id="qtOut">1</output></label>
+    <div class="group"><span class="lbl" id="critLbl">Crit</span><div class="seg" id="critseg" role="group" aria-labelledby="critLbl"></div></div>
+    <label class="chk"><input id="insp" type="checkbox"> Inspiration</label>
+    <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+    <label class="chk"><input id="calm" type="checkbox"> Reduce flashing</label>
+  </div>
+</div>
+
+<main class="wrap">
+  <h2 class="sec">All eight at a glance</h2>
+  <p class="sub">The left of the strip, at about 3x. Change the hero, level, XP, MP, quarters or the Crit state above and every design follows. Click one to jump to its card.</p>
+  <div id="overview"></div>
+
+  <h2 class="sec">The cards</h2>
+  <p class="sub">Each card shows the left of the strip at 5x and the whole strip at 3x, so you can see how it sits next to the bench.</p>
+  <div id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx, drawText, drawTinyText, drawBar, drawIcon, drawPortrait } from '/src/gfx/index.ts';
+import { drawHud } from '/src/ui/hud.ts';
+import { box, outline, clipped } from '/src/ui/kit.ts';
+import { drawDie, DIE_DIM, DIE_GOLD } from '/src/ui/die.ts';
+import { isLowHp, clamp01 } from '/src/ui/format.ts';
+import { HERO_DEFS } from '/src/heroes/defs.ts';
+import { slotKeyLabel } from '/src/core/bindings.ts';
+import { settings } from '/src/core/settings.ts';
+import { Px } from '/src/gfx/px.ts';
+import { xpToNext, MAX_LEVEL, INSPIRATION_SECONDS } from '/src/progression/xp.ts';
+import { SCREEN_W, VIEW_TOP } from '/src/core/config.ts';
+
+initGfx();
+
+// ---------------------------------------------------------------- state
+const HEROES = ['mike', 'dustin', 'lucas', 'eleven'];
+const CRIT = { empty: 0, half: 0.5, ready: 1 };
+const st = { hero: 'mike', level: 3, xp: 0.45, mp: 0.6, q: 1, crit: 'half', insp: false, animate: true, calm: false };
+const PRESETS = {
+  shot: { label: 'Your shot', level: 3, xp: 0.45, mp: 0.6, q: 1, crit: 'empty' },
+  mid: { label: 'Mid game', level: 6, xp: 0.55, mp: 0.7, q: 12, crit: 'half' },
+  max: { label: 'Max level', level: 12, xp: 1, mp: 1, q: 99, crit: 'ready' },
+  dry: { label: 'Dry', level: 4, xp: 0.92, mp: 0.08, q: 0, crit: 'empty' },
+};
+
+function party() {
+  const active = HEROES.indexOf(st.hero);
+  return HEROES.map((id, i) => {
+    const d = HERO_DEFS[id];
+    const hpMax = d.base.hp + Math.floor(d.growth.hp * (st.level - 1));
+    const mpMax = d.base.mp + Math.floor(d.growth.mp * (st.level - 1));
+    const next = xpToNext(st.level);
+    const maxed = st.level >= MAX_LEVEL;
+    return {
+      id, name: d.name, level: st.level, hp: Math.round(hpMax * 0.8), hpMax, mp: Math.round(mpMax * (i === active ? st.mp : 0.7)), mpMax, mpCost: d.special.mp,
+      xp: maxed ? next : Math.round(next * st.xp), xpNext: next, ko: false, active: i === active,
+    };
+  });
+}
+
+/** Everything a design needs, worked out once per frame. */
+function sceneFor(t) {
+  const pty = party();
+  const idx = HEROES.indexOf(st.hero);
+  const p = pty[idx];
+  const cost = HERO_DEFS[p.id].special.mp;
+  const maxed = st.level >= MAX_LEVEL;
+  const burst = CRIT[st.crit], ready = st.crit === 'ready';
+  const hud = { party: pty, burst, burstReady: ready, quarters: st.q, inspiration: st.insp ? 14 : 0, swapReady: 1, boss: null };
+  return {
+    p, hud, idx, t, calm: st.calm || !st.animate,
+    level: st.level, xp: maxed ? 1 : clamp01(p.xp / p.xpNext),
+    mp: p.mp, mpMax: p.mpMax, cost, castMax: Math.ceil(p.mpMax / cost), afford: p.mp >= cost,
+    q: st.q, insp: hud.inspiration, burst, ready,
+  };
+}
+
+// ---------------------------------------------------------------- drawing kit
+let X; // the context the current design draws into
+const R = (x, y, w, h, c) => box(X, x, y, w, h, c);
+const T = (s, x, y, c = 'white') => drawText(X, s, x, y, c);
+const TT = (s, x, y, c = 'white') => drawTinyText(X, s, x, y, c);
+
+const cache = new Map();
+const canvasOf = (key, build) => { let c = cache.get(key); if (!c) { c = build().toCanvas(); cache.set(key, c); } return c; };
+const blit = (c, x, y) => X.drawImage(c, Math.round(x), Math.round(y));
+
+/** ASCII art where b is the base tone and picks a light, mid or dark step by its place on the diagonal. */
+function shaded(rows, ramp, bias = 2.2) {
+  const H = rows.length, W = rows[0].length, p = new Px(W, H);
+  rows.forEach((row, y) => {
+    for (let x = 0; x < W; x++) {
+      const ch = row[x];
+      if (ch === '.') continue;
+      if (ch === 'b') {
+        const v = (x - (W - 1) / 2) + (y - (H - 1) / 2);
+        p.set(x, y, v <= -bias ? ramp.h : v >= bias ? ramp.d : ramp.b);
+      } else p.set(x, y, ramp[ch]);
+    }
+  });
+  return p;
+}
+const RAMP = {
+  gold: { h: 'cream', b: 'yellow', d: 'amber', w: 'white' },
+  blue: { h: 'sky', b: 'blue', d: 'dusk', w: 'white' },
+  dull: { h: 'mist', b: 'slate', d: 'dusk', w: 'bone' },
+};
+const GEM9 = ['..hhhhh..', '.hhwhbbd.', 'hhhbbbbbd', '.hhbbbbd.', '..hbbbd..', '...hbd...', '....d....'];
+const STAR5 = ['..b..', 'bbbbb', '.bbb.', '.b.b.', 'b...b'];
+const gem9 = (k) => canvasOf('gem9' + k, () => shaded(GEM9, RAMP[k]));
+const star5 = () => canvasOf('star5', () => shaded(STAR5, RAMP.gold));
+
+/** A silver coin of n by n px: a lit rim, a bone face, a highlight and a stamped mark. */
+function coin(n) {
+  return canvasOf('coin' + n, () => {
+    const p = new Px(n, n), c = n / 2;
+    const inside = (x, y, r) => (x + 0.5 - c) ** 2 + (y + 0.5 - c) ** 2 <= r * r;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        if (inside(x, y, n / 2)) p.set(x, y, x + y < n - 1 ? 'grey3' : 'grey2');
+        if (inside(x, y, n / 2 - 1.05)) p.set(x, y, 'bone');
+      }
+    }
+    if (n >= 6) p.set(Math.floor(n / 2) - 1, Math.floor(n / 2) - 1, 'white');
+    if (n >= 7) p.rect(Math.floor((n - 1) / 2), Math.floor(n / 2) - 1, 1, Math.max(2, n - 5), 'grey3');
+    return p;
+  });
+}
+
+/** n equal notches across w px with a 1 px gap, filled in order. The last notch ends on the edge. */
+function notches(x, y, w, h, n, frac, color, back) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.round((i * (w + 1)) / n), b = Math.round(((i + 1) * (w + 1)) / n) - 1;
+    drawBar(X, x + a, y, b - a, h, clamp01(frac * n - i), color, back);
+  }
+}
+
+/** The MP bar, one segment per cast of the special: bright can be cast now, dim is still charging. When the width has no
+ * room for that, a plain bar with a tick at each cast. */
+function mpBar(s, x, y, w, h, back = 'shadow') {
+  const n = s.castMax, pitch = Math.floor((w + 1) / n);
+  if (pitch >= 3) {
+    for (let i = 0; i < n; i++) {
+      const len = Math.min(s.cost, s.mpMax - i * s.cost);
+      const sw = Math.max(2, Math.round(((pitch - 1) * len) / s.cost));
+      const f = clamp01((s.mp - i * s.cost) / len);
+      drawBar(X, x + i * pitch, y, sw, h, f, f >= 1 && len >= s.cost ? 'blue' : 'slate', back);
+    }
+    return n * pitch - 1;
+  }
+  drawBar(X, x, y, w, h, s.mp / s.mpMax, s.afford ? 'blue' : 'slate', back);
+  for (let k = 1; k * s.cost < s.mpMax; k++) R(x + Math.round((w * k * s.cost) / s.mpMax), y, 1, h, 'ink');
+  return w;
+}
+
+/** The Crit die as the game draws it: dim and filling from the bottom, or gold with sparks once it is ready. */
+const METER_LIT = { ...DIE_GOLD, edge: 'orange' };
+function die(s, cx, cy, r) {
+  if (!s.ready) { drawDie(X, cx, cy, r, { scheme: DIE_DIM, lit: s.burst, litScheme: METER_LIT }); return; }
+  drawDie(X, cx, cy, r, { scheme: METER_LIT });
+  if (s.calm) return;
+  const k = (s.t >> 3) & 3, hot = k === 1 ? 'white' : 'yellow';
+  for (const [dx, dy] of [[-r - 2, -2], [-r - 2, 3]]) if (((dx + dy + k) & 1) === 0) R(cx + dx, cy + dy, 1, 1, hot);
+}
+const critColor = (s) => (s.ready ? 'yellow' : 'amber');
+
+/** The quarter count: a coin and a white "x12". Returns the right edge. */
+function coins(s, x, y, n = 7) {
+  blit(coin(n), x, y);
+  return x + n + 2 + T('x' + s.q, x + n + 2, y);
+}
+
+/** The Nat 20 timer: a lit d20 and the seconds left. */
+function inspire(s, x, y) {
+  if (s.insp <= 0) return;
+  drawIcon(X, 'd20Glow', x, y, s.t);
+  T(`${Math.ceil(s.insp)}S`, x + 10, y + 1, 'yellow');
+}
+
+/** The key that picks the hero, the name and the level, at row y. */
+function ident(s, y) {
+  T(slotKeyLabel(s.idx + 1), 18, y, 'slate');
+  T(s.p.name, 25, y, 'white');
+  T(`LV${s.level}`, 25 + s.p.name.length * 6 + 6, y, 'yellow');
+}
+
+function face(s) {
+  const p = s.p, low = isLowHp(p.hp, p.hpMax);
+  outline(X, 1, 0, 16, 16, 'amber');
+  clipped(X, 2, 1, 14, 14, () => drawPortrait(X, p.id, low ? 'worried' : 'neutral', -3, -2));
+}
+
+// ---------------------------------------------------------------- the designs
+const DESIGNS = [];
+const design = (d) => DESIGNS.push(d);
+
+design({
+  id: 'Before', ref: true, name: 'The header before Captions',
+  blurb: 'What the game drew a moment ago: MP, the coins and the Crit meter on one row above the XP notches, with 3 by 5 px labels. Everything below is drawn over the real bench.',
+  reads: [['XP', 'Ten 2 px notches under the MP row. The empty ones are almost the strip\'s color.'], ['MP', 'A 3 by 5 px label, then a 5 px bar.'], ['Coins', 'A coin and a white count, at its own gap.'], ['Crit', 'A dim die with a 3 by 5 px label. It reads as switched off.']],
+  draw(s) {
+    ident(s, 1);
+    TT('MP', 25, 10, 'mist'); mpBar(s, 34, 10, 24, 5);
+    coins(s, 63, 9);
+    die(s, 98, 12, 4); TT('CRIT', 104, 10, s.ready ? 'yellow' : 'mist');
+    notches(25, 16, 33, 2, 10, s.xp, 'yellow', 'dusk');
+    inspire(s, 124, 9);
+  },
+});
+
+// 1 ------------------------------------------------------------------
+design({
+  id: '1', name: 'Tidy row',
+  blurb: 'The same structure, made readable. One row of three groups at even gaps, with full-size labels, bars as tall as the text, and the Crit label in warm gold so it reads as a thing you want.',
+  reads: [['XP', 'Ten 2 px notches under MP, with a brighter empty step.'], ['MP', 'A blue "MP" in the full font, then a 7 px bar.'], ['Coins', 'A coin and a count, 9 px after the bar.'], ['Crit', 'A small die and CRIT in amber, yellow when ready.']],
+  draw(s) {
+    ident(s, 0);
+    T('MP', 25, 8, 'sky'); mpBar(s, 38, 8, 26, 7);
+    coins(s, 74, 8);
+    die(s, 112, 11, 4); T('CRIT', 121, 8, critColor(s));
+    notches(25, 16, 39, 2, 10, s.xp, 'yellow', 'slate');
+    inspire(s, 152, 8);
+  },
+});
+
+// 2 ------------------------------------------------------------------
+design({
+  id: '2', name: 'XP beside level',
+  blurb: 'XP moves up next to the level it belongs to, with a thick bar, so the second row has only the three things you spend or save and the bottom edge is clear.',
+  reads: [['XP', 'An XP label and ten 5 px notches, right of LV, in the name row.'], ['MP', 'A blue label and a 7 px bar, wider than before.'], ['Coins', 'A coin and a count.'], ['Crit', 'A die and CRIT, last on the row.']],
+  draw(s) {
+    ident(s, 1);
+    T('XP', 98, 1, 'yellow'); notches(111, 2, 46, 5, 10, s.xp, 'yellow', 'dusk');
+    T('MP', 25, 9, 'sky'); mpBar(s, 38, 9, 32, 7);
+    coins(s, 84, 9);
+    die(s, 123, 12, 4); T('CRIT', 132, 9, critColor(s));
+    inspire(s, 160, 1);
+  },
+});
+
+// 3 ------------------------------------------------------------------
+design({
+  id: '3', name: 'Rail',
+  blurb: 'XP becomes one long rail along the bottom of the cluster, as wide as the whole header. It is the easiest progress bar to read from across a room, and the row above it is only labels and values.',
+  reads: [['XP', 'Twenty notches from the portrait to the bench, 2 px tall.'], ['MP', 'A blue label and a 7 px bar.'], ['Coins', 'A coin and a count.'], ['Crit', 'A die and CRIT.']],
+  draw(s) {
+    ident(s, 0);
+    T('MP', 25, 8, 'sky'); mpBar(s, 38, 8, 30, 7);
+    coins(s, 82, 8);
+    die(s, 122, 11, 4); T('CRIT', 131, 8, critColor(s));
+    notches(25, 16, 166, 2, 20, s.xp, 'yellow', 'dusk');
+    inspire(s, 164, 0);
+  },
+});
+
+// 4 ------------------------------------------------------------------
+design({
+  id: '4', name: 'Two columns',
+  blurb: 'Your own stuff on the left, the shared stuff on the right. MP and XP stack under the name; the coins and the Crit die stack in a second column with a divider, left aligned so the eye runs down it.',
+  reads: [['XP', 'Ten notches under MP, in the left column.'], ['MP', 'A blue label and a 7 px bar, top of the left column.'], ['Coins', 'Top of the right column.'], ['Crit', 'Under the coins, on the same left edge.']],
+  draw(s) {
+    ident(s, 0);
+    T('MP', 25, 8, 'sky'); mpBar(s, 38, 8, 46, 7);
+    notches(25, 16, 59, 2, 10, s.xp, 'yellow', 'slate');
+    R(94, 0, 1, 16, 'dusk');
+    coins(s, 102, 0);
+    die(s, 106, 12, 4); T('CRIT', 115, 9, critColor(s));
+    inspire(s, 156, 0);
+  },
+});
+
+// 5 ------------------------------------------------------------------
+design({
+  id: '5', name: 'Icons',
+  blurb: 'Pictures instead of words. A star for XP, a gem for MP, a coin and a die, all roughly the same weight. Only CRIT keeps a word, because nothing else says what the die does.',
+  reads: [['XP', 'A gold star and ten notches, next to LV.'], ['MP', 'A blue gem and a 5 px bar. It goes dull when you cannot afford the special.'], ['Coins', 'A coin and a count.'], ['Crit', 'A die and CRIT.']],
+  draw(s) {
+    ident(s, 1);
+    blit(star5(), 98, 2); notches(106, 3, 48, 3, 10, s.xp, 'yellow', 'dusk');
+    blit(gem9(s.afford ? 'blue' : 'dull'), 25, 9); mpBar(s, 37, 10, 30, 5);
+    coins(s, 78, 9);
+    die(s, 120, 12, 4); T('CRIT', 129, 9, critColor(s));
+    inspire(s, 158, 1);
+  },
+});
+
+// 6 ------------------------------------------------------------------
+function chip(x, y, w, h) { R(x, y, w, h, 'shadow'); }
+design({
+  id: '6', name: 'Chips',
+  blurb: 'Each readout sits on its own soft chip, like a status bar, so they read as four separate things. The chip is a fill with no frame, one step lighter than the strip.',
+  reads: [['XP', 'The last chip: a label and ten notches.'], ['MP', 'The first chip: a label and a 5 px bar.'], ['Coins', 'A coin and a count, on a chip.'], ['Crit', 'A die and CRIT on a chip.']],
+  draw(s) {
+    ident(s, 0);
+    chip(25, 8, 40, 9);
+    T('MP', 28, 9, 'sky'); mpBar(s, 41, 10, 21, 5, 'ink');
+    chip(69, 8, 31, 9);
+    coins(s, 72, 9);
+    chip(104, 8, 38, 9);
+    die(s, 111, 12, 4); T('CRIT', 118, 9, critColor(s));
+    chip(146, 8, 45, 9);
+    T('XP', 149, 9, 'yellow'); notches(162, 10, 26, 5, 10, s.xp, 'yellow', 'dusk');
+    inspire(s, 100, 0);
+  },
+});
+
+// 7 ------------------------------------------------------------------
+design({
+  id: '7', name: 'Big Crit',
+  blurb: 'The Crit die is the one thing you act on, so it gets the room: a die almost the height of the strip, at the right end of the cluster with its label beside it. Everything else stays small and left.',
+  reads: [['XP', 'Ten notches under MP.'], ['MP', 'A blue label and a 7 px bar.'], ['Coins', 'A coin and a count, after MP.'], ['Crit', 'A 12 by 14 px die, with CRIT in the full font.']],
+  draw(s) {
+    ident(s, 0);
+    T('MP', 25, 8, 'sky'); mpBar(s, 38, 8, 28, 7);
+    coins(s, 78, 8);
+    notches(25, 16, 41, 2, 10, s.xp, 'yellow', 'slate');
+    die(s, 150, 9, 7); T('CRIT', 162, 6, critColor(s));
+    inspire(s, 100, 0);
+  },
+});
+
+// 8 ------------------------------------------------------------------
+design({
+  id: '8', name: 'Captions', chosen: true,
+  blurb: 'A small caption over each value, the way a dashboard does it. The value is the biggest thing in its column, and the captions tell you what it is. XP is a thick yellow bar under the yellow level.',
+  reads: [['XP', 'A 5 px bar under the name, as yellow as LV.'], ['MP', 'MP caption, then a 7 px bar.'], ['Coins', 'COINS caption, then the coin and count.'], ['Crit', 'CRIT caption, then the die.']],
+  draw(s) {
+    ident(s, 1);
+    notches(25, 10, 62, 5, 10, s.xp, 'yellow', 'dusk');
+    TT('MP', 100, 1, 'mist'); mpBar(s, 100, 8, 28, 7);
+    if (s.insp > 0) inspire(s, 134, 0); else TT('COINS', 137, 1, 'mist');
+    coins(s, 137, 8);
+    TT('CRIT', 170, 1, s.ready ? 'yellow' : 'mist'); die(s, 174, 11, 4);
+  },
+});
+
+// ---------------------------------------------------------------- page
+const SW = SCREEN_W, SH = VIEW_TOP, LEFT = 192;
+const base = document.createElement('canvas');
+base.width = SW; base.height = SH;
+const baseCtx = base.getContext('2d');
+
+for (const d of DESIGNS) {
+  const off = document.createElement('canvas');
+  off.width = SW; off.height = SH;
+  d.off = off; d.ctx = off.getContext('2d');
+  d.ctx.imageSmoothingEnabled = false;
+}
+
+const cards = document.getElementById('cards'), overview = document.getElementById('overview');
+for (const d of DESIGNS) {
+  const tile = document.createElement('a');
+  tile.className = 'tile' + (d.ref ? ' ref' : '') + (d.chosen ? ' chosen' : '');
+  tile.href = '#d' + d.id;
+  tile.innerHTML = `<div class="cap"><i>${d.id}</i>${d.name}</div><canvas width="${LEFT}" height="${SH}" aria-label="${d.name}, left of the strip"></canvas>`;
+  overview.append(tile);
+  d.thumb = tile.querySelector('canvas').getContext('2d');
+
+  const sec = document.createElement('section');
+  sec.className = 'card' + (d.ref ? ' ref' : '') + (d.chosen ? ' chosen' : '');
+  sec.id = 'd' + d.id;
+  sec.innerHTML = `
+    <div class="head"><span class="badge">${d.id}</span><h2>${d.name}</h2>${d.chosen ? '<span class="pick">Chosen, now in the game</span>' : ''}</div>
+    <p class="blurb">${d.blurb}</p>
+    <dl class="reads">${d.reads.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    <div class="scroll"><canvas class="crop" width="${LEFT}" height="${SH}" aria-label="${d.name}, left of the strip at 5x"></canvas></div>
+    <div class="scroll"><canvas class="strip" width="${SW}" height="${SH}" aria-label="${d.name}, whole strip at 3x"></canvas></div>`;
+  cards.append(sec);
+  d.cropCtx = sec.querySelector('.crop').getContext('2d');
+  d.stripCtx = sec.querySelector('.strip').getContext('2d');
+}
+
+let t = 0;
+function frame() {
+  if (st.animate) t++;
+  settings.reduceFlashing = st.calm || !st.animate;
+  const s = sceneFor(t);
+  drawHud(baseCtx, s.hud, t, {});
+  for (const d of DESIGNS) {
+    const c = d.ctx;
+    c.clearRect(0, 0, SW, SH);
+    c.drawImage(base, 0, 0);
+    {
+      X = c;
+      c.fillStyle = '#0a0a14';
+      c.fillRect(0, 0, LEFT, 18);
+      face(s);
+      c.save();
+      c.beginPath(); c.rect(0, 0, LEFT, 18); c.clip();
+      d.draw(s);
+      c.restore();
+    }
+    d.thumb.drawImage(d.off, 0, 0, LEFT, SH, 0, 0, LEFT, SH);
+    d.cropCtx.drawImage(d.off, 0, 0, LEFT, SH, 0, 0, LEFT, SH);
+    d.stripCtx.drawImage(d.off, 0, 0);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- controls
+function seg(id, options, get, set) {
+  const root = document.getElementById(id);
+  const paint = () => root.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(String(get()) === b.dataset.v)));
+  for (const [value, label] of options) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.v = String(value); b.textContent = label;
+    b.addEventListener('click', () => { set(value); paint(); });
+    root.append(b);
+  }
+  paint();
+  return paint;
+}
+const slider = (id, outId, fmt, set) => {
+  const el = document.getElementById(id), out = document.getElementById(outId);
+  const sync = () => { out.textContent = fmt(Number(el.value)); };
+  el.addEventListener('input', () => { set(Number(el.value)); sync(); });
+  return { el, sync };
+};
+
+seg('hero', HEROES.map((h) => [h, h]), () => st.hero, (v) => { st.hero = v; });
+const paintCrit = seg('critseg', [['empty', 'Empty'], ['half', 'Half'], ['ready', 'Ready']], () => st.crit, (v) => { st.crit = v; });
+const lvS = slider('lv', 'lvOut', (v) => String(v), (v) => { st.level = v; });
+const xpS = slider('xp', 'xpOut', (v) => `${v}%`, (v) => { st.xp = v / 100; });
+const mpS = slider('mp', 'mpOut', (v) => `${v}%`, (v) => { st.mp = v / 100; });
+const qtS = slider('qt', 'qtOut', (v) => String(v), (v) => { st.q = v; });
+seg('preset', Object.entries(PRESETS).map(([k, p]) => [k, p.label]), () => '', (k) => {
+  const p = PRESETS[k];
+  Object.assign(st, { level: p.level, xp: p.xp, mp: p.mp, q: p.q, crit: p.crit });
+  lvS.el.value = p.level; xpS.el.value = Math.round(p.xp * 100); mpS.el.value = Math.round(p.mp * 100); qtS.el.value = p.q;
+  for (const x of [lvS, xpS, mpS, qtS]) x.sync();
+  paintCrit();
+});
+for (const x of [lvS, xpS, mpS, qtS]) x.sync();
+const bind = (id, key) => document.getElementById(id).addEventListener('change', (e) => { st[key] = e.target.checked; });
+bind('insp', 'insp'); bind('anim', 'animate'); bind('calm', 'calm');
+
+frame();
+window.__hdr = { st, DESIGNS, base };
+</script>
+</body>
+</html>

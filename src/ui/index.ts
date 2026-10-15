@@ -9,5 +9,7 @@ export { createResultsScene } from './results.ts';
 export { createMapScene } from './map.ts';
 export type { MapOpts } from './map.ts';
 export { createPauseScene } from './pause.ts';
+export { createCharSheetScene } from './charsheet.ts';
+export type { CharSheetHero } from './charsheet.ts';
 export { mountDevPanel } from './devpanel.ts';
 export { inFrame } from './kit.ts';

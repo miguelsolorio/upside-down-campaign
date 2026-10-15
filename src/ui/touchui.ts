@@ -1,12 +1,13 @@
-// The touch screen's controls on the page: the overlay canvas, the finger listeners and the layout.
-// It touches the DOM, so main.ts mounts it once at boot. The overlay never takes a pointer itself, so a tap on the
-// game still reaches the game canvas, and the listeners here only claim fingers that land on a control.
+// The touch screen's controls on the page: the Game Boy overlay, the finger listeners and the layout.
+// It touches the DOM, so main.ts mounts it once at boot. The overlay sits behind the game and never takes a pointer
+// itself, so a tap on the game still reaches the game canvas, and the listeners here only claim fingers that land on a
+// control.
 import type { PadLike } from '../core/gamepad.ts';
 import type { InputState } from '../core/input.ts';
 import { layoutTouch } from '../core/touchlayout.ts';
-import type { TouchLayout } from '../core/touchlayout.ts';
+import type { TouchButton, TouchLayout } from '../core/touchlayout.ts';
 import { createTouchPad } from '../core/touchpad.ts';
-import { drawTouch, overlaySize } from './touchdraw.ts';
+import { drawTouch, overlaySize, pressedArms } from './touchdraw.ts';
 
 export interface TouchUi {
   /** For createInput: the virtual controller while the controls show, else null. */
@@ -31,6 +32,8 @@ export function mountTouchUi(): TouchUi {
   let shown = false;
   let layoutKey = '';
   let drawn = '';
+  let feltHeld: ReadonlySet<TouchButton> = new Set();
+  let feltArms = '0000';
 
   function measure(): TouchLayout {
     const v = vp();
@@ -52,6 +55,14 @@ export function mountTouchUi(): TouchUi {
   document.addEventListener('dblclick', (e) => { if (shown) e.preventDefault(); });
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('contextmenu', (e) => { if (shown) e.preventDefault(); });
+
+  /** A short buzz when a button goes down or the D-pad rocks onto other arms, where the phone can (iOS can't). */
+  function feel(held: ReadonlySet<TouchButton>, arms: string): void {
+    const fresh = [...held].some((b) => !feltHeld.has(b)) || (arms !== feltArms && arms !== '0000');
+    feltHeld = held;
+    feltArms = arms;
+    if (fresh && navigator.userActivation?.hasBeenActive) navigator.vibrate?.(8);
+  }
 
   return {
     pad: () => (shown ? pad.pad() : null),
@@ -75,21 +86,21 @@ export function mountTouchUi(): TouchUi {
         const size = overlaySize(layout);
         canvas.width = size.w;
         canvas.height = size.h;
-        canvas.style.width = `${size.w * layout.scale}px`;
-        canvas.style.height = `${size.h * layout.scale}px`;
-        ctx.imageSmoothingEnabled = false;
+        canvas.style.width = `${layout.viewport.w}px`;
+        canvas.style.height = `${layout.viewport.h}px`;
         drawn = '';
       }
 
-      const skip = input.offered('skip');
       const burstReady = input.offered('burst');
-      pad.setSkip(skip);
       const held = pad.held();
-      const stick = pad.stick();
-      const state = `${layoutKey}|${[...held].sort().join()}|${stick ? `${stick.base.x},${stick.base.y},${stick.knob.x},${stick.knob.y}` : '-'}|${skip}|${burstReady}`;
+      const dpad = pad.dpad();
+      // Only what shows: which buttons are down and which arms the D-pad leans on, not the thumb's exact angle.
+      const arms = pressedArms(dpad).map(Number).join('');
+      feel(held, arms);
+      const state = `${layoutKey}|${[...held].sort().join()}|${arms}|${burstReady}`;
       if (state !== drawn) {
         drawn = state;
-        drawTouch(ctx, { layout, held, stick, skip, burstReady });
+        drawTouch(ctx, { layout, held, dpad, burstReady });
       }
       return layout;
     },

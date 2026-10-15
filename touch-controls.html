@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Touch Controls</title>
-<meta name="description" content="The shipped touch controls, drawn by the game's own code on phone frames at real size, in portrait and landscape.">
+<meta name="description" content="The shipped Game Boy touch controls, drawn by the game's own code on phone frames at real size, in portrait and landscape.">
 <style>
   :root {
     color-scheme: dark;
@@ -16,6 +16,7 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
   canvas, img { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  canvas.shell { image-rendering: auto; }
   button, input, select { font: inherit; color: inherit; }
   button { cursor: pointer; }
   :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
@@ -61,23 +62,23 @@
 <header class="hero"><div class="wrap">
   <p class="kicker">Touch review</p>
   <h1>Touch controls check</h1>
-  <p>The on-screen controls the game ships, drawn by the game's own code at the game's pixel size. Every button is a keycap: a dark top over a darker lip, and pressing slides the top down. Phones are shown at real CSS size, and the game and every button sit exactly where the shipped layout puts them.</p>
+  <p>On a phone or tablet the game is dressed as the original grey Game Boy, drawn by the game's own code with smooth shapes at the screen's resolution. Only the game screen stays pixelated. In landscape the same parts are laid out wide, the way a Game Boy Advance has them. Phones are shown at real CSS size, and the game and every button sit exactly where the shipped layout puts them.</p>
   <ul class="rules">
-    <li><b>Stick:</b> the ring stays put and the knob follows the left thumb</li>
+    <li><b>D-pad:</b> each arm is a button, and a sliding thumb steers like a stick</li>
     <li><b>A:</b> attack, confirm, light</li>
     <li><b>B:</b> special, back</li>
-    <li><b>Arrows:</b> swap hero</li>
-    <li><b>d20:</b> Crit, gold when ready</li>
-    <li><b>Top keys:</b> skip (lit only during dialogue) and pause</li>
+    <li><b>SWAP:</b> next hero</li>
+    <li><b>CRIT:</b> the d20, gold when ready</li>
+    <li><b>SELECT:</b> skip</li>
+    <li><b>START:</b> pause, and begin on the title</li>
   </ul>
 </div></header>
 
 <div class="bar">
   <div class="wrap">
     <div class="group"><span class="lbl" id="prLbl">Pressed</span><div class="seg" id="pressed" role="group" aria-labelledby="prLbl"></div></div>
-    <div class="group"><span class="lbl" id="stLbl">Stick</span><div class="seg" id="stick" role="group" aria-labelledby="stLbl"></div></div>
+    <div class="group"><span class="lbl" id="dpLbl">D-pad</span><div class="seg" id="dpad" role="group" aria-labelledby="dpLbl"></div></div>
     <label class="chk"><input id="ready" type="checkbox"> Crit ready</label>
-    <label class="chk"><input id="skip" type="checkbox" checked> Skip shown</label>
     <label class="chk"><input id="safe" type="checkbox"> Safe area</label>
   </div>
 </div>
@@ -85,20 +86,18 @@
 <main class="wrap"><div id="cards"></div></main>
 
 <script type="module">
-import { initGfx } from '/src/gfx/index.ts';
 import { layoutTouch } from '/src/core/touchlayout.ts';
 import { drawTouch, overlaySize } from '/src/ui/touchdraw.ts';
-
-initGfx();
 
 const DEVICES = {
   iphone: { label: 'iPhone 15', p: { w: 393, h: 852, dpr: 3, safe: { t: 59, r: 0, b: 34, l: 0 } }, l: { w: 852, h: 393, dpr: 3, safe: { t: 0, r: 59, b: 21, l: 59 } }, island: true },
   se: { label: 'iPhone SE', p: { w: 375, h: 548, dpr: 2 }, l: { w: 667, h: 375, dpr: 2 }, island: false },
   pixel: { label: 'Pixel 8', p: { w: 412, h: 915, dpr: 2.625, safe: { t: 24, r: 0, b: 16, l: 0 } }, l: { w: 915, h: 412, dpr: 2.625, safe: { t: 0, r: 24, b: 16, l: 24 } }, island: false },
 };
-const PRESSES = { none: [], a: ['a'], b: ['b'], swap: ['swapNext'], all: ['a', 'b', 'burst', 'swapPrev', 'swapNext', 'skip', 'pause'] };
-const STICKS = { rest: 'Resting', pushed: 'Pushed' };
-const st = { pressed: 'none', stick: 'rest', ready: false, skip: true };
+const PRESSES = { none: [], a: ['a'], b: ['b'], swap: ['swap'], d20: ['burst'], select: ['select'], start: ['start'], all: ['a', 'b', 'burst', 'swap', 'select', 'start'] };
+const D = Math.SQRT1_2;
+const DPADS = { rest: { label: 'Rest', v: null }, up: { label: 'Up', v: { x: 0, y: -1 } }, right: { label: 'Right', v: { x: 1, y: 0 } }, upRight: { label: 'Up right', v: { x: D, y: -D } }, left: { label: 'Left', v: { x: -1, y: 0 } } };
+const st = { pressed: 'none', dpad: 'rest', ready: false };
 
 const bg = new Image();
 bg.src = '/docs/screenshots/touch-bg.png';
@@ -115,8 +114,8 @@ function seg(id, options, key) {
   });
 }
 seg('pressed', Object.fromEntries(Object.keys(PRESSES).map((k) => [k, k])), 'pressed');
-seg('stick', STICKS, 'stick');
-for (const id of ['ready', 'skip']) document.getElementById(id).addEventListener('change', (e) => { st[id] = e.target.checked; render(); });
+seg('dpad', DPADS, 'dpad');
+document.getElementById('ready').addEventListener('change', (e) => { st.ready = e.target.checked; render(); });
 document.getElementById('safe').addEventListener('change', (e) => document.body.classList.toggle('show-safe', e.target.checked));
 
 const cards = document.getElementById('cards');
@@ -137,29 +136,26 @@ function phone(el, vp, island) {
   el.style.width = `${vp.w}px`;
   el.style.height = `${vp.h}px`;
   el.innerHTML = '';
+  // The shell first, then the game over it, the way the page stacks them.
+  const size = overlaySize(l);
+  const c = document.createElement('canvas');
+  c.className = 'shell';
+  c.width = size.w;
+  c.height = size.h;
+  Object.assign(c.style, { left: '0', top: '0', width: `${vp.w}px`, height: `${vp.h}px` });
+  drawTouch(c.getContext('2d'), {
+    layout: l,
+    held: new Set(PRESSES[st.pressed]),
+    dpad: DPADS[st.dpad].v,
+    burstReady: st.ready,
+  });
+  el.append(c);
+
   const img = document.createElement('img');
   img.src = bg.src;
   img.alt = '';
   Object.assign(img.style, { left: `${l.game.x}px`, top: `${l.game.y}px`, width: `${l.game.w}px`, height: `${l.game.h}px` });
   el.append(img);
-
-  const size = overlaySize(l);
-  const c = document.createElement('canvas');
-  c.width = size.w;
-  c.height = size.h;
-  Object.assign(c.style, { left: '0', top: '0', width: `${size.w * l.scale}px`, height: `${size.h * l.scale}px` });
-  const ctx = c.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-  const pushed = st.stick === 'pushed';
-  const base = l.stickRest;
-  drawTouch(ctx, {
-    layout: l,
-    held: new Set(PRESSES[st.pressed]),
-    stick: pushed ? { base, knob: { x: base.x + l.stickR * 0.7, y: base.y - l.stickR * 0.35 } } : null,
-    skip: st.skip,
-    burstReady: st.ready,
-  });
-  el.append(c);
 
   const safe = document.createElement('div');
   safe.className = 'safe';

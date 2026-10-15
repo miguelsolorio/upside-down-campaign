@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Max, Steve and Hopper Designs</title>
+<meta name="description" content="Four designs each for Max, Steve and Hopper, drawn with the game's own paper-doll and portrait formats. Pick one per hero.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; width: 100%; height: auto; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .muted { color: var(--mist); }
+  .scale { display: inline-block; margin-top: 10px; border: 2px dashed var(--dusk); padding: 8px; background: var(--night); }
+  .scale canvas { width: auto; }
+  .scale b { display: block; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); margin-bottom: 8px; }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding-block: 10px; font: 600 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .bar b { color: var(--amber); }
+  h2.sec { margin: 34px 0 2px; font-size: 22px; }
+  .sub { margin: 0 0 14px; color: var(--mist); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 620px), 1fr)); gap: 18px; }
+  .card { border: 2px solid var(--shadow); padding: 14px; background: var(--night); display: flex; flex-direction: column; gap: 10px; }
+  .card.picked { border-color: var(--amber); }
+  .head { display: flex; align-items: center; gap: 12px; }
+  .badge { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 16px/1 var(--mono); }
+  .head h3 { margin: 0; font-size: 18px; }
+  .pick { margin-left: auto; padding: 6px 10px; border: 2px solid var(--dusk); background: var(--ink); font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .pick[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+  .note { margin: 0; color: var(--mist); }
+  .meta { margin: 0; font: 11px/1.3 var(--mono); color: var(--slate); }
+  .card canvas { background: #000; max-width: 608px; }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Heroes review</p>
+  <h1>Twelve looks for Max, Steve and Hopper</h1>
+  <p>Four designs for each of the three new faces of chapter 2. Every card is drawn by the game's own code, in the game's paper-doll and portrait formats, on its fixed palette, in five colors and an ink outline. Whichever you pick goes into the game as it is.</p>
+  <p class="muted">On each card the top row is 4x and 3x. The strip under it is the real size, 1x, on a tunnel floor. Each sprite is shown facing down, up and side, then a walk frame, the wind up and the hit, and the portrait in two expressions. Max swings her board and Steve his nail bat. Hopper has no weapon yet.</p>
+  <div class="scale"><b>For scale, as the game draws them now</b><div id="scale"></div></div>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your picks</span><span id="picks">none yet</span></div></div>
+
+<main class="wrap" id="main"></main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { CARD_W, HERO_GROUPS, colorsOf, heroCard, scaleStrip } from '/src/gfx/var/heroes2.ts';
+
+initGfx();
+document.getElementById('scale').append(scaleStrip());
+
+const picks = {};
+const out = document.getElementById('picks');
+function showPicks() {
+  const parts = HERO_GROUPS.filter((g) => picks[g.who]).map((g) => `${g.title}: ${picks[g.who].name}`);
+  out.innerHTML = '';
+  if (!parts.length) { out.textContent = 'none yet'; return; }
+  const b = document.createElement('b'); b.textContent = parts.join('   '); out.append(b);
+}
+
+const main = document.getElementById('main');
+for (const grp of HERO_GROUPS) {
+  const sec = document.createElement('section');
+  sec.innerHTML = `<h2 class="sec"></h2><p class="sub"></p><div class="grid"></div>`;
+  sec.querySelector('h2').textContent = grp.title;
+  sec.querySelector('.sub').textContent = grp.role;
+  const grid = sec.querySelector('.grid');
+  const cards = [];
+  grp.opts.forEach((o, i) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `<div class="head"><span class="badge">${i + 1}</span><h3></h3><button class="pick" type="button" aria-pressed="false">Pick</button></div><p class="note"></p>`;
+    card.querySelector('h3').textContent = o.name;
+    card.querySelector('.note').textContent = o.note;
+    const cv = heroCard(o);
+    cv.style.maxWidth = CARD_W + 'px';
+    card.append(cv);
+    const meta = document.createElement('p'); meta.className = 'meta';
+    meta.textContent = `${colorsOf(o)} colors and the ink outline`;
+    card.append(meta);
+    const btn = card.querySelector('.pick');
+    btn.setAttribute('aria-label', `Pick ${grp.title} ${o.name}`);
+    btn.onclick = () => {
+      picks[grp.who] = picks[grp.who] === o ? null : o;
+      cards.forEach((c) => { const on = picks[grp.who] === c.o; c.card.classList.toggle('picked', on); c.btn.setAttribute('aria-pressed', String(on)); });
+      showPicks();
+    };
+    cards.push({ o, card, btn });
+    grid.append(card);
+  });
+  main.append(sec);
+}
+</script>
+</body>
+</html>

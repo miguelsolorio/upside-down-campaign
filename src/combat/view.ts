@@ -86,9 +86,10 @@ function propView(s: S, p: Prop): PropView {
   return v;
 }
 
-const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI' };
+const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI',
+  billy: 'BILLY', flayer: 'MIND FLAYER' };
 
-/** The first Warden, Demogorgon, Alpha or Grigori that is awake and standing fills the boss bar. */
+/** The first Warden, Demogorgon, Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
@@ -176,6 +177,8 @@ export function buildView(s: S): SimView {
     items: s.items.map((it) => ({ kind: it.kind, x: it.x, y: it.y, t: it.t })),
     props: s.props.map((p) => propView(s, p)),
     hazards: hazardViews(s),
+    // The Mind Flayer's goo pools (docs/level-9.md). Sim B fills this from its state.
+    pools: [],
     floaters: s.floaters.slice(),
     hud: {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,

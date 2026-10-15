@@ -48,7 +48,7 @@ test('Starcourt is C Lydian at 118, 32 bars, with a base and a combat layer, and
   assert.notEqual(T.mode, HAWKINS.mode);
   assert.notDeepEqual(T.channels, HAWKINS.channels);
   assert.notDeepEqual(T.harmony, HAWKINS.harmony);
-  assert.equal(new Set(Object.values(TRACKS)).size, 7, 'seven different tracks');
+  assert.equal(new Set(Object.values(TRACKS)).size, TRACK_IDS.length, 'every track is its own');
   // 65 seconds, near a minute.
   const c = compile(T);
   assert.ok(Math.abs(c.loop * c.stepSec - 65.08) < 0.05);

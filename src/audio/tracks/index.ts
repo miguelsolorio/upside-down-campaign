@@ -8,8 +8,10 @@ import { UPSIDE } from './upside.ts';
 import { CLOCK } from './clock.ts';
 import { HAWKINS } from './hawkins.ts';
 import { STARCOURT } from './starcourt.ts';
+import { SOUR } from './sour.ts';
 
 export const TRACKS: Record<TrackId, Track> = {
   static: STATIC, mirkwood: MIRKWOOD, lab: LAB, upside: UPSIDE, clock: CLOCK, hawkins: HAWKINS, starcourt: STARCOURT,
+  sour: SOUR,
 };
-export const TRACK_IDS: TrackId[] = ['static', 'mirkwood', 'lab', 'upside', 'clock', 'hawkins', 'starcourt'];
+export const TRACK_IDS: TrackId[] = ['static', 'mirkwood', 'lab', 'upside', 'clock', 'hawkins', 'starcourt', 'sour'];

@@ -18,15 +18,18 @@ const FOE_LINE = 9;
 const ROW_AT = 18;
 const ROW_GAP = 14;
 const COUNT = 30;
+const CHAPTER_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
 const PARTY_AT = ROW_AT + 5 * ROW_GAP;
 const FOOT_AT = PARTY_AT + 24;
 /** Confirm waits this long after everything is showing. */
 const READY = FOOT_AT + 12;
 
-export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; level?: number; final?: boolean; onContinue(): void }): Scene {
+/** `chapter`: the stage closes that chapter, so the title says CHAPTER n CLEAR (docs/level-9.md, "The chapter end"). */
+export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; level?: number; chapter?: number; final?: boolean; onContinue(): void }): Scene {
   const { stats, party } = opts;
   const final = !!opts.final;
   const level = opts.level ?? 1;
+  const title = opts.chapter ? `CHAPTER ${CHAPTER_WORDS[opts.chapter] ?? opts.chapter} CLEAR` : final ? `END OF LEVEL ${level}` : `LEVEL ${level} CLEAR`;
   let t = 0;
   let finished = false;
   const kinds = Object.entries(stats.killsByKind).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
@@ -53,7 +56,7 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
   }
 
   function drawCard(ctx: Ctx): void {
-    bigText(ctx, final ? `END OF LEVEL ${level}` : `LEVEL ${level} CLEAR`, 128, 12, 'yellow', 2, 'center', true);
+    bigText(ctx, title, 128, 12, 'yellow', 2, 'center', true);
     if (final) drawText(ctx, 'This is a feedback build. More soon.', 128, 32, 'cream', { align: 'center' });
     drawPanel(ctx, 24, 46, 208, 70 + extra, 'menu');
 

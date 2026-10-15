@@ -6,7 +6,7 @@ A Hawkins map between stages, the design "Two Hawkins" (chosen from `map-variati
 
 - The whole 256 by 224 screen. A slim strip on top (10 px: the chapter name on the left, the selected stage's name on the right) and a party band at the bottom (28 px: a face and a level for each hero, and the hints as a short legend on the right). The map fills the 186 px between.
 - A wavy horizon splits the map. Above it is Hawkins in daylight: the woods, the Lab, the school, the pumpkin patch and arcade, and a town around them (roads, houses, Main Street shops, the water tower, fields, trees). Below it the same land hangs upside down in the Upside Down palette: dark red veins, drifting grey spores, a black sun. The tunnels and the gate are down there.
-- One node per stage (1.1 to 3.2), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked: 3.3, the food court. The route drops through the hole in the patch, which sits on the horizon. Node states:
+- One node per stage (1.1 to 3.3), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked. It is empty now: 3.3, the food court, is the last stage, and chapter 4 adds its own nodes. The route drops through the hole in the patch, which sits on the horizon. Node states:
   - `cleared`: gold, with a check
   - `open`: the next uncleared stage, white and pulsing
   - `locked`: grey, with a padlock; its landmark is greyed too (in Hawkins)
@@ -71,7 +71,7 @@ Erica runs an ice cream cart and sells the party what it carries into a stage. I
 
 - Starcourt Mall stands in Hawkins, above the horizon, as a new landmark: the long low mall, its sign, the parking lot. Stage 3.1 sits on it.
 - Stage 3.2, the base under the mall, sits just below the mall on the horizon line. It is underground but not in the Upside Down, so it gets no vein palette.
-- Stage 3.3, the food court, shows locked inside the mall.
+- Stage 3.3, the food court, sits inside the mall and opens once 3.2 is cleared. It is the last stage of the build, and it closes chapter 3 (`docs/level-9.md`, "The chapter end"). Its name plate says FOOD COURT, like STARCOURT's.
 - The route climbs back up from the Gate (2.3) to the mall. Art picks where it crosses the horizon. The token turns over as it does, as at the hole in the patch.
 - `MAP_PLACE` in `core/mapdata.ts` gains `mall` (3.1), `base` (3.2) and `foodcourt` (3.3). The positions and the art are Art's, in `gfx/map_geo.ts`, `gfx/map_art.ts` and `gfx/map_land.ts`.
 - The chapter strip says Chapter three on those nodes. Entering 3.1 for the first time shows the chapter three card: CHAPTER THREE, STARCOURT.

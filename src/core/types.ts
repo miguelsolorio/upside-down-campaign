@@ -13,8 +13,10 @@ export interface Rect { x: number; y: number; w: number; h: number }
 /** Playable so far. Will joins in chapter 2, Max and Steve in 2.2, Robin and Nancy in 3.1. Later: hopper, eddie. */
 export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | 'steve' | 'robin' | 'nancy';
 /** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1 and plays from
- *  2.2 on. Hopper is an npc at the Gate in 2.3. Erica is an npc at Scoops Ahoy in 3.1 and runs the cart on the map. */
-export type CharId = HeroId | 'joyce' | 'hopper' | 'erica';
+ *  2.2 on. Hopper is an npc at the Gate in 2.3 and at the food court in 3.3. Erica is an npc at Scoops Ahoy in 3.1 and runs
+ *  the cart on the map. Billy is never an npc: he is the `billy` enemy, and the cast entry gives him a portrait and a voice
+ *  for his one line in 3.3 (docs/level-9.md). */
+export type CharId = HeroId | 'joyce' | 'hopper' | 'erica' | 'billy';
 /**
  * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
  * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
@@ -22,10 +24,12 @@ export type CharId = HeroId | 'joyce' | 'hopper' | 'erica';
  * alpha: the Demodog Alpha, the chapter 2 boss (docs/level-6.md).
  * melter: a melting rat that bursts into goo when it dies. flayed: a slow grabber that rises from goo (docs/level-7.md).
  * soldier: a Russian soldier with burst fire. grigori: the 3.2 mini-boss, who shrugs off frontal hits (docs/level-8.md).
+ * billy: Flayed Billy, phase one of the 3.3 boss, pinned at 0 HP until Eleven reaches him. flayer: the Mind Flayer's body,
+ * phase two. flayerleg: one of its four legs, hit on its own (docs/level-9.md).
  */
 export type EnemyKind =
   | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
-  | 'melter' | 'flayed' | 'soldier' | 'grigori';
+  | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -65,8 +69,14 @@ export interface ActorView {
   guarding?: boolean;
   /** A boss's pose, when it is doing something other than walking. The Demogorgon uses charge to pinned
    *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md).
-   *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. */
-  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab';
+   *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. Billy uses
+   *  charge, grab, stun and pinned (kneeling). The Mind Flayer's body uses rise (coming in through the skylight) and down
+   *  (its head on the floor), and a leg uses warn (its line shown), slam (striking down it) and severed (docs/level-9.md). */
+  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab' | 'warn' | 'slam' | 'severed' | 'down';
+  /** A Mind Flayer leg's tip in world px: the end of the line it strikes down. x, y is its root. Absent on everything else. */
+  aim?: Vec2;
+  /** 0..1 how far Eleven has reached a pinned Billy. Absent means 0. */
+  k?: number;
   /** The Demogorgon's head petals are open (below 60% HP). */
   petals?: boolean;
   /** A hidden enemy that only Will's Cold spot shows. gfx draws it faint or not at all. */
@@ -89,7 +99,10 @@ export type FxKind =
   /** scoop: Robin's ice cream in flight and its splat. babble: her Word vomit cone, w its reach. bullet: a pistol or rifle round
    *  in flight. goo: a melting rat's burst, w its diameter. trap: one of Nancy's bear traps on the floor. arcs: the power box
    *  firing, w and h its size. */
-  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs';
+  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs'
+  /** slam: a Mind Flayer leg striking the floor, w its reach. glass: the skylight shattering as the Mind Flayer comes in,
+   *  w the spread. */
+  | 'slam' | 'glass';
 
 export interface FxView {
   kind: FxKind;
@@ -176,6 +189,10 @@ export interface HazardView {
   t: number;
 }
 
+/** A pool of goo a Mind Flayer leg left on the floor (docs/level-9.md). It slows and stings the active hero standing in it.
+ *  x, y is its center, r its radius in px, t frames since it landed and life its total. */
+export interface PoolView { x: number; y: number; r: number; t: number; life: number }
+
 export interface Floater { text: string; x: number; y: number; t: number; life: number; color: ColorName; big: boolean }
 export interface LightSource { x: number; y: number; r: number; flicker?: number }
 /** A stage is either in daylight, drawn with the normal art, or at night, drawn with the night art. */
@@ -197,7 +214,8 @@ export interface HudView {
   inspiration: number;
   /** How recharged the hero swap is: 0 just swapped, 1 ready. */
   swapReady: number;
-  boss: { name: string; hp: number; hpMax: number } | null;
+  /** parts: the share of HP each part has left, for a boss hit in parts (the Mind Flayer's four legs, 0 when severed). */
+  boss: { name: string; hp: number; hpMax: number; parts?: number[] } | null;
   /**
    * The defense (docs/level-6.md): who the party guards, their health, and the clock in frames. left counts down from
    * total to 0. The HUD draws it where the boss bar goes. Null outside a defense.
@@ -214,6 +232,8 @@ export interface SimView {
   props: PropView[];
   /** Floor hazards and what each is doing now. Empty on a stage without any. */
   hazards: HazardView[];
+  /** Goo pools on the floor. Empty on a stage without any. */
+  pools: PoolView[];
   floaters: Floater[];
   hud: HudView;
   /** Camera focus: the active hero's feet. */
@@ -256,6 +276,9 @@ export type SfxId =
    *  grab: a Flayed or Grigori taking hold. decode: a cipher door opening. stash: an item from Erica's stash used. buy: a
    *  purchase at Erica's cart. */
   | 'pistol' | 'shotgun' | 'scoop' | 'babble' | 'rifle' | 'melt' | 'grab' | 'decode' | 'stash' | 'buy'
+  /** legslam: a Mind Flayer leg striking. sever: a leg cut. shatter: the skylight breaking. boom: the Key's machine blowing
+   *  up under the mall. reach: Eleven reaching Billy. */
+  | 'legslam' | 'sever' | 'shatter' | 'boom' | 'reach'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
@@ -284,7 +307,8 @@ export type SimEvent =
   | { t: 'spotted'; propId: string }
   /** A hero tried a gate, door, log, crate, lantern or console that is still shut: swung or fired at it, or pushed against it. */
   | { t: 'poked'; propId: string; hero: HeroId }
-  /** The Demogorgon hit 0 HP and is pinned: only Eleven's Mind Blast finishes it. spawnId is the boss's spawn. */
+  /** A boss hit 0 HP and is pinned, until Eleven finishes it: the Demogorgon with her Mind Blast, Billy by reaching him.
+   *  spawnId is the boss's spawn. */
   | { t: 'pinned'; spawnId: string }
   /** The Alpha howled and called its pack. Once per howl. */
   | { t: 'howl'; spawnId: string }
@@ -400,6 +424,9 @@ export interface Sim {
   view(): SimView;
   /** Joins at party average level minus one (min 1). Removes an npc spawn with the same id. */
   recruit(id: HeroId): void;
+  /** An npc leaves the stage: Hopper going down to the Key in 3.3 (docs/level-9.md). Gone from the view at once, with a puff
+   *  of dust where it stood. Does nothing if there is no such npc. Optional so a stand-in sim can leave it out. */
+  dismiss?(id: CharId): void;
   /** Wakes every dormant enemy spawn in the group. */
   spawnGroup(group: string): void;
   /** Opens a gate or clears a log by prop id. */
@@ -449,42 +476,4 @@ export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 
 // ---------------------------------------------------------------- audio vocabulary
-/** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen and 2.1. starcourt: 3.1 and 3.2. */
-export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins' | 'starcourt';
-export type JingleId = 'levelUp' | 'recruit' | 'clear' | 'gameOver' | 'item' | 'dice';
-export type StingerId = 'scare' | HeroId;
-export interface AudioMetrics {
-  seconds: number;
-  /** Peak sample after the limiter, 0..1. */
-  peak: number;
-  rmsDb: number;
-  /** Largest gain reduction the limiter applied, in dB. */
-  limiterDb: number;
-  clipped: number;
-  wav: ArrayBuffer | null;
-}
-export interface AudioApi {
-  /** Call on the first key or pointer event. Safe to call repeatedly. A controller press can call it too, but a browser may ignore that. */
-  unlock(): void;
-  /** True once the browser lets sound play. The title asks a controller player for one click while this is false. */
-  ready(): boolean;
-  music(id: TrackId | null): void;
-  /** 0..1 target for the combat layer. Smoothed inside. */
-  intensity(v: number): void;
-  jingle(id: JingleId): void;
-  sfx(id: SfxId, opts?: { rate?: number; pan?: number }): void;
-  /** One dialogue speech blip for this speaker. */
-  blip(who: Speaker): void;
-  stinger(id: StingerId): void;
-  setVolumes(music: number, sfx: number): void;
-  mute(on: boolean): void;
-  isMuted(): boolean;
-  /**
-   * Tells the mixer whether the page has focus. An unfocused page goes silent: the music keeps its place,
-   * effects are dropped. This is separate from mute(), so the player's own mute survives a focus change.
-   */
-  focus(on: boolean): void;
-  tracks(): TrackId[];
-  /** Offline render for QA and WAV export. */
-  renderOffline(id: TrackId, seconds: number, opts?: { combat?: boolean }): Promise<AudioMetrics>;
-}
+export type { TrackId, JingleId, StingerId, AudioMetrics, AudioApi } from './types_audio.ts';

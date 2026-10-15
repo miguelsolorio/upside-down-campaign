@@ -17,6 +17,7 @@ import { tunnelTile } from './tile_tunnel.ts';
 import { fleshTile } from './tile_flesh.ts';
 import { mallObject } from './tile_mall.ts';
 import { baseObject } from './tile_base.ts';
+import { foodTile } from './tile_food.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
@@ -351,6 +352,8 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
       return mallObject(name, c, under);
     case 'basecap': case 'basewall': case 'ammo': case 'bunk': case 'cell': case 'machine':
       return baseObject(name, c, under);
+    case 'foodfloor': case 'foodband': case 'skyfloor': case 'stallcap': case 'stall': case 'kitchenfloor': case 'fryer': case 'escalator':
+      return foodTile(name, c);
     default: return null;
   }
 }

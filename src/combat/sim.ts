@@ -138,6 +138,12 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     step: (input) => stepSim(s, input),
     view: () => buildView(s),
     recruit: (id) => recruitHero(s, id),
+    dismiss(id) {
+      const n = s.npcs.find((p) => p.id === id);
+      if (!n) return;
+      dust(s, n.x, n.y, 4);
+      s.npcs = s.npcs.filter((p) => p !== n);
+    },
     spawnGroup(group) {
       for (const e of s.enemies) {
         if (!e.dormant || e.dead || e.group !== group) continue;

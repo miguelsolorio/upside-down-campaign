@@ -1,5 +1,5 @@
 // Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, the Demogorgon, chapter 2's demodog, vine, pod and Alpha, and
-// chapter 3's melting rat, Flayed, soldier and Grigori.
+// chapter 3's melting rat, Flayed, soldier, Grigori, Flayed Billy and the Mind Flayer.
 import type { Difficulty, EnemyKind } from '../core/types.ts';
 
 export interface EnemyDef {
@@ -183,6 +183,23 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       grabFirst: 150, grabEvery: 220, grabLow: 160, grabMin: 30, grabMax: 80, grabWindup: 24, lungeT: 12, lungeSpeed: 3.5, holdT: 45,
       throwPower: 0.7, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5, call: 2,
     },
+  },
+  // Stand-ins for the 3.3 boss until Sim builds them (docs/level-9.md): the stats are the spec's starting numbers, and x is the
+  // agent's, so the agent's brain in ai.ts can run them. Sim A replaces Billy's x, Sim B the Mind Flayer's and its legs'.
+  billy: {
+    kind: 'billy', name: 'Billy', hp: 700, atk: 30, def: 6, speed: 1.1, xp: 60, aggro: 200,
+    windup: 24, power: 1, cooldown: 90, drop: 1, weight: 4,
+    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
+  },
+  flayer: {
+    kind: 'flayer', name: 'Mind Flayer', hp: 1600, atk: 30, def: 6, speed: 0, xp: 120, aggro: 400,
+    windup: 40, power: 1.2, cooldown: 90, drop: 1, weight: 99,
+    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
+  },
+  flayerleg: {
+    kind: 'flayerleg', name: 'Mind Flayer leg', hp: 180, atk: 30, def: 4, speed: 0, xp: 0, aggro: 400,
+    windup: 40, power: 1.2, cooldown: 90, drop: 0, weight: 99,
+    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
   },
 };
 

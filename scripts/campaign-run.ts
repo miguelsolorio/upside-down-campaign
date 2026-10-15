@@ -24,8 +24,9 @@ import { STAGE_22 } from '../src/world/stages/stage22.ts';
 import { STAGE_23 } from '../src/world/stages/stage23.ts';
 import { STAGE_31 } from '../src/world/stages/stage31.ts';
 import { STAGE_32 } from '../src/world/stages/stage32.ts';
+import { STAGE_33 } from '../src/world/stages/stage33.ts';
 
-export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32 };
+export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33 };
 
 /** Props a retry leaves open, as the play scene's KEPT_PROPS. */
 const KEPT = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap']);

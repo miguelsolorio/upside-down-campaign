@@ -27,7 +27,9 @@ export type TileName =
   | 'mallfloor' | 'mallband' | 'mallcap' | 'mallwall' | 'mallglass' | 'shopfront' | 'shopshut' | 'planter' | 'fountain'
   | 'railing' | 'scoops' | 'goo' | 'servicefloor' | 'lift'
   // The Russian base under the mall (stage 3.2).
-  | 'basefloor' | 'basegrate' | 'basecap' | 'basewall' | 'ammo' | 'bunk' | 'cell' | 'machine' | 'keyfloor';
+  | 'basefloor' | 'basegrate' | 'basecap' | 'basewall' | 'ammo' | 'bunk' | 'cell' | 'machine' | 'keyfloor'
+  // Starcourt's food court and its back of house (stage 3.3).
+  | 'foodfloor' | 'foodband' | 'skyfloor' | 'stallcap' | 'stall' | 'kitchenfloor' | 'fryer' | 'escalator';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -161,6 +163,18 @@ export const TILES: Record<string, TileDef> = {
   '×': { name: 'cell', solid: true },
   '¤': { name: 'machine', solid: true, animated: true },
   'º': { name: 'keyfloor', solid: false },
+  // Stage 3.3: the food court. Walls are a stallcap row over a stall row: the food stalls' counters and menu boards facing the
+  // floor below. The food floor is the court's tile, the band the colored ring round it, and the sky floor the patch of floor
+  // under the skylight, lit by the moon through the glass. Kitchens have a red quarry floor and solid fryer lines. The
+  // escalator is walked over, up from the lower concourse to the balcony.
+  'À': { name: 'foodfloor', solid: false },
+  'Á': { name: 'foodband', solid: false },
+  'Æ': { name: 'skyfloor', solid: false },
+  'Â': { name: 'stallcap', solid: true },
+  'Ã': { name: 'stall', solid: true },
+  'Ä': { name: 'kitchenfloor', solid: false },
+  'Ç': { name: 'fryer', solid: true },
+  'Å': { name: 'escalator', solid: false },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

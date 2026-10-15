@@ -1,6 +1,6 @@
 // The beat director. Runs a stage's beats: rect triggers fire once, cleared groups and sim events fire others
 // (a lit target, a cleared prop, a camera sighting, a pinned boss), and each beat is a queue of steps (dialogue, scare,
-// wake, recruit, open, music, finish). Pure logic with no DOM and no audio, so Node can run it. The play scene supplies the env.
+// wake, recruit, open, music, boom, leave, finish). Pure logic with no DOM and no audio, so Node can run it. The play scene supplies the env.
 import type { JingleId, Sim, SimEvent, TrackId } from '../core/types.ts';
 import type { Beat, BeatStep, TileRect } from './types.ts';
 
@@ -18,6 +18,8 @@ export interface DirectorEnv {
   music?(track: TrackId): void;
   /** Lights a lights prop the way the player does: the save point and the heal. Optional like music. */
   light?(prop: string): void;
+  /** The Key's machine blowing up under the mall: the sound, the shake and the lights going dark. Optional like music. */
+  boom?(): void;
   jingle(id: JingleId): void;
   /** The level-clear beat reached its last step. */
   finish(): void;
@@ -123,6 +125,8 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
       case 'close': env.sim().closeProp(s.prop); break;
       case 'defend': env.sim().defend(); break;
       case 'light': env.light?.(s.prop); break;
+      case 'boom': env.boom?.(); break;
+      case 'leave': env.sim().dismiss?.(s.npc); break;
       case 'finish': over = true; env.finish(); break;
       case 'end': completed.add(s.id); for (const b of beats) if ('after' in b.when && b.when.after === s.id) fire(b); break;
     }

@@ -74,6 +74,8 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   robin: { wave: 'p25', midi: 77, spread: 4, dur: 0.028, vol: 0.22, attack: 0.001, bend: 1 },
   nancy: { wave: 'tri', midi: 55, spread: 1, dur: 0.07, vol: 0.38, attack: 0.012 },
   erica: { wave: 'p50', midi: 83, spread: 2, dur: 0.03, vol: 0.14, attack: 0.001 },
+  // A stand-in for Billy until Audio voices him (docs/level-9.md): Steve's mid square, a little lower.
+  billy: { wave: 'p50', midi: 57, spread: 2, dur: 0.06, vol: 0.2, attack: 0.004, bend: -1 },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };

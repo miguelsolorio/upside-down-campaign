@@ -4,10 +4,10 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
-export const STAGES_AHEAD: readonly string[] = ['3.3'];
+export const STAGES_AHEAD: readonly string[] = [];
 
 /** Heroes on the field at once: the lead and three on the bench. */
 export const PARTY_SIZE = 4;
@@ -39,6 +39,12 @@ export const CHAPTERS: Record<number, { title: string; subtitle: string }> = {
   3: { title: 'Chapter three', subtitle: 'Starcourt' },
 };
 
+/** True when `id` is the last stage of its chapter, so its clear ends the chapter: the epilogue, then CHAPTER n CLEAR. */
+export function closesChapter(id: string): boolean {
+  const i = STAGE_ORDER.indexOf(id);
+  return i >= 0 && (i + 1 === STAGE_ORDER.length || chapterOf(STAGE_ORDER[i + 1] as string) !== chapterOf(id));
+}
+
 /** True when `id` is the first stage of its chapter, so entering it shows the chapter card. */
 export function opensChapter(id: string): boolean {
   const i = STAGE_ORDER.indexOf(id);
@@ -60,13 +66,16 @@ const ROSTER: Record<string, HeroId[]> = {
   '2.3': ['mike', 'dustin', 'lucas', 'will', 'max', 'steve'],
   '3.1': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   '3.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
+  '3.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
 };
 
-/** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. */
+/** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. Eleven
+ *  holds 3.3's route crate and is the only one who can reach Billy (docs/level-9.md). */
 const REQUIRED: Record<string, HeroId[]> = {
   '2.2': ['max'],
   '2.3': ['steve'],
   '3.2': ['robin'],
+  '3.3': ['eleven'],
 };
 
 /**
@@ -82,6 +91,8 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 123 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
   '3.1': [{ id: 'mike', level: 6, xp: 198 }, { id: 'dustin', level: 5, xp: 257 }, { id: 'robin', level: 3 }, { id: 'nancy', level: 3 }],
   '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 82 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
+  // Eleven is locked in 3.3 and walks in at the level chapter 1 left her: the run plays 3.1 and 3.2 without her (docs/level-9.md).
+  '3.3': [{ id: 'mike', level: 7, xp: 197 }, { id: 'dustin', level: 6, xp: 235 }, { id: 'robin', level: 4, xp: 102 }, { id: 'eleven', level: 3, xp: 109 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

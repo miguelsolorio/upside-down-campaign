@@ -1,8 +1,22 @@
 # TODO
 
-Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) and Level 8 (stage 3.2, the Russian base, the cipher doors and Grigori), with Erica's cart on the map. Chapter 3 opens here. 3.3 (the food court and the Mind Flayer) shows locked on the map. The pass before it built Levels 5 and 6 and party picks.
+Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy and the Mind Flayer), the end of chapter 3 and of this build. Hopper leaves, `starcourt` goes sour near the boss, and the chapter ends on an epilogue. The pass before it built Levels 7 and 8 and Erica's cart.
 
-## This pass (levels 7 and 8)
+## This pass (level 9)
+
+- [x] Owner's calls (2026-10-15): Eleven is locked in. Hopper is an npc who leaves to go down to the Key, and the machine's boom takes him; he isn't playable yet. The Mind Flayer is the legs fight (four legs slam telegraphed lines, cut all four and the head comes down). Billy is phase one of the boss in the same arena, pinned at 0 HP until Eleven reaches him. The chapter ends on Hopper's letter, then CHAPTER THREE CLEAR with the feedback note, then the map with nothing ahead
+- [x] Spine: `docs/level-9.md`, the 3.3 lines in `docs/map-screen.md`, the contracts in `core/types.ts` (the audio vocabulary moved to `core/types_audio.ts` to keep the file under 500 lines) and `world/types.ts` (the `boom` and `leave` steps, `Sim.dismiss`), eight food court tiles, 3.3 in the campaign with Eleven locked, `closesChapter`, the epilogue scene and CHAPTER n CLEAR, stand-ins, a stub stage 3.3. `ARRIVAL['3.3']` comes from the run: Mike 7, Dustin 6, Robin 4, Eleven 3
+- [ ] Art: `billy-variations.html`, `flayer-variations.html`, `foodcourt-variations.html`, sent to the owner one image per option
+- [ ] Sim A: Billy, the pin and the reach, the bot against him
+- [ ] Owner picks
+- [ ] Sim B: the Mind Flayer, its legs, pools, waves and sweep, the bot against it
+- [ ] Art build, Audio (`sour`, five effects, Billy's blip), UI (the epilogue, the leg pips)
+- [ ] World 3.3: the map, beats, `l9_*` scripts and the letter, the `boom` step in the play scene
+- [ ] Tuned inside the targets, and the campaign pace: the lead ends chapter 3 at Lv 8 (`xpMult`, `ARRIVAL`)
+- [ ] Verified: typecheck, tests, the bot clears 3.3 inside the targets, the map chains 3.2 to 3.3, the epilogue and CHAPTER THREE CLEAR, no console errors
+- [ ] Owner asked before merging into main
+
+## Levels 7 and 8 (merged)
 
 - [x] Owner's calls (2026-10-15): Robin and Nancy both join in 3.1, nobody locked there, Robin locked for 3.2. Hopper stays an npc. Erica's cart lands now on the map, Eggos and Cokes at triple price, three of each carried, spent by the sim on its own (an Eggo under 25% HP, a Coke on a dry Special). Grigori is the 3.2 mini-boss as designed (flank him or zap him on the power box). Cipher doors on the 3.2 route and on a cache
 - [x] Spine: `docs/level-7.md`, `docs/level-8.md`, "Erica's cart" and "Chapter three on the map" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, 23 mall and base tiles, the nine-hero pool, `core/shop.ts`, the purse and stash in `core/progress.ts`, stand-ins, stub stages 3.1 and 3.2. Chapter 3 enemies are sized for the party a chained bot run really brings (Mike Lv 6, the bench at 4 and 5, Robin and Nancy at 3), not the design's Lv 7
@@ -191,4 +205,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Next: stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.
+Next: chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.

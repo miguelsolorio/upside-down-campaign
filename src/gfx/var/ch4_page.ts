@@ -14,10 +14,12 @@ export interface PageSpec<T extends PageOpt> {
   file: string;
   /** Repaint every this many ms with a phase that counts up, while the box with id "anim" is ticked. */
   tick?: number;
+  /** For a second list on a page: the ids of its card list and its picks readout, and the name of its export on window. */
+  listId?: string; pickId?: string; global?: string;
 }
 
 export function mountSheet<T extends PageOpt>(spec: PageSpec<T>): void {
-  const list = document.getElementById('cards') as HTMLElement, out = document.getElementById('pick') as HTMLElement;
+  const list = document.getElementById(spec.listId ?? 'cards') as HTMLElement, out = document.getElementById(spec.pickId ?? 'pick') as HTMLElement;
   let picked: T | null = null;
   const cards: { o: T; card: HTMLElement; btn: HTMLButtonElement; made: Made }[] = [];
   spec.opts.forEach((o, i) => {
@@ -58,7 +60,7 @@ export function mountSheet<T extends PageOpt>(spec: PageSpec<T>): void {
     }, spec.tick);
   }
 
-  (window as unknown as { __sheet: () => Promise<string> }).__sheet = () => {
+  (window as unknown as Record<string, () => Promise<string>>)[spec.global ?? '__sheet'] = () => {
     for (const c of cards) c.made.draw?.(0);
     const img = sheetImage(spec.title, cards.map((c, i) => ({ num: i + 1, name: c.o.name, canvas: c.made.canvas })));
     return saveSheet(spec.file, img);

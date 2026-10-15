@@ -18,21 +18,24 @@ export interface VecnaOpt {
   draw(pose: VPose): Px;
 }
 
-interface Spec {
+export interface Spec {
   cols: VCols;
   vine: ColorName;
   stretch?: (r: VRig) => VRig;
   body?: BodyOpts;
+  /** Drawn first, so the body covers it: tendrils behind him. */
+  before?: (px: Px, r: VRig, pose: VPose) => void;
   dress?: (px: Px, r: VRig, pose: VPose) => void;
 }
 
 /** The vine whip cracking over his head from the raised hand, relative to the hand. */
 const WHIP: Pt[] = [[2, -3], [-1, -8], [-8, -9], [-16, -8], [-22, -4], [-24, 1]];
 
-function make(s: Spec): (pose: VPose) => Px {
+export function make(s: Spec): (pose: VPose) => Px {
   return (pose) => {
     const r = s.stretch ? s.stretch(POSES[pose]) : POSES[pose];
     const fig = new Px(36, 52);
+    s.before?.(fig, r, pose);
     body(fig, r, s.cols, s.body);
     s.dress?.(fig, r, pose);
     if (pose === 'whip') {

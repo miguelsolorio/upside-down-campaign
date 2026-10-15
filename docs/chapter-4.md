@@ -36,8 +36,8 @@ He joins at the party's average level minus one. The recruit scene is in the Hel
 
 The owner's call: the solo plays as a retro Guitar Hero. While Eddie plays, a note highway shows and notes come down it to a strum line. A note hit on time crits (the NAT 20 floater over what the ring hits) and widens the ring; a miss shrinks it. A streak counter shows under the strum line. The 4.3 rooftop is the same highway for a whole song, with the demobats as the pressure.
 
-- **Layout:** pending the pick from `solo-variations.html` (Fretboard, The neck, Tab strip, Arrows, Amp ring).
-- **Lanes and inputs** follow the layout. The three-lane layouts use Attack, Special and Crit (keys Z, X, Space; pad A, X, Y; touch A, B and the d20), colored like the HUD: Attack red, Special blue like the MP bar, Crit gold like the d20. The one-lane layouts use Attack only. Arrows uses the D-pad, which is free because Eddie is planted.
+- **Layout: The neck** (owner's pick, `solo-variations.html`). The highway is the neck of his Flying V, coming out from under him toward the player in perspective: dark wood, fret wires that scroll, inlay dots, three lanes. Notes start small at the far end and grow as they come, and hit three strum targets on a bone line near the bottom of the screen. The streak counter sits to the left of the neck, HIT over the struck target.
+- **Lanes and inputs.** Three lanes on Attack, Special and Crit (keys Z, X, Space; pad A, X, Y; touch A, B and the d20), colored like the HUD: Attack red, Special blue like the MP bar, Crit gold like the d20. Eddie is planted while he plays, so movement does nothing during the solo; a rebinding of the three actions moves the lanes with it.
 - **The chart comes from the music.** The sequencer schedules one bar at a time, so the solo's notes can be read off the same bar the audio plays, and the highway is always in time with what you hear. The solo's track is original, like everything else (no borrowed songs).
 - **Open:** the timing window (frames either side of the beat for a hit and for a perfect), how many notes a 6 s solo has, what a miss costs beyond the ring, and how the bot plays it for the tests.
 
@@ -76,7 +76,7 @@ A story item from 4.2, not her Lv 9 talent, since the pace puts Max near Lv 8 in
 
 ### The Demogorgon pit (4.1, mini-boss)
 
-Hopper alone against a Demogorgon in a pit under the prison, with only his haymaker and ground slam. It uses the 1.3 Demogorgon's moves, sized for one hero: the charge that stuns it on the wall, the acid arcs from 60%, the leap onto shadow marks from 30%. Three stuns and a slam put it down. Open: the design doc calls it smaller than the 1.3 one; the sheet shows the game's own sprite, so a smaller frame is still to draw if the owner wants one. Look: pending the pick from `pit-variations.html` (Ice pit, Rust cage, Floodlit arena, Mine shaft).
+Hopper alone against a Demogorgon in a pit under the prison, with only his haymaker and ground slam. It uses the 1.3 Demogorgon's moves, sized for one hero: the charge that stuns it on the wall, the acid arcs from 60%, the leap onto shadow marks from 30%. Three stuns and a slam put it down. Open: the design doc calls it smaller than the 1.3 one; the sheet shows the game's own sprite, so a smaller frame is still to draw if the owner wants one. Look: **Mine shaft** (owner's pick, `pit-variations.html`): an old shaft under the camp, rough rock walls held up by timber, a plank barricade nailed over the beast's tunnel, a dirt floor with stains, bones, a drain and a chain, and lanterns on hooks for the only light.
 
 ### Vecna (4.4)
 
@@ -102,9 +102,9 @@ Look: pending the pick from `vecna-variations.html` (Vined, Lich, Scorched, Cree
 | Sheet | Page | Pick |
 |---|---|---|
 | Eddie | `eddie-variations.html` | **1 Hellfire Club** |
-| The solo's note highway | `solo-variations.html` | pending |
-| Vecna | `vecna-variations.html` | pending |
-| The Demogorgon pit | `pit-variations.html` | pending |
+| The solo's note highway | `solo-variations.html` | **2 The neck** |
+| Vecna | `vecna-variations.html` | **1 Vined**, made scarier (three takes pending) |
+| The Demogorgon pit | `pit-variations.html` | **4 Mine shaft** |
 | Kamchatka | `kamchatka-variations.html` | **1 Blizzard** |
 | The Creel House | `creel-variations.html` | **2 Abandoned** now (4.2), **4 Upside Down** for the lair (4.4), **3 Blood red** for memories |
 | Upside Down Hawkins | `hawkinsud-variations.html` | **Blue storm**: 1 Blue night and 2 Red storm mixed |

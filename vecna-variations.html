@@ -16,11 +16,14 @@
   <p class="muted">Each card is drawn by the game's own pixel tools, in five fill colors and the ink outline, like the Demogorgon. The top row is 2x, grouped by phase. Under it is the curse on Max, with two of the four chimes sounded, and Vecna at his real size beside the heroes and the Demogorgon.</p>
 </div></header>
 
-<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span></div></div>
+<div class="bar"><div class="wrap"><span>Scarier Vined</span><span id="pick2">none yet</span><span>First round</span><span id="pick">1 Vined</span></div></div>
 
 <main class="wrap">
-  <h2 class="sec">Vecna</h2>
-  <p class="sub">Pick one by name.</p>
+  <h2 class="sec">Vined, scarier</h2>
+  <p class="sub">You picked Vined and asked for him scarier. All three hunch him, sink his head between his shoulders, lengthen his arms and claws, and give him a skull: a big cranium over a narrow jaw, black sockets with glowing points, bare teeth. Pick one by name.</p>
+  <div class="list" id="cards2"></div>
+  <h2 class="sec">The first round</h2>
+  <p class="sub">The five looks you picked Vined from.</p>
   <div class="list" id="cards"></div>
 </main>
 
@@ -28,8 +31,10 @@
 import { initGfx } from '/src/gfx/index.ts';
 import { VECNA_OPTS, VECNA_W, vecnaCard } from '/src/gfx/var/vecna.ts';
 import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+import { VECNA_SCARY } from '/src/gfx/var/vecna_scary.ts';
 
 initGfx();
+mountSheet({ opts: VECNA_SCARY, width: VECNA_W, title: 'Chapter 4: Vecna, Vined made scarier', file: 'ch4-vecna-scary', make: vecnaCard, listId: 'cards2', pickId: 'pick2', global: '__scary' });
 mountSheet({ opts: VECNA_OPTS, width: VECNA_W, title: 'Chapter 4: Vecna, five looks', file: 'ch4-vecna', make: vecnaCard });
 </script>
 </body>

@@ -90,6 +90,8 @@ export interface BodyOpts {
   arm?: ColorName; leg?: ColorName;
   /** Drawn after the torso and before the arms and head: a robe, a hood. */
   mid?: (px: Px, r: VRig) => void;
+  /** Claw length in px. */
+  claw?: number;
 }
 
 /** The bare body in a pose: legs, torso, arms, head, claws. Dressing goes on after, the outline last. */
@@ -106,7 +108,7 @@ export function body(px: Px, r: VRig, c: VCols, o: BodyOpts = {}): void {
   for (const [sh, el, ha] of r.arms) {
     seg(px, sh, el, 2, o.arm ?? c.G, c.D);
     seg(px, el, ha, 1, c.G, c.D);
-    claws(px, ha, el, c.B);
+    claws(px, ha, el, c.B, o.claw);
   }
   px.rect(r.neck[0] - 1, r.neck[1] - 2, 3, 3, c.G);
   head(px, r, c);

@@ -66,7 +66,7 @@ import { getStage } from '/src/world/stage.ts';
 import { drawControlsCorner, drawWorld } from '/src/world/render.ts';
 import { createSim } from '/src/combat/index.ts';
 import { drawHud } from '/src/ui/hud.ts';
-import { MIDDLE_END } from '/src/ui/hudlayout.ts';
+import { CLUSTER_END } from '/src/ui/hudlayout.ts';
 import { drawDie } from '/src/ui/die.ts';
 
 // Steady logo, steady lights: the same pixels every time the page loads.
@@ -303,12 +303,12 @@ function fightCard(ctx, w, h) {
     }
   }
 
-  // The HUD: the active hero and the MP stay left, the bench and the d20 meter go right, the strip runs between.
+  // The HUD: the active hero and the MP, coin and Crit columns stay left, the bench goes right, the strip runs between.
   pad.fillStyle = PAL.black;
   pad.fillRect(0, 0, SCREEN_W, SCREEN_H);
   drawHud(pad, view.hud, T, {});
   drawPanel(ctx, 0, 0, w, VIEW_TOP, 'hud');
-  const split = MIDDLE_END + 1;
+  const split = CLUSTER_END + 1;
   ctx.drawImage(glowPad, 0, 0, split, VIEW_TOP, 0, 0, split, VIEW_TOP);
   ctx.drawImage(glowPad, split, 0, SCREEN_W - split, VIEW_TOP, w - (SCREEN_W - split), 0, SCREEN_W - split, VIEW_TOP);
 

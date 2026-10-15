@@ -187,7 +187,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
 };
 
 /** Enemy HP and damage multiplier. */
-export const DIFFICULTY_MULT: Record<Difficulty, number> = { kid: 0.7, chief: 1, upside: 1.4 };
+export const DIFFICULTY_MULT: Record<Difficulty, number> = { kid: 0.7, normal: 0.85, chief: 1, upside: 1.4 };
 
 /** What `tier: 'elite'` does to any enemy: more HP and damage, a quicker pace, shorter cooldowns, double XP and drops. */
 export const ELITE = { hp: 1.9, atk: 1.6, speed: 1.1, cooldown: 0.75, xp: 2, drop: 2 } as const;

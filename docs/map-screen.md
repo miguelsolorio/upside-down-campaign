@@ -49,7 +49,8 @@ From 2.2 on, more heroes can play a stage than fit in the party: Mike, Dustin, L
 - **On START.** `onPlay(stage, picks)`. Flow remembers them (`withPicks` in `core/progress.ts`) and builds the party with `partyFor(stage, progress.heroes, picks)`. A hero nobody has played yet joins at the average level of the met heroes in the pool minus one.
 - **The party band** under the map shows the party the selected stage would get: the last picks, fixed up.
 - **Who builds it.** UI owns the panel: `ui/picks_logic.ts` (pure: the cursor, toggling, the lock, the lead, whether START is live) and `ui/picks.ts` (input and drawing). It draws inside `inFrame` with the gfx primitives (`drawPortrait`, `drawText`, `drawPanel`, `drawIcon`), the way the HUD does. `ui/map.ts` opens it and hands the result to `onPlay`.
-- **Variation sheet first.** `picks-variations.html` at the project root: five layouts for the panel over the map, drawn with the game's renderer, each named so the owner can pick one. UI builds the chosen one.
+- **Variation sheet first.** `picks-variations.html` at the project root: five layouts for the panel over the map. The owner picked **Grid**: a PARTY panel over the map with the heroes as three cards by two (face, name, level, gate word), the lead framed in amber, party numbers on the picked, a padlock on the locked, START and a one-line legend under them.
+- **Data.** `poolFor(stage, progress.heroes)` gives every hero in the pool at the level they'd play at; `requiredFor`, `pickParty` and `needsPicks` do the rest. `MapOpts.onPlay` takes the picks as an optional second argument.
 - **Tests.** `tests/picks.test.ts` covers `picks_logic.ts`: the lock, toggling, the lead, START only at four. `pickParty` and `withPicks` are tested in `tests/campaign.test.ts`.
 
 ## gfx

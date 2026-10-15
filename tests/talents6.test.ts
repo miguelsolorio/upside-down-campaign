@@ -3,7 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { SimEvent, SimSpawn } from '../src/core/types.ts';
-import { HERO_DEFS, roleAt, utilitiesAt } from '../src/heroes/index.ts';
+import { HERO_DEFS, HERO_IDS, roleAt, utilitiesAt } from '../src/heroes/index.ts';
+import { xpToNext } from '../src/progression/index.ts';
 import { heroSheet } from '../src/heroes/charsheet.ts';
 import { HOLD_FRAMES } from '../src/heroes/hold.ts';
 import { heroAtk } from '../src/combat/damage.ts';
@@ -231,4 +232,19 @@ test('Dart: with no foe he stays at the active hero\'s heels, and a wipe sends h
   sim.healParty(0.5);
   assert.equal(s.t6.dart, null);
   assert.equal(s.t6.dartRest, 0, 'and he can come again at once');
+});
+
+// ------------------------------------------------------------------ the callout
+
+test('reaching Lv 6 brings the Lv 6 talent\'s NEW TALENT callout, once, for every hero', () => {
+  for (const id of HERO_IDS) {
+    const { sim } = makeWhite({ party: [{ id, level: 5 }, { id: id === 'mike' ? 'dustin' : 'mike', level: 5 }] });
+    sim.dev.giveXp(xpToNext(5));
+    const ups = ofType(sim.step(inp()), 'levelUp').map((e) => e.info).filter((u) => u.hero === id);
+    assert.deepEqual(ups.map((u) => u.to), [6], id);
+    assert.equal(ups[0]?.talent?.name, HERO_DEFS[id].talents[1]?.name);
+    sim.dev.giveXp(xpToNext(6));
+    const more = ofType(sim.step(inp()), 'levelUp').map((e) => e.info).filter((u) => u.hero === id);
+    assert.equal(more[0]?.talent, null, `${id} gains nothing at 7`);
+  }
 });

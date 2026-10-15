@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demobats</title>
+<meta name="description" content="Four designs for the demobat, the Upside Down's flying enemy in stage 4.3 and chapter 5, drawn from above in the game's own pixel tools. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for the demobat</h1>
+  <p>Demobats are the Upside Down's flyers: a leathery body, wide wings, a long whip tail, and a head that opens in petals like the Demogorgon's. They fly in groups and ignore walls. In 4.3 they swoop at Eddie while he plays his solo on the rooftop, and the sound ring stuns them. Chapter 5 brings them back.</p>
+  <p class="muted">Each card is drawn by the game's own pixel tools, in five fill colors and the ink outline, from above. The top row is 4x: four flap frames (wings up, mid, down, mid), glide, dive with the head open, stunned with three stars, and the white hit flash. Under it is the Blue storm street at the size the game shows, with five bats flapping and one diving at Eddie, and the same street at 2x.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span><label class="chk"><input id="anim" type="checkbox" checked> Flap the wings</label></div></div>
+
+<main class="wrap">
+  <h2 class="sec">Demobats</h2>
+  <p class="sub">Each one is about 17 by 14 pixels. Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { BAT_W, DEMOBAT_OPTS, batCard } from '/src/gfx/var/demobat.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({ opts: DEMOBAT_OPTS, width: BAT_W, title: 'Chapter 4: the demobat, 4 looks', file: 'ch4-demobat', make: batCard, tick: 120 });
+</script>
+</body>
+</html>

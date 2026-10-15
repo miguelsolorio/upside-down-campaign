@@ -19,17 +19,17 @@ const BLOOD: Kit = {
   top: 'black', topHi: 'soil2', rail: 'soil1', railHi: 'soil2', railLo: 'soil0', wd: 'soil0', wdHi: 'soil1', wdLo: 'black',
   fl: 'soil0', flHi: 'soil1', flLo: 'black', seam: 'black', gleam: 'blood0', rim: 'blood1', shade: 'black',
 };
-const UD: Kit = {
+export const UD: Kit = {
   top: 'ink', topHi: 'slate', rail: 'dusk', railHi: 'slate', railLo: 'shadow', wd: 'shadow', wdHi: 'dusk', wdLo: 'night',
   fl: 'dusk', flHi: 'slate', flLo: 'shadow', seam: 'ink', shade: 'teal0',
 };
 const BLACK_MIRROR: MirrorKit = { fr: 'soil2', hi: 'sand', lo: 'soil1', glass: 'mist', sheen: 'bone', shine: 'white', ghost: 'slate', eye: 'hot', crack: 'ink' };
-const RED_MIRROR: MirrorKit = { fr: 'blood1', hi: 'red', lo: 'blood0', glass: 'red', sheen: 'pink', shine: 'white', ghost: 'blood0', eye: 'cream', crack: 'black' };
+export const RED_MIRROR: MirrorKit = { fr: 'blood1', hi: 'red', lo: 'blood0', glass: 'red', sheen: 'pink', shine: 'white', ghost: 'blood0', eye: 'cream', crack: 'black' };
 const WIN3: WinKit = { fr: 'soil1', frHi: 'soil2', frLo: 'black' };
-const WIN4: WinKit = { fr: 'dusk', frHi: 'slate', frLo: 'night', bar: 'night' };
+export const WIN4: WinKit = { fr: 'dusk', frHi: 'slate', frLo: 'night', bar: 'night' };
 const RUG3: RugKit = { field: 'black', dark: 'ink', pat: 'blood1', band: 'blood0', line: 'sand', fringe: 'sand' };
-const RUG4: RugKit = { field: 'night', dark: 'ink', pat: 'blood0', band: 'ink', line: 'blood1', fringe: 'blood1' };
-const GLOW: Glow = { halo: 'blood0', base: 'blood1', mid: 'red', bright: 'hot' };
+export const RUG4: RugKit = { field: 'night', dark: 'ink', pat: 'blood0', band: 'ink', line: 'blood1', fringe: 'blood1' };
+export const GLOW: Glow = { halo: 'blood0', base: 'blood1', mid: 'red', bright: 'hot' };
 
 const HAND = ['.r.r.r.r.', '.r.r.r.r.', 'rrrrrrrrr', '.rrrrrrr.', '..rrrrr..'];
 /** Deep red damask; on some tiles the blood has run down it, on one a hand has left its print. */
@@ -76,13 +76,13 @@ const FLOOR_VEIN: Pt[][][] = [ // main veins enter at the left middle and leave 
 const ROT: Rect[][] = [[[2, 2, 5, 4]], [[9, 3, 5, 5], [1, 5, 3, 3]], [[6, 1, 4, 3]], [[1, 2, 4, 6], [10, 4, 4, 3]]];
 const SPORE: Pt[][] = [[[3, 4], [11, 9]], [[12, 3]], [[6, 2]], [[9, 5], [3, 11]]];
 /** The wall paper gone to rags: dark holes with a curled lip, mold in the damask. */
-function rotted(px: Px, c: TC): void {
+export function rotted(px: Px, c: TC): void {
   damask(px, 'teal1', 'slate', 'teal0');
   for (const [x, y, w, h] of ROT[c.v]) px.rect(x, y - 1, w, 1, 'dusk').rect(x, y, w, h, 'night').rect(x + 1, y + h, w - 2, 1, 'teal0').rect(x, y, 1, h, 'teal0');
   dots(px, [[12 - c.v * 3, 7], [13 - c.v * 3, 7], [3 + c.v, 6]], 'teal0');
 }
 /** A vine: two wide, a lit edge and a dark one, a pod at its tip. */
-function vine(px: Px, pts: readonly Pt[]): void {
+export function vine(px: Px, pts: readonly Pt[]): void {
   const path = trace(pts);
   path.forEach(([x, y], i) => { px.set(x + 2, y, 'blood0').set(x + 1, y, 'blood1').set(x, y, i % 3 ? 'blood1' : 'red'); });
   const [x, y] = path[path.length - 1] as Pt;
@@ -90,7 +90,7 @@ function vine(px: Px, pts: readonly Pt[]): void {
 }
 const FLASH: N[] = ['hot', 'red', 'blood1', 'red'];
 /** Glass lit red by lightning: it flashes on phase 0 with a bolt, and the dead branches stay black against it. */
-function lightning(px: Px, c: TC, g0: number, g1: number, phase: number): void {
+export function lightning(px: Px, c: TC, g0: number, g1: number, phase: number): void {
   const w = g1 - g0 + 1, right = c.w === 'w';
   px.rect(g0, 3, w, 9, FLASH[phase & 3] as N).rect(g0, 9, w, 3, phase ? 'blood1' : 'red');
   const br: Pt[][] = right ? [[[g1, 11], [g1 - 3, 8], [g1 - 4, 5]], [[g1 - 3, 8], [g1 - 8, 7]]] : [[[g0, 11], [g0 + 3, 9], [g0 + 4, 6], [g0 + 7, 5]], [[g0 + 3, 9], [g0 + 8, 9]]];
@@ -98,7 +98,7 @@ function lightning(px: Px, c: TC, g0: number, g1: number, phase: number): void {
   if (!phase && right) for (const [x, y] of trace([[g0 + 5, 3], [g0 + 3, 6], [g0 + 6, 8], [g0 + 4, 11]])) px.set(x, y, 'cream');
 }
 /** The Upside Down's overlay: vines up the walls, veins over floor and rug, a glowing hole, spores. */
-function overgrown(px: Px, c: TC, phase: number): void {
+export function overgrown(px: Px, c: TC, phase: number): void {
   const floor = '.rx'.includes(c.ch);
   if (c.ch === 'W') for (const v of VINE[c.v + (c.tx & 1) * 4]) vine(px, v);
   if (c.ch !== 'x' && floor && !(c.ty & 1)) for (const p of FLOOR_VEIN[c.v]) vein(px, p, phase, GLOW);

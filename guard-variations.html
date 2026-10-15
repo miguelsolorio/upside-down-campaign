@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamchatka Guards</title>
+<meta name="description" content="Four winter guards for the Kamchatka prison camp of stage 4.1, drawn as winter versions of the Russian soldier from stage 3.2. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for the Kamchatka guard</h1>
+  <p>The guards of stage 4.1 are the Russian soldier from 3.2 in winter clothes, standing in night snow under amber floodlights. Three carry his rifle, which they aim and fire. The camp guard carries a baton instead, so the yard has a guard who fights up close. Each one has to read against blue snow.</p>
+  <p class="muted">Each card is drawn by the game's own code on the adult body, in five fill colors and the ink outline. The top row is 4x: facing down, up and side, a walk frame, the aim or wind up, the shot or swing, and hurt. Under it, the frames at their real size on the Blizzard look's snow, beside the 3.2 soldier and Hopper.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span></div></div>
+
+<main class="wrap">
+  <h2 class="sec">The guard</h2>
+  <p class="sub">Adult body, the soldier's size. Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { CARD_W, KGUARD_OPTS, colorsOf, guardCard } from '/src/gfx/var/kguard.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: KGUARD_OPTS, width: CARD_W, title: 'Chapter 4: the Kamchatka guard, 4 looks', file: 'ch4-guard',
+  make: (o) => ({ canvas: guardCard(o), meta: `${colorsOf(o)} fill colors and the ink outline` }),
+});
+</script>
+</body>
+</html>

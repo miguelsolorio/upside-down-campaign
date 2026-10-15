@@ -334,6 +334,7 @@ export interface S {
   rng: Rng;
   /** Cosmetic randomness only (shake, dust). Never feeds gameplay. */
   frng: Rng;
+  /** The difficulty's factor (DIFFICULTY_MULT): enemy HP and every hit on the party, hazards included. */
   mult: number;
   /** The stage's own enemy factor (StageData.enemyMult): enemy HP and the damage enemies deal, not hazards. 1 by default. */
   foeMult: number;

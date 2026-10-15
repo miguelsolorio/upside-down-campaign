@@ -25,6 +25,7 @@ function fakeCtx(): unknown {
 const { createPlayScene } = await import('../src/world/play.ts');
 const { createArcadeScene } = await import('../src/arcade/scene.ts');
 const { createBoard } = await import('../src/arcade/scores.ts');
+const { settings } = await import('../src/core/settings.ts');
 
 const stack: Scene[] = [];
 /** The actions the fake input holds down this tick, and whether the player was just pulled away. */
@@ -111,6 +112,56 @@ test('a bot run is not paused by the window, so a background tab still plays its
   l.tick();
   assert.equal(stack.length, 0);
   (game.flags as { bot: boolean }).bot = false;
+});
+
+/** Stage 1.1 with the story on, run until Joyce's opening lines are up: her beat is waiting on the box. */
+function levelWithBox(): ReturnType<typeof level> & { busy: () => boolean } {
+  settings.skipDialogue = false;
+  const l = level();
+  const busy = (): boolean => (globalThis as unknown as { __ud: { play: { director: { busy(): boolean } } } }).__ud.play.director.busy();
+  for (let n = 0; n < 600 && !busy(); n++) l.tick();
+  assert.ok(busy(), 'the opening lines are up');
+  return { ...l, busy };
+}
+
+test('the pause key opens the menu over a dialogue box, and the box is still up when the menu closes', () => {
+  try {
+    const l = levelWithBox();
+    pressed = new Set(['pause']);
+    l.tick();
+    pressed = new Set();
+    assert.equal(stack.length, 1, 'the pause menu is up over the box');
+    l.tick(30);
+    pressed = new Set(['cancel']);
+    l.tick();
+    pressed = new Set();
+    assert.equal(stack.length, 0, 'back in the level');
+    assert.ok(l.busy(), 'with the box where it was');
+    pressed = new Set(['skip']);
+    l.tick();
+    pressed = new Set();
+    l.tick(5);
+    assert.ok(!l.busy(), 'and the skip key still closes it');
+  } finally {
+    settings.skipDialogue = true;
+  }
+});
+
+test('losing focus over a dialogue box holds nothing, and the pause is not queued behind the box', () => {
+  try {
+    const l = levelWithBox();
+    interrupted = true;
+    l.tick();
+    interrupted = false;
+    assert.equal(stack.length, 0, 'no menu over a box for a blur');
+    pressed = new Set(['skip']);
+    l.tick();
+    pressed = new Set();
+    l.tick(10);
+    assert.equal(stack.length, 0, 'and none after it closes');
+  } finally {
+    settings.skipDialogue = true;
+  }
 });
 
 test('an arcade run is held when focus goes, and Esc then leaves instead of holding', () => {

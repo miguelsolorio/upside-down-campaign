@@ -136,8 +136,9 @@ export const STAGE_32: StageData = {
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
   // Measured with node scripts/measure-stage.ts 3.2 chief 20 [--careless] after the lead's Grigori pass (his guard drops while he
   // recovers, softer hits, two soldiers called at half HP; rifle rounds at power 0.3), with the party a real run brings (Mike 7,
-  // Dustin 6, Robin and Nancy at 3). Chief clears 19 of 20 (89 of 100, none stuck) for about 291 damage, 0.55 KOs, 47% lowest HP (42%
-  // over 100) and 118 s, the fight 45% of it; careless 12, kid 20, upside 7.
-  enemyMult: 1.25,
+  // Dustin 6, Robin and Nancy at 3). At 1.25 the careless bot cleared 60 of 100, under chapters 1 and 2, so the difficulty pass eased
+  // it to 1.1 (docs/level-8.md, "Result"). Chief clears 18 of 20 (97 of 100, none stuck) for about 279 damage, 0.55 KOs, 49% lowest HP
+  // and 106 s, the fight 43% of it; careless 16 (80 of 100), kid 20, upside 13, normal 20 of 20 for 220 damage.
+  enemyMult: 1.1,
   waypoints: WAYPOINTS,
 };

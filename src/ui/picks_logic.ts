@@ -141,6 +141,18 @@ export function toggle(s: PicksState, i: number = s.cursor): PicksState {
   return { ...s, picked: [...s.picked, id] };
 }
 
+/**
+ * The cards that stand in the way when `toggle` refuses card `i`, for the panel to flash: the whole party when a fifth hero
+ * has no slot, the hero's own card when a locked hero can't come out. Empty when the toggle goes through, and on START.
+ */
+export function blockedBy(s: PicksState, i: number = s.cursor): number[] {
+  const id = heroAt(s, i);
+  if (!id) return [];
+  if (s.picked.includes(id)) return s.locked.includes(id) ? [i] : [];
+  if (s.picked.length < PARTY_SIZE) return [];
+  return s.pool.flatMap((p, k) => (s.picked.includes(p.id) ? [k] : []));
+}
+
 /** Moves a picked hero to the front, so they lead. A hero on the bench, or the lead already, changes nothing. */
 export function makeLead(s: PicksState, i: number = s.cursor): PicksState {
   const id = heroAt(s, i);

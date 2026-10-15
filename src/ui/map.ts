@@ -6,6 +6,7 @@ import type { CharId, HeroId, PartySeed } from '../core/types.ts';
 import type { MapNode, MapView } from '../core/mapdata.ts';
 import type { Progress } from '../core/progress.ts';
 import { CHAPTERS, chapterOf, needsPicks, pickParty, poolFor, requiredFor } from '../core/campaign.ts';
+import { shopOpen } from '../core/shop.ts';
 import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { audio } from '../audio/index.ts';
@@ -13,9 +14,11 @@ import { SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { drawMapScreen } from '../gfx/index.ts';
 import { box, inFrame } from './kit.ts';
 import { hintLine, mapNodes, startHop, startNode, stepFrom, stepHop } from './map_logic.ts';
-import type { Hop } from './map_logic.ts';
+import type { Hop, ShopHint } from './map_logic.ts';
 import { createPicksPanel } from './picks.ts';
 import type { PicksPanel } from './picks.ts';
+import { createShopPanel } from './shop.ts';
+import type { ShopPanel } from './shop.ts';
 
 export interface MapOpts {
   progress: Progress | null;
@@ -26,7 +29,7 @@ export interface MapOpts {
   onPlay(stageId: string, picks?: HeroId[]): void;
   onQuit(): void;
   /** Erica's cart closed (docs/map-screen.md, "Erica's cart"): the progress it leaves, with the purse and stash it changed.
-   *  UI builds the cart; until then nothing calls this. */
+   *  Called on every close, bought or not. The map keeps the same record, so a reopened cart starts from it. */
   onShop?(p: Progress): void;
 }
 
@@ -34,9 +37,11 @@ export interface MapOpts {
 const GRACE = 30;
 
 export function createMapScene(opts: MapOpts): Scene {
-  const nodes = mapNodes(opts.progress, opts.name);
+  // The map's own copy of the record: Erica's cart changes the purse and the stash, and a reopened cart must start from them.
+  let progress = opts.progress;
+  const nodes = mapNodes(progress, opts.name);
   const nodeOf = (id: string): MapNode | undefined => nodes.find((n) => n.id === id);
-  let sel = startNode(opts.progress);
+  let sel = startNode(progress);
   let party = opts.party(sel);
   let t = 0;
   let hop: Hop | null = null;
@@ -44,6 +49,8 @@ export function createMapScene(opts: MapOpts): Scene {
   let left = false;
   /** The party picks panel while it is open over the map. */
   let picks: PicksPanel | null = null;
+  /** Erica's cart while it is open over the map. */
+  let shop: ShopPanel | null = null;
 
   const leave = (fn: () => void): void => {
     if (left) return;
@@ -63,13 +70,25 @@ export function createMapScene(opts: MapOpts): Scene {
   /** Opens the picks panel for a stage with a pool bigger than the party, on the last party picked, fixed up for it. */
   const openPicks = (id: string): void => {
     picks = createPicksPanel({
-      pool: poolFor(id, opts.progress?.heroes ?? []),
+      pool: poolFor(id, progress?.heroes ?? []),
       locked: requiredFor(id),
-      seed: pickParty(id, opts.progress?.picks),
+      seed: pickParty(id, progress?.picks),
       onStart: (who) => leave(() => opts.onPlay(id, who)),
       onBack: () => { picks = null; },
     });
   };
+
+  /** Opens the cart once chapter 3 is reached. On close the map keeps what it left and hands it to flow to save. */
+  const openShop = (p: Progress): void => {
+    audio.sfx('confirm');
+    shop = createShopPanel({
+      progress: p,
+      onClose: (left) => { progress = left; shop = null; opts.onShop?.(left); },
+    });
+  };
+
+  /** What the hint line needs to name SHOP, or nothing before the cart is open. */
+  const cartHint = (): ShopHint | undefined => (shopOpen(progress) ? { key: labelOf('special'), pause: labelOf('pause') } : undefined);
 
   return {
     opaque: true,
@@ -80,6 +99,7 @@ export function createMapScene(opts: MapOpts): Scene {
     update(g) {
       t++;
       if (picks) { picks.update(g); return; }
+      if (shop) { shop.update(g); return; }
       if (hop) {
         const s = stepHop(hop);
         hop = s.done ? null : s.hop;
@@ -89,7 +109,11 @@ export function createMapScene(opts: MapOpts): Scene {
       // A short grace on arrival, so a confirm mashed through the results screen doesn't enter a stage at once.
       if (t < GRACE) return;
       const i = g.input;
-      if (i.pressed('cancel')) { audio.sfx('cancel'); leave(opts.onQuit); return; }
+      // Special opens the cart once chapter 3 is reached. X is special and cancel together, so this comes before cancel quits,
+      // and a touch screen's B (the same pair) leaves by START instead.
+      const cart = shopOpen(progress);
+      if (cart && progress && i.pressed('special')) { openShop(progress); return; }
+      if (i.pressed('cancel') || (cart && i.device() === 'touch' && i.pressed('pause'))) { audio.sfx('cancel'); leave(opts.onQuit); return; }
       if (i.pressed('confirm')) {
         if (nodeOf(sel)?.state === 'locked') { audio.sfx('cancel'); return; }
         audio.sfx('confirm');
@@ -112,8 +136,9 @@ export function createMapScene(opts: MapOpts): Scene {
         party: party.map((p) => ({ id: p.id, level: p.level ?? 1 })),
         chapter: CHAPTERS[chapterOf(sel)]?.title ?? '',
         stage: opts.name(sel),
-        // The picks panel prints its own legend, so the map's goes quiet while it is open.
-        hint: picks ? '' : hintLine(getPromptDevice(), labelOf('attack')),
+        // The picks panel and the cart print their own legends, so the map's goes quiet while one is open. SHOP joins it
+        // once the cart is open, and not before.
+        hint: picks || shop ? '' : hintLine(getPromptDevice(), labelOf('attack'), cartHint()),
         t,
         calm: settings.reduceFlashing,
       };
@@ -122,6 +147,7 @@ export function createMapScene(opts: MapOpts): Scene {
       inFrame(ctx, () => {
         drawMapScreen(ctx, view);
         picks?.draw(ctx);
+        shop?.draw(ctx);
       });
     },
   };

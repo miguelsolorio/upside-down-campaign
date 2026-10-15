@@ -173,7 +173,7 @@ test('hints name the keyboard, the controller or the touch screen, never another
   assert.match(pad, /\bA\b/);
   assert.match(pad, /\bB\b/);
   assert.doesNotMatch(pad, /ARROWS|ESC|\bZ\b/);
-  assert.match(touch, /D-PAD/);
+  assert.match(touch, /DPAD/);
   assert.match(touch, /\bA\b/);
   assert.match(touch, /\bB\b/);
   assert.doesNotMatch(touch, /ARROWS|ESC|STICK/);
@@ -188,5 +188,6 @@ test('hints name the keyboard, the controller or the touch screen, never another
 test('the map scene names its keys through bindings, not literals of its own', () => {
   const scene = readFileSync(new URL('../src/ui/map.ts', import.meta.url), 'utf8');
   assert.match(scene, /labelOf\('attack'\)/);
+  assert.match(scene, /labelOf\('special'\)/, 'the SHOP key is named through bindings too');
   assert.match(scene, /getPromptDevice\(\)/);
 });

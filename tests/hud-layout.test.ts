@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects, stashCells } from '../src/ui/hudlayout.ts';
+import { STASH_ART } from '../src/ui/hudstash.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { XP_NOTCHES, notchSpans } from '../src/ui/format.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
@@ -234,4 +235,40 @@ test('the active hero\'s name and level are one button, over the text and clear 
   }
   assert.equal(levelRect([]), null, 'no party, no button');
   assert.ok(!onLevel([], 30, 4));
+});
+
+test('Erica\'s stash rides the MP column\'s caption row: past the MP caption, inside the bar\'s width, clear of the coins and the bench', () => {
+  const mpCaption = 'MP'.length * 4 - 1;
+  assert.ok(STASH_X >= MP_X + mpCaption + 2, 'at least 2 px past the MP caption');
+  assert.equal(STASH_Y, CAPTION_Y, 'on the caption row');
+  const cell = (item: 'eggo' | 'coke'): number => STASH_ICON_W[item] + 1 + 3 + STASH_CELL_GAP;
+  // Both items, three of each: the widest it gets.
+  const both = stashCells({ eggo: 3, coke: 3 });
+  assert.deepEqual(both.map((c) => [c.item, c.x, c.count]), [['eggo', STASH_X, 3], ['coke', STASH_X + cell('eggo'), 3]]);
+  const last = both[1] as { x: number };
+  const end = last.x + STASH_ICON_W.coke + 1 + 3;
+  assert.ok(end <= MP_X + MP_BAR_W, `the stash ends at ${end}, past the MP bar's end at ${MP_X + MP_BAR_W}`);
+  assert.ok(end + 6 <= COIN_X, 'and six px short of the coins');
+  assert.ok(end < BENCH_START - 40, 'nowhere near the bench');
+  assert.ok(STASH_Y + 5 < VALUE_Y, 'the 5 px icons end above the value row, so they never touch the MP bar');
+  for (const d of '0123456789') assert.ok(TINY_GLYPHS[d], `the tiny font has ${d}`);
+});
+
+test('the stash shows only what the party carries, and the second item slides left into a gap', () => {
+  assert.deepEqual(stashCells({ eggo: 0, coke: 0 }), [], 'an empty stash draws nothing');
+  assert.deepEqual(stashCells(undefined), []);
+  assert.deepEqual(stashCells({ eggo: 2, coke: 0 }).map((c) => [c.item, c.x, c.count]), [['eggo', STASH_X, 2]]);
+  assert.deepEqual(stashCells({ eggo: 0, coke: 1 }).map((c) => [c.item, c.x, c.count]), [['coke', STASH_X, 1]]);
+  assert.deepEqual(stashCells({ eggo: 12, coke: -2 }).map((c) => c.count), [9], 'a count is one digit, and never negative');
+});
+
+test('the mini icons are as wide as the layout says and as tall as the caption row', () => {
+  for (const item of ['eggo', 'coke'] as const) {
+    const art = STASH_ART[item];
+    assert.equal(art.rows.length, 5, `${item} is 5 px tall`);
+    for (const row of art.rows) {
+      assert.equal(row.length, STASH_ICON_W[item], `${item} rows are ${STASH_ICON_W[item]} wide`);
+      for (const ch of row) assert.ok(ch === '.' || art.map[ch], `${item} uses only colors it names`);
+    }
+  }
 });

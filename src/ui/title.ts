@@ -5,6 +5,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { audio } from '../audio/index.ts';
+import { loadProgress } from '../core/progress.ts';
 import { hasSave } from '../core/save.ts';
 import { inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
@@ -61,7 +62,7 @@ function fadeOut(ctx: Ctx, level: number): void {
 export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scene {
   let t = 0;
   let open = false;
-  /** With a save on disk, PRESS START gives way to CONTINUE and NEW GAME. NEW GAME asks twice. */
+  /** With a save on disk, or campaign progress for the map, PRESS START gives way to CONTINUE and NEW GAME. NEW GAME asks twice. */
   let saved = false;
   let armed = false;
   /** 0 until START is chosen, then counts frames up to LAUNCH_FRAMES while the party walks off. */
@@ -131,7 +132,7 @@ export function createTitleScene(opts: { onStart(mode: StartMode): void }): Scen
       open = false;
       launch = 0;
       armed = false;
-      saved = hasSave();
+      saved = hasSave() || loadProgress() !== null;
       buildMain();
       main.sel = 0;
       build(g);

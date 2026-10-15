@@ -5,6 +5,8 @@ import type { SfxId, Utility } from '../core/types.ts';
 import { HERO_DEFS, critChance } from '../heroes/defs.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
+import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
+import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
@@ -51,6 +53,8 @@ export interface HitOpts {
   shake?: number;
   /** Ignores a guard's shield: the crit. */
   pierce?: boolean;
+  /** Eleven's Mind Blast beam: the only thing that hurts a pinned Demogorgon. */
+  beam?: boolean;
 }
 
 /** Makes an enemy notice the hero, and its group-mates within earshot. */
@@ -69,6 +73,9 @@ export function alertEnemy(s: S, e: Enemy): void {
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.dead || e.dormant || e.hp <= 0) return 0;
+  const boss = e.demo !== null;
+  // A pinned Demogorgon shrugs off everything but the beam. It reports the try and takes nothing.
+  if (boss && demoPoke(s, by.id, e, o.beam === true)) return 0;
   const spread = spreadRoll(s.rng);
   const critRoll = s.rng();
   // A guard with its shield up stops a hit that comes from inside its front arc. The rolls above are drawn either way.
@@ -84,6 +91,11 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   let dmg = rollDamage(o.power, heroAtk(s, by), e.def, spread);
   if (crit) dmg *= 2;
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
+  // Dazed against a wall, the Demogorgon takes half again as much.
+  if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS.demogorgon.x.stunMul);
+  // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
+  if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
+  if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
   const dealt = Math.min(dmg, e.hp);
   e.hp -= dmg;
   e.flash = 1;
@@ -91,13 +103,17 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   e.by = by.id;
   e.noLure = 240;
 
-  const kb = (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const rooted = e.kind === 'vine' || e.kind === 'pod';
+  const kb = (boss && demoImmovable(e)) || rooted ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
     e.vy += Math.sin(a) * kb;
   }
-  if (!shielded) {
+  if (boss) {
+    // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.
+    demoSettle(s, e, o.beam === true, by.id);
+  } else if (!shielded) {
     e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));
     if (e.mode === 'windup' || e.mode === 'lunge') { e.mode = 'chase'; e.modeT = 0; }
   } else {
@@ -112,7 +128,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
       cancelAttack(s, e);
     }
   }
-  if (o.stun) e.stat.stun = Math.max(e.stat.stun, o.stun);
+  if (o.stun && !boss) e.stat.stun = Math.max(e.stat.stun, o.stun);
   if (o.burn) {
     e.stat.burn = Math.max(e.stat.burn, o.burn.frames);
     e.stat.burnTick = Math.min(e.stat.burnTick || o.burn.tick, o.burn.tick);

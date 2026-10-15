@@ -86,6 +86,8 @@ export interface ToneOpts {
   /** Glide to this frequency over the gate. */
   to?: number;
   vib?: Vib;
+  /** Cents off pitch for the whole note. */
+  detune?: number;
   /** Where to feed the echo, and how much. */
   send?: AudioNode;
   sendAmt?: number;
@@ -99,6 +101,7 @@ export function tone(ctx: BaseAudioContext, dest: AudioNode, o: ToneOpts): Audio
   const osc = ctx.createOscillator();
   osc.setPeriodicWave(waves(ctx)[o.wave]);
   osc.frequency.setValueAtTime(o.freq, o.t);
+  if (o.detune) osc.detune.value = o.detune;
   if (o.arp && o.arp.length && o.arpRate) {
     for (let k = 0; k * o.arpRate < o.gate; k++) {
       osc.frequency.setValueAtTime(o.freq * Math.pow(2, o.arp[k % o.arp.length] / 12), o.t + k * o.arpRate);
@@ -218,6 +221,8 @@ export const DRUM_DEFS: Record<Drum, DrumDef> = {
   tock: { mode: 7, clock: 4300, vol: 0.32, filter: { type: 'bandpass', freq: 1700, q: 3 } },
   swell: { mode: 15, clock: 11000, vol: 0.18, rise: 1.5, filter: { type: 'lowpass', freq: 1800, freqEnd: 900, q: 0.5 } },
   crack: { mode: 7, clock: 20000, vol: 0.1, filter: { type: 'highpass', freq: 3000, q: 0.7 } },
+  // A gust: breath in over 0.7 s, then it falls away. The pass band climbs, so it leans like wind round a corner.
+  wind: { mode: 15, clock: 22000, vol: 0.2, rise: 0.7, filter: { type: 'bandpass', freq: 380, freqEnd: 820, q: 1.3 } },
 };
 
 /** One hit of the noise channel's kit. It rings for DRUM_SECONDS, which the compiler leaves room for. */

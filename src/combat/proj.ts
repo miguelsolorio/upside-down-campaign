@@ -6,12 +6,12 @@ import { activeHero } from './state.ts';
 import { angleDiff, BODY_Y, pointSolid, propBlocks } from './space.ts';
 import { sparks, sfx } from './fx.ts';
 import { hitEnemy, hurtHero, heroAtk } from './damage.ts';
-import { isTargetFor, lightTarget } from './props.ts';
+import { hitProp, isTargetFor, lightTarget } from './props.ts';
 import { BURN_PERIOD } from './status.ts';
 
 export function newProj(p: Partial<Proj> & Pick<Proj, 'kind' | 'mine' | 'x' | 'y' | 'vx' | 'vy' | 'life' | 'r'>): Proj {
   return {
-    age: 0, by: null, power: 1, kb: 0, atk: 0, util: null, hit: [], lob: null, ox: p.x, oy: p.y + BODY_Y, pierce: 0, ...p,
+    age: 0, by: null, power: 1, kb: 0, atk: 0, util: null, hit: [], lob: null, end: null, ox: p.x, oy: p.y + BODY_Y, pierce: 0, ...p,
   };
 }
 
@@ -51,6 +51,8 @@ function collide(s: S, p: Proj, hero: Hero): boolean {
     for (const e of s.enemies) {
       if (e.dead || e.dormant || e.hp <= 0 || p.hit.includes(e.uid)) continue;
       if (Math.abs(p.x - e.x) > HURT_HALF_W + p.r || p.y < e.y - HURT_H - p.r || p.y > e.y + p.r) continue;
+      // A fireball bursts on the first enemy it touches, and the burst does the hitting.
+      if (p.end) return false;
       p.hit.push(e.uid);
       hitEnemy(s, by, e, { power: p.power, kb: p.kb, angle: Math.atan2(p.vy, p.vx), sfx: 'rockHit', util: p.util ?? undefined });
       if (p.pierce <= 0) return false;
@@ -86,7 +88,7 @@ export function updateProjectiles(s: S): void {
       alive = collide(s, p, hero);
     }
     if (p.age >= p.life) alive = false;
-    if (alive) keep.push(p);
+    if (alive) keep.push(p); else if (p.end) p.end(p.x, p.y);
   }
   s.projs = keep;
 }
@@ -113,7 +115,7 @@ function updateZone(s: S, z: Zone): void {
     if (!isTargetFor(pr, 'burn')) continue;
     const cx = Math.max(pr.x, Math.min(z.x, pr.x + pr.w)), cy = Math.max(pr.y, Math.min(z.y + BODY_Y, pr.y + pr.h));
     const dx = cx - z.x, dy = cy - BODY_Y - z.y;
-    if (Math.hypot(dx, dy) <= z.r && angleDiff(Math.atan2(dy, dx), z.angle) <= z.half + 0.3) lightTarget(s, pr);
+    if (Math.hypot(dx, dy) <= z.r && angleDiff(Math.atan2(dy, dx), z.angle) <= z.half + 0.3) hitProp(s, pr);
   }
 }
 

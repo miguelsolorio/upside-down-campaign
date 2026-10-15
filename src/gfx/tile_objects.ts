@@ -1,4 +1,4 @@
-// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts.
+// Solid tiles: trees, bushes, rocks, stumps, fences, the Byers house, the shed, the lamp and the mailbox. The lab walls, pipes, glass and cages are in tile_lab.ts, the lockers, benches, cabinets, shelves, mass and wall signs in tile_lab3.ts, the school's walls in tile_school2.ts and its furniture in tile_school3.ts, the street in tile_town.ts, the patch in tile_patch.ts and the barn and corn in tile_barn.ts.
 // Trees read their neighbours so a forest is one canopy with trunks only along its south edge.
 import type { TileName } from '../core/tiles.ts';
 import { hash2 } from './canvas.ts';
@@ -8,13 +8,19 @@ import type { TileCtx } from './tile_ground.ts';
 import type { ColorName } from './palette.ts';
 import { labObject } from './tile_lab.ts';
 import { lab2Object } from './tile_lab3.ts';
+import { schoolWall } from './tile_school2.ts';
+import { schoolFurniture } from './tile_school3.ts';
+import { townObject } from './tile_town.ts';
+import { patchObject } from './tile_patch.ts';
+import { barnObject } from './tile_barn.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
-  'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines',
+  'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines', 'schoolfloor', 'checker', 'gymfloor',
+  'arcadecarpet', 'sidewalk', 'furrow', 'rot',
 ]);
 /** Floors that are a mark on another floor: an object beside one stands on the plain floor named here, unless a plain floor is also beside it. */
-const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet' };
+const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet', rot: 'furrow' };
 
 /** The ground an object stands on: whatever its neighbours are, else the given default. */
 function under(c: TileCtx, prefer: TileName): Px {
@@ -302,6 +308,29 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
     case 'mass':
     case 'wallsign':
       return lab2Object(name, c, rngFor(c, name), under);
+    case 'schoolwall':
+    case 'schoolcap':
+    case 'lockerwall':
+    case 'chalkboard':
+    case 'trophy':
+    case 'brick':
+      return schoolWall(name, c, rngFor(c, name));
+    case 'desk':
+    case 'table':
+    case 'counter':
+    case 'bleachers':
+      return schoolFurniture(name, c, rngFor(c, name), under);
+    case 'arcadewall':
+    case 'storefront':
+      return townObject(name, c, rngFor(c, name));
+    case 'pumpkin':
+    case 'rotpumpkin':
+    case 'haybale':
+      return patchObject(name, c, rngFor(c, name), under);
+    case 'barnwall':
+    case 'barnroof':
+    case 'corn':
+      return barnObject(name, c, rngFor(c, name));
     default: return null;
   }
 }

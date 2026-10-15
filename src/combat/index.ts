@@ -35,6 +35,23 @@
 //   { t: 'spotted', propId } once per spotting. PropView.cam is the live cone: angle and half in radians, range in px.
 //   A shot lights it (hitBy defaults to 'shoot') and a lit camera is off for good, which openProps restores. Cameras are
 //   not solid. tank, rack and generator are solid by default and do nothing else.
+// - The Demogorgon (enemies/demogorgon.ts, enemies/demo_hit.ts) sets view().actors[].pose and .petals, fills view().hud.boss
+//   with the name DEMOGORGON while it is awake, and adds 'mark' and 'acid' effects (the header of demogorgon.ts says how they
+//   are sized). Its HP holds at 1 until three wall stuns. Then the hit that would finish it pins it: { t: 'pinned', spawnId }
+//   once, no more attacks, and only Eleven's Mind Blast beam hurts it. Any other hit on it is { t: 'poked', propId: <its spawn
+//   id>, hero } and does nothing. The beam kills it with a normal kill and groupCleared.
+// - vines (hitBy 'burn', solid by default) burn under Dustin's spray: a sizzle and flames, then propCleared 30 frames later, open
+//   and not solid. firebox (hitBy 'shoot') lights like a console. A van with pushBy 'push' clears like a crate. All three, when
+//   they ask for something, report a try as 'poked' like a gate does.
+// - Will (heroes/will.ts, heroes/cold.ts): his bolt is a 'bolt' fx, his Fireball a small 'flame' in flight and a 'blast' (w and h
+//   the diameter) where it bursts. A d20 from the sim's rng sizes the burst: radius 16 plus the roll, a 1 is a FIZZLE and no
+//   damage, a 20 doubles it and floats NAT 20. From Lv 3, while he is the active hero, enemies spawned `hidden: true` within 72 px
+//   have ActorView.hidden false (it is true for them otherwise, until they strike) and take 15 percent more damage. A prop
+//   `hidden` (hitBy 'sense', solid by default) is shown when the active hero has that utility within 40 px of it: a 'reveal' sfx and
+//   fx, propCleared, open and walkable. Any other hero pushing or hitting it is a try ('poked').
+// - Level 4's enemies (enemies/demodog.ts, vine.ts, pod.ts): a demodog circles, winds up for 28 frames and lunges; only one in a pack
+//   does either at a time. Vines and pods are rooted. A vine's lash and a pod's spore cloud slow the hero (his tint is purple, his
+//   speed 0.55 for 90 frames). A pod that bursts dies for no XP; a vine takes double from fire. 'spore' fx: w the cloud's diameter.
 // - A prop spawned with smash: true (a camera, a console) also lights for any hero's basic attack that starts within
 //   18 px of it, aimed its way (props.ts), whatever its hitBy asks for.
 import type { Sim, SimOptions } from '../core/types.ts';

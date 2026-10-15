@@ -2,7 +2,7 @@
 
 ![Dustin, Mike, Eleven and Lucas on a path into the woods, under the red Stranger Things logo](public/social/og.png)
 
-An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement, and you play it: a party of four, real-time fights, a d20 behind every level-up. This build is Levels 1 and 2 (Mirkwood and Hawkins Lab). It's here for feedback before the rest gets built.
+An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement, and you play it: a party of four, real-time fights, a d20 behind every level-up. This build is Levels 1 to 4 (Mirkwood, Hawkins Lab, the middle school and the Demogorgon, and the arcade and pumpkin patch that open chapter 2), joined by a Hawkins map between stages. It's here for feedback before the rest gets built.
 
 **[Play it in your browser](https://miguelsolorio.github.io/upside-down-campaign/).** It works with a keyboard, an Xbox controller, a mouse or a touch screen.
 

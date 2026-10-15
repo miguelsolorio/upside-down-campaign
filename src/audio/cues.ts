@@ -7,6 +7,8 @@ import type { Env, Vib, Wave } from './tracks/types.ts';
 
 const HELD: Env = { a: 0.004, d: 0.05, s: 0.85, r: 0.06 };
 const VIB: Vib = { rate: 5.5, cents: 24, delay: 0.12 };
+/** Billy's growl: a wobble fast enough to roughen the tone, not to be heard as a pitch. Its depth fades in over the blip. */
+const GROWL: Vib = { rate: 38, cents: 160, delay: 0 };
 
 /** Plays a cue starting at context time t. */
 export function playCue(ctx: BaseAudioContext, dest: AudioNode, cue: Cue, t: number): void {
@@ -50,6 +52,8 @@ interface BlipDef {
   attack: number;
   /** Slide this many semitones over the blip. Steve's sags and Hopper's drops, which is how they sound unimpressed. */
   bend?: number;
+  /** A fast, wide vibrato that roughens the tone into a growl. The depth fades in, so a short blip gets a part of it. */
+  rough?: Vib;
 }
 
 /** One voice per speaker, from the table in the design doc. The narrator is quiet on purpose. */
@@ -74,8 +78,11 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   robin: { wave: 'p25', midi: 77, spread: 4, dur: 0.028, vol: 0.22, attack: 0.001, bend: 1 },
   nancy: { wave: 'tri', midi: 55, spread: 1, dur: 0.07, vol: 0.38, attack: 0.012 },
   erica: { wave: 'p50', midi: 83, spread: 2, dur: 0.03, vol: 0.14, attack: 0.001 },
-  // A stand-in for Billy until Audio voices him (docs/level-9.md): Steve's mid square, a little lower.
-  billy: { wave: 'p50', midi: 57, spread: 2, dur: 0.06, vol: 0.2, attack: 0.004, bend: -1 },
+  // Billy is a low square, a fourth under Lucas's and above Hopper's saw, hard-edged and rough: a fast, wide wobble
+  // roughens it into a growl, and every blip drops three semitones, a good deal further than Steve's or Hopper's one.
+  // He never speaks while he fights, so it is heard in one short line, and it has to read as him. His level is set by
+  // ear-weighted energy like the others: a low square needs more peak than a bright one to be heard as loud.
+  billy: { wave: 'p50', midi: 50, spread: 2, dur: 0.07, vol: 0.23, attack: 0.002, bend: -3, rough: GROWL },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };
@@ -95,5 +102,6 @@ export function playBlip(
     gate: b.dur,
     vol: b.vol,
     env: { a: b.attack, d: b.dur * 0.6, s: 0.55, r: 0.015 },
+    vib: b.rough,
   });
 }

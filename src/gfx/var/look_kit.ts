@@ -14,8 +14,8 @@ export const ROOM_W = COLS * TILE, ROOM_H = ROWS * TILE;
 /** What a tile painter knows about its place: its letter, the variant (0 to 3) and the letters around it ('#' past the edge). */
 export interface TC { ch: string; tx: number; ty: number; v: number; n: string; s: string; e: string; w: string }
 
-/** A thing laid over the tiles, at room pixels x, y. */
-export interface Prop { px: Px; x: number; y: number }
+/** A thing laid over the tiles, at room pixels x, y. An actor sets `actor`, so the night pass leaves it as the game draws it. */
+export interface Prop { px: Px; x: number; y: number; actor?: boolean }
 
 /** A light pool: center in room px, radius, strength 0 to 1. */
 export type Light = readonly [number, number, number, number];
@@ -90,8 +90,10 @@ export function roomPx(room: Room, look: StageLook, phase: number): Px {
       out.blit(lit(look, tileKey(c, phase), () => look.tile(c, phase)), tx * TILE, ty * TILE);
     }
   }
-  look.props(phase).forEach((p, i) => out.blit(lit(look, `p${i}|${phase}`, () => p.px), p.x, p.y));
+  const props = look.props(phase);
+  props.forEach((p, i) => { if (!p.actor) out.blit(lit(look, `p${i}|${phase}`, () => p.px), p.x, p.y); });
   if (look.night && look.lights.length) pools(out, look.lights, look.glow);
+  for (const p of props) if (p.actor) out.blit(p.px, p.x, p.y);
   return out;
 }
 
@@ -105,7 +107,7 @@ export function legend(room: Room, look: StageLook, phase: number): { name: stri
     out.push({ name: t.name, px: lit(look, tileKey(cc, phase), () => look.tile(cc, phase)) });
   }
   const props = look.props(phase);
-  room.props.forEach((name, i) => { const p = props[i]; if (p) out.push({ name, px: lit(look, `p${i}|${phase}`, () => p.px) }); });
+  room.props.forEach((name, i) => { const p = props[i]; if (p) out.push({ name, px: p.actor ? p.px : lit(look, `p${i}|${phase}`, () => p.px) }); });
   return out;
 }
 

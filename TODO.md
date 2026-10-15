@@ -10,7 +10,7 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Art: `heroes2-variations.html` (Max, Steve, Hopper), `alpha-variations.html`, `tunnel-variations.html`, sent to the owner one image per option
 - [x] Sim B: the Alpha, the seals, run-time spawns, the defense (850 tests pass). The Alpha's ATK is 26, not the spec's 34: at 34 the bot never won the den
 - [ ] UI: `picks-variations.html`
-- [ ] Owner picks from the four sheets
+- [ ] Owner picks from the four sheets. Heroes picked: Max Walkman, Steve Letterman, Hopper Uniform. Alpha, tunnels and the picks panel still open
 - [x] World 2.2: the tunnels at `enemyMult` 1.25, 166 XP. Chief 18 of 20 (252 damage, 1.6 KOs, 34% low, 101 s), 100 seeds 90 cleared and none stuck, careless 19, kid 20, upside 8
 - [x] A knocked-out hero stands back up when the party tries a gate only they can open (it soft-locked 2.2 at a gap)
 - [ ] Paused at 84% of the 5-hour window (19:52 PT). Next after the 20:40 reset: UI picks sheet and World 2.3

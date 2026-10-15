@@ -11,8 +11,11 @@ export interface PlayOptions {
   party: PartySeed[];
   /** Pick up from this save instead of the stage start. Its party replaces `party`. */
   resume?: SaveData;
-  /** Fired when the level-clear beat finishes. */
-  onClear(result: { stats: RunStats; party: HeroSnapshot[] }): void;
+  /**
+   * Fired when the level-clear beat finishes. `quarters` is every quarter the whole run picked up, retries and CONTINUEs included
+   * (the play scene banks them at each lit light, SaveData.quarters), where stats.quarters only counts since the last retry.
+   */
+  onClear(result: { stats: RunStats; party: HeroSnapshot[]; quarters?: number }): void;
   onQuit(): void;
   /** Pause menu, START OVER: the save is wiped and the level begins again. */
   onStartOver(): void;

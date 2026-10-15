@@ -25,6 +25,9 @@ export interface MapOpts {
   /** `picks` is who goes, lead first, from the party picks panel. A stage that needs no picks calls it without. */
   onPlay(stageId: string, picks?: HeroId[]): void;
   onQuit(): void;
+  /** Erica's cart closed (docs/map-screen.md, "Erica's cart"): the progress it leaves, with the purse and stash it changed.
+   *  UI builds the cart; until then nothing calls this. */
+  onShop?(p: Progress): void;
 }
 
 /** Frames the map ignores input for after it opens. */

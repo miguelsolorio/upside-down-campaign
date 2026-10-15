@@ -5,7 +5,7 @@ import type { Game } from './core/scene.ts';
 import type { HeroId, PartySeed } from './core/types.ts';
 import { CHAPTERS, STAGE_ORDER, chapterOf, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
 import { flags } from './core/flags.ts';
-import { clearProgress, loadProgress, recordClear, withPicks, writeProgress } from './core/progress.ts';
+import { clearProgress, loadProgress, purseOf, recordClear, spendStash, stashOf, withPicks, withPurse, writeProgress } from './core/progress.ts';
 import type { Progress } from './core/progress.ts';
 import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
@@ -63,6 +63,8 @@ export function startGame(g: Game): void {
       if (picks) { progress = withPicks(progress, picks); writeProgress(progress); }
       toStage(id, partyFor(id, known(), picks ?? progress?.picks));
     },
+    // Erica's cart (docs/map-screen.md): what it leaves in the purse and the stash is saved at once.
+    onShop: (p) => { progress = withPurse(progress, purseOf(p), stashOf(p)); writeProgress(progress); },
     onQuit: toTitle,
   }));
   /** A stage opens on its own card, unless the story is skipped. A chapter's first stage shows the chapter the first time. */
@@ -82,9 +84,15 @@ export function startGame(g: Game): void {
       time: flags.time ?? undefined,
       party,
       resume,
-      onClear: ({ stats, party: after }) => {
-        // Progress marks the stage and keeps every hero at their best. The map is the way on, so the stage save goes.
-        progress = recordClear(progress, id, after);
+      // The purse and Erica's stash ride into every stage. An item the sim spends is written back at once, so a retry or a quit
+      // never gives it back.
+      purse: purseOf(progress),
+      stash: () => stashOf(progress),
+      onStashUsed: (item) => { progress = spendStash(progress, item); writeProgress(progress); },
+      onClear: ({ stats, party: after, quarters }) => {
+        // Progress marks the stage, keeps every hero at their best and banks the run's quarters. The map is the way on, so the
+        // stage save goes.
+        progress = recordClear(progress, id, after, quarters ?? stats.quarters);
         writeProgress(progress);
         clearSave();
         g.scenes.go(createResultsScene({

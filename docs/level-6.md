@@ -167,3 +167,27 @@ Art builds only after the owner picks from the variation sheets. The owner picke
 ## Variation sheet
 
 `alpha-variations.html` at the project root, made like the sheets in `docs/level-5.md`: five designs for the Demodog Alpha, each with the walk, the howl and the leap, at 1x and zoomed, next to a young demodog for scale.
+
+## Result
+
+Measured with `node scripts/measure-stage.ts 2.3` at `enemyMult` 1. "Boss" in the script's output runs from the `alpha` beat to the finish, the defense included.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 19 | 97, none stuck | 20 of 20 | 20 | 6 |
+| Eleven fell | 1 | 2 | 0 | 0 | 2 |
+| Damage taken | 426 | 425 | 404 | 180 | 660 |
+| KOs | 0.8 | 0.68 | | | |
+| Lowest party HP | 38% | 37% | | | |
+| Time | 116 s | 116 s | | | |
+| Boss time | 81 s (69%) | | | | |
+
+Stage XP is 156, the run-time pups at 1 each.
+
+- **Two bands are out.** Damage taken is about 425, not 150 to 300, because the 45 s defense comes on top of a whole stage. The boss share is about 70 percent, not half, because the defense alone is 45 of the 116 seconds. The Alpha fight itself takes about 17 s.
+- **The spec's Alpha and defense were a cliff.** At 1100 HP and 34 ATK with 23 defense dogs, the bot won 35 of 40 at an effective factor of 1.0 and 4 of 40 at 1.1. The dogs piled up faster than the party killed them, and the stage had to sit at 0.7 for upside to clear at all, which left chief with no KOs. Now:
+  - the Alpha has 700 HP and 16 ATK
+  - the defense is 17 dogs, one elite, and no wave is bigger than three
+  - Eleven has 160 HP
+- **The Gate lights itself.** Hopper strung the lights: the `gate` beat lights `lights_gate` with a new `light` step, the same save point and heal as a player's press. The defense always starts with the party healed, and a loss always retries at the Gate. The bot never lights anything, so without it the measure undersold what a player gets.
+- **A retry keeps the boss track and a broken crack.** A `?bot=1` run restarts from the lights after a loss.

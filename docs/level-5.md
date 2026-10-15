@@ -151,3 +151,22 @@ The owner picks the look before Art builds. Art makes two standalone pages at th
 - `tunnel-variations.html`: four or five looks for the tunnels, each as one sample room at night: floor, cap and wall, roots, veins, a nest, a `gap` and a `crack`.
 
 The third sheet, the Alpha, is in `docs/level-6.md`. The picks panel sheet is in `docs/map-screen.md`.
+
+## Result
+
+Measured with `node scripts/measure-stage.ts 2.2` at `enemyMult` 1.25, on the chapter 2 enemy numbers. "Boss" in the script's output is the ambush.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 18 | 90, none stuck | 19 of 20 | 20 | 8 |
+| Damage taken | 252 | 270 | 260 | 136 | 446 |
+| KOs | 1.6 | 1.66 | | | |
+| Lowest party HP | 34% | 32% | | | |
+| Time | 101 s | 102 s | | | |
+
+Stage XP is 166.
+
+- **The roster is smaller than the spec's.** Its 18 demodogs came to about 220 XP, so the stage has 14 (two of them elite), two vines and four pods.
+- **A knocked-out Max soft-locked the stage at a gap.** Nobody else can cross and Eggos don't revive. Now a try at a gate that only knocked-out heroes can open stands the first of them back up (see "Puzzles"). The three gaps also come before the packs the bot fights as Max.
+- **The crack's hint beat fires when the bot walks through the junction.** The crack itself stays shut in a bot run, and the cache with it.
+- **Retries keep a crossed gap and a broken crack open**, the way they keep every other gate.

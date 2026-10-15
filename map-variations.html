@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hawkins Map Designs</title>
+<meta name="description" content="Five designs for the Hawkins map between stages, drawn with the game's own code, beside the current one.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; max-width: 100%; height: auto; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .lbl { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .seg { display: inline-flex; border: 2px solid var(--dusk); }
+  .seg button { border: 0; background: var(--ink); padding: 6px 12px; font: 600 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .seg button + button { border-left: 2px solid var(--dusk); }
+  .seg button[aria-pressed="true"] { background: var(--dusk); color: var(--cream); }
+  .chk { display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  h2.sec { margin: 30px 0 4px; font-size: 22px; }
+  .sub { margin: 0 0 14px; color: var(--mist); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 18px; }
+  .card { border: 2px solid var(--shadow); padding: 14px; background: var(--night); }
+  .head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .badge { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 16px/1 var(--mono); }
+  .ref .badge { background: var(--dusk); color: var(--bone); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .head h3 { margin: 0; font-size: 18px; }
+  .blurb { margin: 0 0 10px; color: var(--mist); min-height: 3em; }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Map review</p>
+  <h1>Five designs for the Hawkins map</h1>
+  <p>The screen between stages: walk the party to a stage, see who is coming, and see what's still locked. Each card draws the whole 256 by 224 screen with the game's own sprites, font and palette, at 2x. The first card is the map in the game now, for comparison.</p>
+  <p>Change the state above to see each design at the start of the campaign, after the school, and with everything cleared. Walk sends the token back and forth between the last two open stages.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <div class="group"><span class="lbl" id="stLbl">State</span><div class="seg" id="state" role="group" aria-labelledby="stLbl"></div></div>
+  <label class="chk"><input id="walk" type="checkbox" checked> Walk</label>
+  <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+  <label class="chk"><input id="calm" type="checkbox"> Reduce flashing</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The designs</h2>
+  <p class="sub">Pick the one you like, by number.</p>
+  <div class="grid" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx, drawMap, drawText } from '/src/gfx/index.ts';
+import { VARIANTS } from '/src/gfx/mapvar/index.ts';
+import { MAP_NODES, MAP_PLACE } from '/src/core/mapdata.ts';
+import { CHAPTERS, partyFor, STAGE_ORDER, STAGES_AHEAD } from '/src/core/campaign.ts';
+import { stageName } from '/src/world/index.ts';
+
+initGfx();
+
+const ALL = [...STAGE_ORDER, ...STAGES_AHEAD];
+const NAMES = { '2.2': 'The tunnels', '2.3': 'The gate' };
+const nameOf = (id) => (STAGE_ORDER.includes(id) ? stageName(id) : NAMES[id] ?? id).toUpperCase();
+const WORDS = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
+
+// What the party looks like at each point, so the band at the bottom has real levels.
+const HEROES = {
+  start: [{ id: 'mike', level: 3, xp: 0 }, { id: 'dustin', level: 3, xp: 0 }, { id: 'lucas', level: 3, xp: 0 }, { id: 'eleven', level: 2, xp: 0 }],
+  school: [{ id: 'mike', level: 5, xp: 0 }, { id: 'dustin', level: 4, xp: 0 }, { id: 'lucas', level: 4, xp: 0 }, { id: 'eleven', level: 4, xp: 0 }],
+  done: [{ id: 'mike', level: 5, xp: 0 }, { id: 'dustin', level: 5, xp: 0 }, { id: 'lucas', level: 4, xp: 0 }, { id: 'eleven', level: 4, xp: 0 }, { id: 'will', level: 4, xp: 0 }],
+};
+const STATES = {
+  start: { label: 'After Mirkwood', cleared: 1, heroes: HEROES.start },
+  school: { label: 'After the school', cleared: 3, heroes: HEROES.school },
+  done: { label: 'All cleared', cleared: 4, heroes: HEROES.done },
+};
+const st = { state: 'school', walk: true, anim: true, calm: false, t: 0 };
+
+function nodesFor(cleared) {
+  return ALL.map((id, i) => ({
+    id, place: MAP_PLACE[id], name: nameOf(id),
+    state: i < cleared ? 'cleared' : i === cleared && i < STAGE_ORDER.length ? 'open' : 'locked',
+  }));
+}
+
+/** The view for this frame: the token rests on the last open node, or walks between it and the one before. */
+function viewAt(t) {
+  const s = STATES[st.state];
+  const nodes = nodesFor(s.cleared);
+  const open = nodes.filter((n) => n.state !== 'locked');
+  const last = open[open.length - 1].id, prev = (open[open.length - 2] ?? open[0]).id;
+  let selected = last, walk = null;
+  if (st.walk && last !== prev) {
+    // 90 frames standing, 120 walking, each way.
+    const c = t % 420, k = (f) => Math.min(1, Math.max(0, f / 120));
+    if (c < 90) selected = last;
+    else if (c < 210) { selected = prev; walk = { from: last, to: prev, k: k(c - 90) }; }
+    else if (c < 300) selected = prev;
+    else { selected = last; walk = { from: prev, to: last, k: k(c - 300) }; }
+  }
+  const party = partyFor(selected, s.heroes).map((p) => ({ id: p.id, level: p.level ?? 1 }));
+  const ch = Number.parseInt(selected, 10);
+  return {
+    nodes, selected, walk, lead: party[0]?.id ?? 'mike', party,
+    chapter: `CHAPTER ${WORDS[ch] ?? ch}`, stage: nameOf(selected),
+    hint: 'ARROWS MOVE  Z PLAY  ESC BACK', t, calm: st.calm,
+  };
+}
+
+/** The current map, drawn the way ui/map.ts draws it, for the reference card. */
+function drawCurrent(ctx, v) {
+  const at = (id) => MAP_NODES[id];
+  let pos = at(v.selected);
+  if (v.walk) { const a = at(v.walk.from), b = at(v.walk.to); pos = { x: a.x + (b.x - a.x) * v.walk.k, y: a.y + (b.y - a.y) * v.walk.k }; }
+  drawMap(ctx, { nodes: v.nodes.map((n) => ({ id: n.id, x: at(n.id).x, y: at(n.id).y, state: n.state, place: n.place })), token: { x: pos.x, y: pos.y, who: v.lead, walking: !!v.walk }, selected: v.selected, t: v.t });
+  ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, 256, 14); ctx.fillRect(0, 176, 256, 48);
+  drawText(ctx, v.chapter, 6, 4, 'mist'); drawText(ctx, v.stage, 250, 4, 'yellow', { align: 'right' });
+  drawText(ctx, v.hint, 128, 214, 'mist', { align: 'center' });
+}
+
+const CARDS = [{ id: 'now', name: 'The map now', blurb: 'For comparison: the screen in the game today.', draw: drawCurrent, ref: true }, ...VARIANTS];
+const screens = [];
+const cardsEl = document.getElementById('cards');
+for (const c of CARDS) {
+  const card = document.createElement('section');
+  card.className = 'card' + (c.ref ? ' ref' : '');
+  card.innerHTML = `<div class="head"><span class="badge">${c.ref ? 'Now' : c.id}</span><h3></h3></div><p class="blurb"></p>`;
+  card.querySelector('h3').textContent = c.name;
+  card.querySelector('.blurb').textContent = c.blurb;
+  const big = document.createElement('canvas'); big.width = 512; big.height = 448;
+  big.setAttribute('aria-label', `${c.name}, map screen`);
+  card.append(big); cardsEl.append(card);
+  const off = document.createElement('canvas'); off.width = 256; off.height = 224;
+  screens.push({ c, off, octx: off.getContext('2d'), bctx: big.getContext('2d') });
+}
+
+const seg = document.getElementById('state');
+for (const [k, s] of Object.entries(STATES)) {
+  const b = document.createElement('button'); b.textContent = s.label; b.setAttribute('aria-pressed', String(k === st.state));
+  b.onclick = () => { st.state = k; for (const x of seg.children) x.setAttribute('aria-pressed', String(x === b)); };
+  seg.append(b);
+}
+document.getElementById('walk').onchange = (e) => { st.walk = e.target.checked; };
+document.getElementById('anim').onchange = (e) => { st.anim = e.target.checked; };
+document.getElementById('calm').onchange = (e) => { st.calm = e.target.checked; };
+
+function frame() {
+  if (st.anim) st.t++;
+  const v = viewAt(st.t);
+  for (const s of screens) {
+    s.octx.save();
+    try { s.c.draw(s.octx, v); } catch (err) { s.octx.fillStyle = '#3a0a14'; s.octx.fillRect(0, 0, 256, 224); console.error(s.c.name, err); }
+    s.octx.restore();
+    s.bctx.imageSmoothingEnabled = false;
+    s.bctx.drawImage(s.off, 0, 0, 512, 448);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

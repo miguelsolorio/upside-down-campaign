@@ -62,17 +62,24 @@ Between stages there's a Hawkins map screen (Mario 3 style) for party picks, the
 
 | Hero | Class | Basic | Special (MP) | Talents at Lv 3 / 6 / 9 | Opens |
 |---|---|---|---|---|---|
-| Eleven | Sorcerer | Push: short shove, free | Mind Blast (8): piercing beam, nosebleed under 25% MP | Flip (Push hurls props) / Sensory tank (hold Special to spot hidden things) / Overload (beam widens, stuns) | push, sense |
-| Mike | Paladin | Bat: three-hit wide arc | DM screen (6): blocks shots, allies behind take half damage for 5 s | DM fiat (first hit of a fight always crits) / Rally (+20% ATK party, 10 s) / Oath (revive one ally per stage) | none |
-| Dustin | Bard | Candy lure: lobbed bar, enemies chase it, small blast | Farrah spray (8): hairspray and a lighter, burning cone | Compass (shows secrets) / Dart (summons Dart, 12 s) / Cerebro (call Suzie, refill party MP 30%, once per stage) | burn, compass |
-| Lucas | Ranger | Wrist rocket: 8-way, long range | Triple shot (5): three-way spread | Sharp eye (+15% crit) / Camo (dash drops aggro 3 s) / Volley (five-way) | shoot |
-| Will | Wizard, then Cleric | Sketch bolt: slow arcane bolt | Fireball (10): a d20 sizes the blast, a 1 fizzles, a 20 doubles the radius | Cold spot (see hidden enemies) / Cleric (hold Special to heal 30%) / Hive link (reveal hidden paths 8 s) | sense |
-| Max | Monk | Board: quick two-hit | Skate dash (4): invulnerable, damages the path, clears one-tile gaps | High score (+10% quarters, +5% crit) / Walkman (8 s, party ignores Curse) / Kickflip (dash leaves a shockwave) | dash |
-| Steve | Fighter | Nail bat: three-hit, big knockback on the third | Babysit (6): taunt pulse, takes 40% less, party +15% DEF for 5 s | Hair of steel (first hit each fight does nothing) / Ahoy (tag-in leap) / King Steve (under 30% HP, +30% ATK) | smash |
-| Nancy | Gunslinger | Pistol: steady single shots | Shotgun (7): wide cone, heavy knockback | Trap kit (dash drops a bear trap) / Molotov (hold Special for a fire pool) / Final girl (+40% ATK once two allies are down) | shoot, burn |
+| Eleven | Sorcerer | Push: short shove, free | Mind Blast (8): piercing beam, nosebleed under 25% MP | Flip (Push hurls props) / Sensory tank (hold Special: hidden foes and paths within 160 px show for 8 s) / Overload (beam widens, stuns) | push, sense |
+| Mike | Paladin | Bat: three-hit wide arc | DM screen (6): blocks shots, allies behind take half damage for 5 s | DM fiat (first hit of a fight always crits) / Rally (the DM screen gives the party +20% ATK, 10 s) / Oath (revive one ally per stage) | none |
+| Dustin | Bard | Candy lure: lobbed bar, enemies chase it, small blast | Farrah spray (8): hairspray and a lighter, burning cone | Compass (shows secrets) / Dart (the spray calls Dart to bite for 12 s, once every 30 s) / Cerebro (call Suzie, refill party MP 30%, once per stage) | burn, compass |
+| Lucas | Ranger | Wrist rocket: 8-way, long range | Triple shot (5): three-way spread | Sharp eye (+15% crit) / Camo (Triple shot drops aggro 3 s, once every 8 s) / Volley (five-way) | shoot |
+| Will | Wizard, then Cleric | Sketch bolt: slow arcane bolt | Fireball (10): a d20 sizes the blast, a 1 fizzles, a 20 doubles the radius | Cold spot (see hidden enemies) / Cleric (hold Special: the party heals 30%, 12 MP, every 10 s) / Hive link (reveal hidden paths 8 s) | sense |
+| Max | Monk | Board: quick two-hit | Skate dash (4): invulnerable, damages the path, clears one-tile gaps | High score (+10% quarters, +5% crit) / Kickflip (the dash ends in a shockwave) / open (the Walkman is a 4.2 story item) | dash |
+| Steve | Fighter | Nail bat: three-hit, big knockback on the third | Babysit (6): taunt pulse, takes 40% less, party +15% DEF for 5 s | Hair of steel (first hit each fight does nothing) / Ahoy (a charged swap leaps him onto a foe) / King Steve (under 30% HP, +30% ATK) | smash |
+| Nancy | Gunslinger | Pistol: steady single shots | Shotgun (7): wide cone, heavy knockback | Trap kit (the Shotgun drops a bear trap) / Molotov (hold Special: a lobbed fire pool that burns, 8 MP) / Final girl (+40% ATK once two allies are down) | shoot, burn |
 | Hopper | Barbarian | Haymaker: slow, huge hitbox | Ground slam (8): 360° shockwave, stuns | Coffee (food heals him 25% more) / Wind-up (hold Attack for a guard-breaking haymaker) / Berserk (under 35% HP, +50% ATK, can't be stunned) | smash |
-| Robin | Rogue | Scoop toss: arcing, slowing splash | Word vomit (5): babble cone, enemies confuse and swing at each other for 3 s | Linguist (reads cipher doors, adds hints) / Triple scoop / Dry wit (confused enemies take +25%) | read |
+| Robin | Rogue | Scoop toss: arcing, slowing splash | Word vomit (5): babble cone, enemies confuse and swing at each other for 3 s | Linguist (Word vomit lasts 4 s) / Triple scoop (three scoops a toss) / Dry wit (confused enemies take +25%) | read |
 | Eddie | Warlock | Flying V swing: wide arc, sound ring | Hellfire solo (9): six-second riff that stuns flyers and damages a ring. Press on the beat for crits | Metalhead (+10% ATK) / Hellfire DM (marks boss weak points) / Encore (solo repeats once) | riff |
+
+**The Lv 6 talents as built** (the owner's picks, 2026-10-15). Where the design left one open or the game had changed under it:
+- **Held Specials.** Will's Cleric, Nancy's Molotov and Eleven's Sensory tank are held: from Lv 6 a tap casts the Special when the key comes up, and 0.4 s held casts the variant, with a ring filling round the hero. Before Lv 6 a press casts at once, as it always has (`heroes/hold.ts`).
+- **Camo** has no dash to ride on, so it rides on Triple shot, the way Trap kit rides on the Shotgun. **Rally** rides on the DM screen. **Ahoy** is a charged swap to Steve: he leaps at the nearest foe within 80 px and the landing hits and stuns. **Triple scoop** throws two more scoops either side, at 60%.
+- **Max's Walkman** is a 4.2 story item (`docs/chapter-4.md`), so her Kickflip moved up from Lv 9 to Lv 6 and her Lv 9 is open.
+- **Dart** stays: Dustin found him in 2.1 and he grew in 2.2, so Lv 6 pays that off.
+- Nancy opens `burn` from Lv 6, and her picks card says SHOOT BURN.
 
 **Voice and look.** Every line is original. The only borrowed phrases are nods, like a bond named after Mike's promise to Eleven and Steve's "Ahoy."
 
@@ -303,7 +310,7 @@ This pass covers steps 0 to 6 for Level 1 only, plus the first stage of step 7. 
 ## Risks and cut line
 
 - **Limits.** Three agents at most, short reports, checkpoints after every phase, and a green build plus `TODO.md` at each stop. A limit mid-pass costs a resume, not a redo.
-- **Scope is the risk:** 16 stages, five bosses and three mini-bosses. Chapter 1 ships first as the vertical slice. If it runs long I cut stretch before systems, in this order: Eddie's beat bonus, the Kamchatka stage (Hopper just returns in chapter 5), Dart, alternate Lv 6 Special variants.
+- **Scope is the risk:** 16 stages, five bosses and three mini-bosses. Chapter 1 ships first as the vertical slice. If it runs long I cut stretch before systems, in this order: Eddie's beat bonus, the Kamchatka stage (Hopper just returns in chapter 5). Dart and the held Lv 6 Specials were on this list and are built.
 - **I can't hear the music.** See the audio note above.
 - **Flashing lights.** The show leans on them, so there's a reduce-flashing setting and the flicker is rate-limited.
 - **Dustin's hairspray flamethrower isn't a scene I could confirm.** It's a gag built on Steve's Farrah spray from season 2, not a claim about an episode.

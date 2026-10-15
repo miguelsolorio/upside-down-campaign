@@ -5,6 +5,7 @@
 //     defense: the cast slows him, and the ward falls more often when he stops for it.
 //   - Will, from Lv 6, holds Special for the Cleric heal when the party is under half its HP, and not again for the heal's 10 s.
 //   - Nancy, from Lv 6, holds Special for the Molotov when two foes stand together 30 to 64 px out.
+//   - Eleven, from Lv 6, holds Special for Sensory tank between fights, at most every 20 s, keeping MP for a Mind Blast.
 // A hold keeps Special down for HOLD_FRAMES and two more, whatever else the bot does meanwhile, then lets go.
 import type { HeroId, PartyHud, SimInput, SimView } from '../core/types.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
@@ -32,6 +33,8 @@ export interface CastScene {
 export const BABYSIT_CROWD = 48;
 const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hypot(bx - ax, by - ay);
 const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
+/** Frames between the bot's Sensory tanks. */
+const SENSE_GAP = 1200;
 
 /** The plain Special: is it worth casting now? */
 function wantsSpecial(me: PartyHud, s: CastScene): boolean {
@@ -63,14 +66,15 @@ function wantsMolotov(me: PartyHud, s: CastScene): boolean {
 export interface Caster {
   /** In a fight, in position: casts or starts a hold. Returns true when it did either. */
   cast(me: PartyHud, s: CastScene, out: SimInput): boolean;
-  /** Every frame, fight or not: Will's heal, and a hold already going. */
-  keep(v: SimView, me: PartyHud, out: SimInput): void;
+  /** Every frame, fight or not: Will's heal, Eleven's Sensory tank between fights (`calm`), and a hold already going. */
+  keep(v: SimView, me: PartyHud, out: SimInput, calm: boolean): void;
 }
 
 export function createCaster(): Caster {
   let holdLeft = 0;
   let frame = 0;
   let healAt = -99999;
+  let senseAt = -99999;
   const startHold = (out: SimInput): void => {
     holdLeft = HOLD_FRAMES + 2;
     out.specialPressed = true;
@@ -84,11 +88,17 @@ export function createCaster(): Caster {
       out.specialPressed = true;
       return true;
     },
-    keep(v, me, out) {
+    keep(v, me, out, calm) {
       frame++;
       if (holdLeft > 0) {
         holdLeft--;
         out.specialHeld = holdLeft > 0;
+        return;
+      }
+      const x = HERO_DEFS.eleven.special;
+      if (me.id === 'eleven' && me.level >= LV6 && calm && me.mp >= x.x.senseMp + x.mp && frame - senseAt >= SENSE_GAP) {
+        senseAt = frame;
+        startHold(out);
         return;
       }
       if (me.id !== 'will' || me.level < LV6 || me.mp < HERO_DEFS.will.special.x.healMp) return;

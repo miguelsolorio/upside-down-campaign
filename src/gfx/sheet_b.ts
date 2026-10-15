@@ -118,7 +118,7 @@ const FX_SIZE: Record<FxKind, [number, number]> = {
   slash: [28, 51], push: [30, 49], beam: [70, 8], flame: [54, 57], shield: [30, 30], nova: [60, 60], spark: [0, 0], dust: [0, 0], rock: [10, 10],
   candy: [6, 14], dart: [6, 6], blast: [40, 40], heal: [14, 14], ring: [40, 20], spore: [32, 32],
   acid: [8, 8], mark: [32, 16], bolt: [8, 8], reveal: [32, 32], trail: [64, 10], howl: [96, 96], taunt: [64, 64],
-  scoop: [32, 32], babble: [56, 48], bullet: [6, 2], goo: [44, 44], trap: [12, 8], arcs: [32, 32], pet: [0, 0], bottle: [6, 20], fire: [48, 24],
+  scoop: [32, 32], babble: [56, 48], bullet: [6, 2], goo: [44, 44], trap: [12, 8], arcs: [32, 32], pet: [0, 9], bottle: [6, 20], fire: [48, 24],
 };
 const FX_KINDS = Object.keys(FX_LIFE) as FxKind[];
 const ANGLES = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
@@ -151,6 +151,9 @@ const fx: Page = {
       } else if (kind === 'candy') {
         drawFx(ctx, { ...base, x: cx + 14, y: oy - 8 - Math.round(8 * Math.sin((lt / life) * Math.PI)), t: lt, h: 6 });
         drawFx(ctx, { ...base, x: cx + 36, y: oy, t: t, h: 0, w: 8 });
+      } else if (kind === 'pet') {
+        // w is 1 while he bites: show it for 16 frames in every 96.
+        drawFx(ctx, { ...base, w: lt % 96 < 16 ? 1 : 0 });
       } else drawFx(ctx, base);
       drawText(ctx, kind.toUpperCase(), cx + 2, cy + 58, 'cream');
     });

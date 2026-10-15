@@ -11,6 +11,7 @@ import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, footBlocked, nearestOnRect, rectsOverlap } from './space.ts';
 import { utilitiesAt } from '../heroes/defs.ts';
+import { senseRange } from '../heroes/sensory.ts';
 import { fireBoxes } from './powerbox.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
@@ -90,7 +91,8 @@ function sensed(s: S, p: Prop, fallback: Utility = 'sense'): boolean {
   const h = activeHero(s);
   if (h.ko || !utilitiesAt(h.id, h.level).includes(p.hitBy ?? fallback)) return false;
   const q = nearestOnRect(p, h.x, h.y - 2);
-  return Math.hypot(q.x - h.x, q.y - (h.y - 2)) <= SENSE_RANGE;
+  // Eleven's Sensory tank reaches a hidden path from much farther off.
+  return Math.hypot(q.x - h.x, q.y - (h.y - 2)) <= ((p.hitBy ?? fallback) === 'sense' ? senseRange(s, SENSE_RANGE) : SENSE_RANGE);
 }
 
 /** The cipher door is decoded: `decode` and a `reveal`, propCleared, open and walkable, its letters all English (k 1). */

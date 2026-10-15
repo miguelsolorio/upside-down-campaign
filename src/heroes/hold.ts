@@ -10,6 +10,7 @@ import type { Hero, S } from '../combat/state.ts';
 import { HERO_DEFS } from './defs.ts';
 import { castHeal, healReady } from './cleric.ts';
 import { throwMolotov } from './molotov.ts';
+import { sensoryTank } from './sensory.ts';
 
 /** Frames Special is held for the variant: 0.4 s. */
 export const HOLD_FRAMES = 24;
@@ -18,13 +19,13 @@ const TAP_BUFFER = 8;
 
 /** True when this hero has a held variant at their level. */
 export function holdsSpecial(h: Hero): boolean {
-  return (h.id === 'will' || h.id === 'nancy') && hasTalent(h.id, h.level, LV6);
+  return (h.id === 'will' || h.id === 'nancy' || h.id === 'eleven') && hasTalent(h.id, h.level, LV6);
 }
 
 /** What the variant costs. */
 export function variantMp(h: Hero): number {
   const x = HERO_DEFS[h.id].special.x;
-  return h.id === 'will' ? x.healMp : h.id === 'nancy' ? x.molMp : 0;
+  return h.id === 'will' ? x.healMp : h.id === 'nancy' ? x.molMp : h.id === 'eleven' ? x.senseMp : 0;
 }
 
 /** False while the variant has a wait of its own (Will's heal). */
@@ -36,6 +37,7 @@ export function variantReady(s: S, h: Hero): boolean {
 export function useVariant(s: S, h: Hero): void {
   if (h.id === 'will') castHeal(s, h);
   else if (h.id === 'nancy') throwMolotov(s, h);
+  else if (h.id === 'eleven') sensoryTank(s, h);
 }
 
 /**

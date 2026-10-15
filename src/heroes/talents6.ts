@@ -11,7 +11,8 @@ export function updateTalents(s: S): void {
   // Camo is Lucas's own: it ends when he tags out.
   if (t.camo > 0) t.camo = activeHero(s).id === 'lucas' ? t.camo - 1 : 0;
   if (t.camoCd > 0) t.camoCd--;
-  if (t.sense > 0) t.sense--;
+  // So is Eleven's Sensory tank.
+  if (t.sense > 0) t.sense = activeHero(s).id === 'eleven' ? t.sense - 1 : 0;
   tickHeal(s);
   stepDart(s);
   stepLeap(s);

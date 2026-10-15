@@ -70,7 +70,7 @@ It builds over the chapter.
 
 ### Max's Walkman
 
-A story item from 4.2, not her Lv 9 talent, since the pace puts Max near Lv 8 in chapter 4. Max gets her Walkman back in a 4.2 beat. With Max in the party, swapping to her plays it: 8 s in which the party ignores the curse, and any curse already counting is cleared. Then a cooldown (open: about 30 s). Her Lv 9 talent needs a new idea (open).
+A story item from 4.2, not her Lv 9 talent, since the pace puts Max near Lv 8 in chapter 4. Max gets her Walkman back in a 4.2 beat. With Max in the party, swapping to her plays it: 8 s in which the party ignores the curse, and any curse already counting is cleared. Then a cooldown (open: about 30 s). Kickflip, her old Lv 9, is her Lv 6 talent now (built 2026-10-15), so her Lv 9 needs a new idea (open).
 
 ## Bosses
 

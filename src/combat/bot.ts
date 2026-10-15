@@ -444,7 +444,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     // In a defense: no straying from the ward, and Babysit when two are on her.
     if (ward) [mx, my] = guardWard.steer(v, ward, foes, hx, hy, mx, my, out, walkTo);
     // Will's heal, and a hold already going.
-    caster.keep(v, me, out);
+    caster.keep(v, me, out, !fighting);
     if (out.specialPressed) lastSpecial = frame;
 
     // Off a mark, out of the charge line, out of the swipe: that comes before whatever else the bot was doing.

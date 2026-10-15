@@ -91,6 +91,7 @@ Robin is a Rogue, in `heroes/robin.ts`, and `HERO_DEFS.robin` replaces the stand
   - A boss (Grigori, any spawn in group `boss`) isn't confused. It staggers for 30 frames instead.
   - Hurting a confused enemy doesn't wake it up.
 - **Linguist** (Lv 3 talent): confusion lasts 240 frames. Reading cipher doors is her `read` utility, not the talent.
+- **Triple scoop** (Lv 6 talent): each toss throws two more scoops, 10 degrees either side of where the first went and as far, at 60 percent of its power. Each splashes and slows as the first does.
 - **Utility:** `read`. **Crit signature:** a wide `babble`.
 - **Bot style:** a mid-range hero (hold about 64, reach about 90). It casts Word vomit when three or more enemies are within 56 px.
 
@@ -103,7 +104,9 @@ Nancy is a Gunslinger, in `heroes/nancy.ts`, and `HERO_DEFS.nancy` replaces the 
 - **Trap kit** (Lv 3 talent): the design's version drops a trap on a dash, and the game has no dash. Instead, each Shotgun also drops a bear trap at her feet.
   - It lasts 600 frames, at most two at once, drawn as a `trap` fx.
   - The first non-boss enemy to step on it is held for 120 frames (it can't move or attack) and takes power 0.8.
-- **Utility:** `shoot`. The design also gives her `burn`, from the Lv 6 Molotov. No hero has Lv 6 talents yet, so it waits for them.
+- **Molotov** (Lv 6 talent, `heroes/molotov.ts`): holding Special for 24 frames (`heroes/hold.ts`) lobs a bottle for 8 MP, 22 frames to a spot up to 64 px out, aim-assisted like the scoop. It leaves a pool of fire 24 px round for 240 frames that hits each foe in it every 20 frames for power 0.25 and sets it burning (120 frames, each tick 0.22 of her ATK), and burns away any vines it reaches. A tap still fires the Shotgun.
+- **Utility:** `shoot`, and `burn` from Lv 6 (`utilitiesAt`), so her picks card says SHOOT BURN from then.
+- **Bot:** from Lv 6 it holds Special for the Molotov when two foes stand within 24 px of each other, 30 to 64 px out.
 - **Crit signature:** a long `bullet` streak.
 - **Bot style:** a ranged hero (hold about 90, reach about 150). It casts Shotgun when an enemy is within 40 px.
 

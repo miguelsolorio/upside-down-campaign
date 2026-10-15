@@ -13,7 +13,7 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [ ] Owner picks from the four sheets. Picked: Max Walkman, Steve Letterman, Hopper Uniform, Alpha Stalker, tunnels Roots. The picks panel sheet is still to come
 - [x] World 2.2: the tunnels at `enemyMult` 1.25, 166 XP. Chief 18 of 20 (252 damage, 1.6 KOs, 34% low, 101 s), 100 seeds 90 cleared and none stuck, careless 19, kid 20, upside 8
 - [x] A knocked-out hero stands back up when the party tries a gate only they can open (it soft-locked 2.2 at a gap)
-- [ ] Paused at 84% of the 5-hour window (19:52 PT). Next after the 20:40 reset: UI picks sheet and World 2.3
+- [x] Paused at 84% of the 5-hour window (19:52 PT), resumed after the 20:40 reset with the UI picks sheet and World 2.3
 - [ ] World 2.3, Audio, Art build, UI build (picks panel, ward bar), flow glue
 - [ ] Measured with the bot on chief inside the targets, map chains 2.1 to 2.2 to 2.3, typecheck and tests clean
 

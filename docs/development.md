@@ -35,7 +35,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?rush=1` | Skip the title, the prologue and every dialogue box, for this page load only |
 | `?skip=1` | Skip the title and prologue, but keep the in-level dialogue |
 | `?bot=1` | A bot plays the level by itself |
-| `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport |
+| `?dev=1` | Dev panel: god mode, hitboxes, give XP, set level, kill all, spawn a group, open a prop, teleport. The group and prop boxes suggest the current stage's own enemy groups and props (`world/devhooks.ts`), and any id works if you type it |
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |

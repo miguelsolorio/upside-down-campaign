@@ -46,6 +46,11 @@ export interface InputState {
   point(): void;
   /** Takes and clears a one-line message about the controller (connected, lost), for a toast. */
   notice(): string | null;
+  /**
+   * True on the one tick after the player was pulled away from the game: the window lost focus, the tab was hidden, or the
+   * controller they were playing with disconnected. A scene where something moves answers it by pausing. Cleared by poll.
+   */
+  interrupted(): boolean;
   /** The next key press goes to cb instead of the game, for rebinding. Returns a function that stops waiting. */
   capture(cb: (code: string) => void): () => void;
   /** A scene says an action would do something this tick, so the touch screen can show its button. Cleared by poll. */
@@ -70,6 +75,8 @@ export function createInput(opts: InputOptions = {}): InputState {
   let touchStickWas = false;
   let offers = new Set<Action>();
   let message: string | null = null;
+  let breakLatch = false;
+  let breakNow = false;
   let captureCb: ((code: string) => void) | null = null;
   let at: Vec2 | null = null;
   let moveLatch = false;
@@ -100,7 +107,11 @@ export function createInput(opts: InputOptions = {}): InputState {
     for (const a of acts) latch.add(a);
   });
   addEventListener('keyup', (e) => { down.delete(e.code); });
-  addEventListener('blur', () => { down.clear(); });
+  addEventListener('blur', () => { down.clear(); breakLatch = true; });
+  // A hidden tab stops the loop, so the pause waits for the first tick after it comes back.
+  if (typeof document !== 'undefined') {
+    document.addEventListener?.('visibilitychange', () => { if (document.visibilityState === 'hidden') breakLatch = true; });
+  }
   // A finger anywhere on the page, the margins included, hands the prompts to the touch controls.
   addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') device = 'touch'; });
 
@@ -140,7 +151,11 @@ export function createInput(opts: InputOptions = {}): InputState {
   });
   addEventListener('gamepaddisconnected', () => {
     if (livePads().length > 0) return;
-    if (device === 'gamepad') device = opts.startDevice ?? 'keyboard';
+    // Only a pad that was being played with interrupts. One lost while the keyboard or the touch screen had the hands isn't news to the game.
+    if (device === 'gamepad') {
+      device = opts.startDevice ?? 'keyboard';
+      breakLatch = true;
+    }
     message = 'CONTROLLER LOST';
   });
 
@@ -204,6 +219,8 @@ export function createInput(opts: InputOptions = {}): InputState {
         canvas.style.cursor = hand ? 'pointer' : '';
       }
       hand = false;
+      breakNow = breakLatch;
+      breakLatch = false;
     },
     held: (a) => now.has(a),
     pressed: (a) => pressedNow.has(a),
@@ -232,6 +249,7 @@ export function createInput(opts: InputOptions = {}): InputState {
       captureCb = cb;
       return () => { if (captureCb === cb) captureCb = null; };
     },
+    interrupted: () => breakNow,
     offer(a) { offers.add(a); },
     offered: (a) => offers.has(a),
   };

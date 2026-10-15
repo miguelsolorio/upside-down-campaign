@@ -37,7 +37,7 @@ An Xbox controller plays the whole game, menus included. Plug it in or pair it, 
 | `Start` | Pause. Begins the game on the title |
 | `View` | Skip dialogue |
 
-Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
+If the controller you're playing with is unplugged or drops its connection mid-stage, the level pauses and the hints go back to keys (see Pausing by itself). Hints switch to button names once you touch the controller, and back to keys when you press one. A controller has no direct hero pick, so the tutorial lines leave that out. A button press doesn't always count as a click, so the browser may keep the sound off until you click the game once. The title says so when that happens. The game reads the standard gamepad layout, which is what an Xbox controller reports. A pad that reports something else isn't supported.
 
 ## Touch
 
@@ -85,6 +85,10 @@ A finished run goes on that game's high-score board under the name of the hero a
 
 The game saves by itself each time you light Joyce's Christmas lights, and `SAVED` shows over them. Reload or quit and the title offers CONTINUE, which puts the party back at the last lit lights with its levels, XP, d20 bonuses, kills, opened gates and story beats. Health comes back full, the same as a retry. NEW GAME on the title and START OVER in the pause menu both wipe the save (press twice to confirm). START OVER restarts the level straight away with the party it started that level with, and NEW GAME plays the prologue unless skip story is on. Clearing Level 1 saves a fresh start at the Lab door with your levels, XP and d20 bonuses, so CONTINUE picks up there. Clearing Level 2 clears the save. It's one save per browser, and `?bot`, `?god`, `?level` and `?party` runs never touch it.
 
+## Pausing by itself
+
+The level pauses on its own when you're pulled away from it, so nothing hits a party nobody is steering. The pause menu opens when the window loses focus (another window, the browser's address bar, the chat next to the pane), when the tab is hidden, and when the controller you were playing with disconnects. The same goes for a cabinet run in the Palace, which holds as it does with `Esc`. Resume the usual way: `Esc`, `P`, `Start` or `B`, or pick RESUME. It happens only while something is moving. On the title, the map, the menus, the results and over dialogue and the character sheet nothing moves, so nothing opens. A controller that drops while the keyboard or the touch screen is in your hands, or one of two controllers, only shows `CONTROLLER LOST` and doesn't pause. A `?bot=1` run is never paused, so a background tab still plays itself out.
+
 ## Sound
 
 The game goes silent whenever the page isn't focused: another window, another tab, or the chat next to the pane. It comes back when you click the game. The `M` mute sits on top of that and survives it.
@@ -95,7 +99,7 @@ Eleven joins at the shed. Lucas can shoot the lantern across the creek to open t
 
 Try a gate, door, log or crate with the wrong hero, by swinging at it or walking into it, and the game says so at once: a yellow caret bobs over the puzzle and a subtitle names who to try (MAYBE ELEVEN SHOULD TRY HER SHOVE), and the right hero's portrait lights up. A party that just stands there gets the same after five seconds.
 
-The Lab is the hard level. Riot guards stop hits from the front, so go around them, burn them or shove them. Elite agents hit harder. Security cameras sweep the corridors, and one that sees you lets reinforcements in, unless Lucas shoots it first or someone gets right under it and smashes it. Electric panels and steam vents fire on a cycle, with a warning before each. The Warden waits at the end. Every enemy in the Lab is 30 percent tougher than the difficulty setting makes it, and the party levels up faster to match.
+The Lab is the hard level. Riot guards stop hits from the front, so go around them, burn them or shove them. Elite agents hit harder. Security cameras sweep the corridors, and one that sees you lets reinforcements in, unless Lucas shoots it first or someone gets right under it and smashes it. Electric panels and steam vents fire on a cycle, with a warning before each. When a camera spots the party or the lockdown starts, the klaxon sounds and a red glow comes up along the edge of the screen: it fades in, breathes once every two and a half seconds for about five seconds, and fades out. With REDUCE FLASH on it doesn't breathe, it holds one steady dim glow. The Warden waits at the end. Every enemy in the Lab is 30 percent tougher than the difficulty setting makes it, and the party levels up faster to match.
 
 ## Level-ups
 

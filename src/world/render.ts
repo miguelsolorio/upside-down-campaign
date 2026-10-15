@@ -17,6 +17,7 @@ import type { ColorName } from '../gfx/palette.ts';
 import type { Stage } from './stage.ts';
 import { SPARKLES, TALENT_TO, ringRadius, sparkle, talentShowing } from './levelfx.ts';
 import type { LevelFx } from './levelfx.ts';
+import { BANDS } from './klaxon.ts';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -193,6 +194,26 @@ function glowLights(stage: Stage, view: SimView, cam: Camera, flicker: number): 
     else if (p.kind === 'vines' && p.state === 'lit') out.push({ x: sx(cx), y: sy(cy), r: 36, k: 1.2, flicker: 0.8 + flicker * 0.5 });
   }
   return out;
+}
+
+/** The prop is inside the camera's clear band, so a caret over it can be seen. */
+export const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
+  p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
+
+/** The klaxon's glow: bands of red stepping in from the edge of the world view, each one fainter than the one before. `level`
+ * is Klaxon.level(), 0 to 1. Nothing here blinks, so a steady level (Reduce flashing) is a steady picture. */
+export function drawKlaxon(ctx: Ctx, level: number): void {
+  if (level <= 0.01) return;
+  const y0 = VIEW_TOP, h = SCREEN_H - VIEW_TOP;
+  ctx.fillStyle = PAL.red;
+  for (const b of BANDS) {
+    ctx.globalAlpha = Math.min(1, level * b.a);
+    ctx.fillRect(0, y0, SCREEN_W, b.w);
+    ctx.fillRect(0, y0 + h - b.w, SCREEN_W, b.w);
+    ctx.fillRect(0, y0 + b.w, b.w, h - 2 * b.w);
+    ctx.fillRect(SCREEN_W - b.w, y0 + b.w, b.w, h - 2 * b.w);
+  }
+  ctx.globalAlpha = 1;
 }
 
 /** The white flash over the world, for a big hit or a crit. */

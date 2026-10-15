@@ -17,6 +17,11 @@ export interface SimBuild {
   openProps?: string[];
 }
 
+/** Props that stay open across a retry or a load, and the ones the dev panel offers to open. */
+export const KEPT_PROPS: ReadonlySet<string> = new Set([
+  'gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap',
+]);
+
 export function stageGrid(data: StageData): Grid {
   return buildGrid(data.rows);
 }

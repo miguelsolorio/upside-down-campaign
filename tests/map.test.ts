@@ -6,7 +6,7 @@ import { STAGE_ORDER, STAGES_AHEAD, partyFor } from '../src/core/campaign.ts';
 import { recordClear } from '../src/core/progress.ts';
 import type { Progress } from '../src/core/progress.ts';
 import type { HeroSnapshot } from '../src/core/types.ts';
-import { BAND_Y, HZ, LEGS, ORDER, POS, TOP_H, hopLength, tokenAt } from '../src/gfx/map_geo.ts';
+import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, TOP_H, hopLength, hzAt, tokenAt } from '../src/gfx/map_geo.ts';
 import { tinyWidth } from '../src/gfx/font.ts';
 import {
   WALK_SPEED, hintLine, mapNodes, startHop, startNode, stepFrom, stepHop,
@@ -40,6 +40,23 @@ test('the route drops through the hole: chapter 1 and 2.1 sit above the horizon,
   for (const id of ['2.2', '2.3']) assert.ok((POS[id] as { y: number }).y > HZ + 8, id);
   const [a, b] = [POS['2.1'] as { x: number }, POS['2.2'] as { x: number }];
   assert.ok(Math.abs(a.x - b.x) < 40, 'the drop is under the patch');
+});
+
+test('chapter three: the mall and the food court above the horizon, the base on it, the route climbing out of the Gate to the mall', () => {
+  const p = (id: string): { x: number; y: number } => POS[id] as { x: number; y: number };
+  for (const id of ['3.1', '3.3']) assert.ok(p(id).y < HZ - 12, `${id} stands in Hawkins`);
+  assert.ok(p('3.2').y > HZ - 16 && p('3.2').y <= HZ - 2, 'the base sits just above the horizon line, on the bunker');
+  assert.ok(Math.abs(LAND.bunker.y - HZ) <= 2, 'the bunker is on the horizon');
+  assert.ok(Math.abs(p('3.3').x - LAND.food.x) <= 6 && Math.abs(p('3.1').x - LAND.mall.x) <= 6, 'the nodes sit on their places');
+  assert.ok(p('3.3').y < p('3.1').y, 'the food court is up on the mall\'s roof');
+  // The leg out of the Gate crosses the horizon on its way up, and the token is the right way up once it is across.
+  const leg = LEGS[ORDER.indexOf('2.3')] as (typeof LEGS)[number];
+  assert.ok(leg.pts.some(([x, y]) => y > hzAt(x) + 6) && leg.pts.some(([x, y]) => y < hzAt(x) - 6), 'it crosses the horizon');
+  const upright = (y: number): number => Math.max(-1, Math.min(1, (HZ + 8 - y) / 10));
+  assert.ok(upright(p('2.3').y) < 0 && upright(p('3.1').y) >= 1 && upright(p('3.2').y) >= 1 && upright(p('3.3').y) >= 1, 'upside down in the Upside Down, upright at all three nodes');
+  // No two nodes crowd each other.
+  for (const a of ORDER) for (const b of ORDER) if (a < b) assert.ok(Math.hypot(p(a).x - p(b).x, p(a).y - p(b).y) >= 20, `${a} and ${b} clear each other`);
+  assert.ok(hopLength('2.3', '3.1') > 60 && hopLength('3.1', '3.2') >= 30 && hopLength('3.2', '3.3') >= 30);
 });
 
 test('states come from progress: cleared, then the next stage open, then locked', () => {

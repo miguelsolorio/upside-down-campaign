@@ -63,6 +63,14 @@ export function labNight(name: TileName, c: TileCtx): boolean {
   return Object.values(c.near).some((n) => LAB.has(n) || FLESH.has(n));
 }
 
+/**
+ * Scoops Ahoy's floor is the school's checker, a bright cafeteria linoleum. In the mall after closing it goes down to a dim blue-grey,
+ * about as bright as the terrazzo's pools of light, so the heroes read on it. Layered over NIGHT, for a checker in a stage with the mall in it.
+ */
+const SCOOPS_NIGHT: Recolor = {
+  white: [60, 72, 104], bone: [46, 56, 84], mist: [42, 52, 78], grey3: [34, 42, 66], dusk: [20, 26, 48], slate: [26, 34, 58], grey2: [20, 26, 46], grey1: [12, 16, 30],
+};
+
 /** The flowers glow: bioluminescent petals, not daylight ones. */
 const FLOWERS: Recolor = { white: [120, 255, 230], pink: [255, 120, 210], yellow: [255, 236, 120], magenta: [255, 90, 220] };
 /** Road paint is not a light, so at night it dims like everything else. */
@@ -85,6 +93,7 @@ const ROAD_MAP = mapOf(NIGHT, ROAD_PAINT);
 const LAB_MAP = mapOf(NIGHT, LAB_NIGHT, OVERRUN);
 const FLESH_MAP = mapOf(NIGHT, OVERRUN);
 const GROWTH_MAP = mapOf(NIGHT, LAB_NIGHT, GROWTH);
+const SCOOPS_MAP = mapOf(NIGHT, SCOOPS_NIGHT);
 const scale = (c: Rgb, f: number): Rgb => [Math.round(c[0] * f), Math.round(c[1] * f), Math.round(c[2] * f)];
 const TREE_MAP = (() => {
   const dark: Recolor = {};
@@ -164,7 +173,7 @@ export function nightTile(day: Px, name: TileName, c: TileCtx): Px {
       out.d[i] = ((canopy[i] ? TREE_MAP : NIGHT_MAP).get(v)) ?? v;
     }
   } else {
-    remap(out.d, name === 'roadline' ? ROAD_MAP : name === 'flowers' ? FLOWER_MAP : FLESH.has(name) ? FLESH_MAP : labNight(name, c) ? (SHARED.has(name) && name !== 'bench' ? GROWTH_MAP : LAB_MAP) : NIGHT_MAP);
+    remap(out.d, name === 'roadline' ? ROAD_MAP : name === 'flowers' ? FLOWER_MAP : FLESH.has(name) ? FLESH_MAP : name === 'checker' && c.mall ? SCOOPS_MAP : labNight(name, c) ? (SHARED.has(name) && name !== 'bench' ? GROWTH_MAP : LAB_MAP) : NIGHT_MAP);
   }
   if (name === 'flowers') petalGlow(out.d, day.d);
   detail(out.d, name, c, canopy);

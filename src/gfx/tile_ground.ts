@@ -9,12 +9,24 @@ import { lab2Ground } from './tile_lab2.ts';
 import { schoolGround } from './tile_school.ts';
 import { townGround } from './tile_town.ts';
 import { patchGround } from './tile_patch.ts';
+import { mallGround } from './tile_mall.ts';
+import { baseGround } from './tile_base.ts';
 
 type Rnd = () => number;
 
 /** The four neighbours of a tile. Off-map neighbours count as the tile itself. */
 export interface Near { n: TileName; e: TileName; s: TileName; w: TileName }
-export interface TileCtx { tx: number; ty: number; near: Near }
+/**
+ * Where a tile sits in a run of its own kind: how many of its kind lie unbroken to its west and north, and how long the run is across and
+ * down. It is set for the tiles that paint one big picture over a block of them (the fountain, the lift, the machine), so each tile knows
+ * which piece of the picture is its own.
+ */
+export interface Block { ox: number; oy: number; w: number; h: number }
+export interface TileCtx {
+  tx: number; ty: number; near: Near; blk?: Block;
+  /** Set on a tile of a stage that has the mall in it: the school's checker is Scoops Ahoy's floor there, and goes as dim as the mall at night (night.ts). */
+  mall?: boolean;
+}
 
 export const isWater = (n: TileName): boolean => n === 'shallows' || n === 'creek';
 export const isTree = (n: TileName): boolean => n === 'pine' || n === 'deadtree';
@@ -168,6 +180,14 @@ export function groundTile(name: TileName, c: TileCtx): Px | null {
     case 'rot':
     case 'hole':
       return patchGround(name, c, r);
+    case 'mallfloor':
+    case 'mallband':
+    case 'servicefloor':
+      return mallGround(name, c);
+    case 'basefloor':
+    case 'basegrate':
+    case 'keyfloor':
+      return baseGround(name, c);
     default:
       return null;
   }

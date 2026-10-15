@@ -10,8 +10,10 @@ import { PAGES_D } from './sheet_school.ts';
 import { PAGES_E } from './sheet_patch.ts';
 import { L56_PAGES } from './sheet_l56.ts';
 import { L56B_PAGES } from './sheet_l56b.ts';
+import { L78_FOE_PAGES, L78_HERO_PAGES } from './sheet_l78.ts';
+import { L78B_PAGES } from './sheet_l78b.ts';
 
-const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D, ...PAGES_E, ...L56_PAGES, ...L56B_PAGES];
+const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D, ...PAGES_E, ...L56_PAGES, ...L56B_PAGES, ...L78_HERO_PAGES, ...L78_FOE_PAGES, ...L78B_PAGES];
 
 function startPage(): { page: number; sub: number } {
   const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();

@@ -26,7 +26,7 @@ import { MAX } from '../src/gfx/data/max.ts';
 import { PORTRAITS } from '../src/gfx/data/portraits.ts';
 import { drawFx } from '../src/gfx/fx.ts';
 import { paintLand } from '../src/gfx/map_land.ts';
-import { BAND_Y, HZ, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H } from '../src/gfx/map_geo.ts';
+import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from '../src/gfx/map_geo.ts';
 
 const around = (n: TileName): Near => ({ n, e: n, s: n, w: n });
 const ctxAt = (tx: number, ty: number, near: Near): TileCtx => ({ tx, ty, near });
@@ -304,7 +304,8 @@ test('the reveal is a shimmer over the prop that sweeps down it and fades out', 
 });
 
 // ---------------------------------------------------------------- the map
-const states = (...s: NodeState[]): Record<string, NodeState> => Object.fromEntries(ORDER.map((id, i) => [id, s[i] as NodeState]));
+/** The states of the first nodes; the rest of the map (chapter 3) is locked. */
+const states = (...s: NodeState[]): Record<string, NodeState> => Object.fromEntries(ORDER.map((id, i) => [id, s[i] ?? 'locked']));
 const SCHOOLED = states('cleared', 'cleared', 'cleared', 'open', 'locked', 'locked');
 const FRESH = states('open', 'locked', 'locked', 'locked', 'locked', 'locked');
 const rows = (px: Px, y0: number, y1: number, names: ColorName[]): number => {
@@ -341,6 +342,29 @@ test('a locked place is dimmed to greys and an open one keeps its colors', () =>
   assert.ok(count(locked, ['pine1', 'pine2', 'pine3']) > 4000, 'the woods are still green');
 });
 
+test('Starcourt Mall, the food court and the base\'s bunker are drawn, in color when their stage is open and in greys when it is locked', () => {
+  const some = (px: Px, x0: number, y0: number, x1: number, y1: number, names: ColorName[]): number => {
+    const set = set5(...names);
+    let n = 0;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (set.has(px.get(x, y))) n++;
+    return n;
+  };
+  const mallBox: [number, number, number, number] = [LAND.mall.x - 21, LAND.mall.base - 27, LAND.mall.x + 21, LAND.mall.base + 1];
+  const foodBox: [number, number, number, number] = [LAND.food.x - 15, LAND.food.base - 17, LAND.food.x + 15, LAND.food.base + 1];
+  const bunkBox: [number, number, number, number] = [LAND.bunker.x - 13, hzAt(LAND.bunker.x) - 18, LAND.bunker.x + 13, hzAt(LAND.bunker.x) + 1];
+  const neon: ColorName[] = ['magenta', 'purple0', 'yellow', 'cyan'];
+  const open = paintLand(states('cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'open', 'open', 'open')).px;
+  const shut = paintLand(FRESH).px;
+  assert.ok(some(open, ...mallBox, neon) > 150, `the open mall has its neon: ${some(open, ...mallBox, neon)}`);
+  assert.ok(some(shut, ...mallBox, neon) < 10, 'the locked one is grey');
+  assert.ok(some(open, ...foodBox, ['cyan', 'sky']) > 40, 'a food court in glass when its stage is open');
+  assert.equal(some(shut, ...foodBox, ['cyan', 'magenta']), 0, 'and locked inside the mall, in greys');
+  assert.ok(some(open, ...bunkBox, ['red', 'blood1']) >= 3, 'the bunker has its red star');
+  assert.equal(some(shut, ...bunkBox, ['red', 'blood1', 'hot']), 0, 'and is grey when locked');
+  // The base is underground but not in the Upside Down: its bunker is on the horizon in Hawkins' own colors, not the palette of the veins.
+  assert.ok(some(open, ...bunkBox, ['grey2', 'grey3']) > 60);
+});
+
 test('the nodes sit between the bars, and the route starts and ends on them without gaps', () => {
   for (const id of ORDER) {
     const n = POS[id] as { x: number; y: number };
@@ -357,6 +381,6 @@ test('the nodes sit between the bars, and the route starts and ends on them with
 
 test('every sign plate names its place and sits clear of the bars', () => {
   const plates = paintLand(SCHOOLED).plates;
-  assert.deepEqual(plates.map((p) => p.name).sort(), ['GATE', 'LAB', 'MIRKWOOD', 'PATCH', 'SCHOOL', 'TUNNELS']);
+  assert.deepEqual(plates.map((p) => p.name).sort(), ['BASE', 'GATE', 'LAB', 'MIRKWOOD', 'PATCH', 'SCHOOL', 'STARCOURT', 'TUNNELS']);
   for (const p of plates) assert.ok(p.y > TOP_H + 4 && p.y + 9 < BAND_Y - 4, `${p.name}`);
 });

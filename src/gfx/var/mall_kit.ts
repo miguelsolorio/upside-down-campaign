@@ -6,9 +6,11 @@
 import { BAYER4, hash2 } from '../canvas.ts';
 import { nightSprite } from '../night.ts';
 import { Px } from '../px.ts';
+import type { MC } from '../paint_kit.ts';
 
-/** What a painter knows about its place: the variant (0 to 3), which neighbors are solid, which are the same kind, and for a cap whether a wall face is right below it. */
-export interface MC { tx: number; ty: number; v: number; sN: boolean; sS: boolean; sE: boolean; sW: boolean; kN: boolean; kS: boolean; kE: boolean; kW: boolean; lipS: boolean }
+export type { MC } from '../paint_kit.ts';
+export { CYR, cyr } from '../paint_kit.ts';
+
 type Paint = (c: MC) => Px;
 
 /** The mall's tiles (tiles.ts, Starcourt) as one look paints them. Planter, counter, goo and fountain may leave the floor showing; the kit lays the floor under them. */
@@ -253,22 +255,3 @@ export function legends(look: Look, phase: number): { mall: { name: string; px: 
   };
 }
 
-/** Pale blocks of the Cyrillic the cipher door shows: 3 by 5 glyphs for the letters of СТОП, ВХОД-free so no foot is needed. */
-export const CYR: Record<string, string[]> = {
-  С: ['###', '#..', '#..', '#..', '###'], Т: ['###', '.#.', '.#.', '.#.', '.#.'], О: ['###', '#.#', '#.#', '#.#', '###'], П: ['###', '#.#', '#.#', '#.#', '#.#'],
-  А: ['.#.', '#.#', '###', '#.#', '#.#'], Х: ['#.#', '#.#', '.#.', '#.#', '#.#'], В: ['##.', '#.#', '##.', '#.#', '##.'], З: ['##.', '..#', '.#.', '..#', '##.'],
-  К: ['#.#', '#.#', '##.', '#.#', '#.#'], Р: ['##.', '#.#', '##.', '#..', '#..'], Е: ['###', '#..', '##.', '#..', '###'], Л: ['.##', '#.#', '#.#', '#.#', '#.#'],
-  Г: ['###', '#..', '#..', '#..', '#..'], Ж: ['#.#', '.#.', '###', '.#.', '#.#'],
-};
-
-/** Draws a Cyrillic word in 3 by 5 glyphs, one pixel apart. */
-export function cyr(px: Px, x: number, y: number, word: string, col: Parameters<Px['set']>[2]): number {
-  let cx = x;
-  for (const ch of word) {
-    const g = CYR[ch];
-    if (!g) continue;
-    g.forEach((row, j) => { for (let i = 0; i < 3; i++) if (row[i] === '#') px.set(cx + i, y + j, col); });
-    cx += 4;
-  }
-  return cx - x - 1;
-}

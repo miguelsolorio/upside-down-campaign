@@ -32,10 +32,13 @@ export const POS: Record<string, Pt> = {
   '2.1': { x: 210, y: 91 },
   '2.2': { x: 194, y: 122 },
   '2.3': { x: 112, y: 157 },
-  // Chapter 3: stand-in spots until Art places Starcourt (docs/map-screen.md, "Chapter three on the map").
-  '3.1': { x: 236, y: 50 },
-  '3.2': { x: 236, y: 92 },
-  '3.3': { x: 200, y: 36 },
+  // Chapter 3 (docs/map-screen.md, "Chapter three on the map"): Starcourt Mall stands in Hawkins between the lab and the school, 3.1 in
+  // front of its door on the parking lot. The bunker of the base is on the horizon below it, 3.2 above the bunker, and the food court is
+  // the glass dome on the mall's roof, 3.3 on it. The route from the Gate climbs out of the Upside Down up the road to the mall, turns
+  // the token over at the horizon like the drop through the hole in the patch, and comes down again to the bunker.
+  '3.1': { x: 124, y: 78 },
+  '3.2': { x: 96, y: 93 },
+  '3.3': { x: 118, y: 48 },
 };
 
 /** The place each stage sits in. */
@@ -51,10 +54,13 @@ export const LAND = {
   hole: { x: 210, y: HZ },
   tunnels: { x: 194, top: 133 },
   gate: { x: 112, top: 168 },
+  mall: { x: 118, base: 72 },
+  food: { x: 118, base: 52 },
+  bunker: { x: 96, y: HZ },
 };
 
 /** How far each leg of the route bows, in px: the sign picks the side. */
-const BEND = [6, -6, 5, -8, 10, -12, 4, -6];
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6];
 
 export interface Leg {
   pts: [number, number][];

@@ -32,14 +32,14 @@ function nightSample(name: TileName, v: number): HTMLCanvasElement {
 }
 
 const baked = new Map<string, BakedStage>();
-function bake(key: string, rows: string[]): BakedStage {
+export function bake(key: string, rows: string[]): BakedStage {
   let b = baked.get(key);
   if (!b) { b = bakeStage(rows, true); baked.set(key, b); }
   return b;
 }
 
-const prop = (kind: PropKind, id: string, x: number, y: number, w: number, h: number, state: PropState, t: number, k?: number) => ({ id, kind, x, y, w, h, state, t, ...(k === undefined ? {} : { k }) });
-const head = (ctx: Ctx, text: string): void => {
+export const prop = (kind: PropKind, id: string, x: number, y: number, w: number, h: number, state: PropState, t: number, k?: number) => ({ id, kind, x, y, w, h, state, t, ...(k === undefined ? {} : { k }) });
+export const head = (ctx: Ctx, text: string): void => {
   ctx.fillStyle = PAL.ink;
   ctx.fillRect(0, 0, SCREEN_W, VIEW_TOP);
   drawText(ctx, text, 6, 6, 'white');
@@ -47,7 +47,7 @@ const head = (ctx: Ctx, text: string): void => {
 };
 
 /** Three variants painted (as the tiles are written, in soil browns and reds) and three at night, for each name, in a grid. */
-function index(ctx: Ctx, names: TileName[], t: number, label: string): void {
+export function index(ctx: Ctx, names: TileName[], t: number, label: string): void {
   ctx.fillStyle = PAL.night;
   ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
   drawText(ctx, label, 4, 3, 'bone');

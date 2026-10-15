@@ -27,8 +27,10 @@ const FRAMES: [AnimId, number][] = [
   ['cast', 0], ['cast', 1], ['dash', 0], ['hurt', 0], ['ko', 0],
 ];
 
+const ENEMIES = new Set(['agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori']);
+
 export function view(id: string, x: number, y: number, over: Partial<ActorView> = {}): ActorView {
-  const kind = id === 'agent' || id === 'rat' || id === 'guard' || id === 'warden' ? 'enemy' : 'hero';
+  const kind = ENEMIES.has(id) ? 'enemy' : id === 'erica' || id === 'hopper' ? 'npc' : 'hero';
   return {
     kind, id: id as ActorView['id'], x, y, dir: 'down', anim: 'idle', t: 0, flash: 0, blink: false, strained: false,
     tint: null, alert: false, z: 0, bar: null, ...over,

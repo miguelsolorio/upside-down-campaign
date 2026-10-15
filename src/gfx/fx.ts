@@ -7,6 +7,7 @@ import type { Ctx } from './canvas.ts';
 import { acid, mark } from './fx_boss.ts';
 import { bolt, reveal } from './fx_town.ts';
 import { howl, taunt, trail } from './fx_l56.ts';
+import { arcs, babble, bullet, goo, scoop, trap } from './fx_l78.ts';
 
 const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
@@ -329,6 +330,12 @@ export function drawFx(ctx: Ctx, f: FxView): void {
     case 'trail': trail(ctx, f, ang); break;
     case 'howl': howl(ctx, f, p); break;
     case 'taunt': taunt(ctx, f, p); break;
+    case 'scoop': scoop(ctx, f, p); break;
+    case 'babble': babble(ctx, f, ang, p); break;
+    case 'bullet': bullet(ctx, f, ang, p); break;
+    case 'goo': goo(ctx, f, p); break;
+    case 'trap': trap(ctx, f); break;
+    case 'arcs': arcs(ctx, f, p); break;
     default: break;
   }
 }

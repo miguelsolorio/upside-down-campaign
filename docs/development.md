@@ -94,8 +94,8 @@ Besides `index.html`, the HTML pages at the root are dev-only review pages that 
 - `social.html` draws the cards and the icon.
 - `character-variations.html` holds the face options for each hero.
 - `darkness-variations.html` holds the night tileset options.
-- `hp-bars.html` draws the HUD's HP bar at every level and HP state.
 - `hud-variations.html` holds the HUD options.
+- `header-variations.html` holds eight layouts for the active hero's name, XP, MP, coins and Crit meter.
 - `touch-controls.html` shows the touch controls on phone frames.
 
 The simulation is plain TypeScript with no DOM, so the rules, the stage and the bot all run in Node tests. The design lives in `docs/game-design.md`, the contract between the pieces in `docs/technical-architecture.md`, and the level specs in `docs/level-1.md` and `docs/level-2.md`.

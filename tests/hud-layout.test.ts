@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CELL_H, LEFT_W, LEFT_X, METER_LABEL_X, METER_LEFT, METER_W, METER_X, MIDDLE_END, MIDDLE_X, MP_BAR_W, MP_BAR_X, MP_LABEL_X, STRIP_W, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, hudBand, leftShift, rightShift, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
-import { XP_NOTCHES, bulbCount, notchSpans } from '../src/ui/format.ts';
+import { XP_NOTCHES, notchSpans } from '../src/ui/format.ts';
 import type { HeroId, PartyHud } from '../src/core/types.ts';
 
 const IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven'];
@@ -30,7 +30,7 @@ test('every hero gets one rectangle, the active one first, numbered by party slo
   }
 });
 
-test('bench slots sit left to right in party order, clear of the middle readout and the Crit meter', () => {
+test('bench slots sit left to right in party order, clear of the MP, coin and Crit columns', () => {
   for (let n = 2; n <= 4; n++) {
     const bench = slotRects(party(n, 1)).filter((r) => !r.active);
     assert.equal(bench.length, n - 1);
@@ -41,7 +41,7 @@ test('bench slots sit left to right in party order, clear of the middle readout 
       assert.equal(r.w, BENCH_PITCH, 'every slot is the same width, whoever else is benched');
       assert.equal(r.px, r.x + BENCH_FACE_DX, 'the face sits after the key');
       assert.equal(r.x, BENCH_START + k * BENCH_PITCH, 'the slots sit in fixed places, so nobody moves when the party grows');
-      assert.ok(r.x >= METER_LEFT + METER_W, `slot ${r.n} starts at ${r.x}, over the Crit meter`);
+      assert.ok(r.x > CLUSTER_END, `slot ${r.n} starts at ${r.x}, inside the Crit column that ends at ${CLUSTER_END}`);
       assert.ok(r.x + r.w <= BENCH_END, `slot ${r.n} ends at ${r.x + r.w}, past the bench`);
     });
   }
@@ -58,15 +58,20 @@ test('a bench slot holds its key and face with room before the next slot\'s key'
   assert.ok(end <= BENCH_PITCH && air >= 4, `the face ends at ${end}, leaving ${air} px before the next key`);
 });
 
-test('the Crit meter sits between the quarters and the bench: the die, then its CRIT label to the right', () => {
-  for (const ch of 'CRIT') assert.ok(TINY_GLYPHS[ch], `the tiny font has ${ch}`);
-  const label = 'CRIT'.length * 4 - 1;
-  const dieRight = METER_X + 4;
-  assert.ok(METER_X - 4 >= METER_LEFT, 'the die starts inside the meter box');
-  assert.ok(METER_LABEL_X > dieRight + 1, 'the label clears the die and its sparks');
-  assert.ok(METER_LABEL_X + label <= METER_LEFT + METER_W, `the label is ${label} px and ends inside the ${METER_W} px box`);
-  assert.ok(METER_LEFT > MIDDLE_END + 1, 'the meter starts after the quarters and Inspiration');
-  assert.ok(BENCH_START - (METER_LEFT + METER_W) >= 3, 'and ends at least 3 px before the first bench slot, whose key has 2 more');
+test('MP, the coins and Crit are three columns, each a tiny caption over a value, in that order, with room between', () => {
+  for (const ch of 'MPCOINSRT') assert.ok(TINY_GLYPHS[ch], `the tiny font has ${ch}`);
+  const caption = (text: string): number => text.length * 4 - 1;
+  const mpEnd = MP_X + MP_BAR_W, coinEnd = COIN_X + COIN_W;
+  assert.ok(MP_X + caption('MP') <= mpEnd, 'the MP caption sits over the bar');
+  assert.ok(COIN_X >= mpEnd + 6, `the coins start ${COIN_X - mpEnd} px after the MP bar`);
+  assert.ok(COIN_X + caption('COINS') <= coinEnd, 'the COINS caption sits over the coin and its count');
+  assert.ok(CRIT_X >= coinEnd + 6, `Crit starts ${CRIT_X - coinEnd} px after "x99"`);
+  assert.equal(CRIT_W, caption('CRIT'));
+  assert.ok(CRIT_X + 8 <= CRIT_X + CRIT_W + 1, 'the 8 px die fits under its caption');
+  assert.ok(CLUSTER_END < BENCH_START, 'the bench starts after the Crit column');
+  assert.ok(BENCH_START - CLUSTER_END >= 6, 'with room between');
+  assert.ok(CAPTION_Y + 5 < VALUE_Y, 'the 5 px captions end above the value row');
+  assert.ok(VALUE_Y + VALUE_H <= 15, 'the value row ends inside the portrait\'s height');
 });
 
 test('the tiny font has every letter and digit, in 3 columns by 5 rows', () => {
@@ -78,25 +83,17 @@ test('the tiny font has every letter and digit, in 3 columns by 5 rows', () => {
 });
 
 test('the active hero\'s panel never collides, for every hero up to level 12 and 99 quarters', () => {
-  assert.ok(TINY_GLYPHS.M && TINY_GLYPHS.P, 'the tiny font has the MP label');
-  const labelEnd = MP_LABEL_X + 2 * 4 - 1;
-  assert.ok(labelEnd < MP_BAR_X, 'the MP label ends before its bar');
-  assert.ok(MP_BAR_X + MP_BAR_W <= MIDDLE_X, 'the MP bar ends before the quarters');
-  // The quarter counter is the coin, a gap, and "x99" in 6 px glyphs.
-  assert.ok(MIDDLE_X + 9 + 'x99'.length * 6 - 1 <= MIDDLE_END, 'two digits of quarters fit before the bench');
+  // The Inspiration timer takes the coin caption's place: the d20, a gap and "20S" in 6 px glyphs.
+  assert.ok(INSPIRE_X + 10 + '20S'.length * 6 - 1 < CRIT_X, 'the Inspiration timer ends before the Crit column');
+  assert.equal(COIN_W, 9 + 'x99'.length * 6 - 1, 'the coin count has room for two digits');
   for (const d of Object.values(HERO_DEFS)) {
-    // The name, a gap, and the level in 6 px glyphs, 5 px of ink in the last one.
+    // The name, a gap, and the level in 6 px glyphs, 5 px of ink in the last one. The XP notches under it are no wider.
     const nameRowEnd = LEFT_X + d.name.length * 6 + 6 + 'LV12'.length * 6 - 1;
-    assert.ok(nameRowEnd < MP_LABEL_X, `${d.name} at level 12 runs to ${nameRowEnd}, into the MP label at ${MP_LABEL_X}`);
-    for (let level = 1; level <= 12; level++) {
-      const hpMax = d.base.hp + Math.floor(d.growth.hp * (level - 1));
-      const n = bulbCount(hpMax);
-      const pitch = Math.max(6, Math.min(8, Math.floor(LEFT_W / n)));
-      const hpEnd = LEFT_X + n * pitch - 1;
-      assert.ok(hpEnd < MIDDLE_X, `${d.name} L${level} HP bar and the XP notches under it end at ${hpEnd}, into the quarters`);
-      assert.equal(notchSpans(n * pitch - 1, XP_NOTCHES).length, XP_NOTCHES, `${d.name} L${level}: the XP row has room for all ten notches`);
-    }
+    assert.ok(nameRowEnd < MP_X - 6, `${d.name} at level 12 runs to ${nameRowEnd}, into the MP column at ${MP_X}`);
   }
+  assert.ok(LEFT_X + XP_W < MP_X - 6, 'the XP notches end before the MP column');
+  assert.ok(XP_Y + XP_H <= 15, 'and inside the portrait\'s height');
+  assert.equal(notchSpans(XP_W, XP_NOTCHES).length, XP_NOTCHES, 'the XP row has room for all ten notches');
 });
 
 test('bench cells do not overlap, so one click picks one hero', () => {
@@ -190,10 +187,9 @@ test('on a wide screen the active hero hugs the band\'s left edge and the meter 
         for (const r of rects) assert.ok(r.y === 0 && r.h === band.h, 'a click cell spans the whole strip');
         const bench = rects.filter((r) => !r.active);
         const first = bench[0];
-        if (first) assert.equal(first.x, BENCH_START + rx, 'the bench starts against the meter');
+        if (first) assert.equal(first.x, BENCH_START + rx, 'the bench starts at its fixed place');
         for (const r of bench) {
-          assert.ok(r.x >= MIDDLE_END + lx, `band ${band.x},${band.w}: the bench clears the middle`);
-          assert.ok(r.x >= METER_LEFT + METER_W + rx, 'the bench clears the Crit meter');
+          assert.ok(r.x >= CLUSTER_END + lx, `band ${band.x},${band.w}: the bench clears the columns`);
           assert.ok(r.x + r.w <= BENCH_END + rx, 'the bench stays inside the band');
           const [cx, cy] = center(r);
           assert.equal(slotAt(p, cx, cy, band), r.index);

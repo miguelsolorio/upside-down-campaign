@@ -1,9 +1,9 @@
 // Where each hero sits in the top strip. The HUD draws from these rectangles and the play scene hit-tests clicks
 // against the same ones, so what you see is what you can press. Pure, so Node can test it.
 // The constants below place things in a strip STRIP_W wide and CELL_H tall. On a wider screen the strip runs edge to
-// edge and is taller, and its contents follow the clear band with some room around them: the active hero and the
-// middle stay against the band's left edge (leftShift), the Crit meter and the bench against its right edge (rightShift),
-// and everything is moved down by the band's `top` so it sits centered in the strip.
+// edge and is taller, and its contents follow the clear band with some room around them: the active hero and the columns
+// beside it (MP, coins, Crit) stay against the band's left edge (leftShift), the bench against its right edge
+// (rightShift), and everything is moved down by the band's `top` so it sits centered in the strip.
 import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud } from '../core/types.ts';
 
@@ -18,31 +18,37 @@ export const BENCH_FACE_DX = 7;
 export const BENCH_W = 63;
 /** The strip is 20 px tall on a 256 px screen and a slot's click cell spans all of it. The last two rows are its border. */
 export const CELL_H = STRIP_H;
-/** The quarters and Inspiration end by here. The Crit meter starts after them. */
-export const MIDDLE_END = 158;
-/** The bench ends at the strip's edge (a slot has 3 px of its own past the face), and its first slot starts BENCH_W before that. The slots sit in fixed places from
- * the first one on, so a hero joining the party fills the next one and nothing else moves. */
+/** The bench ends at the strip's edge (a slot has 3 px of its own past the face), and its first slot starts BENCH_W before
+ * that. The slots sit in fixed places from the first one on, so a hero joining the party fills the next one and nothing
+ * else moves. */
 export const BENCH_END = STRIP_W;
 export const BENCH_START = BENCH_END - BENCH_W;
-/** The Crit meter is a small d20 with its CRIT label to the right, just left of the bench: a 9 px die, a 2 px gap and
- * the 15 px label. The label ends 5 px before the first key (3 here and the key's 2 px of padding), so the number reads as
- * the hero's and not as part of the label. */
-export const METER_W = 26;
-export const METER_LEFT = BENCH_START - 3 - METER_W;
-/** Center of the Crit die, and the left edge of its label. */
-export const METER_X = METER_LEFT + 4;
-export const METER_LABEL_X = METER_LEFT + 11;
-/** The active hero's text, HP bar and XP notches start here, right of the portrait and its shortcut key. */
+/** The active hero's name and level, and the XP notches under them, start here, right of the portrait and its shortcut
+ * key. */
 export const LEFT_X = 25;
-/** Width the HP bar's segments are fitted into. The bar is shorter than this until max HP is high. */
-export const LEFT_W = 100;
-/** The MP readout sits in the name row: a tiny label, then a bar. Level 12 Eleven has the longest name and level,
- * and they end before the label. The bar ends before the quarters. */
-export const MP_LABEL_X = 94;
-export const MP_BAR_X = 103;
-export const MP_BAR_W = 24;
-/** The quarter counter starts here, and the Inspiration timer sits under it. */
-export const MIDDLE_X = 130;
+/** XP is ten notches, 5 px thick, under the name. The widest name and level, DUSTIN LV12, ends at 90, so the notches and
+ * the columns beside them never meet it. */
+export const XP_Y = 10;
+export const XP_H = 5;
+export const XP_W = 62;
+/** Three columns follow, each a tiny caption over a 7 px value row: MP, then the coins, then Crit. CAPTION_Y is the top of
+ * the caption and VALUE_Y the top of the value under it. */
+export const CAPTION_Y = 1;
+export const VALUE_Y = 8;
+export const VALUE_H = 7;
+/** MP: the caption over one segment per cast. */
+export const MP_X = 100;
+export const MP_BAR_W = 28;
+/** Coins: the caption over the 7 px coin, a 2 px gap and "x99" in 6 px glyphs. The Inspiration timer takes the caption's
+ * place while a natural 20 has it running. */
+export const COIN_X = 137;
+export const COIN_W = 9 + 'x99'.length * 6 - 1;
+export const INSPIRE_X = COIN_X - 3;
+/** Crit: the caption over a small d20, 8 px wide, under the caption's left end. */
+export const CRIT_X = 170;
+export const CRIT_W = 'CRIT'.length * 4 - 1;
+/** The columns end here, and the bench starts after them. */
+export const CLUSTER_END = CRIT_X + CRIT_W;
 /** The active hero's portrait box and its click cell. */
 export const ACTIVE_CELL = { x: 0, y: 0, w: 20, h: CELL_H };
 
@@ -74,7 +80,7 @@ export function hudBand(): HudBand {
 }
 /** How far the left-hand contents (active hero, middle) move from where the constants put them. */
 export const leftShift = (b: HudBand): number => b.x;
-/** How far the right-hand contents (Crit meter, bench) move from where the constants put them. */
+/** How far the right-hand contents (the bench) move from where the constants put them. */
 export const rightShift = (b: HudBand): number => b.x + b.w - STRIP_W;
 
 /** Left edge of bench slot `k`. */

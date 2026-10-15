@@ -5,8 +5,8 @@ import { audio } from '../audio/index.ts';
 import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import { drawPanel, drawText } from '../gfx/index.ts';
 import { bigText, dither, inFrame } from './kit.ts';
-import { drawMenu, settingItems, updateMenu } from './menu.ts';
-import type { Menu } from './menu.ts';
+import { drawMenu, reshape, settingItems, settingsKind, updateMenu } from './menu.ts';
+import type { Menu, SettingsKind } from './menu.ts';
 import { createCharSheetScene } from './charsheet.ts';
 import type { CharSheetHero } from './charsheet.ts';
 
@@ -17,7 +17,10 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
   /** The label of the row waiting for a second press, if any. */
   let armed: string | null = null;
   let menu: Menu | null = null;
+  /** The input the settings rows were built for. Picking up the controller while paused brings RUMBLE in. */
+  let builtFor: SettingsKind = 'keys';
   const build = (g: Game): Menu => {
+    builtFor = settingsKind(g);
     const resume = { label: 'RESUME', activate: () => opts.onResume() };
     const characters = { label: 'CHARACTERS', activate: () => g.scenes.push(createCharSheetScene({ heroes: opts.party, onBack: () => g.scenes.pop() })) };
     // Destructive rows: the first press arms them, the second one does it.
@@ -44,6 +47,11 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
     update(g) {
       t++;
       const m = menu ?? build(g);
+      if (settingsKind(g) !== builtFor) {
+        const fresh = build(g);
+        reshape(m, fresh.items);
+        menu = m;
+      }
       if (g.input.pressed('pause') || g.input.pressed('cancel')) {
         audio.sfx('cancel');
         opts.onResume();
@@ -56,7 +64,9 @@ export function createPauseScene(opts: { onResume(): void; onQuit(): void; onSta
       inFrame(ctx, () => {
         bigText(ctx, 'PAUSED', 128, 30, 'yellow', 2, 'center', true);
         drawPanel(ctx, 36, 48, 184, 132, 'menu');
-        drawMenu(ctx, menu ?? build(g), 48, 56, 160, t);
+        const m = menu ?? build(g);
+        // The RUMBLE row makes a twelfth, which fits the same panel with the rows a pixel closer.
+        drawMenu(ctx, m, 48, 56, 160, t, m.items.length > 11 ? 10 : 11);
         // Escape always works on a keyboard. On a controller and on the touch screen's Game Boy, B does.
         const key = labelOf('pause');
         const back = getPromptDevice() === 'keyboard' ? 'ESC' : 'B';

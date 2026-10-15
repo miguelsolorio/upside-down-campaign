@@ -108,7 +108,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 | Talk, light | Space / Enter | Interact |
 | Pause | Esc / P | Character sheet (also a click on the HUD's name and level), settings. Items later |
 
-Gamepad uses the standard mapping, Xbox layout: stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
+Gamepad uses the standard mapping, Xbox layout (rebindable in CONTROLS, with A and B fixed as confirm and back, and a short rumble on a hit): stick or D-pad moves, A attacks, X is special, B backs out of menus, LB and RB swap, Y is Crit, Start pauses (and begins the game on the title), View skips. Every hint follows whichever device was touched last. The controls get taught in character in 1.1, so Dustin explains attacking and Lucas explains swapping. There's no dash: moving, stepping aside and the swap's invulnerability cover dodging, and it keeps the controls down to attack, special, swap and Crit.
 
 **Attack rules**
 - Fixed 60 Hz. Melee heroes chain three hits if you tap within 18 frames. Ranged heroes aim eight ways on a cooldown.

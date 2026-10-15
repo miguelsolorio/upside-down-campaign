@@ -23,6 +23,8 @@ export interface Settings {
   skipDialogue: boolean;
   difficulty: Difficulty;
   shell: ShellPref;
+  /** Short pulses through a controller's motors on a hit, a KO, a level-up and a boss slam. Only matters with a controller. */
+  rumble: boolean;
 }
 
 const KEY = 'upside-down:settings:v1';
@@ -36,6 +38,7 @@ export const settings: Settings = {
   skipDialogue: true,
   difficulty: 'chief',
   shell: 'auto',
+  rumble: true,
 };
 
 /** True when the story should be skipped: the saved setting, or ?rush=1 for this page load only. */
@@ -51,6 +54,7 @@ export function loadSettings(): void {
     Object.assign(settings, saved);
   } catch { /* corrupt save: keep defaults */ }
   if (!SHELL_PREFS.includes(settings.shell)) settings.shell = 'auto';
+  if (typeof settings.rumble !== 'boolean') settings.rumble = true;
 }
 
 export function saveSettings(): void {

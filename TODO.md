@@ -46,6 +46,15 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] The dev panel follows the stage: its group and prop suggestions (and the two boxes' starting values) come from the stage's own spawns (`world/devhooks.ts`). `KEPT_PROPS` moved to `world/options.ts`, and `play.ts` is back under 500 lines
 - [x] Verified: typecheck clean, 1091 tests pass (38 new), the production build passes. In the browser with `?mute=1`: blur, a hidden tab and a pad pulled out each open the pause menu and hold the level, the title ignores all three, a Galaga run holds on blur, the klaxon glow breathes in 1.2 and holds steady with Reduce flashing on, and the panel's boxes list 1.2's, 2.1's and 2.3's own groups and props. No console errors on the title, 1.2, 2.1 and 2.3. A real controller and a real window switch were simulated with events, not tried by hand
 
+## Controller pass (rebinding and rumble)
+
+- [x] Controller buttons rebind. The CONTROLS screen has a GAMEPAD page (it opens first while a controller is in use): ATTACK, SPECIAL, SWAP BACK, SWAP NEXT and CRIT, each with two of the eight face, bumper and trigger buttons. A taken button swaps, every action keeps one, and A (confirm and use) and B (back) are fixed the way Enter and Esc are. Saved beside the keys in `core/padmap.ts`, and every hint that names a button follows
+- [x] Rumble: short weak pulses on the active hero's hit, a KO, a level-up and a boss slam or landing, through `vibrationActuator`, skipped quietly where it's missing. A RUMBLE ON / OFF row shows in the options only while a controller is in use, saved with the settings
+- [x] The one hook into world code: a call to `rumble(ev)` at the top of `forward()` in `world/play.ts`. Nothing in combat, enemies or the HUD changed
+- [x] The options rebuild their rows when the input changes (picking up a pad with the menu open), keeping the cursor on its row
+- [x] Verified: typecheck clean, 1149 tests pass (58 new), the production build passes. In the browser with `?mute=1` and a simulated pad: RUMBLE shows and saves, the GAMEPAD page rebinds by pad and by mouse, B binds without backing out, Start cancels, View clears, the level's hints and the pause menu follow the new buttons, and a bot run buzzes the fake pad's motor on hits and level-ups
+- [ ] The picks screen's controller legend still prints `X LEAD` whatever SPECIAL is bound to (`legend()` in `ui/picks_logic.ts`, left alone while chapter 3 works in it). Its `A PICK` and `B BACK` are right, since A and B are fixed
+
 ## Status
 
 - [x] Level 1 (stage 1.1 Mirkwood, the title, the basement prologue). See `docs/level-1.md`
@@ -95,7 +104,7 @@ From Levels 1 and 2:
 - The bot is a good dodger and flatters the difficulty: hazards were about 75 percent of its damage on the first draft, and it sidesteps almost every guard bash. `createBot({ careless: true })` is a floor for a player who is not dodging. Nobody has played the harder Lab by hand, so how it feels to a person is unknown. If it is still too easy, raise `enemyMult` in `stage12.ts`; if it is too hard, lower it. The difficulty setting stacks on top.
 - Two bot stalls (a pickup at its reach edge, an idle enemy at its engage radius) were fixed in `combat/bot.ts`. There may be others.
 - Stage 1.2's dialogue is off by default like the rest. The `l2_*` scripts only show with SKIP STORY off, and have only had the mechanical copy checks.
-- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Its buttons can't be rebound and there's no rumble. Only the standard mapping is read.
+- The controller is checked with unit tests and a simulated Xbox pad in the browser, not with real hardware yet. Nobody has felt the rumble: the pulses are weak numbers from `core/rumble.ts` (`PULSES`), sent through the Gamepad `vibrationActuator`, and a simulated pad only proves they're asked for. Only the standard mapping is read.
 - The autosave at Joyce's lights keeps levels, kills and story beats but not health, and the results screen only times the stretch since the last Continue.
 - Keyboard rebinding is saved per browser. Arrow keys, Enter, Escape and Backspace are fixed so menus can't get stuck.
 - Skip story is on by default, so the level's tutorial lines never show unless the player turns it off. The combat controls sit in the bottom left corner of the level instead, and fade to grey once the party leaves the starting yard. A puzzle gets a hint the moment someone tries it with the wrong hero (swings or fires at it, or pushes against its gate or door), with a bobbing yellow caret over the prop and a subtitle that names the hero (MAYBE ELEVEN SHOULD TRY HER SHOVE), so the Lab's three gates teach nothing else in words when the story is skipped. A party that tries nothing still gets the hint after five seconds near the puzzle.

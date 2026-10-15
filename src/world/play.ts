@@ -9,6 +9,7 @@ import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
 import { toSimInput } from '../core/input.ts';
+import { rumble } from '../core/rumble.ts';
 import { createSim, setReduceFlashing, setShakeScale } from '../combat/index.ts';
 import { createBot } from '../combat/bot.ts';
 import type { Bot } from '../combat/bot.ts';
@@ -282,6 +283,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   // ---------------------------------------------------------------- events, lights
   function forward(ev: SimEvent[]): void {
+    rumble(ev);
     for (const e of ev) {
       switch (e.t) {
         case 'sfx': if (!swallow.delete(e.id)) audio.sfx(e.id); break;

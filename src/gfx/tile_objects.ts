@@ -17,17 +17,18 @@ import { tunnelTile } from './tile_tunnel.ts';
 import { fleshTile } from './tile_flesh.ts';
 import { mallObject } from './tile_mall.ts';
 import { baseObject } from './tile_base.ts';
-import { foodTile } from './tile_food.ts';
+import { foodTable, foodTile, inCourt } from './tile_food.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
   'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines', 'schoolfloor', 'checker', 'gymfloor',
   'arcadecarpet', 'sidewalk', 'furrow', 'rot',
   'mallfloor', 'mallband', 'servicefloor', 'basefloor', 'basegrate', 'keyfloor',
+  'foodfloor', 'foodband', 'skyfloor', 'kitchenfloor',
 ]);
 /** Floors that are a mark on another floor: an object beside one stands on the plain floor named here, unless a plain floor is also beside it. */
 const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet', rot: 'furrow',
-  mallband: 'mallfloor', basegrate: 'basefloor', keyfloor: 'basefloor' };
+  mallband: 'mallfloor', basegrate: 'basefloor', keyfloor: 'basefloor', foodband: 'foodfloor', skyfloor: 'foodfloor' };
 
 /** The ground an object stands on: whatever its neighbours are, else the given default. */
 function under(c: TileCtx, prefer: TileName): Px {
@@ -331,8 +332,9 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
     case 'trophy':
     case 'brick':
       return schoolWall(name, c, rngFor(c, name));
-    case 'desk':
     case 'table':
+      return inCourt(c) ? foodTable(c) : schoolFurniture(name, c, rngFor(c, name), under);
+    case 'desk':
     case 'counter':
     case 'bleachers':
       return schoolFurniture(name, c, rngFor(c, name), under);
@@ -352,7 +354,7 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
       return mallObject(name, c, under);
     case 'basecap': case 'basewall': case 'ammo': case 'bunk': case 'cell': case 'machine':
       return baseObject(name, c, under);
-    case 'foodfloor': case 'foodband': case 'skyfloor': case 'stallcap': case 'stall': case 'kitchenfloor': case 'fryer': case 'escalator':
+    case 'stallcap': case 'stall': case 'fryer': case 'escalator':
       return foodTile(name, c);
     default: return null;
   }

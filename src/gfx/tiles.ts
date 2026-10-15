@@ -238,6 +238,21 @@ function patchNear(name: TileName, v: number, near: Near): Near {
   }
 }
 
+/** The food court at its best: v 0 in a run, v 1 at an edge, v 2 beside something else it meets; a stall under its awning, the escalator between its rails. */
+function foodNear(name: TileName, v: number, near: Near): Near {
+  const all = (n: TileName): Near => ({ n, e: n, s: n, w: n });
+  switch (name) {
+    case 'foodfloor': return v === 0 ? all(name) : v === 1 ? { n: 'stall', e: name, s: name, w: name } : { n: 'stall', e: name, s: name, w: 'foodband' };
+    case 'foodband': return v === 2 ? { n: name, e: 'foodfloor', s: name, w: 'foodfloor' } : { n: 'foodfloor', e: name, s: 'foodfloor', w: name };
+    case 'skyfloor': return v === 0 ? all(name) : v === 1 ? { n: 'foodfloor', e: name, s: name, w: 'foodfloor' } : { n: 'foodfloor', e: 'foodfloor', s: name, w: name };
+    case 'stallcap': return { n: 'mallcap', e: name, s: 'stall', w: name };
+    case 'stall': return { n: 'stallcap', e: name, s: 'foodfloor', w: name };
+    case 'kitchenfloor': return v === 0 ? all(name) : { n: 'fryer', e: name, s: name, w: name };
+    case 'escalator': return v === 0 ? { n: name, e: name, s: name, w: 'railing' } : v === 1 ? { n: name, e: 'railing', s: name, w: name } : all(name);
+    default: return near;
+  }
+}
+
 /** The pixels of one tile on its own, beside the neighbours that show it at its best. Water is not here: see tileSample. */
 export function samplePx(name: TileName, v: number): Px {
   const tx = 5 + v * 3, ty = 4 + v * 7;
@@ -247,7 +262,7 @@ export function samplePx(name: TileName, v: number): Px {
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near)))));
+  near = foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))))));
   // The fountain, the lift and the machine are one picture over a block: v 0 is its top left piece, v 1 the one beside it, v 2 one inside.
   if (name === 'fountain' || name === 'lift' || name === 'machine') {
     const floor: TileName = name === 'machine' ? 'basefloor' : 'mallfloor';

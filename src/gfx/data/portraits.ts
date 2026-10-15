@@ -7,6 +7,7 @@ import type { CharId, Expr } from '../../core/types.ts';
 import type { Part } from './types.ts';
 import { HOPPER_PORTRAIT, MAX_PORTRAIT, STEVE_PORTRAIT } from './portraits_l56.ts';
 import { ERICA_PORTRAIT, NANCY_PORTRAIT, ROBIN_PORTRAIT } from './portraits_l78.ts';
+import { BILLY_PORTRAIT } from './portraits_l9.ts';
 
 export type Shirt = 'stripes' | 'plaid' | 'plain' | 'jacket' | 'cardigan';
 
@@ -224,9 +225,8 @@ const BASE_PORTRAITS = {
   },
 } satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy'>, PortraitSpec>;
 
-// Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica are in portraits_l78.ts. Billy borrows Steve's
-// until Art draws his (docs/level-9.md).
+// Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica are in portraits_l78.ts. Billy is in portraits_l9.ts.
 export const PORTRAITS: Record<CharId, PortraitSpec> = {
   ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT,
-  robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: STEVE_PORTRAIT,
+  robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: BILLY_PORTRAIT,
 };

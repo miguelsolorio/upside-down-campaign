@@ -16,6 +16,7 @@ export { drawText, textWidth, drawTinyText, tinyWidth, TINY_H } from './font.ts'
 export { bakeStage, drawStage } from './tiles.ts';
 export { drawActor, drawHeroBar } from './actors.ts';
 export { drawFx } from './fx.ts';
+export { drawPool } from './fx_l9.ts';
 export { drawItem, drawProp } from './props.ts';
 export { drawCamCone, drawHazard } from './overlays.ts';
 export { paintGlow } from './glow.ts';

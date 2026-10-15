@@ -117,6 +117,34 @@ export interface AlphaState {
   mark: FxView | null;
 }
 
+/**
+ * What a Flayed is doing (enemies/flayed.ts). walk: shambling at the hero. rise: coming up out of the goo, untouchable. wind: the
+ * "!" before the reach. reach: the arm out. hold: holding the hero. recover: after a hold or a miss.
+ */
+export type FlayedMove = 'walk' | 'rise' | 'wind' | 'reach' | 'hold' | 'recover';
+
+/** A Flayed's own state. Every other enemy has `flayed: null`. */
+export interface FlayedState { move: FlayedMove; t: number }
+
+/**
+ * What a Russian soldier is doing (enemies/soldier.ts). walk: keeping its distance. wind: the "!" before a burst. fire: the burst, one
+ * round every few frames along the aim locked when the wind-up ended. butt: the rifle butt wind-up. recover: after either.
+ */
+export type SoldierMove = 'walk' | 'wind' | 'fire' | 'butt' | 'recover';
+
+/** A soldier's own state. Every other enemy has `soldier: null`. `shots` is how many rounds of the burst are left, `backing` that it is stepping back. */
+export interface SoldierState { move: SoldierMove; t: number; shots: number; aim: number; backing: boolean; buttCd: number }
+
+/**
+ * What Grigori is doing (enemies/grigori.ts). walk: coming at the hero, facing him. hay: the haymaker wind-up. grab: the wind-up of
+ * the lunge. lunge: the lunge. hold: holding the hero. recover: after a haymaker, a missed lunge or a throw, not turning. stun: on
+ * the power box.
+ */
+export type GrigoriMove = 'walk' | 'hay' | 'grab' | 'lunge' | 'hold' | 'recover' | 'stun';
+
+/** Grigori's own state. Every other enemy has `grigori: null`. `raged` is set once, at half HP. */
+export interface GrigoriState { move: GrigoriMove; t: number; grabCd: number; raged: boolean }
+
 export interface Enemy {
   uid: number;
   id: string;
@@ -188,7 +216,17 @@ export interface Enemy {
   onWard: boolean;
   /** The frame a hero last hit it. The defense's targeting reads it. */
   hitAt: number;
+  /** A Flayed, a soldier or Grigori only (docs/level-7.md, docs/level-8.md). */
+  flayed: FlayedState | null;
+  soldier: SoldierState | null;
+  grigori: GrigoriState | null;
 }
+
+/** A Flayed or Grigori holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */
+export interface Hold { by: Enemy; hero: Hero; t: number }
+
+/** The power box firing (combat/powerbox.ts): frames left in the window, and the uids of the enemies it has already hit. */
+export interface Zap { left: number; hit: Set<number> }
 
 /**
  * The stage's defense while it runs (combat/defense.ts). `left` counts frames down from `total`. `down` is set once her HP
@@ -227,6 +265,8 @@ export interface Proj {
   hit: number[];
   /** The most a hit may leave an enemy's shove at (before its weight), so a volley that all lands does not stack (Nancy's Shotgun). */
   kbCap?: number;
+  /** Enemy rounds only: the frames of invulnerability a hit leaves the hero, where it isn't the usual 45 (a soldier's burst). */
+  invuln?: number;
   /** Candy lobs: start and end, and what happens on landing. */
   lob: { sx: number; sy: number; ex: number; ey: number; onLand: () => void } | null;
   /** A fireball: called with where it ended (an enemy, a solid prop or the end of its flight). It does the damage; the shot itself does none. */
@@ -316,6 +356,10 @@ export interface S {
   lure: Lure | null;
   /** Nancy's bear traps, oldest first. */
   traps: Trap[];
+  /** The hero a Flayed or Grigori is holding right now, or null. */
+  hold: Hold | null;
+  /** The power box while it fires, or null. */
+  zap: Zap | null;
   shield: Shield | null;
   fx: FxView[];
   floaters: Floater[];

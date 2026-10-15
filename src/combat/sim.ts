@@ -12,6 +12,8 @@ import { tickEnemyStatus, tickHeroStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
 import { updateItems, updateStash } from './pickups.ts';
 import { closePropById, openPropById, updateProps } from './props.ts';
+import { updatePowerboxes } from './powerbox.ts';
+import { wakeFlayed } from '../enemies/flayed.ts';
 import { startDefense, updateDefense } from './defense.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
@@ -101,6 +103,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   updateItems(s);
   updateStash(s);
   updateProps(s);
+  updatePowerboxes(s);
   updateCameras(s);
   updateHazards(s);
   regen(s);
@@ -141,6 +144,8 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
         e.dormant = false;
         dust(s, e.x, e.y, 4);
         alertEnemy(s, e);
+        // A Flayed comes up out of its puddle before it hunts.
+        wakeFlayed(e);
       }
     },
     openProp: (id) => openPropById(s, id),

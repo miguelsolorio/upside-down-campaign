@@ -9,6 +9,8 @@ import { dirOfVec } from './state.ts';
 import { BODY_Y, dist, los } from './space.ts';
 import { floater, sfx, sparks } from './fx.ts';
 import { rollDamage, spreadRoll } from './damage.ts';
+import { grigoriDazed } from '../enemies/grigori_hit.ts';
+import { untouchable } from '../enemies/hold.ts';
 import { speedMul } from './status.ts';
 
 /** Frames of wind-up before a bump, and the share of the attacker's ATK it lands with. */
@@ -29,15 +31,18 @@ export function isBoss(e: Enemy): boolean {
 
 /** A boss caught in the cone staggers for a moment. Not while it is in the air or charging, where it would hang in mid-move. */
 function stagger(s: S, e: Enemy): void {
-  const move = e.demo?.move ?? e.alpha?.move;
-  if (move === 'air' || move === 'run') return;
+  const move = e.demo?.move ?? e.alpha?.move ?? e.grigori?.move;
+  // Not in the air, charging or lunging, and not while stunned on the power box: there it would hang in mid-move.
+  if (move === 'air' || move === 'run' || (e.grigori && (move === 'lunge' || move === 'stun'))) return;
   e.stagger = Math.max(e.stagger, BOSS_STAGGER);
+  // Grigori also loses the wind-up he was in and drops a hero he held.
+  grigoriDazed(s, e);
   floater(s, 'DAZED', e.x, e.y - 24, 'mist', false, 30);
 }
 
 /** Confuses an enemy for `frames` more (a longer spell is not shortened). A boss staggers instead. */
 export function confuse(s: S, e: Enemy, frames: number): void {
-  if (e.dead || e.dormant || e.hp <= 0) return;
+  if (e.dead || e.dormant || e.hp <= 0 || untouchable(e)) return;
   if (isBoss(e)) { stagger(s, e); return; }
   if (e.stat.confuse <= 0) floater(s, 'CONFUSED', e.x, e.y - 24, 'purple', false, 40);
   e.stat.confuse = Math.max(e.stat.confuse, frames);
@@ -48,7 +53,7 @@ function nearestOther(s: S, e: Enemy): Enemy | null {
   let best: Enemy | null = null;
   let bestD = Infinity;
   for (const o of s.enemies) {
-    if (o === e || o.dead || o.dormant || o.hp <= 0 || isBoss(o)) continue;
+    if (o === e || o.dead || o.dormant || o.hp <= 0 || isBoss(o) || untouchable(o)) continue;
     const d = dist(e.x, e.y, o.x, o.y);
     if (d >= bestD || !los(s, e.x, e.y, o.x, o.y)) continue;
     best = o; bestD = d;

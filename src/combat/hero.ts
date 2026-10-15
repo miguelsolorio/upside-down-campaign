@@ -12,6 +12,7 @@ import { pokeAimed, trackBump } from './pokes.ts';
 import { smashAimed } from './props.ts';
 import { drinkCoke } from './pickups.ts';
 import { endDash, stepDash } from '../heroes/skate.ts';
+import { isHeld } from '../enemies/hold.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -89,7 +90,9 @@ export function updateActive(s: S, input: SimInput): void {
   const x0 = h.x, y0 = h.y;
   let meant = 0;
 
-  if (h.hurtT <= 0) {
+  // A hero a Flayed or Grigori holds can't walk, swing or cast until it lets go (enemies/hold.ts).
+  const held = isHeld(s, h);
+  if (h.hurtT <= 0 && !held) {
     // A rolling Max goes where she was aimed: the stick does not steer her, turn her or walk her.
     if (live && !h.dash) {
       h.aim = snap8(Math.atan2(uy, ux));
@@ -115,7 +118,7 @@ export function updateActive(s: S, input: SimInput): void {
   trackBump(s, h, live ? ux : 0, live ? uy : 0, meant, Math.hypot(h.x - x0, h.y - y0));
 
   let anim: AnimId = 'idle';
-  if (h.hurtT > 0) anim = 'hurt';
+  if (h.hurtT > 0 || held) anim = 'hurt';
   else if (h.dash) anim = 'dash';
   else if (h.actT > 0 && h.act) anim = h.act === 'special' ? 'cast' : 'attack';
   else if (h.moving) anim = 'walk';

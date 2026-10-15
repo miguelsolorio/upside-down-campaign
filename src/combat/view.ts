@@ -12,6 +12,8 @@ import { hazardViews } from './hazards.ts';
 import { guarding, isShielded } from '../enemies/shield.ts';
 import { demoPose } from '../enemies/demo_hit.ts';
 import { alphaPose } from '../enemies/alpha_hit.ts';
+import { grigoriPose } from '../enemies/grigori_hit.ts';
+import { flayedPose } from '../enemies/flayed.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
 
@@ -56,7 +58,23 @@ function enemyView(s: S, e: Enemy): ActorView {
     const pose = alphaPose(e.alpha);
     if (pose) v.pose = pose;
   }
+  if (e.grigori && !e.dead) {
+    const pose = grigoriPose(e.grigori);
+    if (pose) v.pose = pose;
+  }
+  if (e.flayed && !e.dead) {
+    const pose = flayedPose(e.flayed);
+    if (pose) v.pose = pose;
+  }
   return v;
+}
+
+/** A dormant Flayed waits as a goo puddle: an actor with `puddle` set, standing still. */
+function puddleView(s: S, e: Enemy): ActorView {
+  return {
+    kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir, anim: 'idle', t: s.frame, flash: 0, blink: false, strained: false,
+    tint: null, alert: false, z: 0, bar: null, puddle: true,
+  };
 }
 
 function propView(s: S, p: Prop): PropView {
@@ -68,9 +86,9 @@ function propView(s: S, p: Prop): PropView {
   return v;
 }
 
-const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA' };
+const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI' };
 
-/** The first Warden, Demogorgon or Alpha that is awake and standing fills the boss bar. */
+/** The first Warden, Demogorgon, Alpha or Grigori that is awake and standing fills the boss bar. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
@@ -142,7 +160,10 @@ export function buildView(s: S): SimView {
   for (const b of s.bodies) {
     actors.push({ kind: 'hero', id: b.id, x: b.x, y: b.y, dir: b.dir, anim: 'ko', t: b.t, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null });
   }
-  for (const e of s.enemies) if (!e.dormant) actors.push(enemyView(s, e));
+  for (const e of s.enemies) {
+    if (!e.dormant) actors.push(enemyView(s, e));
+    else if (e.flayed && !e.dead) actors.push(puddleView(s, e));
+  }
   for (const n of s.npcs) {
     const ward = wardView(s, n);
     if (ward) { actors.push(ward); continue; }

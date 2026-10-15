@@ -11,7 +11,7 @@ import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './spa
 import { HERO_DEFS } from '../heroes/defs.ts';
 
 /** Props that can be a puzzle. A crate, van or lantern only counts if it asks for something: a decor crate does not. */
-const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack', 'shutter', 'cipher']);
+const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack', 'shutter', 'cipher', 'breaker']);
 /** Props whose own hero is not "trying" them when he goes at them: it is how they are solved. Robin walks up to a cipher door. */
 const SOLVED_BY_TRY = new Set<PropKind>(['gap', 'crack', 'cipher']);
 /** Frames before the same prop reports another attempt. */

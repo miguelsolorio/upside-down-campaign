@@ -8,6 +8,7 @@ import { sparks, sfx } from './fx.ts';
 import { hitEnemy, hurtHero, heroAtk } from './damage.ts';
 import { hitProp, isTargetFor, lightTarget } from './props.ts';
 import { BURN_PERIOD } from './status.ts';
+import { untouchable } from '../enemies/hold.ts';
 
 export function newProj(p: Partial<Proj> & Pick<Proj, 'kind' | 'mine' | 'x' | 'y' | 'vx' | 'vy' | 'life' | 'r'>): Proj {
   return {
@@ -49,7 +50,7 @@ function collide(s: S, p: Proj, hero: Hero): boolean {
     const by = heroById(s, p.by);
     if (!by) return false;
     for (const e of s.enemies) {
-      if (e.dead || e.dormant || e.hp <= 0 || p.hit.includes(e.uid)) continue;
+      if (e.dead || e.dormant || e.hp <= 0 || p.hit.includes(e.uid) || untouchable(e)) continue;
       if (Math.abs(p.x - e.x) > HURT_HALF_W + p.r || p.y < e.y - HURT_H - p.r || p.y > e.y + p.r) continue;
       // A fireball bursts on the first enemy it touches, and the burst does the hitting.
       if (p.end) return false;
@@ -60,7 +61,7 @@ function collide(s: S, p: Proj, hero: Hero): boolean {
     }
   } else if (!hero.ko) {
     if (Math.abs(p.x - hero.x) <= HURT_HALF_W + p.r && p.y >= hero.y - HURT_H - p.r && p.y <= hero.y + p.r) {
-      hurtHero(s, hero, p.ox, p.oy, p.power, p.atk, p.kb);
+      hurtHero(s, hero, p.ox, p.oy, p.power, p.atk, p.kb, p.invuln);
       sparks(s, p.x, p.y, 3);
       return false;
     }

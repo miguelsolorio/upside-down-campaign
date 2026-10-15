@@ -104,6 +104,26 @@
 //   The clock runs through hit-stop and stops only for a burst and a game over. About every 600 frames the sim plays 'rumble'. At 0:
 //   { t: 'defended' }, the 'gateShut' sfx, a shake and a flash, and every run-time enemy still up dies for no XP and no kill event.
 //   If her HP hits 0 first: { t: 'wardDown', id } once, the clock stops and the waves stop.
+// - The melting rat (enemies/rat.ts, combat/kills.ts): it swarms like the rat (24 frame wind-up, power 0.75) and, when it dies by any cause,
+//   bursts: a 'goo' fx (w 44, h 22), the 'melt' sfx, and for the active hero within 22 px power 0.5 and the 'slow' status for 60 frames.
+// - The Flayed (enemies/flayed.ts, enemies/hold.ts): a 30 frame "!", a 10 frame reach, and on contact a grab of power 0.8 that holds the
+//   active hero for 40 frames (50 for an elite): pose 'grab' on it, the 'grab' sfx, ActorView anim 'hurt' on the hero, and no move or attack
+//   until it lets go. The hold ends in a shove of 3 (no damage). A swap frees the hero, so does a hit on it with knockback 3 or more, and it
+//   lets go if it is stunned, confused, staggered or killed. A dormant Flayed is an actor with `puddle` set; when its group wakes it has
+//   pose 'rise' for 40 frames and cannot be hit, confused or shot.
+// - The soldier (enemies/soldier.ts): holds 80 to 120 px from the hero, steps back inside 60, and after a 30 frame "!" fires three (an elite
+//   five) 'bullet' rounds six frames apart along the aim locked at the end of the wind-up, with 'rifle' on each. A round hits for power 0.45
+//   and leaves the hero invulnerable for five frames, so each round of a burst can land. Inside 22 px it clubs (20 frame wind-up, power
+//   0.8, knockback 3). Bullets stop at solid tiles and props, and a hit on it breaks the wind-up and the burst.
+// - Grigori (enemies/grigori.ts, grigori_hit.ts): hud.boss reads GRIGORI while he is awake. He always faces the hero (ActorView.dir) except
+//   while he recovers, and a hit from inside 70 degrees of that facing deals a quarter, with the 'block' sfx. Haymaker at 28 px (30 frame
+//   "!", reach 32, power 1.2, then 50 frames of recovery), grab (pose 'grab' from the "!" through the lunge and the 45 frame hold, then a
+//   throw of power 1.0 and knockback 6), rage at half HP, pose 'stun' on the power box. Word vomit staggers him 30 frames and drops a hero he
+//   holds. Hits never stagger him, and Nancy's traps do not hold him.
+// - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
+//   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
+//   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;
+//   the active hero takes 15 and is thrown clear. The breaker is 'closed' again 300 frames after it was lit. openProps never leaves it lit.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

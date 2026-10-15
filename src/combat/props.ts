@@ -2,7 +2,8 @@
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
 // A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat.
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
-// for any hero who swings at it from up close. A cipher door (docs/level-8.md) decodes while a hero with `read` stands near.
+// for any hero who swings at it from up close. A cipher door (docs/level-8.md) decodes while a hero with `read` stands near. A breaker
+// lit by a shot fires the power boxes (powerbox.ts).
 import type { PropKind, PropState, Utility } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import type { Hero, Prop, S } from './state.ts';
@@ -10,6 +11,7 @@ import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, footBlocked, nearestOnRect, rectsOverlap } from './space.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
+import { fireBoxes } from './powerbox.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
@@ -42,6 +44,8 @@ export function lightTarget(s: S, p: Prop): void {
   p.t = 0;
   s.events.push({ t: 'targetHit', propId: p.id });
   sfx(s, 'targetHit');
+  // A breaker fires every power box in the stage (combat/powerbox.ts).
+  if (p.kind === 'breaker') fireBoxes(s);
 }
 
 /** Fire reaches a prop that asked to be burned: vines catch, anything else lights like a target. */

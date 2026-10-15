@@ -8,10 +8,13 @@ import { awardXp } from './party.ts';
 
 const DEATH_FRAMES = 22;
 export const COMPASS_DROP = 0.1;
+/** Max's High score talent: the same bonus to quarter drops as Dustin's Compass, and the two stack. */
+export const HIGH_SCORE_DROP = 0.1;
 
 function dropChance(s: S, base: number): number {
   const dustin = s.heroes.find((h) => h.id === 'dustin');
-  return base + (dustin && hasTalent('dustin', dustin.level) ? COMPASS_DROP : 0);
+  const max = s.heroes.find((h) => h.id === 'max');
+  return base + (dustin && hasTalent('dustin', dustin.level) ? COMPASS_DROP : 0) + (max && hasTalent('max', max.level) ? HIGH_SCORE_DROP : 0);
 }
 
 function kill(s: S, e: Enemy): void {

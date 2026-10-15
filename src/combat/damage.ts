@@ -7,6 +7,7 @@ import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
 import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
+import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
@@ -164,6 +165,10 @@ export function behindShield(s: S, sx: number, sy: number, tx: number, ty: numbe
 
 /** The part of a hit on a hero that does not depend on where the damage came from. */
 function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'hot' | 'sky'): number {
+  // Steve's Hair of steel can cover the hit and his Babysit cuts it. A covered hit does nothing at all.
+  dmg = steveTakes(s, h, dmg);
+  if (dmg === 0) return 0;
+  h.unhurt = 0;
   h.hp = Math.max(0, h.hp - dmg);
   h.invuln = HERO_HIT_INVULN;
   h.blink = true;
@@ -189,7 +194,7 @@ function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'ho
 export function hurtHero(s: S, h: Hero, sx: number, sy: number, power: number, atk: number, kb = 2.6): number {
   if (h.ko || s.over || s.god || h.invuln > 0) return 0;
   const spread = spreadRoll(s.rng);
-  let dmg = Math.max(1, Math.round((power * atk * spread - h.st.def * 0.5) * s.mult * s.foeMult));
+  let dmg = Math.max(1, Math.round((power * atk * spread - heroDef(s, h) * 0.5) * s.mult * s.foeMult));
   const shielded = behindShield(s, sx, sy, h.x, h.y);
   if (shielded) dmg = Math.max(1, Math.round(dmg * 0.5));
   return wound(s, h, dmg, Math.atan2(h.y - sy, h.x - sx), kb, shielded ? 'sky' : 'hot');

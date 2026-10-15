@@ -18,11 +18,15 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack']);
 /** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
 const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox']);
+/** Props that stay solid once solved: the lit ones, and a gap, which is crossed and never filled in. */
+const SOLID_WHEN_SOLVED = new Set<PropKind>([...LIT_WHEN_SOLVED, 'gap']);
 /** What lights or clears a prop when its spawn does not say: a target, camera or fire-door box takes a shot, vines take fire. */
-const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = { target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense' };
+const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
+  target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense', gap: 'dash', crack: 'smash',
+};
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
 function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
@@ -44,7 +48,7 @@ function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
     demo: sp.type === 'demogorgon' ? newDemo() : null,
-    hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false,
+    hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
   };
 }
 
@@ -74,7 +78,7 @@ export function createState(opts: SimOptions): S {
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
-    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, over: false, nextUid: 1, nextDrop: 1,
+    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
     },
@@ -98,7 +102,7 @@ export function createState(opts: SimOptions): S {
       let state: PropState = sp.state ?? DEFAULT_STATE[sp.prop] ?? 'closed';
       if (open.has(sp.id)) {
         state = LIT_WHEN_SOLVED.has(sp.prop) ? 'lit' : 'open';
-        if (!LIT_WHEN_SOLVED.has(sp.prop)) solid = false;
+        if (!SOLID_WHEN_SOLVED.has(sp.prop)) solid = false;
       }
       const hitBy: Utility | undefined = sp.hitBy ?? DEFAULT_HIT[sp.prop];
       const pushBy: Utility | undefined = sp.pushBy ?? (sp.prop === 'log' ? 'push' : undefined);

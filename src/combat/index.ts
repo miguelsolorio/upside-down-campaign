@@ -54,6 +54,20 @@
 //   speed 0.55 for 90 frames). A pod that bursts dies for no XP; a vine takes double from fire. 'spore' fx: w the cloud's diameter.
 // - A prop spawned with smash: true (a camera, a console) also lights for any hero's basic attack that starts within
 //   18 px of it, aimed its way (props.ts), whatever its hitBy asks for.
+// - Max (heroes/max.ts, heroes/skate.ts): the Board is a two-hit chain. The Skate dash is a straight 72 px roll along her aim, 16 frames,
+//   invulnerable for the roll and 6 frames after, one hit to every enemy it passes through, a 'skate' sfx, a 'trail' fx (x, y where
+//   it started at chest height, angle the heading, w the length rolled) and the 'dash' anim. It stops at a wall. A gap (a drop, solid
+//   to walking and to enemies, not to sight or shots) does not stop it: a roll that would end over one carries on up to 16 px to
+//   clear it, or stops on the near side if the far side is blocked. The gaps she crossed open when she lands: state 'open', one
+//   propCleared each, still solid. A swap waits out the roll. A hero without 'dash' who pushes at a gap for 20 ticks, swings or fires
+//   at it is a 'poked'; Max is not. High score (Lv 3) adds 10 percent quarter drops and 5 percent crit.
+// - Steve (heroes/steve.ts, heroes/steve_guard.ts): the nail bat is a three-hit chain, and a swing that reaches a 'crack' prop (hitBy
+//   'smash', solid) breaks it: 'crack' sfx, dust, propCleared, open and not solid. Other heroes at a crack are 'poked'; Steve never is.
+//   Babysit pulses a 'taunt' fx (w the diameter, 144) and sfx, sets Enemy.taunt to 180 frames on every enemy within 72 px, and for
+//   300 frames he takes 40 percent less damage and the party's DEF is up 15 percent. Hair of steel (Lv 3): after 300 frames without
+//   a hit, the next one does nothing and floats SAVED.
+// - The bot (bot.ts) crosses a gap at a waypoint flagged `dash: true`: it swaps to the party hero with the 'dash' utility, faces the
+//   next waypoint, casts the special and carries on. It treats gaps and cracks as walls, so there is no way across without it.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

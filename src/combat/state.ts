@@ -11,7 +11,16 @@ export interface Pos { x: number; y: number }
 
 /** Burn and stun are live. Slow is cheap, so it works too. Confuse and curse are types only. */
 export interface Statuses { burn: number; burnTick: number; burnDmg: number; stun: number; slow: number }
+/** The most frames `Hero.unhurt` counts up to. A hero starts a level fully unhurt. */
+export const UNHURT_CAP = 600;
 export const noStatus = (): Statuses => ({ burn: 0, burnTick: 0, burnDmg: 0, stun: 0, slow: 0 });
+
+/**
+ * Max's Skate dash while it runs (heroes/skate.ts plans it when she casts). She rolls `len` px along (ux, uy), `gone` so far,
+ * and every enemy her body passes through takes one hit (`hit` holds their uids). `gaps` are the drops she crosses: they
+ * open when she lands.
+ */
+export interface Dash { ux: number; uy: number; len: number; gone: number; hit: number[]; gaps: string[] }
 
 export interface Hero {
   id: HeroId;
@@ -49,6 +58,10 @@ export interface Hero {
   combo: number; comboT: number;
   stat: Statuses;
   nosebled: boolean;
+  /** Max's Skate dash while it runs, else null. */
+  dash: Dash | null;
+  /** Frames since this hero last took a hit, capped at 600. Steve's Hair of steel reads it. */
+  unhurt: number;
 }
 
 export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'recover' | 'lured';
@@ -143,6 +156,8 @@ export interface Enemy {
   cloaked: boolean;
   /** A demodog in the air or in the wind-up before it: the pack lets one do that at a time. */
   lunging: boolean;
+  /** Frames this enemy stays taunted onto Steve (Babysit). Zero when it is not. The defense's targeting reads it. */
+  taunt: number;
 }
 
 export interface Proj {
@@ -265,6 +280,8 @@ export interface S {
   calm: number;
   /** Mike's DM fiat: the next hit he lands is a crit. */
   armed: boolean;
+  /** Frames of Steve's Babysit left: he takes less damage and the whole party's DEF is up. */
+  babysit: number;
   over: boolean;
   nextUid: number;
   nextDrop: number;

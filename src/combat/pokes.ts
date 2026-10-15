@@ -2,12 +2,16 @@
 // is still shut, or pushes against one. The sim only reports the attempt, as `{ t: 'poked', propId, hero }`, whichever
 // hero it was. The stage decides whether that hero was the wrong one for the puzzle and shows the hint (see
 // world/puzzles.ts). A pinned Demogorgon reports the same event for a hit that is not Eleven's beam (enemies/demo_hit.ts).
+// A gap and a crack are the exception: the hero who solves them (Max's dash, Steve's nail bat) never pokes them.
 import type { HeroId, PropKind } from '../core/types.ts';
 import type { Hero, Prop, S } from './state.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './space.ts';
+import { HERO_DEFS } from '../heroes/defs.ts';
 
 /** Props that can be a puzzle. A crate, van or lantern only counts if it asks for something: a decor crate does not. */
-const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden']);
+const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack']);
+/** Props whose own hero is not "trying" them when he goes at them: it is how they are solved. */
+const SOLVED_BY_TRY = new Set<PropKind>(['gap', 'crack']);
 /** Frames before the same prop reports another attempt. */
 const POKE_GAP = 45;
 /** Frames of pushing against a shut prop before it counts as trying it. A third of a second. */
@@ -28,6 +32,7 @@ function shut(p: Prop): boolean {
 
 function report(s: S, p: Prop, hero: HeroId): void {
   if (p.pokeCd > 0) return;
+  if (SOLVED_BY_TRY.has(p.kind) && p.hitBy !== undefined && HERO_DEFS[hero].utilities.includes(p.hitBy)) return;
   p.pokeCd = POKE_GAP;
   s.events.push({ t: 'poked', propId: p.id, hero });
 }

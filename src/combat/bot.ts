@@ -14,8 +14,17 @@ import { HERO_DEFS } from '../heroes/defs.ts';
 import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
 import { createBossSense } from './bot_boss.ts';
+import { createDashCross } from './bot_dash.ts';
 
-export interface BotWaypoint extends Vec2 { /** Prop id to open when reached. */ open?: string; /** Group to wake when reached. */ wake?: string }
+export interface BotWaypoint extends Vec2 {
+  /** Prop id to open when reached. */ open?: string;
+  /** Group to wake when reached. */ wake?: string;
+  /**
+   * On the near side of a gap: the bot swaps to the party hero who has `dash`, faces the next waypoint, casts the special
+   * to cross, and carries on toward the next waypoint. There is no flag that opens a gap for it.
+   */
+  dash?: true;
+}
 
 export interface Bot {
   next(sim: Sim): SimInput;
@@ -36,7 +45,7 @@ interface Foe {
 }
 
 /** Furniture that never moves. The bot's map treats it as wall, so it does not walk into it and learn the hard way. */
-const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator', 'arcade']);
+const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator', 'arcade', 'gap', 'crack']);
 const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
 const defOf = (kind: string): EnemyDef => ENEMY_DEFS[kind as EnemyKind];
 /** How far past the shield's edge the bot circles to, so the guard's slow turn has not caught up. */
@@ -55,6 +64,8 @@ const STYLE: Record<HeroId, { hold: number; reach: number }> = {
 
 /** Just above the sim's 0.15 dead zone: turns the hero to face a target without walking anywhere. */
 const NUDGE = 0.2;
+/** Steve casts Babysit when two foes are this close. */
+const BABYSIT_CROWD = 48;
 const ENGAGE = 120;
 const CHASE = 260;
 const TAU = Math.PI * 2;
@@ -264,6 +275,7 @@ function reachThreatOf(f: Foe): boolean {
   }
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
+  const cross = createDashCross();
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -303,8 +315,14 @@ function reachThreatOf(f: Foe): boolean {
     const style = STYLE[me.id];
     let wp: Vec2 | undefined = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
 
-    // Arrived at a waypoint? Trigger it and aim for the next one.
-    if (wp && dist(hx, hy, wp.x, wp.y) < 10) {
+    // Arrived at a waypoint? Trigger it and aim for the next one. A `dash` waypoint is crossed by hand first.
+    let arrived = wp !== undefined && dist(hx, hy, wp.x, wp.y) < 10;
+    if (opts.waypoints[wi]?.dash && (cross.active() || arrived)) {
+      const after = opts.waypoints[wi + 1];
+      if (!cross.step(v, out, hx, hy, after ? goalOf(after) : undefined)) { lastMag = 0; return out; }
+      arrived = true;
+    }
+    if (arrived) {
       reachWaypoint(sim);
       wp = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
     }
@@ -397,6 +415,8 @@ function reachThreatOf(f: Foe): boolean {
             else if (me.id === 'dustin') use = (near.d < 50 || group >= 2) && me.mp >= cost && !(isGuard(near.kind) && near.burning);
             else if (me.id === 'will') use = near.d > 26 && me.mp >= cost && (foes.filter((f) => dist(f.x, f.y, near.x, near.y) < 36).length >= 2 || me.mp >= me.mpMax * 0.6);
             else if (me.id === 'eleven') use = near.d < 120 && me.mp >= cost && miss < 12 && (group >= 2 || near.kind === 'agent' || shielded);
+            // Babysit when two or more are on him.
+            else if (me.id === 'steve') use = me.mp >= cost && foes.filter((f) => f.d < BABYSIT_CROWD).length >= 2;
             if (use) { out.specialPressed = true; lastSpecial = frame; }
           }
         }

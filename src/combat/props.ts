@@ -1,5 +1,6 @@
 // Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
+// A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat.
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
 // for any hero who swings at it from up close.
 import type { Utility } from '../core/types.ts';
@@ -96,6 +97,44 @@ export function smashAimed(s: S, h: Hero): void {
   }
 }
 
+/**
+ * Max has crossed a gap: it reads 'open', which solves the puzzle, and the stage hears it once. It stays solid, so walking
+ * across is still no way over, and it looks the same.
+ */
+export function crossGap(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.t = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+}
+
+/** The crack gives way: a crack and dust, the stage hears it, and it is open and walkable. */
+export function breakCrack(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.solid = false;
+  p.t = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+  sfx(s, 'crack');
+  dust(s, p.x + p.w / 2, p.y + p.h, 8);
+}
+
+/**
+ * One of Steve's nail bat swings lands from `h` along `aim`. Every shut crack inside the swing's reach breaks, the way a
+ * swing that reaches an enemy hits it: the nearest point of the crack to his feet within `reach` and inside the cone.
+ */
+export function smashCracks(s: S, h: Hero, aim: number, reach: number, half: number): void {
+  const hy = h.y - 2;
+  for (const p of s.props) {
+    if (p.kind !== 'crack' || p.state === 'open') continue;
+    const q = nearestOnRect(p, h.x, hy);
+    const d = dist(h.x, hy, q.x, q.y);
+    if (d > reach + 4) continue;
+    if (d > 2 && angleDiff(Math.atan2(q.y - hy, q.x - h.x), aim) > half) continue;
+    breakCrack(s, p);
+  }
+}
+
 /** A log (or anything pushable) is shoved out of the way. */
 export function clearProp(s: S, p: Prop): void {
   if (p.state === 'open') return;
@@ -114,6 +153,8 @@ export function openPropById(s: S, id: string): void {
   if (p.kind === 'log' || isPushable(p)) { clearProp(s, p); return; }
   if (p.kind === 'vines') { clearVines(s, p); return; }
   if (p.kind === 'hidden') { revealHidden(s, p); return; }
+  if (p.kind === 'gap') { crossGap(s, p); return; }
+  if (p.kind === 'crack') { breakCrack(s, p); return; }
   if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;

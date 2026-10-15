@@ -25,7 +25,7 @@ An 8-bit action RPG fan tribute. Mike runs one last D&D campaign in the basement
 | `M` | Mute |
 | On the map | `Z` or `Space` enters a stage and `X` opens Erica's cart. In the party panel, `Z` picks a hero and `X` makes them the lead |
 
-Press any key once so the browser lets the sound start. You can rebind keys under CONTROLS in the options. The full list is in [docs/controls.md](docs/controls.md).
+Press any key once so the browser lets the sound start. You can rebind keys under CONTROLS in the options. DIFFICULTY is there too: NORMAL by default, or HARD for the balance every stage was tuned at, and you can switch mid-stage. The full list is in [docs/controls.md](docs/controls.md).
 
 A controller plays the whole game, menus included: plug in an Xbox controller and press a button. Its attack, special, swap and Crit buttons rebind on the GAMEPAD page of CONTROLS, and a controller that can buzz rumbles on a hit, a knockout, a level-up and a boss slam.
 

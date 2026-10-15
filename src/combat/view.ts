@@ -13,6 +13,7 @@ import { guarding, isShielded } from '../enemies/shield.ts';
 import { demoPose } from '../enemies/demo_hit.ts';
 import { alphaPose } from '../enemies/alpha_hit.ts';
 import { grigoriPose } from '../enemies/grigori_hit.ts';
+import { billyK, billyPose, isBillyPinned } from '../enemies/billy_hit.ts';
 import { flayedPose } from '../enemies/flayed.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
@@ -62,6 +63,14 @@ function enemyView(s: S, e: Enemy): ActorView {
     const pose = grigoriPose(e.grigori);
     if (pose) v.pose = pose;
   }
+  if (e.billy && !e.dead) {
+    const pose = billyPose(e.billy);
+    if (pose) v.pose = pose;
+    // The reach while he kneels. His bar is empty then: he is at 0 HP to anyone watching.
+    const k = billyK(e.billy);
+    if (k > 0) v.k = k;
+    if (isBillyPinned(e) && v.bar) v.bar = { hp: 0, hpMax: e.hpMax };
+  }
   if (e.flayed && !e.dead) {
     const pose = flayedPose(e.flayed);
     if (pose) v.pose = pose;
@@ -89,11 +98,11 @@ function propView(s: S, p: Prop): PropView {
 const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI',
   billy: 'BILLY', flayer: 'MIND FLAYER' };
 
-/** The first Warden, Demogorgon, Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. */
+/** The first Warden, Demogorgon, Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
-    if (name && !e.dormant && !e.dead && e.hp > 0) return { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
+    if (name && !e.dormant && !e.dead && e.hp > 0 && !isBillyPinned(e)) return { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
   }
   return null;
 }
@@ -162,7 +171,8 @@ export function buildView(s: S): SimView {
     actors.push({ kind: 'hero', id: b.id, x: b.x, y: b.y, dir: b.dir, anim: 'ko', t: b.t, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null });
   }
   for (const e of s.enemies) {
-    if (!e.dormant) actors.push(enemyView(s, e));
+    // A freed Billy is the npc that replaces him (enemies/billy_hit.ts): his body is not drawn dying.
+    if (!e.dormant && !(e.billy && e.dead)) actors.push(enemyView(s, e));
     else if (e.flayed && !e.dead) actors.push(puddleView(s, e));
   }
   for (const n of s.npcs) {

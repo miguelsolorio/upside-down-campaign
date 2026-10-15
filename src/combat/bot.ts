@@ -9,7 +9,8 @@
 // while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
 // are on her (bot_ward.ts). Robin casts Word vomit with three foes within 56 px and Nancy her Shotgun with one within 40. Rifle
 // bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
-// recovers, with the power box when there is a shooter (bot_grigori.ts). It ignores hazards and cameras.
+// recovers, with the power box when there is a shooter (bot_grigori.ts). Billy's charge and grab are stepped out of, his wall stun is hit
+// and Eleven is walked up to him once he kneels (bot_billy.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -23,6 +24,7 @@ import { createDashCross } from './bot_dash.ts';
 import { createAlphaSense, howlFirst } from './bot_alpha.ts';
 import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 import { createGrigoriSense } from './bot_grigori.ts';
+import { createBillySense } from './bot_billy.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
 import { backOffFrom, slamThreat } from './bot_threat.ts';
@@ -279,6 +281,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   const alpha = createAlphaSense();
   const guardWard = createWardSense();
   const grig = createGrigoriSense({ walkable, walkTo });
+  const bil = createBillySense({ walkable, walkTo });
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -331,9 +334,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     }
 
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
-    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable);
-    const pin = boss.finish(v, hx, hy);
-    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style));
+    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy);
+    const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style);
+    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style));
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
     const ward = guardWard.read(v);
@@ -354,8 +357,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     let mx = 0, my = 0;
     const hpFrac = me.hp / me.hpMax;
 
-    // A Flayed or Grigori has hold of the hero: a swap frees him.
-    const held = careless ? -1 : holdSwap(v, hx, hy);
+    // A Flayed, Grigori or Billy has hold of the hero: a swap frees him. Not while Eleven reaches a pinned Billy: she is standing there.
+    const held = careless || pin ? -1 : holdSwap(v, hx, hy);
     if (held >= 0) { out.swapTo = held; lastSwap = frame; }
     // Swap out a hurt hero for the healthiest bench hero.
     if (hpFrac < 0.35 && frame - lastSwap > 100 && !pin) {

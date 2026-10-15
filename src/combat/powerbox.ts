@@ -82,7 +82,7 @@ export function updatePowerboxes(s: S): void {
       if (e.dead || e.dormant || e.hp <= 0 || z.hit.has(e.uid) || untouchable(e) || !onPlate(p, e.x, e.y)) continue;
       z.hit.add(e.uid);
       if (e.grigori) stunGrigori(s, e);
-      else if (e.demo === null && e.alpha === null) zapFoe(s, e);
+      else if (e.demo === null && e.alpha === null && e.billy === null) zapFoe(s, e);
     }
   }
   if (--z.left <= 0) {

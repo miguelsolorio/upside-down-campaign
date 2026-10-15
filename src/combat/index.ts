@@ -120,6 +120,16 @@
 //   "!", reach 32, power 1.2, then 50 frames of recovery), grab (pose 'grab' from the "!" through the lunge and the 45 frame hold, then a
 //   throw of power 1.0 and knockback 6), rage at half HP, pose 'stun' on the power box. Word vomit staggers him 30 frames and drops a hero he
 //   holds. Hits never stagger him, and Nancy's traps do not hold him.
+// - Flayed Billy (enemies/billy.ts, billy_hit.ts): hud.boss reads BILLY while he is awake and above 0 HP. He hunts at 1.1 px a frame and
+//   faces the hero. Charge (pose 'charge', 24 frames under the "!", then a run at 3.6 px a frame for at most 160 px, along the line locked
+//   when the "!" ends, with the hero 60 to 160 px away); a wall stops it and stuns him for 60 frames (pose 'stun', `thud`, x1.5 damage taken).
+//   Grab inside 26 px (pose 'grab' from the "!" through the 50 frame hold, then a throw of power 1.0 and knockback 6; a swap frees the hero).
+//   Two jabs inside 24 px (12 frame "!", power 0.6 twice, eight frames apart). At half HP he charges more often and faster and calls two
+//   Flayed (group `billys`, run-time spawns). Word vomit staggers him 30 frames, traps do not hold him, knockback moves him a quarter as far.
+//   The hit that would take him to 0 HP pins him instead: pose 'pinned', { t: 'pinned', spawnId: 'billy' } once, no more attacks, no boss bar.
+//   Every hit on him is then { t: 'poked', propId: 'billy', hero } and does nothing, and a knocked-out Eleven stands back up for it. While
+//   Eleven is the active hero, standing, within 32 px of him, ActorView.k climbs 1/60 a frame (else falls 1/120). At 1: the `reach` sfx, a
+//   'reveal' fx, and he dies (the kill, XP, groupCleared `boss`). A dead Billy is not drawn dying: an npc `billy` stands where he knelt.
 // - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;

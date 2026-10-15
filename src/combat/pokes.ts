@@ -48,6 +48,15 @@ function needs(p: Prop): Utility | undefined {
   return p.kind === 'gap' ? 'dash' : p.hitBy ?? p.pushBy;
 }
 
+/** A knocked-out hero stands back up with `share` of their HP and the MP for one special. Their body leaves the floor. */
+export function standHero(s: S, h: Hero, share = STAND_HP): void {
+  h.ko = false;
+  h.hp = Math.max(1, Math.ceil(h.st.hp * share));
+  h.mp = Math.max(h.mp, HERO_DEFS[h.id].special.mp);
+  h.anim = 'idle'; h.animT = 0;
+  s.bodies = s.bodies.filter((b) => b.id !== h.id);
+}
+
 /**
  * A gate can't wait on a hero who is out. When the party tries a prop that only knocked-out heroes can open (Max for a
  * gap, Steve for a crack, Dustin for vines), the first of them stands back up with STAND_HP of their HP and the MP for
@@ -59,11 +68,7 @@ function standFor(s: S, p: Prop): void {
   const able = s.heroes.filter((h) => HERO_DEFS[h.id].utilities.includes(util));
   const h = able[0];
   if (!h || able.some((a) => !a.ko)) return;
-  h.ko = false;
-  h.hp = Math.max(1, Math.ceil(h.st.hp * STAND_HP));
-  h.mp = Math.max(h.mp, HERO_DEFS[h.id].special.mp);
-  h.anim = 'idle'; h.animT = 0;
-  s.bodies = s.bodies.filter((b) => b.id !== h.id);
+  standHero(s, h);
 }
 
 /**

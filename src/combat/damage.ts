@@ -8,6 +8,7 @@ import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../ene
 import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
 import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
+import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
 import { HOLD_BREAK_KB, isHolding, releaseHold, untouchable } from '../enemies/hold.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
@@ -79,10 +80,10 @@ export function alertEnemy(s: S, e: Enemy): void {
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.dead || e.dormant || e.hp <= 0 || untouchable(e)) return 0;
-  // A boss has poise: the Demogorgon, the Alpha and Grigori are never staggered, stunned or broken off a wind-up by a hit.
-  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null;
-  // A pinned Demogorgon shrugs off everything but the beam. It reports the try and takes nothing.
-  if (boss && demoPoke(s, by.id, e, o.beam === true)) return 0;
+  // A boss has poise: the Demogorgon, the Alpha, Grigori and Billy are never staggered, stunned or broken off a wind-up by a hit.
+  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null;
+  // A pinned Demogorgon shrugs off everything but the beam, and a pinned Billy everything at all. They report the try and take nothing.
+  if (boss && (demoPoke(s, by.id, e, o.beam === true) || billyPoke(s, by.id, e))) return 0;
   const spread = spreadRoll(s.rng);
   const critRoll = s.rng();
   // A guard with its shield up stops a hit that comes from inside its front arc. The rolls above are drawn either way.
@@ -102,9 +103,10 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
   // Dazed against a wall, the Demogorgon takes half again as much.
   if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS.demogorgon.x.stunMul);
-  // The Alpha takes double while it howls and half again while it is dazed. Grigori takes half again while he is stunned.
+  // The Alpha takes double while it howls and half again while it is dazed. Grigori and Billy take half again while they are stunned.
   if (e.alpha) dmg = Math.round(dmg * alphaTakes(e));
   if (e.grigori) dmg = Math.round(dmg * grigoriTakes(e));
+  if (e.billy) dmg = Math.round(dmg * billyTakes(e));
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
@@ -124,7 +126,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const planted = e.kind === 'flayed';
   const breaksHold = planted && (o.kb ?? 0) >= HOLD_BREAK_KB;
   if (holding && breaksHold) releaseHold(s, e);
-  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e))) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e) || billyImmovable(e))) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
@@ -136,6 +138,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (boss) {
     // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.
     demoSettle(s, e, o.beam === true, by.id);
+    billySettle(s, e);
   } else if (!shielded) {
     if (!(planted && !breaksHold)) {
       e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));

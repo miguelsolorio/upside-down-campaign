@@ -184,13 +184,36 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       throwPower: 0.7, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5, call: 2,
     },
   },
-  // Stand-ins for the 3.3 boss until Sim builds them (docs/level-9.md): the stats are the spec's starting numbers, and x is the
-  // agent's, so the agent's brain in ai.ts can run them. Sim A replaces Billy's x, Sim B the Mind Flayer's and its legs'.
+  // Flayed Billy, phase one of the 3.3 boss (docs/level-9.md, "Billy", enemies/billy.ts, billy_hit.ts). HP, ATK, DEF, walk and XP are
+  // the spec's starting numbers. Windup, power and cooldown are the jab's: a 12 frame wind-up, power 0.6 a hit, and 90 frames between
+  // the starts of two jabs. Weight 4 is the quarter knockback the spec gives a boss.
+  // jabReach: px at which he commits to a jab, jabHit: how far a jab still lands once it comes out. jabGap: frames between the two
+  // hits, jabKb: their shove (light, so the hero is still in reach for the second), jabInvuln: the frames of invulnerability the first leaves, short of the gap so the second can land.
+  // jabRecover: frames after. hold: px he stops short of the hero (a hero at his melee distance can step out of a grab's reach in time).
+  // chargeFirst: frames before the first charge, chargeEvery and chargeLow (enraged): frames between charges, counted from the end of the
+  // last. chargeMin and chargeMax: the hero's distance band (the first charge comes as he closes in on a hero who walked in from afar). chargeWindup: frames of "!", chargeSpeed and rageSpeed (enraged): px a frame, chargeRange: px he runs at most,
+  // chargePower and chargeKb: a hero in the way, chargeRecover: frames after a run that found no wall. stunT: frames dazed against a wall,
+  // stunMul: damage taken meanwhile.
+  // grabFirst and grabEvery: frames before the first grab and between grabs. grabReach: px at which he commits to one, grabHit: how far
+  // it still takes hold once the wind-up is over. grabWindup: frames of "!". holdT: frames he holds. throwPower and throwKb: the throw.
+  // grabRecover: frames after a miss or a throw.
+  // rageAt: the HP share that enrages him, call: Flayed he calls in then.
+  // reachR: px within which Eleven reaches him pinned, reachRise: frames to climb from 0 to 1, reachFall: frames to fall from 1 to 0.
+  // pokeGap: frames before the pinned Billy reports another try, reviveHp: the share of her HP a knocked-out Eleven stands up with.
   billy: {
     kind: 'billy', name: 'Billy', hp: 700, atk: 30, def: 6, speed: 1.1, xp: 60, aggro: 200,
-    windup: 24, power: 1, cooldown: 90, drop: 1, weight: 4,
-    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
+    windup: 12, power: 0.6, cooldown: 90, drop: 1, weight: 4,
+    x: {
+      jabReach: 24, jabHit: 28, jabGap: 8, jabKb: 1.4, jabInvuln: 6, jabRecover: 30, hold: 20,
+      chargeFirst: 30, chargeEvery: 200, chargeLow: 140, chargeMin: 60, chargeMax: 160, chargeWindup: 24, chargeSpeed: 3.6, rageSpeed: 4.2, chargeRange: 160,
+      chargePower: 1, chargeKb: 5, chargeRecover: 24, stunT: 60, stunMul: 1.5,
+      grabFirst: 150, grabEvery: 240, grabReach: 26, grabHit: 28, grabWindup: 16, holdT: 50, throwPower: 1, throwKb: 6, grabRecover: 36,
+      rageAt: 0.5, call: 2,
+      reachR: 32, reachRise: 60, reachFall: 120, pokeGap: 45, reviveHp: 0.3,
+    },
   },
+  // Stand-ins for the Mind Flayer and its legs until Sim builds them (docs/level-9.md): the stats are the spec's starting numbers, and x is
+  // the agent's, so the agent's brain in ai.ts can run them.
   flayer: {
     kind: 'flayer', name: 'Mind Flayer', hp: 1600, atk: 30, def: 6, speed: 0, xp: 120, aggro: 400,
     windup: 40, power: 1.2, cooldown: 90, drop: 1, weight: 99,

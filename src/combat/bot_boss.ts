@@ -119,7 +119,7 @@ export function createBossSense(env: BossEnv): BossSense {
   }
 
   function finish(v: SimView, hx: number, hy: number): Finish | null {
-    const boss = v.actors.find((a) => a.kind === 'enemy' && a.pose === 'pinned');
+    const boss = v.actors.find((a) => a.kind === 'enemy' && a.pose === 'pinned' && a.id !== 'billy');
     const me = v.hud.party.find((p) => p.active);
     if (!boss || !me) return null;
     const out: Finish = { swapTo: -1, mv: [0, 0], cast: false };

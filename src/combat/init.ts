@@ -13,6 +13,7 @@ import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
 import { newSoldier } from '../enemies/soldier.ts';
 import { newGrigori } from '../enemies/grigori_hit.ts';
+import { newBilly } from '../enemies/billy_hit.ts';
 
 const TRAIL = 256;
 
@@ -57,7 +58,7 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
     alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
     flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' ? newSoldier() : null,
-    grigori: sp.type === 'grigori' ? newGrigori() : null,
+    grigori: sp.type === 'grigori' ? newGrigori() : null, billy: sp.type === 'billy' ? newBilly() : null,
   };
 }
 

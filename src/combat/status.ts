@@ -3,6 +3,7 @@ import type { Hero, Statuses, S } from './state.ts';
 import { floater } from './fx.ts';
 import { UNHURT_CAP } from './state.ts';
 import { demoSettle, isPinned } from '../enemies/demo_hit.ts';
+import { billySettle, isBillyPinned } from '../enemies/billy_hit.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 
 export const BURN_PERIOD = 30;
@@ -27,13 +28,14 @@ export function tickEnemyStatus(s: S): void {
       st.burnTick--;
       if (st.burnTick <= 0) {
         st.burnTick = BURN_PERIOD;
-        // A pinned Demogorgon takes nothing from fire. Any other keeps its floor of 1 until it is pinned.
+        // A pinned Demogorgon or Billy takes nothing from fire. Any other keeps its floor of 1 until it is pinned (Billy is pinned at 0).
         // Fire is double for a vine.
         const tick = e.kind === 'vine' ? st.burnDmg * ENEMY_DEFS.vine.x.burnMul : st.burnDmg;
-        const dmg = isPinned(e) ? 0 : Math.min(tick, Math.max(0, e.hp));
+        const dmg = isPinned(e) || isBillyPinned(e) ? 0 : Math.min(tick, Math.max(0, e.hp));
         if (dmg > 0) {
           e.hp -= tick;
           if (e.demo) demoSettle(s, e, false, null);
+          billySettle(s, e);
           e.flash = Math.max(e.flash, 0.5);
           e.hurtSeen = true;
           s.stats.damageDealt += dmg;

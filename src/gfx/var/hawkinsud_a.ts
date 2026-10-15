@@ -233,8 +233,8 @@ export function yardClock(ck: ClockKit, k: Kit, phase: number): Px {
 /** The four props in the sheet's order, at their places in the room: the car on the near lane, the streetlight on the walk, the tear in the lawn, the clock in the yard. */
 export const place = (carPx: Px, lampPx: Px, tearPx: Px, clockPx: Px): Prop[] => [{ px: carPx, x: 48, y: 64 }, { px: lampPx, x: 176, y: 32 }, { px: tearPx, x: 112, y: 136 }, { px: clockPx, x: 224, y: 120 }];
 
-const GLOW: Glow = { halo: 'blood0', base: 'blood1', mid: 'red', bright: 'hot' };
-const BLUE: Kit = {
+export const GLOW: Glow = { halo: 'blood0', base: 'blood1', mid: 'red', bright: 'hot' };
+export const BLUE: Kit = {
   rf: 'dusk', rfHi: 'slate', rfLo: 'shadow', rfSeam: 'night', lip: 'mist', eave: 'black',
   sd: 'shadow', sdHi: 'dusk', sdLo: 'night', fr: 'slate', pane: 'black', glint: 'dusk', lit: 'blood1',
   dr: 'slate', drHi: 'mist', drLo: 'dusk', step: 'mist', gr: 'teal1', grHi: 'slate', grLo: 'teal0',

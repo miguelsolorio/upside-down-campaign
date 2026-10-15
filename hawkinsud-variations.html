@@ -22,6 +22,9 @@
 </div></div>
 
 <main class="wrap">
+  <h2 class="sec">Your pick: Blue storm</h2>
+  <p class="sub">Blue night and Red storm mixed. Blue night between bolts, with rain throwing dim red off the asphalt. A bolt every 6 to 10 s floods the lit edges red, then fades back to blue. Left: between bolts (it runs the cycle when Pulse is on). Right: the bolt.</p>
+  <article class="card picked" id="mix"></article>
   <h2 class="sec">The looks</h2>
   <p class="sub">Pick one by name.</p>
   <div class="list" id="cards"></div>
@@ -32,12 +35,22 @@ import { initGfx } from '/src/gfx/index.ts';
 import { HAWKINSUD_OPTS, HAWKINSUD_ROOM } from '/src/gfx/var/hawkinsud.ts';
 import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
 import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+import { MIX_W, mixCard } from '/src/gfx/var/hawkinsud_mix.ts';
+import { saveSheet, sheetImage } from '/src/gfx/var/sheet_png.ts';
 
 initGfx();
 mountSheet({
   opts: HAWKINSUD_OPTS, width: LOOK_W, title: 'Chapter 4: Upside Down Hawkins, four looks', file: 'ch4-hawkinsud', tick: 300,
   make: (o) => lookCard(HAWKINSUD_ROOM, o, 'hawkinsud'),
 });
+
+const mix = mixCard();
+mix.canvas.style.maxWidth = MIX_W + 'px';
+document.getElementById('mix').append(mix.canvas);
+const box = document.getElementById('anim');
+let step = 0;
+setInterval(() => { if (box.checked && !document.hidden) mix.draw(++step); }, 300);
+window.__mix = () => { mix.draw(0); return saveSheet('ch4-hawkinsud-mix', sheetImage('Chapter 4: Upside Down Hawkins, Blue storm', [{ num: 1, name: 'Blue storm, between bolts and in the bolt', canvas: mix.canvas }])); };
 </script>
 </body>
 </html>

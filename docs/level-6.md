@@ -61,11 +61,11 @@ Scripts: `l6_start`, `l6_crack_hint`, `l6_crack_done`, `l6_storage`, `l6_gap_hin
 
 ## Demodog Alpha
 
-`EnemyKind` `alpha`, in `src/enemies/alpha.ts`. One spawn, id `alpha`, group `boss`, dormant until the `alpha` beat. Numbers are starting points, set on the chapter 2 enemy numbers; tune them inside "Targets", not the targets themselves.
+`EnemyKind` `alpha`, in `src/enemies/alpha.ts`. One spawn, id `alpha`, group `boss`, dormant until the `alpha` beat. Numbers are starting points, set against the chapter 2 enemy numbers (a young demodog is 60 HP, 30 ATK, 4 DEF); tune them inside "Targets", not the targets themselves.
 
 | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|
-| 640 | 18 | 4 | 1.1 | 70 |
+| 1100 | 34 | 6 | 1.1 | 70 |
 
 - **Bite.** It walks at the hero and bites at close range: a 24 frame wind-up under the red "!", an arc in front of it (reach 28, power 1.0, knockback 4), `chomp`.
 - **Lunge.** About every 120 frames, when the hero is 50 to 120 px away: a 30 frame wind-up, then 18 frames along a fixed line at 4.6 px a frame (power 1.1, `lunge`). It stops at a wall and isn't stunned.
@@ -98,7 +98,7 @@ Scripts: `l6_start`, `l6_crack_hint`, `l6_crack_done`, `l6_storage`, `l6_gap_hin
 | Field | Starting value |
 |---|---|
 | `npc` | `eleven` |
-| `hp` | 200 |
+| `hp` | 400 |
 | `frames` | 2700 (45 s) |
 | `prop` | `rift` |
 | `waves` | 3 demodogs at 0 s, 3 at 7 s, 4 at 14 s, 3 and an elite at 22 s, 4 at 30 s, 3 at 37 s |

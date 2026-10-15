@@ -1,6 +1,18 @@
 # TODO
 
-Scope for the latest pass: Level 3 (stage 1.3, the middle school and the Demogorgon), Level 4 (stage 2.1, the arcade and the pumpkin patch), and the Hawkins map between stages. Everything else waits for feedback.
+Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level 6 (stage 2.3, the Gate, the Demodog Alpha and the defense of Eleven), and party picks on the map. The pass before it built Levels 3 and 4 and the Hawkins map.
+
+## This pass (levels 5 and 6)
+
+- [x] Owner's calls: Max and Steve join in 2.2, Hopper is an npc at the Gate. Party picks lock the heroes a stage's gates need (Max for 2.2, Steve for 2.3) and remember the last party. Eleven can fall in the defense, and a retry starts the defense again. Variation sheets first for the Alpha, the picks panel, the tunnels and the new heroes
+- [x] Spine: `docs/level-5.md`, `docs/level-6.md`, "Party picks" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, ten tiles, `pickParty` and remembered picks, stand-ins, stub stages
+- [x] Sim A: Max, Steve, `gap`, `crack`, the bot's dash crossing (805 tests pass)
+- [ ] Art: `heroes2-variations.html`, `alpha-variations.html`, `tunnel-variations.html`
+- [ ] Sim B: the Alpha, the seals, run-time spawns, the defense
+- [ ] UI: `picks-variations.html`
+- [ ] Owner picks from the four sheets
+- [ ] World 2.2 and 2.3, Audio, Art build, UI build (picks panel, ward bar), flow glue
+- [ ] Measured with the bot on chief inside the targets, map chains 2.1 to 2.2 to 2.3, typecheck and tests clean
 
 ## Status
 

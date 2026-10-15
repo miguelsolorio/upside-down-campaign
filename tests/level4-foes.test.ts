@@ -20,7 +20,7 @@ const opts = { enemyMult: 1.15, seed: 3 };
 // ---------------------------------------------------------------- demodog
 test('demodog: the numbers', () => {
   const d = ENEMY_DEFS.demodog;
-  assert.deepEqual([d.hp, d.atk, d.def, d.speed, d.xp, d.windup, d.power], [34, 12, 2, 1.2, 9, 28, 0.9]);
+  assert.deepEqual([d.hp, d.atk, d.def, d.speed, d.xp, d.windup, d.power], [60, 30, 4, 1.2, 9, 28, 0.9]);
   assert.deepEqual([d.x.orbit, d.x.lungeT, d.x.lungeSpeed, d.x.recover, d.x.gap], [48, 14, 4, 30, 20]);
 });
 
@@ -68,7 +68,7 @@ test('demodog: 28 frames of wind-up under the "!", a 14 frame lunge at 4 px a fr
   const bites = frames.filter((t) => t.hurt.length > 0);
   assert.equal(bites.length, 1, 'one bite');
   assert.ok(bites[0]?.sfx.includes('chomp'));
-  const range = takes(0.9, 12, hero.st.def);
+  const range = takes(0.9, ENEMY_DEFS.demodog.atk, hero.st.def);
   assert.ok((bites[0]?.hurt[0] ?? 0) >= range.lo && (bites[0]?.hurt[0] ?? 0) <= range.hi, `bite ${bites[0]?.hurt[0]}, expected ${range.lo} to ${range.hi}`);
   const after = lunge + air;
   let still = 0;
@@ -121,7 +121,7 @@ test('demodog: a hit breaks a wind-up, and the pack\'s turn goes on', () => {
 // ---------------------------------------------------------------- vine
 test('vine: the numbers', () => {
   const v = ENEMY_DEFS.vine;
-  assert.deepEqual([v.hp, v.atk, v.def, v.speed, v.xp, v.windup, v.power, v.x.reach, v.x.slowT, v.x.burnMul], [30, 9, 2, 0, 5, 30, 0.8, 34, 90, 2]);
+  assert.deepEqual([v.hp, v.atk, v.def, v.speed, v.xp, v.windup, v.power, v.x.reach, v.x.slowT, v.x.burnMul], [50, 18, 4, 0, 5, 30, 0.8, 34, 90, 2]);
 });
 
 test('vine: rooted. 30 frames of wind-up in a 34 px reach, then a lash for power 0.8 that slows for 90 frames', () => {
@@ -139,7 +139,7 @@ test('vine: rooted. 30 frames of wind-up in a 34 px reach, then a lash for power
   while (frames[first + wind]?.alert) wind++;
   assert.equal(wind, 30);
   const lash = frames[first + wind];
-  const range = takes(0.8, 9, hero.st.def);
+  const range = takes(0.8, ENEMY_DEFS.vine.atk, hero.st.def);
   assert.ok(lash && lash.hurt.length === 1 && lash.hurt[0] as number >= range.lo && lash.hurt[0] as number <= range.hi, `lash ${lash?.hurt}, expected ${range.lo} to ${range.hi}`);
   assert.equal(lash?.slow, 90, 'slowed for 90 frames');
   assert.ok(Math.abs((frames[first + wind + 60]?.slow ?? 0) - 30) <= 4, 'it counts down (the lash freezes play for three frames)');
@@ -210,7 +210,7 @@ test('vine: Dustin\'s real spray kills it faster than Lucas\'s rock does, and no
 // ---------------------------------------------------------------- pod
 test('pod: the numbers', () => {
   const p = ENEMY_DEFS.pod;
-  assert.deepEqual([p.hp, p.atk, p.def, p.speed, p.xp, p.aggro, p.windup, p.power, p.x.cloud], [16, 6, 0, 0, 3, 48, 40, 0.6, 28]);
+  assert.deepEqual([p.hp, p.atk, p.def, p.speed, p.xp, p.aggro, p.windup, p.power, p.x.cloud], [28, 16, 2, 0, 3, 48, 40, 0.6, 28]);
 });
 
 test('pod: a hero within 48 px starts a 40 frame swell, then it bursts into a spore cloud that hurts and slows, and dies for no XP', () => {
@@ -229,7 +229,7 @@ test('pod: a hero within 48 px starts a 40 frame swell, then it bursts into a sp
   assert.equal(swell, 40, 'a 40 frame swell');
   const burst = frames[first + swell] as (typeof frames)[number];
   assert.ok(burst.fx.includes('spore'), 'a spore cloud');
-  const range = takes(0.6, 6, hero.st.def);
+  const range = takes(0.6, ENEMY_DEFS.pod.atk, hero.st.def);
   const dmg = hurts(burst.ev);
   assert.ok(dmg.length === 1 && dmg[0] as number >= range.lo && dmg[0] as number <= range.hi, `cloud ${dmg}, expected ${range.lo} to ${range.hi}`);
   assert.equal(hero.stat.slow > 0, true, 'and the hero is slowed');

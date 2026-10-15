@@ -33,10 +33,11 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Level 4 (stage 2.1, the Palace and the patch). See `docs/level-4.md`
   - Chapter 2 starts here: Eleven is gone and Will joins at the others' average level minus one (`partyFor` in `core/campaign.ts`)
   - Will: Sketch bolt, a d20-sized Fireball (1 fizzles, 20 doubles), Cold spot shows hidden enemies. New foes: young demodogs, vines, spore pods. Max is an npc at Dig Dug with MADMAX on the board. Will opens the hidden corn path (`sense`)
-  - Bot on chief at `enemyMult` 3.15: careful 17 of 20 (211 damage, 41% low), careless 14 of 20, kid 20, upside 5. 300 seeds: none stuck. Stage XP 166
+  - Bot on chief at `enemyMult` 1.15: careful 17 of 20 (237 damage, 35% low), careless 20 of 20, kid 20, upside 11. 300 seeds: none stuck. Stage XP 166
 - [x] The Hawkins map (`docs/map-screen.md`): results lead to the map, the map enters the next stage or replays a cleared one, chapter cards on a chapter's first visit, CONTINUE opens the map when no stage is in progress. Campaign progress is `core/progress.ts`
 - [x] Music: `upside` (1.3), `clock` (every boss), `hawkins` (map and 2.1), each with base and combat layers. Eight new effects and Will's stinger
 - [x] Verified: typecheck clean, 704 tests pass. In the browser the bot clears 1.3 (1:40, 140 XP), the map shows chapter two with Will in the party, and the bot clears 2.1 (1:45, 157 XP). No console errors on the title, 1.3 or 2.1
+- [x] Chapter 2 enemy numbers: the demodog, vine and pod are sized for a Lv 5 party in `enemies/defs.ts`, and 2.1's `enemyMult` is back to 1.15 from 3.15. Chapter 1 enemies and stages are unchanged. Typecheck clean, 777 tests pass, and the bot clears 2.1 in the browser (1:55, 157 XP). See `docs/level-4.md`, "New enemies" and "Result"
 - [ ] Feedback on Levels 1 to 4, then the rest
 
 ## Known rough edges
@@ -44,7 +45,9 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 New with Levels 3 and 4:
 
 - Nobody has heard `upside`, `clock` or `hawkins`. Metrics only (peaks 0.52 to 0.77, no limiting, no clipping). Upside is dissonant on purpose in places, and the clock's bell bars sit about 4 dB under the rest.
-- Stage 2.1 needs `enemyMult` 3.15 because the enemy base numbers are set for chapter 1 and the party arrives at Lv 5. Chapter 2 enemies should get their own numbers in `enemies/defs.ts` so the factor can come back near 1.
+- In 2.1 only the demodogs ever hit the bot. The vine and pod numbers are sized by sums against the Lv 5 party, not by measurement. Nobody has fought them, or the dogs, by hand.
+- In 2.1 the careless bot clears more often than the careful one (20 of 20 to 17). Dogs that die in a few hits reward trading blows over dodging.
+- The street rats in 2.1 keep their chapter 1 numbers and die in one hit. If a later stage needs a chapter 1 enemy at full strength, give it its own kind with chapter 2 numbers rather than a factor.
 - The bot dodges the Demogorgon better than a person will (it reacts a frame late to the charge). The careless bot is the better guide. Nobody has fought it by hand.
 - No level-ups happened in the bot runs of 1.3 and 2.1: the lead stays Lv 5. The plan's "Lv 6 after chapter 2" now depends on 2.2 and 2.3.
 - A `?stage=` jump seeds levels but no XP, so it arrives a little behind a real run.
@@ -80,4 +83,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Stages 2.2 (the tunnels, `upside` track) and 2.3 (the Gate and the Demodog Alpha), with Max joining in 2.2. Chapter 2 enemy numbers. Then chapters 3 to 5, the other heroes, the shop and party picks, bonds, the remaining tracks, docs polish.
+Stages 2.2 (the tunnels, `upside` track) and 2.3 (the Gate and the Demodog Alpha), with Max joining in 2.2. Then chapters 3 to 5, the other heroes, the shop and party picks, bonds, the remaining tracks, docs polish.

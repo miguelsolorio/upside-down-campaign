@@ -27,6 +27,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 | `src/audio/` (including `lab.ts`) | Audio |
 | `src/combat/`, `src/heroes/`, `src/enemies/`, `src/progression/`, and their tests | Sim |
 | `src/world/` | World |
+| `src/arcade/` | World |
 | `src/ui/` | UI |
 | `src/story/` | Story |
 | `src/core/`, `src/main.ts`, `src/flow.ts`, `docs/`, root configs | Lead (read-only for agents) |
@@ -63,6 +64,7 @@ Source of truth: the stubs. Quick map.
 - `ui/index.ts`: `drawHud` (the optional fourth argument is a `HudOpts`: the benched hero whose slot pulses for a puzzle hint, the heroes whose level-up effect is lit, the frames since the last swap, the hovered portrait, whether the name and level are hovered, and the input device), `createDialogueBox`, `createTitleScene`, `createChapterCard`, `createResultsScene`, `createPauseScene` (it takes a `party()` for the character sheet), `createCharSheetScene` (the character sheet, opened by the play scene and by CHARACTERS in the pause menu), `createGameOverScene`, `mountDevPanel`. `ui/charsheetlayout.ts`: the sheet's tab and button boxes, pure. `heroes/charsheet.ts`: `heroSheet`, the pure stats and per-move damage the sheet shows, read from `HERO_DEFS` and `damageRange` so it says what the sim does.
 - `story/index.ts`: `SCRIPTS`, `bark`, `createPrologueScene`.
 - `world/index.ts`: `createPlayScene`. `world/puzzles.ts`: `createPuzzleTracker`, the pure tracker behind the puzzle hints (a try with the wrong hero shows the hint at once, a 5 second clock near the puzzle is the backstop), and `isNear`, which gates the hint caret and subtitle. `combat/pokes.ts` detects the tries and the sim reports them as `poked` events. `world/levelfx.ts`: `createLevelFx`, the pure timing behind the in-world level-up effect. `ui/hudlayout.ts`: `slotRects` and `slotAt`, the portrait rectangles shared by the HUD and click-to-swap, and `levelRect` and `onLevel`, the active hero's name and level, which open the character sheet. `world/triggers.ts`: `createDirector`, whose `hasFired(beat)` it reads.
+- `arcade/index.ts`: `createArcadeScene` (the cabinet overlay the play scene pushes when Space is pressed at an `arcade` prop), `gameFor` and `CABINET_GAMES` (which game a cabinet plays), `TITLES`, `arcadeBoard` and `createBoard` (the saved high-score boards), `postScore`, `MADMAX_SCORE`. Each game is a `Cart` (`arcade/types.ts`): `step(pad)` is pure and returns sfx ids, `draw` paints a 168 px square at 1x. `world/interact.ts`: `nearUsable`, what Space reaches (unlit lights or a cabinet). `Sim.bonus(xp, quarters)` pays the MADMAX prize.
 - `flow.ts` glues them: title, prologue, chapter card, play, results.
 
 ## Reports

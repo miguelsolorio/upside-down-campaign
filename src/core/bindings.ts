@@ -39,7 +39,7 @@ export const BIND_ROWS: readonly BindRow[] = [
   { action: 'swap3', label: 'HERO 3', required: false },
   { action: 'swap4', label: 'HERO 4', required: false },
   { action: 'burst', label: 'CRIT', required: false },
-  { action: 'interact', label: 'LIGHT OR CRIT', required: false },
+  { action: 'interact', label: 'USE OR CRIT', required: false },
   { action: 'skip', label: 'SKIP DIALOGUE', required: false },
   { action: 'pause', label: 'PAUSE', required: false },
   { action: 'mute', label: 'MUTE', required: false },

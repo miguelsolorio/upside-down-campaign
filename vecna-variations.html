@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vecna Designs</title>
+<meta name="description" content="Five designs for Vecna, chapter 4's boss, each drawn in the poses of his three phases, with his clock curse on a hero. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Five looks for Vecna</h1>
+  <p>Vecna is the boss of 4.4, in three phases. Clock: he walks behind his vines while the clock chimes, curses a hero, and the memory orbs heal him. Float, from 60%: he rises out of reach and throws debris until the orbs are broken. Burn, from 25%: he's on fire, the vine whips speed up and the clock chimes twice as fast. A cursed hero rises off the floor while four chimes count down, and is KO'd on the fourth unless Max plays her Walkman or the marked orb breaks.</p>
+  <p class="muted">Each card is drawn by the game's own pixel tools, in five fill colors and the ink outline, like the Demogorgon. The top row is 2x, grouped by phase. Under it is the curse on Max, with two of the four chimes sounded, and Vecna at his real size beside the heroes and the Demogorgon.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span></div></div>
+
+<main class="wrap">
+  <h2 class="sec">Vecna</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { VECNA_OPTS, VECNA_W, vecnaCard } from '/src/gfx/var/vecna.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({ opts: VECNA_OPTS, width: VECNA_W, title: 'Chapter 4: Vecna, five looks', file: 'ch4-vecna', make: vecnaCard });
+</script>
+</body>
+</html>

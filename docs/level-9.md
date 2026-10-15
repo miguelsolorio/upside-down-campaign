@@ -88,13 +88,15 @@ Listed in `puzzles` in `stage33.ts`, in this order.
 
 | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|
-| 700 | 30 | 6 | 1.1 | 60 |
+| 700 | 18 | 6 | 1.1 | 60 |
+
+The spec started at 30 ATK, jabs of 0.6, a charge of 1.0, a throw of 1.0 and two Flayed at rage. See "Result" for why that changed.
 
 - **He hunts the active hero,** faster than anything else in chapter 3.
-- **Charge.** About every 200 frames, when the hero is 60 to 160 px away with a clear line: a 24 frame wind-up under the "!" (pose `charge`, `lunge` sfx), aimed where the hero stands when it ends. Then a straight run at 3.6 px a frame for up to 160 px. Contact deals power 1.0 with knockback 5. If he hits a solid tile or prop, he's stunned for 60 frames (pose `stun`, `thud` sfx) and takes ×1.5 meanwhile. That's the window to punish him.
-- **Grab.** Inside 26 px, about every 240 frames: a 16 frame wind-up, then he holds the hero for 50 frames (pose `grab`, `grab` sfx), power 1.0, then a throw (knockback 6). A swap frees the held hero, as with the Flayed.
-- **Jabs.** Otherwise, inside 24 px, two quick jabs: a 12 frame wind-up, then two hits of power 0.6, eight frames apart. Recover 30 frames.
-- **Rage at 50 percent HP.** He charges every 140 frames at 4.2 px a frame and calls two Flayed in round him (run-time spawns like the Alpha's pack: awake at once, 1 XP each, back on every retry).
+- **Charge.** About every 200 frames, when the hero is 60 to 160 px away with a clear line: a 24 frame wind-up under the "!" (pose `charge`, `lunge` sfx), aimed where the hero stands when it ends. Then a straight run at 3.6 px a frame for up to 160 px. Contact deals power 0.8 with knockback 5. If he hits a solid tile or prop, he's stunned for 60 frames (pose `stun`, `thud` sfx) and takes ×1.5 meanwhile. That's the window to punish him.
+- **Grab.** Inside 26 px, about every 240 frames: a 16 frame wind-up, then he holds the hero for 50 frames (pose `grab`, `grab` sfx), then throws them (power 0.7, knockback 6). A swap frees the held hero, as with the Flayed.
+- **Jabs.** Otherwise, inside 24 px, two quick jabs: a 12 frame wind-up, then two hits of power 0.4, eight frames apart. Recover 30 frames.
+- **Rage at 50 percent HP.** He charges every 140 frames at 4.2 px a frame and calls a Flayed in beside him (run-time spawns like the Alpha's pack: awake at once, 1 XP each, back on every retry).
 - **The boss rules.** Word vomit staggers him for 30 frames instead of confusing him, Nancy's traps don't hold him, and knockback moves him a quarter as far.
 - **Pinned at 0 HP.** He doesn't die. He kneels (pose `pinned`), stops attacking, and the sim emits `{ t: 'pinned', spawnId: 'billy' }` once. Hits do nothing and report a `poked`. The Flayed he called keep fighting.
   - **The reach.** While Eleven is the active hero, is standing and stands within 32 px of him, `ActorView.k` climbs by 1/60 a frame. Otherwise it falls by 1/120 a frame toward 0. At 1 he is freed: `reach` sfx, a `reveal` fx, and he dies (the kill, his XP, `groupCleared` `boss`).
@@ -109,22 +111,22 @@ Listed in `puzzles` in `stage33.ts`, in this order.
 
 | | HP | ATK | DEF | XP |
 |---|---|---|---|---|
-| Body | 1200 | 30 | 6 | 120 |
-| Leg | 140 | 30 | 4 | 0 |
+| Body | 800 | 22 | 6 | 120 |
+| Leg | 90 | 22 | 4 | 0 |
 
-Sim B built it at 1200 and 140, down from the first spec's 1600 and 180. A leg is hit at its tip, so its hurtbox is where the leg meets the floor; its view's x, y is the root and `aim` the tip.
+The first spec had 1600 and 180 HP, 30 ATK, a slam of 1.2 every 70 frames, pools of 0.15, a head down for 300 frames at x1.5, and two Flayed every 540 frames, three at most. See "Result" for why that changed. A leg is hit at its tip, so its hurtbox is where the leg meets the floor; its view's x, y is the root and `aim` the tip.
 
 - **It comes in through the skylight.** On waking the body is in pose `rise` for 40 frames: a `glass` fx, `shatter` sfx, and nothing can hit it or its legs. Then it fights.
 - **It never moves.** The body and the legs are rooted. Knockback, Push and the candy bar do nothing to them.
-- **Legs slam down lines.** One leg at a time, about every 70 frames, picks the active hero:
+- **Legs slam down lines.** One leg at a time, about every 110 frames, picks the active hero:
   - **Warn** for 40 frames: pose `warn`, `ActorView.aim` is the tip of its line, from the leg's root through where the hero stood, 150 px long. gfx draws the line on the floor.
-  - **Slam:** pose `slam` for 12 frames, `legslam` sfx, a `slam` fx at the tip. Any hero inside 12 px of the line takes power 1.2 with knockback 5.
-  - **Pool:** a goo pool where the tip landed (`SimView.pools`): radius 20 px, 480 frames, at most four (a fifth replaces the oldest). The active hero standing in one gets `slow` and power 0.15 every 30 frames.
+  - **Slam:** pose `slam` for 12 frames, `legslam` sfx, a `slam` fx at the tip. Any hero inside 12 px of the line takes power 0.8 with knockback 5.
+  - **Pool:** a goo pool where the tip landed (`SimView.pools`): radius 20 px, 480 frames, at most four (a fifth replaces the oldest). The active hero standing in one gets `slow` and power 0.07 every 30 frames.
   - Then the leg rests 30 frames, with its tip on the floor and open to hits.
 - **Cut the legs.** A leg at 0 HP is `severed` (pose `severed`, `sever` sfx): it can't be hit and doesn't slam, but it isn't dead.
-- **The head comes down.** With all four legs severed, the body is in pose `down` for 300 frames: its head is on the floor in front of it and takes ×1.5. Then it rises, and every leg grows back at full HP.
+- **The head comes down.** With all four legs severed, the body is in pose `down` for 420 frames: its head is on the floor in front of it and takes ×3. Then it rises, and every leg grows back at full HP.
 - **The body is shielded while it is up.** A hit on the body with any leg standing does nothing: a `block` spark and the `block` sfx.
-- **Flayed waves.** While the head is up, two Flayed come in from the arena's sides every 540 frames (run-time spawns from `burrows`, 1 XP each), at most three alive.
+- **Flayed waves.** While the head is up, a Flayed comes in from one of the arena's sides every 600 frames (run-time spawns from `burrows`, 1 XP each), at most two alive.
 - **Under 50 percent.** The warn drops to 28 frames and two legs slam at once. About every 480 frames a leg sweeps: a band 24 px tall right across the arena is warned for 40 frames, then any hero in it takes power 1.0 and knockback 4. The view shows it as a `sweep` fx (x, y the band's top-left, w and h its size, t under 40 the warning).
 - **It dies all at once.** At 0 HP the body and all four legs die together, so `groupCleared` `flayer` fires once and a retry's kill list never holds a leg by itself.
 - **The boss rules.** Word vomit staggers a leg for 30 frames (its slam waits), and nothing confuses the body. Traps don't hold either.
@@ -141,8 +143,8 @@ Sim B built it at 1200 and 140, down from the first spec's 1600 and 180. A leg i
 | `balcony` | 3 melting rats, a Flayed | dormant in the balcony's goo. The Flayed rises |
 | `boss` | Billy `billy` | dormant in the court |
 | `flayer` | the Mind Flayer `flayer`, `leg1` to `leg4` | dormant on the north wall |
-| `billys` | 2 Flayed | run-time, called when Billy rages |
-| `waves` | 2 Flayed at a time | run-time, while the Mind Flayer's head is up |
+| `billys` | a Flayed | run-time, called when Billy rages |
+| `waves` | a Flayed at a time, two at most | run-time, while the Mind Flayer's head is up |
 
 Count the XP from `ENEMY_DEFS` before `xpMult` and keep it between 270 and 320. A test enforces it. `xpMult` then sets what the stage pays, so the lead ends chapter 3 at Lv 8 (`docs/pace.md`).
 

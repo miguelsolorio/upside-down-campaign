@@ -150,8 +150,12 @@ export const STAGE_33: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
-  // Not tuned yet: the lead sets it from node scripts/measure-stage.ts 3.3 chief 20.
-  enemyMult: 1,
+  // Measured with node scripts/measure-stage.ts 3.3 chief 20 [--careless] on HARD, with the party a real run brings (Mike 7, Dustin 6,
+  // Robin 4, Eleven 3), after the lead's boss pass (docs/level-9.md, "Result"): chief clears 19 of 20 for about 259 damage, 1.15 KOs,
+  // 40% lowest HP and 118 s, the fight 62% of it; careless 13, kid 20, upside 5. NORMAL clears 20, careless 18.
+  enemyMult: 1.43,
+  // Pays the lead the rest of the way to Lv 8 at the end of chapter 3 (docs/pace.md).
+  xpMult: 1.5,
   // The Flayed that Billy and the Mind Flayer call come up here, one at each side of the court.
   burrows: BURROWS,
   waypoints: WAYPOINTS,

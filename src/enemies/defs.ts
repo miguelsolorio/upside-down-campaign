@@ -201,14 +201,14 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // reachR: px within which Eleven reaches him pinned, reachRise: frames to climb from 0 to 1, reachFall: frames to fall from 1 to 0.
   // pokeGap: frames before the pinned Billy reports another try, reviveHp: the share of her HP a knocked-out Eleven stands up with.
   billy: {
-    kind: 'billy', name: 'Billy', hp: 700, atk: 30, def: 6, speed: 1.1, xp: 60, aggro: 200,
-    windup: 12, power: 0.6, cooldown: 90, drop: 1, weight: 4,
+    kind: 'billy', name: 'Billy', hp: 700, atk: 18, def: 6, speed: 1.1, xp: 60, aggro: 200,
+    windup: 12, power: 0.4, cooldown: 90, drop: 1, weight: 4,
     x: {
       jabReach: 24, jabHit: 28, jabGap: 8, jabKb: 1.4, jabInvuln: 6, jabRecover: 30, hold: 20,
       chargeFirst: 30, chargeEvery: 200, chargeLow: 140, chargeMin: 60, chargeMax: 160, chargeWindup: 24, chargeSpeed: 3.6, rageSpeed: 4.2, chargeRange: 160,
-      chargePower: 1, chargeKb: 5, chargeRecover: 24, stunT: 60, stunMul: 1.5,
-      grabFirst: 150, grabEvery: 240, grabReach: 26, grabHit: 28, grabWindup: 16, holdT: 50, throwPower: 1, throwKb: 6, grabRecover: 36,
-      rageAt: 0.5, call: 2,
+      chargePower: 0.8, chargeKb: 5, chargeRecover: 24, stunT: 60, stunMul: 1.5,
+      grabFirst: 150, grabEvery: 240, grabReach: 26, grabHit: 28, grabWindup: 16, holdT: 50, throwPower: 0.7, throwKb: 6, grabRecover: 36,
+      rageAt: 0.5, call: 1,
       reachR: 32, reachRise: 60, reachFall: 120, pokeGap: 45, reviveHp: 0.3,
     },
   },
@@ -226,11 +226,11 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // two only). waveFirst, waveEvery, waveN and waveMax: the Flayed waves, while the head is up: frames before the first, between two, how many
   // come and how many may be alive.
   flayer: {
-    kind: 'flayer', name: 'Mind Flayer', hp: 1200, atk: 30, def: 6, speed: 0, xp: 120, aggro: 400,
+    kind: 'flayer', name: 'Mind Flayer', hp: 800, atk: 22, def: 6, speed: 0, xp: 120, aggro: 400,
     windup: 40, power: 1.2, cooldown: 70, drop: 1, weight: 99,
     x: {
-      riseT: 40, downT: 300, downMul: 1.5, slamFirst: 90, slamEvery: 70, slamRegrow: 90, phaseAt: 0.5, sweepFirst: 240, sweepEvery: 480,
-      waveFirst: 300, waveEvery: 540, waveN: 2, waveMax: 3,
+      riseT: 40, downT: 420, downMul: 3, slamFirst: 90, slamEvery: 110, slamRegrow: 90, phaseAt: 0.5, sweepFirst: 240, sweepEvery: 480,
+      waveFirst: 300, waveEvery: 600, waveN: 1, waveMax: 2,
     },
   },
   // A leg. Windup is the warn, power the slam's. warn and warnLow (phase two): frames the line is shown. slamT: frames of the strike. rest:
@@ -239,12 +239,12 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // The sweep: sweepWarn and sweepPower and sweepKb, bandH: the band's height in px. The pools its tip leaves (combat/pools.ts): poolR and
   // poolLife, poolMax (a fifth replaces the oldest), poolPower and poolEvery (frames between stings), poolSlow (frames of slow it renews).
   flayerleg: {
-    kind: 'flayerleg', name: 'Mind Flayer leg', hp: 140, atk: 30, def: 4, speed: 0, xp: 0, aggro: 400,
-    windup: 40, power: 1.2, cooldown: 70, drop: 0, weight: 99,
+    kind: 'flayerleg', name: 'Mind Flayer leg', hp: 90, atk: 22, def: 4, speed: 0, xp: 0, aggro: 400,
+    windup: 40, power: 0.8, cooldown: 70, drop: 0, weight: 99,
     x: {
       warn: 40, warnLow: 28, slamT: 12, rest: 30, len: 150, halfW: 12, kb: 5, restLen: 56, daze: 30,
       sweepWarn: 40, sweepPower: 1, sweepKb: 4, bandH: 24,
-      poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.15, poolEvery: 30, poolSlow: 20,
+      poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.07, poolEvery: 30, poolSlow: 20,
     },
   },
 };

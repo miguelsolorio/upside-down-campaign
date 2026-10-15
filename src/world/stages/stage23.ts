@@ -135,7 +135,10 @@ export const STAGE_23: StageData = {
   scare: { from: { x: px(4), y: fy(33) }, to: { x: px(4), y: fy(33) }, frames: 1 },
   // Measured with node scripts/measure-stage.ts 2.3 chief 20 [--careless]. The gate beat lights lights_gate, so the party goes into
   // the defense healed and a failed defense comes back to the Gate. With the softer Alpha and the sparse defense (stage23_data.ts) the
-  // stage runs at 1.0: see "Result" in docs/level-6.md for the numbers.
+  // stage runs at 1.0: see "Result" in docs/level-6.md for the numbers. With Mike's Rally (Lv 6) the careful bot let Eleven fall in 23 of
+  // 100 runs at 95 HP, so she has 110 (stage23_data.ts). Measured with node scripts/measure-stage.ts 2.3 chief 100 [--careless]: chief
+  // clears 87 (17 of 20, she falls in 12) for about 361 damage, 0.55 KOs, 40% lowest HP and 109 s, careless 93, kid 20 of 20, upside 27
+  // (4 of 20). A factor under 1 would clear more, but it takes the KOs from 0.55 to 0.28, so the factor stays at 1.
   enemyMult: 1,
   // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
   xpMult: 1.6,

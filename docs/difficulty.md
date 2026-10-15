@@ -37,6 +37,16 @@ Before the pass (3.1 at 1.4, 3.2 at 1.25):
 
 The 100-seed numbers and the reasons for both factors are in `docs/level-7.md` and `docs/level-8.md`, "The difficulty pass".
 
+After the Lv 6 talents (3.2 at `enemyMult` 1.15 and Eleven at 110 HP in 2.3, `docs/pace.md`), the rows that moved, 20 seeds:
+
+| Stage | HARD | HARD, careless | NORMAL | NORMAL, careless |
+|---|---|---|---|---|
+| 2.3 | 17, 362, 38% | 19, 392, 37% | 18, 293, 51% | 19, 299, 55% |
+| 3.1 | 20, 252, 40% | 16, 203, 46% | 20, 179, 60% | 20, 148, 64% |
+| 3.2 | 20, 246, 54% | 17, 492, 36% | 20, 211, 61% | 19, 374, 54% |
+
+Over 100 seeds the careful bot clears 2.3 on NORMAL 96 times, so the 19 of 20 goal holds there and misses by one on the first 20. 3.1 on NORMAL takes 182 damage over 100 seeds, not 77: the bot's Rally cast slows Mike under the Flayed's grab cliff (`docs/level-7.md`, "After the Lv 6 talents").
+
 A carried run on NORMAL (`node scripts/measure-campaign.ts normal 10`) clears every stage with no wipes in all 10 seeds, and the lead levels as on HARD: Lv 4 after chapter 1, 6 after 2 and 7 after 3.2, since XP doesn't depend on the difficulty.
 
 ## How NORMAL was set

@@ -21,6 +21,19 @@ Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) a
 - [x] Merged into main with the owner's go-ahead (76c3904): typecheck clean, 1432 tests pass on main. Not pushed
 - [ ] Feedback on Levels 7 and 8
 
+## Lv 6 talents
+
+- [x] Owner's calls (2026-10-15), all the recommended options: Max's Lv 6 is Kickflip, moved up from Lv 9 since her Walkman is a 4.2 story item, and her Lv 9 is open; Dart stays, called by the spray; the held Special casts on release and the variant at 0.4 s; Camo rides on Triple shot, Rally on the DM screen, Ahoy on a charged swap; Triple scoop throws three; Cleric heals the whole party; Sensory tank reaches 160 px for 8 s; Molotov lobs a 24 px pool for 4 s. The record is under "The Lv 6 talents as built" in `docs/game-design.md`
+- [x] Data and sheet: two talents per hero (`progression/talents.ts`, `hasTalent(id, level, LV6)`), the NEW TALENT callout at Lv 6, both rows on the character sheet (`MOVE_PITCH` 20), Will reads Cleric from Lv 6 (`roleAt`), Nancy opens `burn` from Lv 6 and her picks card says SHOOT BURN (`utilitiesAt`)
+- [x] The held Special (`heroes/hold.ts`) for Will, Nancy and Eleven from Lv 6. The talents in `heroes/`: `rally.ts`, `dart.ts`, `camo.ts`, `sensory.ts`, `cleric.ts`, `ahoy.ts`, `molotov.ts`, Kickflip in `skate.ts`, Triple scoop in `robin.ts`; their clocks in `combat/talent_state.ts` and `heroes/talents6.ts`
+- [x] Bot: the per-hero casting rules moved to `combat/bot_talents.ts`. From Lv 6 Mike raises the screen with two foes close or a dart coming (Rally), Will holds for the heal under half the party's HP, Nancy holds for the Molotov on a pair 30 to 64 px out, Eleven holds Sensory tank between fights
+- [x] Art: Dart, the bottle, the fire pool and the hold ring (`gfx/fx_l6.ts`), and Lucas half faint under Camo, outline kept
+- [x] Tests: `tests/talents6.test.ts`, `talents6-moves.test.ts`, `talents6-bot.test.ts`, `art-l6.test.ts`
+- [x] Measured on HARD (`chief`), 100 seeds, careful and careless: only 2.2 to 3.2 can move. 2.3 lost Eleven in 23 runs of 100, so her ward HP is 110, not 95 (chief 87, careless 93, upside 27). 3.2 got easier (careless 95), so its `enemyMult` is 1.15, not 1.1. 3.1 holds its bands. The lead is Lv 4, 6 and 7 after chapters 1 to 3, and `ARRIVAL` stays (`docs/pace.md`, "Lv 6 talents")
+- [x] Verified in the browser (muted, 3.1 at Lv 6): the sheet's two talent rows, Will as CLERIC, Nancy's held Molotov and its pool, Dart at Dustin's heels. No console errors
+- [ ] Owner plays the talents by hand, the hold above all
+- [ ] The bot's screen rule: Mike stops for the DM screen with two foes in reach, and the cast slows him, so on NORMAL 3.1 the bot takes 182 damage, not 77. A rule that raises it before contact may play better, and would need the stages measured again
+
 ## Difficulty pass (NORMAL and HARD, Starcourt eased)
 
 - [x] Owner's calls (2026-10-15): NORMAL is easier and the default, HARD is today's balance (`chief`), unchanged. Starcourt is eased only where it spikes against the chapter 1 and 2 curve
@@ -205,4 +218,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Next: stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.
+Next: stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, the Lv 9 talents (Max's is open), the remaining tracks, docs polish.

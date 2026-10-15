@@ -244,3 +244,19 @@ Over 20 seeds at 1.15: HARD 19 of 20 (259 damage, 1.6 KOs, 40% lowest, 83 s), ca
 - **Why 1.15.** It is the smallest cut that brings the clears and lowest HP back in line, and it keeps HARD over the cliff with some margin (a party a level up could tip 1.1 under it). 1.2 cleared 90 of 100 with 36% lowest. The KOs (1.51) stay over chapter 2's, since that is the grab.
 - **NORMAL plays the mall as a walk.** At 1.15 times 0.85, about 0.98, NORMAL sits under the cliff. NORMAL with the factor left at 1.4 (about 1.19) would have changed almost nothing: 93 of 100 and 258 damage. Smoothing the cliff (the grab's damage, or the Flayed's HP against a combo) is a call for the Flayed's numbers in `enemies/defs.ts`, not made here.
 - **The time band slips.** The foes fall sooner, so clears run 78 s and up and 84 s on average, under the 90 to 150 s band (91 s at 1.4). `tests/stage31-sim.test.ts` floors a clear at 75 s, not 80.
+
+### After the Lv 6 talents
+
+Mike is Lv 6 here, so the bot's DM screen is also Rally. The factor stays at 1.15 and every band still holds. Measured with `node scripts/measure-stage.ts 3.1 chief 100 [--careless]`, and `normal` for NORMAL:
+
+| 100 seeds | HARD before | HARD after | Careless, HARD before | Careless, HARD after | NORMAL before | NORMAL after |
+|---|---|---|---|---|---|---|
+| Cleared | 96 | 97, none stuck | 94 | 79 | 100 | 100 |
+| Damage taken | 260 | 257 | 221 | 208 | 78 | 182 |
+| KOs | 1.51 | 1.38 | 1.60 | 1.61 | 0.16 | 0.37 |
+| Lowest party HP | 41% | 39% | 43% | 43% | 81% | 59% |
+
+Over 20 seeds: HARD 20 of 20 (252 damage, 1.35 KOs, 40% lowest, 84 s), careless 16, kid 20, upside 18 (75 of 100), NORMAL 20 for 179 damage.
+
+- **The careless bot clears 79 of 100, not 94.** That is still inside its band (at least 12 of 20, and chapters 1 and 2 clear 14 to 20 on HARD), so the factor stays.
+- **NORMAL is no longer a walk.** The bot casts the screen when two foes are within 60 px, and the cast slows Mike. On NORMAL, under the Flayed's grab cliff, that lets grabs land: with Mike's special switched off in the bot, NORMAL takes 75 damage and keeps 82% lowest HP, with it 182 and 59%. On HARD, over the cliff, it changes nothing (262 damage without it, 257 with). The cause is the bot's rule in `combat/bot_talents.ts`, not the stage, and NORMAL still clears 100 of 100.

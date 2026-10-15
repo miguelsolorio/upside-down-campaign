@@ -66,6 +66,10 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   // square at the same peak, so it has a little more volume.
   steve: { wave: 'p50', midi: 61, spread: 2, dur: 0.06, vol: 0.2, attack: 0.004, bend: -1 },
   hopper: { wave: 'saw', midi: 45, spread: 2, dur: 0.085, vol: 0.24, attack: 0.006, bend: -1 },
+  // Robin, Nancy and Erica: stand-ins until Audio sets them (fast high pulse, triangle, quick bright square; docs/level-7.md).
+  robin: { wave: 'p25', midi: 76, spread: 4, dur: 0.035, vol: 0.2, attack: 0.002 },
+  nancy: { wave: 'tri', midi: 62, spread: 2, dur: 0.06, vol: 0.22, attack: 0.006 },
+  erica: { wave: 'p50', midi: 77, spread: 3, dur: 0.04, vol: 0.18, attack: 0.002 },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };

@@ -1,8 +1,24 @@
 # TODO
 
-Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level 6 (stage 2.3, the Gate, the Demodog Alpha and the defense of Eleven), and party picks on the map. The pass before it built Levels 3 and 4 and the Hawkins map.
+Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) and Level 8 (stage 3.2, the Russian base, the cipher doors and Grigori), with Erica's cart on the map. Chapter 3 opens here. 3.3 (the food court and the Mind Flayer) shows locked on the map. The pass before it built Levels 5 and 6 and party picks.
 
-## This pass (levels 5 and 6)
+## This pass (levels 7 and 8)
+
+- [x] Owner's calls (2026-10-15): Robin and Nancy both join in 3.1, nobody locked there, Robin locked for 3.2. Hopper stays an npc. Erica's cart lands now on the map, Eggos and Cokes at triple price, three of each carried, spent by the sim on its own (an Eggo under 25% HP, a Coke on a dry Special). Grigori is the 3.2 mini-boss as designed (flank him or zap him on the power box). Cipher doors on the 3.2 route and on a cache
+- [x] Spine: `docs/level-7.md`, `docs/level-8.md`, "Erica's cart" and "Chapter three on the map" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, 23 mall and base tiles, the nine-hero pool, `core/shop.ts`, the purse and stash in `core/progress.ts`, stand-ins, stub stages 3.1 and 3.2. Chapter 3 enemies are sized for the party a chained bot run really brings (Mike Lv 6, the bench at 4 and 5, Robin and Nancy at 3), not the design's Lv 7
+- [ ] Sim A: Robin, Nancy, confusion, the cipher door, the stash
+- [ ] Art: `heroes3-variations.html` (Robin, Nancy, Erica), `grigori-variations.html`, `mall-variations.html` (mall and base looks)
+- [ ] Owner picks from the three sheets
+- [ ] Sim B: the soldier, the Flayed, the melting rat, Grigori, the power box and breaker, the bot's play
+- [ ] Audio: `starcourt`, the effects, Robin's and Nancy's stingers, blips for Robin, Nancy and Erica
+- [ ] Art build: the picks, the foes, the tiles, the props, fx, sheet pages, Starcourt on the map
+- [ ] World 3.1 and World 3.2: maps, beats, `l7_*` and `l8_*` scripts, waypoints, tuned with the bot
+- [ ] UI: Erica's cart, picks three by three, the stash and purse in the HUD
+- [ ] Flow: the purse on a clear, the stash written on `stashUsed`, the cart from the map
+- [ ] Verified: typecheck, tests, the bot clears 3.1 and 3.2 inside the targets, the map chains 2.3 to 3.1 to 3.2 with the chapter three card, no console errors
+- [ ] Owner asked before merging into main
+
+## Levels 5 and 6 (merged)
 
 - [x] Owner's calls: Max and Steve join in 2.2, Hopper is an npc at the Gate. Party picks lock the heroes a stage's gates need (Max for 2.2, Steve for 2.3) and remember the last party. Eleven can fall in the defense, and a retry starts the defense again. Variation sheets first for the Alpha, the picks panel, the tunnels and the new heroes
 - [x] Spine: `docs/level-5.md`, `docs/level-6.md`, "Party picks" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, ten tiles, `pickParty` and remembered picks, stand-ins, stub stages
@@ -90,4 +106,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Chapter 3, Starcourt (1985): 3.1 the mall concourse, 3.2 the Russian base, 3.3 the food court and the Mind Flayer, with Robin and Nancy joining, Erica's shop, and Hopper leaving the party. Then chapters 4 and 5, the other heroes, bonds, the remaining tracks, docs polish.
+Stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.

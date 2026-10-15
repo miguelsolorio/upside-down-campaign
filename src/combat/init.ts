@@ -19,14 +19,15 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack', 'shutter', 'cipher', 'breaker']);
 /** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
-const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox']);
+const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox', 'breaker']);
 /** Props that stay solid once solved: the lit ones, and a gap, which is crossed and never filled in. */
 const SOLID_WHEN_SOLVED = new Set<PropKind>([...LIT_WHEN_SOLVED, 'gap']);
 /** What lights or clears a prop when its spawn does not say: a target, camera or fire-door box takes a shot, vines take fire. */
 const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
   target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense', gap: 'dash', crack: 'smash',
+  cipher: 'read', breaker: 'shoot',
 };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
@@ -89,6 +90,7 @@ export function createState(opts: SimOptions): S {
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
+    purse: Math.max(0, Math.floor(opts.purse ?? 0)), stash: { eggo: opts.stash?.eggo ?? 0, coke: opts.stash?.coke ?? 0 },
     burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,

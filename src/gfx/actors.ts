@@ -69,8 +69,14 @@ function eliteBand(buf: Uint8Array, C: number): void {
 }
 
 /** key is the actor id, then ":low" for a guard with its shield down, then ":elite". */
+/** Chapter 3 stand-ins until Art draws them (docs/level-7.md, docs/level-8.md): each borrows a sprite that already exists. */
+const STAND_IN: Record<string, string> = {
+  robin: 'max', nancy: 'steve', erica: 'will', melter: 'rat', flayed: 'agent', soldier: 'agent', grigori: 'hopper',
+};
+
 function buildSheet(key: string): Sheet {
-  const [id, ...flags] = key.split(':') as [string, ...string[]];
+  const [raw, ...flags] = key.split(':') as [string, ...string[]];
+  const id = STAND_IN[raw] ?? raw;
   const elite = flags.includes('elite'), low = flags.includes('low');
   const foe = id === 'guard' || id === 'warden';
   const C = foe ? (FOE_CELL[id] as number) : CELL;

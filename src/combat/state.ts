@@ -1,7 +1,7 @@
 // Internal state of one simulation. Only src/combat, src/heroes and src/enemies import this.
 import type {
   AnimId, CamDef, CharId, Dir, EnemyKind, Floater, FxView, Grid, HazardDef, HeroId, ItemKind, PropKind, PropState,
-  RunStats, SimEvent, SfxId, Utility, Burrow, DefenseDef, DefenseWave,
+  RunStats, SimEvent, SfxId, Utility, Burrow, DefenseDef, DefenseWave, Stash,
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
 
@@ -327,6 +327,10 @@ export interface S {
   seq: BurstSeq | null;
   /** Frames of Inspiration left. */
   inspire: number;
+  /** Quarters the party walked in with (SimOptions.purse). The HUD's coins add the run's own. */
+  purse: number;
+  /** What is left of Erica's stash (SimOptions.stash). The sim spends it on its own (docs/level-7.md). */
+  stash: Stash;
   /** Frames since an enemy last knew where the hero was. */
   calm: number;
   /** Mike's DM fiat: the next hit he lands is a crit. */

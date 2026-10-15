@@ -43,14 +43,17 @@ test('the route drops through the hole: chapter 1 and 2.1 sit above the horizon,
 });
 
 test('states come from progress: cleared, then the next stage open, then locked', () => {
-  assert.equal(states(null), 'olllll');
-  assert.equal(states(cleared(1)), 'collll');
-  assert.equal(states(cleared(2)), 'ccolll');
-  assert.equal(states(cleared(3)), 'cccoll');
-  assert.equal(states(cleared(4)), 'ccccol');
-  assert.equal(states(cleared(5)), 'ccccco');
+  // 3.3 is past the end of the build, so it stays locked whatever is cleared.
+  assert.equal(states(null), 'ollllllll');
+  assert.equal(states(cleared(1)), 'colllllll');
+  assert.equal(states(cleared(2)), 'ccollllll');
+  assert.equal(states(cleared(3)), 'cccolllll');
+  assert.equal(states(cleared(4)), 'ccccollll');
+  assert.equal(states(cleared(5)), 'cccccolll');
+  assert.equal(states(cleared(6)), 'ccccccoll');
+  assert.equal(states(cleared(7)), 'cccccccol');
   // Everything cleared: no open node is left.
-  assert.equal(states(cleared(6)), 'cccccc');
+  assert.equal(states(cleared(8)), 'ccccccccl');
 });
 
 test('the token starts on the next uncleared stage, or the last stage when all are cleared', () => {
@@ -61,8 +64,10 @@ test('the token starts on the next uncleared stage, or the last stage when all a
   assert.equal(startNode(cleared(3)), '2.1');
   assert.equal(startNode(cleared(4)), '2.2');
   assert.equal(startNode(cleared(5)), '2.3');
-  assert.equal(startNode(cleared(6)), '2.3');
-  assert.equal(startNode(cleared(6)), STAGE_ORDER[STAGE_ORDER.length - 1]);
+  assert.equal(startNode(cleared(6)), '3.1');
+  assert.equal(startNode(cleared(7)), '3.2');
+  assert.equal(startNode(cleared(8)), '3.2');
+  assert.equal(startNode(cleared(8)), STAGE_ORDER[STAGE_ORDER.length - 1]);
 });
 
 test('a start node is never locked', () => {

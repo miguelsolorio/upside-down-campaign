@@ -130,6 +130,29 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       howl1: 0.75, howl2: 0.5, howl3: 0.25, howlT: 50, howlMul: 2, howlRing: 160, pack: 3,
     },
   },
+  // Chapter 3 (docs/level-7.md, "New enemies", docs/level-8.md). HP, ATK and DEF are sized for the party a real run brings to 3.1
+  // (a Lv 6 lead, the bench at 4 and 5), so the chapter's stages keep enemyMult near 1. Stand-in move numbers until Sim writes their brains: the melting rat and the
+  // Flayed borrow the rat's x, the soldier and Grigori the agent's.
+  melter: {
+    kind: 'melter', name: 'Melting rat', hp: 30, atk: 26, def: 2, speed: 1.3, xp: 4, aggro: 80,
+    windup: 24, power: 0.75, cooldown: 80, drop: 0.15, weight: 1.3,
+    x: { range: 20, lungeT: 9, lungeSpeed: 2.8, recover: 20 },
+  },
+  flayed: {
+    kind: 'flayed', name: 'Flayed', hp: 90, atk: 32, def: 4, speed: 0.55, xp: 11, aggro: 100,
+    windup: 30, power: 0.8, cooldown: 110, drop: 0.25, weight: 1.6,
+    x: { range: 22, lungeT: 10, lungeSpeed: 1.5, recover: 40 },
+  },
+  soldier: {
+    kind: 'soldier', name: 'Soldier', hp: 70, atk: 30, def: 5, speed: 0.8, xp: 12, aggro: 130,
+    windup: 30, power: 0.45, cooldown: 120, drop: 0.3, weight: 1.2,
+    x: { near: 80, far: 120, dart: 3.2, range: 180, patrol: 0.5, back: 0.7, stamina: 50, recover: 50, lose: 240 },
+  },
+  grigori: {
+    kind: 'grigori', name: 'Grigori', hp: 800, atk: 26, def: 8, speed: 0.7, xp: 80, aggro: 200,
+    windup: 30, power: 1.2, cooldown: 100, drop: 1, weight: 4,
+    x: { near: 20, far: 40, dart: 2, range: 60, patrol: 0.5, back: 0.5, stamina: 30, recover: 50, lose: 600 },
+  },
 };
 
 /** Enemy HP and damage multiplier. */

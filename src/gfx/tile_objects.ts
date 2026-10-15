@@ -281,7 +281,20 @@ function mailbox(c: TileCtx): Px {
   return px;
 }
 
+// Flat stand-ins for the mall (3.1) and base (3.2) tiles until Art paints them: a fill and a frame (docs/level-7.md, docs/level-8.md).
+const PLACEHOLDER: Partial<Record<TileName, [ColorName, ColorName]>> = {
+  mallfloor: ['bone', 'mist'], mallband: ['teal1', 'mist'], mallcap: ['ink', 'purple0'], mallwall: ['purple0', 'magenta'],
+  mallglass: ['teal0', 'cyan'], shopfront: ['night', 'pink'], shopshut: ['grey2', 'grey3'], planter: ['soil1', 'leaf'],
+  fountain: ['blue', 'sky'], railing: ['grey3', 'white'], scoops: ['red', 'white'], goo: ['blood0', 'rose'],
+  servicefloor: ['grey2', 'slate'], lift: ['grey3', 'amber'],
+  basefloor: ['slate', 'grey2'], basegrate: ['shadow', 'grey2'], basecap: ['ink', 'red'], basewall: ['grey2', 'red'],
+  ammo: ['pine1', 'pine3'], bunk: ['soil1', 'bone'], cell: ['shadow', 'grey3'], machine: ['dusk', 'cyan'], keyfloor: ['night', 'blue'],
+};
+const placeholder = ([fill, edge]: [ColorName, ColorName]): Px => new Px(16).rect(0, 0, 16, 16, fill).frame(0, 0, 16, 16, edge);
+
 export function objectTile(name: TileName, c: TileCtx): Px | null {
+  const flat = PLACEHOLDER[name];
+  if (flat) return placeholder(flat);
   switch (name) {
     case 'tunnelfloor': case 'tunnelcap': case 'tunnelwall': case 'roots': case 'veins': case 'nest': case 'ladder':
       return tunnelTile(name, c);

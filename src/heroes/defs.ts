@@ -175,9 +175,39 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     talent: TALENTS.steve,
   },
+  // Robin and Nancy join in 3.1. Stand-in moves until Sim writes their kits (docs/level-7.md, "Robin" and "Nancy"): both
+  // borrow Lucas's shots for now, so the x numbers are his.
+  robin: {
+    id: 'robin', name: CHAR_NAMES.robin, role: 'Rogue',
+    base: st(40, 20, 8, 3, 10), growth: st(5.5, 2.5, 1.4, 0.8, 0.6), weights: st(2, 2, 3, 1, 2),
+    speed: 1, crit: 0.02, utilities: ['read'],
+    basic: {
+      name: 'Scoop toss', mp: 0, cd: 26, power: 0.9, dur: 14, at: 6, lock: 0.5, reach: 72, kb: 1.5, sfx: 'scoop',
+      x: { speed: 3, r: 5 },
+    },
+    special: {
+      name: 'Word vomit', mp: 5, cd: 40, power: 0, dur: 20, at: 6, lock: 0.3, reach: 56, kb: 0, sfx: 'babble',
+      x: { speed: 3, r: 5, fan: 18, n: 3 },
+    },
+    talent: TALENTS.robin,
+  },
+  nancy: {
+    id: 'nancy', name: CHAR_NAMES.nancy, role: 'Gunslinger',
+    base: st(42, 18, 9, 3, 9), growth: st(5.5, 2, 1.5, 0.9, 0.5), weights: st(2, 1, 3, 1, 2),
+    speed: 1, crit: 0.03, utilities: ['shoot'],
+    basic: {
+      name: 'Pistol', mp: 0, cd: 18, power: 1.1, dur: 12, at: 4, lock: 0.6, reach: 160, kb: 2, sfx: 'pistol',
+      x: { speed: 4.4, r: 4 },
+    },
+    special: {
+      name: 'Shotgun', mp: 7, cd: 40, power: 0.6, dur: 18, at: 6, lock: 0.3, reach: 72, kb: 4, sfx: 'shotgun',
+      x: { speed: 5, r: 4, fan: 12.5, n: 5 },
+    },
+    talent: TALENTS.nancy,
+  },
 };
 
-export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'max', 'steve'];
+export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'max', 'steve', 'robin', 'nancy'];
 
 /** The stat at `level`: base, plus floored fixed growth, plus the d20 bonus received so far (in stat units). */
 export function statsAt(def: HeroDef, level: number, bonus: Stats = emptyStats()): Stats {

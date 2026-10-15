@@ -95,6 +95,11 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         basic(b.power, `Third hit ${range(hit(b.power * b.x.thirdPower))}, throws`),
         special(null, `Taunts, takes ${Math.round(sp.x.guard * 100)}% less, ${secs(sp.x.life)}`),
       ];
+    // Stand-ins until Sim writes Robin's and Nancy's lines (docs/level-7.md).
+    case 'robin':
+      return [basic(b.power, 'Lobbed, splashes and slows'), special(null, 'Foes fight each other')];
+    case 'nancy':
+      return [basic(b.power, 'Steady single shots'), special(hit(sp.power), 'Five pellets, heavy knockback', 5)];
   }
 }
 

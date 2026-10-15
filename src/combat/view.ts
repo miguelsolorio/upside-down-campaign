@@ -153,9 +153,10 @@ export function buildView(s: S): SimView {
     floaters: s.floaters.slice(),
     hud: {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,
-      quarters: s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
+      quarters: s.purse + s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
       ward: wardHud(s),
+      stash: { ...s.stash },
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

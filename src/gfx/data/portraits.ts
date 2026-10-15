@@ -221,7 +221,11 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper'>, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica'>, PortraitSpec>;
 
-// Max, Steve and Hopper are in portraits_l56.ts.
-export const PORTRAITS: Record<CharId, PortraitSpec> = { ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT };
+// Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica borrow Max's, Steve's and Will's until Art draws
+// theirs (docs/level-7.md).
+export const PORTRAITS: Record<CharId, PortraitSpec> = {
+  ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT,
+  robin: MAX_PORTRAIT, nancy: STEVE_PORTRAIT, erica: BASE_PORTRAITS.will,
+};

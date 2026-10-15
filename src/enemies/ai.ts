@@ -53,7 +53,9 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
     setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
     return;
   }
-  if (e.kind === 'rat') ratUpdate(s, e, hero);
+  // Stand-ins until Sim writes the chapter 3 brains (docs/level-7.md, docs/level-8.md): the melting rat and the Flayed run the
+  // rat's, the soldier and Grigori the agent's.
+  if (e.kind === 'rat' || e.kind === 'melter' || e.kind === 'flayed') ratUpdate(s, e, hero);
   else if (e.kind === 'guard' || e.kind === 'warden') guardUpdate(s, e, hero);
   else if (e.kind === 'demodog') { demodogUpdate(s, e, hero); unhide(e); }
   else agentUpdate(s, e, hero);

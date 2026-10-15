@@ -231,7 +231,11 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
     }
     case 'van': ctx.drawImage(art(`van${w}x${h}${v.state === 'open'}`, () => vanArt(w, h, v.state === 'open')), x - 1, y - 1); return;
     case 'door': ctx.drawImage(art(`door${w}x${h}${v.state === 'open'}`, () => rimmed(doorArt(w, h, v.state === 'open'))), x - 1, y - 1); return;
-    case 'console': {
+    // Chapter 3 stand-ins until Art draws them (docs/level-7.md, docs/level-8.md): the shutter is a gate, the cipher door a
+    // door, the breaker a console. The power box draws nothing yet.
+    case 'shutter': ctx.drawImage(art(`gate${w}x${h}${v.state === 'open'}`, () => gateArt(w, h, v.state === 'open')), x, y); return;
+    case 'cipher': ctx.drawImage(art(`door${w}x${h}${v.state === 'open'}`, () => rimmed(doorArt(w, h, v.state === 'open'))), x - 1, y - 1); return;
+    case 'console': case 'breaker': {
       const lit = v.state === 'lit' || v.state === 'open';
       const cx = x + ((w - 16) >> 1), cy = y + (h - 16);
       ctx.drawImage(art(`console${lit}`, () => rimmed(consoleArt(lit))), cx - 1, cy - 1);

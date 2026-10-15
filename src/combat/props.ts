@@ -158,11 +158,11 @@ export function openPropById(s: S, id: string): void {
   if (p.kind === 'hidden') { revealHidden(s, p); return; }
   if (p.kind === 'gap') { crossGap(s, p); return; }
   if (p.kind === 'crack') { breakCrack(s, p); return; }
-  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox') { lightTarget(s, p); return; }
+  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox' || p.kind === 'breaker') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
   p.t = 0;
-  if (p.kind === 'gate' || p.kind === 'door') sfx(s, 'gateOpen');
+  if (p.kind === 'gate' || p.kind === 'door' || p.kind === 'shutter') sfx(s, 'gateOpen');
 }
 
 /** How far from a hero's feet closeProp looks for open floor, in tiles. */

@@ -194,4 +194,7 @@ export const STINGERS: Record<StingerId, Cue> = {
     ...line(170, 'p50', 0.24, [[1, 1.1, 'D5']], { vib: true }),
     ...line(170, 'tri', 0.26, [[0, 2.1, 'D3']]),
   ], [], 3, 0.8),
+  // Robin and Nancy: stand-ins until Audio writes theirs (docs/level-7.md). Two quick notes each.
+  robin: cue(line(210, 'p25', 0.24, [[0, 0.2, 'E5'], [0.2, 0.6, 'B5']]), [], 3),
+  nancy: cue(line(150, 'tri', 0.26, [[0, 0.3, 'G4'], [0.3, 0.8, 'D5']]), [], 3),
 };

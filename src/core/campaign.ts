@@ -4,10 +4,10 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
-export const STAGES_AHEAD: readonly string[] = [];
+export const STAGES_AHEAD: readonly string[] = ['3.3'];
 
 /** Heroes on the field at once: the lead and three on the bench. */
 export const PARTY_SIZE = 4;
@@ -36,6 +36,7 @@ export function chapterOf(id: string): number {
 export const CHAPTERS: Record<number, { title: string; subtitle: string }> = {
   1: { title: 'Chapter one', subtitle: 'The vanishing' },
   2: { title: 'Chapter two', subtitle: 'The tunnels' },
+  3: { title: 'Chapter three', subtitle: 'Starcourt' },
 };
 
 /** True when `id` is the first stage of its chapter, so entering it shows the chapter card. */
@@ -48,7 +49,7 @@ export function opensChapter(id: string): boolean {
  * Who can play each stage. Up to four is the party itself, in order (the first is the lead). More than four is a pool
  * the player picks four from on the map (docs/map-screen.md, "Party picks"). Eleven joins inside 1.1 with a recruit beat,
  * so 1.1 starts with three. She is gone after the Demogorgon and comes back at the end of 2.3. Will is back for
- * chapter 2, and Max and Steve join in 2.2.
+ * chapter 2, and Max and Steve join in 2.2. Chapter 3 has all nine: Eleven again, and Robin and Nancy join in 3.1.
  */
 const ROSTER: Record<string, HeroId[]> = {
   '1.1': ['mike', 'dustin', 'lucas'],
@@ -57,12 +58,15 @@ const ROSTER: Record<string, HeroId[]> = {
   '2.1': ['mike', 'dustin', 'lucas', 'will'],
   '2.2': ['mike', 'dustin', 'lucas', 'will', 'max', 'steve'],
   '2.3': ['mike', 'dustin', 'lucas', 'will', 'max', 'steve'],
+  '3.1': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
+  '3.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
 };
 
 /** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. */
 const REQUIRED: Record<string, HeroId[]> = {
   '2.2': ['max'],
   '2.3': ['steve'],
+  '3.2': ['robin'],
 };
 
 /** What a jump straight to a stage (?stage=1.3) starts with: the roster at the levels a normal run arrives with. */
@@ -73,6 +77,10 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '2.1': [{ id: 'mike', level: 5 }, { id: 'dustin', level: 5 }, { id: 'lucas', level: 4 }, { id: 'will', level: 3 }],
   '2.2': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
   '2.3': [{ id: 'mike', level: 6 }, { id: 'dustin', level: 5 }, { id: 'max', level: 4 }, { id: 'steve', level: 4 }],
+  // A chained bot run brings Mike to 3.1 at Lv 6 with the bench at 4 and 5, and the recruit rule makes Robin and Nancy Lv 3.
+  // The jump is a little ahead of that, as 2.2's is. 3.2's is provisional until a chained run through 3.1 sets it.
+  '3.1': [{ id: 'mike', level: 6 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 4 }, { id: 'nancy', level: 4 }],
+  '3.2': [{ id: 'mike', level: 7 }, { id: 'eleven', level: 5 }, { id: 'robin', level: 5 }, { id: 'nancy', level: 5 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

@@ -1,25 +1,28 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PARTY_SIZE, STAGE_ORDER, chapterOf, defaultParty, isFinalStage, levelNumber, mergeHeroes, needsPicks, nextStage, opensChapter, partyFor, pickParty, poolFor, requiredFor, rosterFor, seedsFrom } from '../src/core/campaign.ts';
+import { CHAPTERS, PARTY_SIZE, STAGES_AHEAD, STAGE_ORDER, chapterOf, defaultParty, isFinalStage, levelNumber, mergeHeroes, needsPicks, nextStage, opensChapter, partyFor, pickParty, poolFor, requiredFor, rosterFor, seedsFrom } from '../src/core/campaign.ts';
 import { isOpen, nextUncleared, parseProgress, recordClear, withPicks } from '../src/core/progress.ts';
 import { HERO_IDS } from '../src/heroes/index.ts';
 import type { HeroSnapshot } from '../src/core/types.ts';
 
-test('stages run 1.1 to 2.3, and only the last one is final', () => {
-  assert.deepEqual([...STAGE_ORDER], ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3']);
+test('stages run 1.1 to 3.2, and only the last one is final', () => {
+  assert.deepEqual([...STAGE_ORDER], ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2']);
   assert.equal(nextStage('1.1'), '1.2');
   assert.equal(nextStage('1.3'), '2.1');
   assert.equal(nextStage('2.1'), '2.2');
   assert.equal(nextStage('2.2'), '2.3');
-  assert.equal(nextStage('2.3'), null);
+  assert.equal(nextStage('2.3'), '3.1');
+  assert.equal(nextStage('3.1'), '3.2');
+  assert.equal(nextStage('3.2'), null);
   assert.equal(nextStage('9.9'), null, 'an unknown id leads nowhere');
   assert.equal(isFinalStage('1.2'), false);
   assert.equal(isFinalStage('2.1'), false);
-  assert.equal(isFinalStage('2.3'), true);
-  assert.deepEqual(STAGE_ORDER.map(levelNumber), [1, 2, 3, 4, 5, 6]);
+  assert.equal(isFinalStage('2.3'), false);
+  assert.equal(isFinalStage('3.2'), true);
+  assert.deepEqual(STAGE_ORDER.map(levelNumber), [1, 2, 3, 4, 5, 6, 7, 8]);
   assert.equal(levelNumber('9.9'), 1);
-  assert.deepEqual(STAGE_ORDER.map(chapterOf), [1, 1, 1, 2, 2, 2]);
-  assert.deepEqual(STAGE_ORDER.filter(opensChapter), ['1.1', '2.1']);
+  assert.deepEqual(STAGE_ORDER.map(chapterOf), [1, 1, 1, 2, 2, 2, 3, 3]);
+  assert.deepEqual(STAGE_ORDER.filter(opensChapter), ['1.1', '2.1', '3.1']);
 });
 
 test('the first stage opens with three kids, the second with all four at Lv 3', () => {
@@ -138,4 +141,18 @@ test('the picks panel sees the whole pool at the levels they would play at', () 
   assert.deepEqual(poolFor('2.2', known).map((s) => [s.id, s.level]), [['mike', 7], ['dustin', 6], ['lucas', 5], ['will', 4], ['max', 4], ['steve', 4]]);
   assert.deepEqual(poolFor('2.2', []).map((s) => s.id), ['mike', 'dustin', 'lucas', 'will', 'max', 'steve']);
   assert.equal(poolFor('2.2', []).find((s) => s.id === 'max')?.level, 4, 'the arrival level with nothing known');
+});
+
+test('chapter 3 picks four from nine, with nobody locked in 3.1 and Robin locked in 3.2', () => {
+  for (const id of ['3.1', '3.2']) {
+    assert.deepEqual(rosterFor(id), ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy']);
+    assert.equal(needsPicks(id), true);
+  }
+  assert.deepEqual(requiredFor('3.1'), []);
+  assert.deepEqual(requiredFor('3.2'), ['robin']);
+  assert.ok(pickParty('3.2', ['mike', 'dustin', 'lucas', 'will']).includes('robin'));
+  assert.deepEqual(pickParty('3.1', ['mike', 'dustin', 'lucas', 'will']), ['mike', 'dustin', 'lucas', 'will']);
+  assert.deepEqual(defaultParty('3.1').map((s) => s.id), ['mike', 'eleven', 'robin', 'nancy']);
+  assert.equal(CHAPTERS[3]?.title, 'Chapter three');
+  assert.deepEqual([...STAGES_AHEAD], ['3.3']);
 });

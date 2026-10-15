@@ -6,7 +6,7 @@ A Hawkins map between stages, the design "Two Hawkins" (chosen from `map-variati
 
 - The whole 256 by 224 screen. A slim strip on top (10 px: the chapter name on the left, the selected stage's name on the right) and a party band at the bottom (28 px: a face and a level for each hero, and the hints as a short legend on the right). The map fills the 186 px between.
 - A wavy horizon splits the map. Above it is Hawkins in daylight: the woods, the Lab, the school, the pumpkin patch and arcade, and a town around them (roads, houses, Main Street shops, the water tower, fields, trees). Below it the same land hangs upside down in the Upside Down palette: dark red veins, drifting grey spores, a black sun. The tunnels and the gate are down there.
-- One node per stage (1.1 to 2.3), joined by a stitched route. `STAGES_AHEAD` can list stages past the end of the build, shown locked; it is empty now. The route drops through the hole in the patch, which sits on the horizon. Node states:
+- One node per stage (1.1 to 3.2), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked: 3.3, the food court. The route drops through the hole in the patch, which sits on the horizon. Node states:
   - `cleared`: gold, with a check
   - `open`: the next uncleared stage, white and pulsing
   - `locked`: grey, with a padlock; its landmark is greyed too (in Hawkins)
@@ -35,15 +35,15 @@ A Hawkins map between stages, the design "Two Hawkins" (chosen from `map-variati
   - Map → `onPlay` → chapter card if the stage opens a chapter and has never been cleared, else the level card (skipped when the story is off) → play.
   - Title CONTINUE resumes a mid-stage save if there is one, else opens the map when progress exists.
   - NEW GAME wipes both.
-- No shop yet: it arrives with Erica in chapter 3.
+- Erica's cart opens from the map once chapter 3 is reached (see "Erica's cart").
 
 ## Party picks
 
-From 2.2 on, more heroes can play a stage than fit in the party: Mike, Dustin, Lucas, Will, Max and Steve. The map asks who goes.
+From 2.2 on, more heroes can play a stage than fit in the party: Mike, Dustin, Lucas, Will, Max and Steve in chapter 2, and those six plus Eleven, Robin and Nancy in chapter 3. The map asks who goes.
 
 - **When.** Confirming a stage where `needsPicks(stage)` is true (`core/campaign.ts`: the stage's pool, `rosterFor`, is bigger than `PARTY_SIZE`) opens the picks panel over the map instead of entering. Chapter 1 stages and 2.1 have a fixed four and enter as before.
-- **What it shows.** Every hero in the pool: face, name, level, and the gate they open as a short word (DASH, SMASH, BURN, SHOOT, SENSE; Mike has none). Four are picked, in order; the first is the lead and is marked as such.
-- **Locked.** Heroes in `requiredFor(stage)` (Max for 2.2, Steve for 2.3) are picked and locked, with a padlock. They can't be taken out. They can be the lead.
+- **What it shows.** Every hero in the pool: face, name, level, and the gate they open as a short word (DASH, SMASH, BURN, SHOOT, SENSE, PUSH for Eleven, READ for Robin; Mike has none). Six heroes are three cards by two; nine are three by three. Four are picked, in order; the first is the lead and is marked as such.
+- **Locked.** Heroes in `requiredFor(stage)` (Max for 2.2, Steve for 2.3, Robin for 3.2) are picked and locked, with a padlock. They can't be taken out. They can be the lead.
 - **Opens with** `pickParty(stage, progress.picks)`: the last party picked, fixed up for this stage (required heroes put in, heroes outside the pool dropped, empty slots filled).
 - **Controls.** Direction keys move the cursor over the heroes. Attack (A) puts the hero in or takes them out. Special (X) makes a picked hero the lead. A START row confirms; it is live only with four picked. Esc or Backspace (B) goes back to the map with nothing changed. The mouse can click a face and START. Hints follow the device, as on the map.
 - **On START.** `onPlay(stage, picks)`. Flow remembers them (`withPicks` in `core/progress.ts`) and builds the party with `partyFor(stage, progress.heroes, picks)`. A hero nobody has played yet joins at the average level of the met heroes in the pool minus one.
@@ -52,6 +52,29 @@ From 2.2 on, more heroes can play a stage than fit in the party: Mike, Dustin, L
 - **Variation sheet first.** `picks-variations.html` at the project root: five layouts for the panel over the map. The owner picked **Grid**: a PARTY panel over the map with the heroes as three cards by two (face, name, level, gate word), the lead framed in amber, party numbers on the picked, a padlock on the locked, START and a one-line legend under them.
 - **Data.** `poolFor(stage, progress.heroes)` gives every hero in the pool at the level they'd play at; `requiredFor`, `pickParty` and `needsPicks` do the rest. `MapOpts.onPlay` takes the picks as an optional second argument.
 - **Tests.** `tests/picks.test.ts` covers `picks_logic.ts`: the lock, toggling, the lead, START only at four. `pickParty` and `withPicks` are tested in `tests/campaign.test.ts`.
+
+## Erica's cart
+
+Erica runs an ice cream cart and sells the party what it carries into a stage. It is the shop the design promised for the map.
+
+- **When.** Once 2.3 is cleared (chapter 3 reached), Special (X on a gamepad) on the map opens ERICA'S CART over the map, the way picks open. The legend in the party band gains a SHOP line then, and not before.
+- **What it sells.** Eggos and Cokes at triple price: an Eggo is 15 quarters and a Coke is 9 (`PRICES` in `core/shop.ts`). The party carries at most three of each (`STASH_MAX`).
+- **What it shows.** Erica's portrait and one dry line, a row per item (icon, name, price, how many are carried out of three), the purse, and a one-line legend. A row the purse can't pay for, or that is full, is grey.
+- **Controls.** Up and down move between the rows. Attack (A) buys one. Esc or Backspace (B) closes it. The mouse can click a row. A buy plays `buy`.
+- **The purse.** Quarters carry between stages: `Progress.purse`, added to on every clear (`recordClear` takes the run's quarters). A save from before the purse existed starts with 10 quarters per cleared stage.
+- **The stash.** `Progress.stash` is `{ eggo, coke }`. The sim spends it on its own during a stage (see `docs/level-7.md`, "Erica and the stash"), and each item spent is written back at once.
+- **Data.** `core/shop.ts` is pure: `PRICES`, `STASH_MAX`, `canBuy(progress, item)` and `buy(progress, item)`, which returns a new record (or the same one when it can't). `shopOpen(progress)` says whether the cart is open yet.
+- **Who builds it.** UI owns the panel: `ui/shop_logic.ts` (pure: the cursor, which rows are live) and `ui/shop.ts` (input and drawing, inside `inFrame` with the gfx primitives, like the picks panel). `ui/map.ts` opens it. Flow saves the progress it returns.
+- **Tests.** `tests/shop.test.ts` covers `core/shop.ts` and `ui/shop_logic.ts`: prices, the cap, a short purse, the old-save purse.
+
+## Chapter three on the map
+
+- Starcourt Mall stands in Hawkins, above the horizon, as a new landmark: the long low mall, its sign, the parking lot. Stage 3.1 sits on it.
+- Stage 3.2, the base under the mall, sits just below the mall on the horizon line. It is underground but not in the Upside Down, so it gets no vein palette.
+- Stage 3.3, the food court, shows locked inside the mall.
+- The route climbs back up from the Gate (2.3) to the mall. Art picks where it crosses the horizon. The token turns over as it does, as at the hole in the patch.
+- `MAP_PLACE` in `core/mapdata.ts` gains `mall` (3.1), `base` (3.2) and `foodcourt` (3.3). The positions and the art are Art's, in `gfx/map_geo.ts`, `gfx/map_art.ts` and `gfx/map_land.ts`.
+- The chapter strip says Chapter three on those nodes. Entering 3.1 for the first time shows the chapter three card: CHAPTER THREE, STARCOURT.
 
 ## gfx
 

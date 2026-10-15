@@ -43,6 +43,20 @@ type Item = BeatStep | { t: 'end'; id: string };
 const inside = (r: TileRect, tx: number, ty: number): boolean =>
   tx >= r.tx && ty >= r.ty && tx < r.tx + r.w && ty < r.ty + r.h;
 
+/**
+ * The track playing once the beats in `fired` have run: the last `music` step among them, in the stage's beat order, else the
+ * stage's own. A retry or a load rebuilds the director from a snapshot without replaying its beats, so this is how a boss track
+ * that a fired beat switched to carries on.
+ */
+export function musicAfter(beats: Beat[], fired: readonly string[], dflt: TrackId): TrackId {
+  let track = dflt;
+  for (const b of beats) {
+    if (!fired.includes(b.id)) continue;
+    for (const st of b.steps) if (st.t === 'music') track = st.track;
+  }
+  return track;
+}
+
 export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv): Director {
   let fired = new Set<string>();
   let cleared = new Set<string>();

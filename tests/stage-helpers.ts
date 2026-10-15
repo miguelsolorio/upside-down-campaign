@@ -4,6 +4,7 @@ import { createSim } from '../src/combat/index.ts';
 import { createBot } from '../src/combat/bot.ts';
 import { astar, buildNav } from '../src/combat/nav.ts';
 import { simOptions, stageGrid } from '../src/world/options.ts';
+import { isLoss } from '../src/world/loss.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import type { DirectorEnv } from '../src/world/triggers.ts';
 import type { StageData, TileRect } from '../src/world/types.ts';
@@ -196,7 +197,10 @@ export function runUntil(sim: Sim, frames: number, input: (f: number) => SimInpu
 
 export interface Run {
   done: boolean;
+  /** The stage was lost: the whole party went down or, in a defense, the ward fell (`fell`). */
   allDown: boolean;
+  /** The loss was the ward falling (a defense, 2.3). */
+  fell: boolean;
   frames: number;
   levels: number[];
   xp: number;
@@ -229,20 +233,21 @@ export function playStage(S: StageData, seed: number, party: PartySeed[], maxFra
     jingle: () => undefined,
     finish: () => undefined,
   });
-  let allDown = false, f = 0, lowestHp = 1;
+  let allDown = false, fell = false, f = 0, lowestHp = 1;
   for (; f < maxFrames && !dir.finished() && !allDown; f++) {
     const ev = sim.step(bot.next(sim));
     dir.events(ev);
     const now = sim.party();
     lowestHp = Math.min(lowestHp, now.reduce((a, m) => a + m.hp, 0) / now.reduce((a, m) => a + m.hpMax, 0));
-    if (ev.some((e) => e.t === 'allDown')) allDown = true;
+    if (ev.some(isLoss)) allDown = true;
+    if (ev.some((e) => e.t === 'wardDown')) fell = true;
     const [tx, ty] = tileOf(sim.heroPos().x, sim.heroPos().y);
     dir.tick(tx, ty);
   }
   const st = sim.stats();
   const snap = sim.party();
   return {
-    done: dir.finished(), allDown, frames: f, levels: snap.map((p) => p.level), xp: st.xpEarned, kos: st.kos, damage: st.damageTaken, lowestHp,
+    done: dir.finished(), allDown, fell, frames: f, levels: snap.map((p) => p.level), xp: st.xpEarned, kos: st.kos, damage: st.damageTaken, lowestHp,
     said, party: snap, steps,
   };
 }

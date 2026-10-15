@@ -15,7 +15,7 @@ import { openPropById, updateProps } from './props.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
 import { stepBurst, tryBurst } from './burst.ts';
-import { dust } from './fx.ts';
+import { dust, floater, sfx } from './fx.ts';
 import { buildView } from './view.ts';
 
 function runTimers(s: S): void {
@@ -138,6 +138,14 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     },
     openProp: (id) => openPropById(s, id),
     healParty: (frac) => healParty(s, frac),
+    bonus(xp, quarters) {
+      const h = activeHero(s);
+      awardXp(s, xp);
+      s.stats.quarters += Math.max(0, Math.floor(quarters));
+      sfx(s, 'pickup');
+      if (xp > 0) floater(s, `+${xp} XP`, h.x, h.y - 34, 'yellow', false, 90);
+      if (quarters > 0) floater(s, `+${quarters} COINS`, h.x, h.y - 24, 'amber', false, 90);
+    },
     heroPos() { const h = activeHero(s); return { x: h.x, y: h.y }; },
     party: () => snapshot(s),
     stats: () => copyStats(s.stats),

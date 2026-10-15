@@ -11,7 +11,7 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | `X` or `K` | Special. Costs MP |
 | `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
 | `1` to `4`, or click a portrait | Pick a hero |
-| `Space` or `Enter` | Light Joyce's Christmas lights when they're in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
+| `Space` or `Enter` | Light Joyce's Christmas lights or play an arcade cabinet when one is in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
 | `U` or `B` | Crit, even next to the lights |
 | `Esc` or `P` | Pause, settings and the character sheet |
 | `T` | Skip dialogue: the rest of the current script, the prologue, the chapter card |
@@ -67,7 +67,19 @@ Click or tap the active hero's name and level in the HUD, or pick CHARACTERS in 
 
 ## Story
 
-Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special and swap controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Crit isn't listed there: once the d20 is full, PRESS SPACE FOR CRIT shows just under the HUD, with no box behind it, until it's used, except next to the lights, where Space lights them instead. Every script still does what it does, so Eleven still joins and the gate still opens.
+Dialogue is off by default. The title reads `SKIP STORY: ON`, so start goes straight into the level and no dialogue box, prologue or chapter card shows. Press `T` on the title screen to turn it off and play the story. The same switch is in the options (`P` on the title) and the pause menu, and it's saved. The attack, special and swap controls sit in the bottom left corner of the level, and fade to a muted grey once the party walks away from the starting yard, so you aren't guessing. Crit isn't listed there: once the d20 is full, PRESS SPACE FOR CRIT shows just under the HUD, with no box behind it, until it's used, except next to the lights or a cabinet, where Space uses them instead. Every script still does what it does, so Eleven still joins and the gate still opens.
+
+## The arcade
+
+Every cabinet in the Palace (stage 2.1) plays. Walk up to one and its key and title show over it, such as `SPACE: GALAGA`. Space, Enter or a controller's A opens it, and the level waits underneath. Play is free.
+
+| Input | In a cabinet |
+| --- | --- |
+| Stick, arrows or `W` `A` `S` `D` | Move. Dragon's Lair has no free movement: tap the arrow that flashes, inside the time bar |
+| `Space`, `Enter`, `Z` or `J`; A on a controller | Start, fire, pump the harpoon in Dig Dug, swing the sword in Dragon's Lair |
+| `Esc`, `P`, `X` or `K`; B on a controller | Pause the run. Press it again to leave. A run you leave isn't posted |
+
+A finished run goes on that game's high-score board under the name of the hero at the cabinet. The boards are saved in the browser. Beat MADMAX's Dig Dug score and your name takes the top of her board, the cabinet in the Palace scrolls it from then on, Max has a word for you, and the party gets 25 XP and five quarters, once a visit.
 
 ## Saving
 

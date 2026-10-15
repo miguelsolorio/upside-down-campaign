@@ -17,6 +17,7 @@ import { objectTile } from '../src/gfx/tile_objects.ts';
 import { litWindow, nightTile } from '../src/gfx/night.ts';
 import { PATCH_TILES } from '../src/gfx/tile_town.ts';
 import { arcadeArt, arcadeLook, hiddenArt } from '../src/gfx/props_town.ts';
+import { CABINET_GAMES } from '../src/arcade/cabinets.ts';
 import { DOG_H, DOG_W, composeDog, dogSpec } from '../src/gfx/actor_dog.ts';
 import type { DogPose } from '../src/gfx/actor_dog.ts';
 import { POD_STAGES, PLANT, composeBurst, composePod, composeVine, lashFrame, vineSpec } from '../src/gfx/actor_plant.ts';
@@ -117,6 +118,8 @@ test('the arcade cabinet is 16 by 24 and its look is the same every time', () =>
   assert.deepEqual(arcadeLook('a1'), arcadeLook('a1'));
   assert.equal(arcadeLook('digdug').digdug, true);
   assert.equal(arcadeLook('a1').digdug, false);
+  // Each of 2.1's cabinets shows the game it plays.
+  for (const [id, game] of Object.entries(CABINET_GAMES)) assert.equal(arcadeLook(id).game, game, id);
   const looks = new Set(['a1', 'a2', 'b3', 'cab4', 'x5', 'y6', 'palace7', 'q8'].map((id) => `${arcadeLook(id).body}${arcadeLook(id).game}`));
   assert.ok(looks.size >= 4, `${looks.size} different cabinets from eight ids`);
 });

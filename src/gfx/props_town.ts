@@ -1,9 +1,13 @@
 // Props for stage 2.1: the arcade cabinet with its live attract screen, and the hidden path through the corn. The cabinet
 // is 16 wide and 24 tall, standing on its footprint (bottom aligned, centered): marquee, a 10 by 8 screen drawn live from
-// PropView.t, a control panel and a coin door, in the colors its id picks. Five games loop on the screens, and the cabinet
-// with the id `digdug` alternates a dig with a high-score table that scrolls MADMAX at the top. The hidden path is corn until
-// it opens, then a dark gap with the stalks parted. Static art is cached by drawProp (and repainted at night like any prop).
+// PropView.t, a control panel and a coin door, in the colors its id picks. Each screen loops the game the cabinet plays
+// (arcade/cabinets.ts), and Dig Dug alternates a dig with its high-score table, which scrolls the top name on the board:
+// MADMAX until someone beats her. The hidden path is corn until it opens, then a dark gap with the stalks parted. Static
+// art is cached by drawProp (and repainted at night like any prop).
 import type { PropView } from '../core/types.ts';
+import { gameFor } from '../arcade/cabinets.ts';
+import { arcadeBoard } from '../arcade/scores.ts';
+import type { ArcadeGameId } from '../arcade/types.ts';
 import { hash2, rect } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 import { drawTinyText } from './font.ts';
@@ -19,10 +23,11 @@ const SCREEN = { x: 3, y: 6, w: 10, h: 8 } as const;
 /** Body, shade, trim: the cabinet colors an id can pick. */
 const BODIES: [ColorName, ColorName, ColorName][] = [['blue', 'dusk', 'sky'], ['purple', 'purple0', 'magenta'], ['red', 'blood1', 'hot'], ['teal1', 'teal0', 'cyan'], ['pine2', 'pine1', 'leaf']];
 
-/** Which look and which game an id gets: the same every frame. The Dig Dug cabinet is its own. */
-export function arcadeLook(id: string): { body: number; game: number; digdug: boolean } {
+/** Which body color and which game an id gets: the same every frame. */
+export function arcadeLook(id: string): { body: number; game: ArcadeGameId; digdug: boolean } {
   const h = hash2(id.length, id.charCodeAt(id.length - 1) || 0, id.split('').reduce((s, ch) => (s * 31 + ch.charCodeAt(0)) | 0, 7));
-  return { body: h % BODIES.length, game: (h >>> 8) % 5, digdug: id === 'digdug' };
+  const game = gameFor(id);
+  return { body: h % BODIES.length, game, digdug: game === 'digdug' };
 }
 
 // ---------------------------------------------------------------- the cabinet
@@ -49,7 +54,7 @@ export function arcadeArt(body: number): Px {
 let OX = 0, OY = 0;
 const P = (ctx: Ctx, x: number, y: number, w: number, h: number, c: ColorName): void => rect(ctx, OX + SCREEN.x + x, OY + SCREEN.y + y, w, h, c);
 
-/** A space shooter: two rows of invaders that shuffle, a ship that slides and a shot that climbs. */
+/** Galaga: two rows of invaders that shuffle, a ship that slides and a shot that climbs. */
 function shooter(ctx: Ctx, t: number): void {
   const sx = ((t >> 4) % 4) - 1;
   for (let row = 0; row < 2; row++) for (let i = 0; i < 4; i++) P(ctx, 1 + i * 2 + sx + (row & 1), 1 + row * 2, 1, 1, row ? 'yellow' : 'leaf');
@@ -58,37 +63,48 @@ function shooter(ctx: Ctx, t: number): void {
   const by = 6 - ((t >> 1) % 6);
   if (by >= 3) P(ctx, sh + 1, by, 1, 1, 'white');
 }
-/** A maze chaser: blue walls, a row of dots and a yellow mouth that eats along it, with a ghost behind. */
-function chaser(ctx: Ctx, t: number): void {
-  P(ctx, 0, 0, 10, 1, 'blue'); P(ctx, 0, 7, 10, 1, 'blue'); P(ctx, 2, 3, 6, 1, 'blue');
+/** Pac-Man: maze walls, a row of dots and a yellow mouth that eats along it, with a ghost behind. Ms. Pac-Man has pink
+ * walls and a red bow. */
+function chaser(ctx: Ctx, t: number, ms: boolean): void {
+  const wall: ColorName = ms ? 'rose' : 'blue';
+  P(ctx, 0, 0, 10, 1, wall); P(ctx, 0, 7, 10, 1, wall); P(ctx, 2, 3, 6, 1, wall);
   const x = (t >> 3) % 10;
   for (let i = 0; i < 10; i += 2) if (i > x) { P(ctx, i, 2, 1, 1, 'cream'); P(ctx, i, 5, 1, 1, 'cream'); }
   P(ctx, x, 5, 2, 2, 'yellow');
   if ((t >> 2) & 1) P(ctx, x + 1, 5, 1, 1, 'black');
-  P(ctx, (x + 6) % 10, 5, 2, 2, 'hot'); P(ctx, (x + 6) % 10, 5, 1, 1, 'white');
+  if (ms) P(ctx, x, 4, 1, 1, 'hot');
+  P(ctx, (x + 6) % 10, 5, 2, 2, ms ? 'cyan' : 'hot'); P(ctx, (x + 6) % 10, 5, 1, 1, 'white');
 }
-/** A racer: a road with a dashed center line that scrolls toward you, and a car that weaves. */
-function racer(ctx: Ctx, t: number): void {
-  P(ctx, 0, 0, 10, 3, 'sky'); P(ctx, 0, 3, 10, 5, 'grey2'); P(ctx, 0, 3, 1, 5, 'leaf'); P(ctx, 9, 3, 1, 5, 'leaf');
-  for (let y = 3 + ((t >> 2) % 3); y < 8; y += 3) P(ctx, 4, y, 1, 1, 'white');
-  const cx = 3 + Math.round(Math.sin(t / 30) * 2);
-  P(ctx, cx, 5, 3, 2, 'hot'); P(ctx, cx + 1, 5, 1, 1, 'white');
+/** Centipede: mushrooms on black, a green body with a yellow head that runs one row and comes back on the next, and the
+ * shooter at the bottom. */
+function centi(ctx: Ctx, t: number): void {
+  for (const [mx, my] of [[2, 1], [7, 1], [4, 3], [8, 5], [1, 5]] as const) P(ctx, mx, my, 1, 1, 'pink');
+  const ph = (t >> 3) % 26, right = ph < 13, row = right ? 2 : 4;
+  const head = right ? ph - 2 : 23 - ph;
+  for (let i = 0; i < 4; i++) {
+    const sx = head + (right ? -i : i);
+    if (sx >= 0 && sx < 10) P(ctx, sx, row, 1, 1, i === 0 ? 'yellow' : 'leaf');
+  }
+  const gx = 4 + Math.round(Math.sin(t / 25) * 3);
+  P(ctx, gx, 7, 1, 1, 'cyan');
+  const by = 6 - ((t >> 1) % 7);
+  if (by >= 0 && by < 6) P(ctx, gx, by, 1, 1, 'white');
 }
-/** A platformer: a ground strip, a ledge, a hero that hops and a coin that spins. */
-function hopper(ctx: Ctx, t: number): void {
-  P(ctx, 0, 0, 10, 7, 'blue'); P(ctx, 0, 7, 10, 1, 'soil2'); P(ctx, 5, 4, 4, 1, 'soil3');
-  const ph = t % 60, x = 1 + Math.floor(ph / 9), y = 5 - (ph < 30 ? Math.round(Math.sin((ph / 30) * Math.PI) * 3) : 0);
-  P(ctx, x, y, 1, 2, 'hot'); P(ctx, x, y - 1, 1, 1, 'pink');
-  if ((t >> 3) & 1) P(ctx, 7, 2, 1, 1, 'yellow'); else P(ctx, 7, 2, 2, 1, 'yellow');
-}
-/** A title screen: a block logo and an INSERT COIN bar that blinks once a second. */
-function title(ctx: Ctx, t: number): void {
-  P(ctx, 0, 0, 10, 8, 'purple0');
-  for (let i = 0; i < 5; i++) P(ctx, 1 + i * 2, 1 + (i & 1), 1, 3, i & 1 ? 'magenta' : 'cyan');
-  if (((t >> 5) & 1) === 0) P(ctx, 1, 6, 8, 1, 'white');
+/** Dragon's Lair: a stone arch over a dark hall, the knight at the door and the dragon's fire flickering at the back. */
+function lair(ctx: Ctx, t: number): void {
+  P(ctx, 0, 0, 10, 8, 'purple0'); P(ctx, 0, 0, 2, 8, 'grey1'); P(ctx, 8, 0, 2, 8, 'grey1'); P(ctx, 2, 0, 6, 1, 'grey1');
+  P(ctx, 0, 7, 10, 1, 'soil1');
+  const f = (t >> 2) % 3;
+  P(ctx, 5, 3 + (f & 1), 2, 4 - (f & 1), 'orange'); P(ctx, 5 + (f === 2 ? 1 : 0), 4, 1, 3, 'amber'); P(ctx, 6, 6, 1, 1, 'yellow');
+  P(ctx, 3, 5, 1, 2, 'bone'); P(ctx, 3, 4, 1, 1, 'skin1');
+  if (((t >> 4) & 3) === 0) P(ctx, 4, 4, 1, 1, 'white');
 }
 
-const GAMES = [shooter, chaser, racer, hopper, title];
+/** The attract loop for every game but Dig Dug, which has its own pair below. */
+const SCREENS: Record<Exclude<ArcadeGameId, 'digdug'>, (ctx: Ctx, t: number) => void> = {
+  galaga: shooter, centipede: centi, dragonslair: lair,
+  pacman: (ctx, t) => chaser(ctx, t, false), mspacman: (ctx, t) => chaser(ctx, t, true),
+};
 
 /** Dig Dug: dirt with a tunnel, the digger tunnelling after a red monster; every other half minute the screen shows its scores. */
 function dig(ctx: Ctx, t: number): void {
@@ -100,7 +116,8 @@ function dig(ctx: Ctx, t: number): void {
   P(ctx, Math.min(9, x + 4), 3, 2, 2, 'hot'); P(ctx, Math.min(9, x + 4), 3, 1, 1, 'white');
 }
 
-/** The high-score table: a title line, MADMAX in yellow scrolling by on the first row, two more rows below. */
+/** The high-score table: a title line, the top name on the board in yellow scrolling by on the first row (MADMAX until
+ * someone beats her), two more rows below. */
 function scores(ctx: Ctx, t: number): void {
   P(ctx, 0, 0, 10, 8, 'night');
   P(ctx, 1, 0, 8, 1, 'hot');
@@ -108,7 +125,7 @@ function scores(ctx: Ctx, t: number): void {
   ctx.beginPath();
   ctx.rect(OX + SCREEN.x, OY + SCREEN.y + 1, SCREEN.w, 5);
   ctx.clip();
-  const name = 'MADMAX', span = name.length * 4 + SCREEN.w;
+  const name = arcadeBoard().topName('digdug'), span = name.length * 4 + SCREEN.w;
   drawTinyText(ctx, name, OX + SCREEN.x + SCREEN.w - ((t / 5) | 0) % span, OY + SCREEN.y + 2, 'yellow');
   ctx.restore();
   P(ctx, 1, 7, 5, 1, 'cyan'); P(ctx, 7, 7, 2, 1, 'white');
@@ -119,11 +136,11 @@ export function arcadeLive(ctx: Ctx, id: string, x: number, y: number, t: number
   const look = arcadeLook(id);
   const tt = calm ? 0 : t;
   OX = x; OY = y;
-  if (look.digdug) {
+  if (look.game === 'digdug') {
     if (Math.floor(t / 270) % 2 === 0) dig(ctx, tt); else scores(ctx, tt);
     return;
   }
-  (GAMES[look.game] as typeof shooter)(ctx, tt);
+  SCREENS[look.game](ctx, tt);
 }
 
 // ---------------------------------------------------------------- the hidden path

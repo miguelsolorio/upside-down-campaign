@@ -30,18 +30,20 @@ function rig(spawns: SimSpawn[], over: Parameters<typeof makeWhite>[0] = {}) {
 
 test('the numbers: what docs/level-7.md and docs/level-8.md say', () => {
   const m = ENEMY_DEFS.melter, f = ENEMY_DEFS.flayed, so = ENEMY_DEFS.soldier;
-  assert.deepEqual([m.hp, m.atk, m.def, m.speed, m.xp, m.windup, m.power], [30, 26, 2, 1.3, 4, 24, 0.75]);
+  assert.deepEqual([m.hp, m.atk, m.def, m.speed, m.xp, m.windup, m.power], [50, 40, 2, 1.3, 4, 20, 0.75]);
+  assert.deepEqual([m.x.range, m.x.lungeT, m.x.lungeSpeed], [34, 11, 3.4]);
   assert.deepEqual([m.x.burst, m.x.power, m.x.slow], [22, 0.5, 60]);
-  assert.deepEqual([f.hp, f.atk, f.def, f.speed, f.xp, f.windup, f.power], [90, 32, 4, 0.55, 11, 30, 0.8]);
-  assert.deepEqual([f.x.range, f.x.reachT, f.x.recover, f.x.hold, f.x.eliteHold, f.x.kb, f.x.rise], [22, 10, 40, 40, 50, 3, 40]);
-  assert.deepEqual([so.hp, so.atk, so.def, so.speed, so.xp, so.windup, so.power, so.cooldown], [70, 30, 5, 0.8, 12, 30, 0.45, 120]);
+  assert.deepEqual([f.hp, f.atk, f.def, f.speed, f.xp, f.windup, f.power], [140, 40, 4, 0.55, 11, 22, 0.8]);
+  assert.deepEqual([f.x.range, f.x.reachT, f.x.recover, f.x.hold, f.x.eliteHold, f.x.kb, f.x.rise], [30, 10, 40, 40, 50, 3, 40]);
+  assert.equal(f.x.reachSpeed, 2.4);
+  assert.deepEqual([so.hp, so.atk, so.def, so.speed, so.xp, so.windup, so.power, so.cooldown], [90, 38, 5, 0.8, 12, 30, 0.45, 120]);
   assert.deepEqual([so.x.near, so.x.far, so.x.panic, so.x.back, so.x.speed, so.x.range, so.x.burst, so.x.eliteBurst, so.x.gap, so.x.recover], [80, 120, 60, 0.7, 3.2, 180, 3, 5, 6, 50]);
   assert.deepEqual([so.x.butt, so.x.buttWindup, so.x.buttPower, so.x.buttKb], [22, 20, 0.8, 3]);
 });
 
 // ------------------------------------------------------------------ the melting rat
 
-test('melting rat: swarms like the rat, a 24 frame wind-up under the "!" and then a bite for power 0.75', () => {
+test('melting rat: swarms like the rat, a 20 frame wind-up under the "!" and then a bite for power 0.75', () => {
   const { sim, s } = rig([unit('m', 'melter', 7, 8)], { seed: 5 });
   let alerts = 0, longest = 0;
   const dmg: number[] = [];
@@ -50,7 +52,7 @@ test('melting rat: swarms like the rat, a 24 frame wind-up under the "!" and the
     if (actor(sim, 'melter')?.alert) alerts++; else if (alerts) { longest = Math.max(longest, alerts); alerts = 0; }
     for (const h of hurt(ev)) dmg.push(h.dmg);
   }
-  assert.equal(Math.max(longest, alerts), 24, 'the "!" shows for 24 frames');
+  assert.equal(Math.max(longest, alerts), ENEMY_DEFS.melter.windup, 'the "!" shows for the wind-up');
   const range = damageRange(0.75, ENEMY_DEFS.melter.atk, mike(s).st.def);
   assert.equal(dmg.length, 1, 'one bite');
   assert.ok(dmg[0]! >= range.min && dmg[0]! <= range.max, `bite of ${dmg[0]}, expected ${range.min} to ${range.max}`);
@@ -143,9 +145,9 @@ test('Flayed: shambles at the hero at 0.55 px a frame', () => {
   assert.ok(v > 0.5 && v <= 0.56, `${v.toFixed(3)} px a frame`);
 });
 
-test('Flayed: a 30 frame wind-up under the "!", then a reach, and the grab holds the hero for 40 frames', () => {
+test('Flayed: a 22 frame wind-up under the "!", then a reach, and the grab holds the hero for 40 frames', () => {
   const g = grabbed();
-  assert.equal(g.windup, 30, 'the "!" shows for 30 frames');
+  assert.equal(g.windup, ENEMY_DEFS.flayed.windup, 'the "!" shows for the wind-up');
   assert.ok(g.s.hold, 'the grab landed');
   assert.equal(g.s.hold?.by, g.f);
   assert.ok(sfxIds(g.events).includes('grab'), 'the grab sfx');
@@ -208,6 +210,26 @@ test('Flayed: a hit with knockback 3 or more frees the hero, and a smaller one n
   hitEnemy(hard.s, mike(hard.s), foe(hard.s), { power: 1, kb: HOLD_BREAK_KB, angle: Math.PI });
   run(hard.sim, 4);
   assert.equal(hard.s.hold, null, 'a hard one frees him');
+});
+
+test('Flayed: it shambles through light hits on its way in and in its wind-up, and knockback 3 or more stops it', () => {
+  // On its way in: a light hit neither moves it nor staggers it.
+  const walk = rig([unit('f', 'flayed', 9, 8)], { seed: 3 });
+  run(walk.sim, 2);
+  const f = foe(walk.s), x0 = f.x;
+  hitEnemy(walk.s, mike(walk.s), f, { power: 1, kb: HOLD_BREAK_KB - 0.1, angle: 0 });
+  assert.equal(f.stagger, 0, 'no stagger on the walk in');
+  assert.equal(f.vx, 0, 'and no shove');
+  assert.ok(Math.abs(f.x - x0) < 1);
+  // In its wind-up: a light hit leaves the wind-up running, a heavy one breaks it.
+  for (const [kb, keeps] of [[HOLD_BREAK_KB - 0.1, true], [HOLD_BREAK_KB, false]] as [number, boolean][]) {
+    const r = rig([unit('f', 'flayed', 6, 8)], { seed: 3 });
+    let f2 = foe(r.s);
+    for (let t = 0; t < 200 && f2.mode !== 'windup'; t++) { r.sim.step(inp()); f2 = foe(r.s); }
+    assert.equal(f2.mode, 'windup', 'it winds up');
+    hitEnemy(r.s, mike(r.s), f2, { power: 1, kb, angle: 0 });
+    assert.equal(f2.mode === 'windup', keeps, keeps ? 'a light hit keeps the wind-up' : 'a heavy one breaks it');
+  }
 });
 
 test('Flayed: stunned, confused, staggered or killed, it lets go', () => {

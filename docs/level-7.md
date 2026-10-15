@@ -113,9 +113,9 @@ HP, ATK and DEF are sized for the party that really arrives at chapter 3, so the
 
 | Enemy | HP | ATK | DEF | Speed | XP | Behavior |
 |---|---|---|---|---|---|---|
-| Melting rat (`melter`) | 30 | 26 | 2 | 1.3 | 4 | Swarms like the rat: a 24 frame wind-up, then a short lunge bite (power 0.75). When it dies, by any means, it bursts: a 22 px `goo` splash (power 0.5, `slow` for 60 frames) and `melt`. Kill it from range, or with area attacks |
-| Flayed (`flayed`) | 90 | 32 | 4 | 0.55 | 11 | Shambles at the hero. In reach (22 px), a 30 frame wind-up under the "!", then a 10 frame reach forward. On contact it grabs the active hero (`grab` sfx, pose `grab`), who is held for 40 frames: no moving, no attacking. The grab deals power 0.8, then a shove (knockback 3) at the end. A swap frees the held hero, and the incoming hero gets the swap's usual invulnerability. A hit on the Flayed with knockback 3 or more frees the hero too (Nancy's Shotgun, Eleven's Push, Steve's third swing). Then it recovers for 40 frames |
-| Russian soldier (`soldier`) | 70 | 30 | 5 | 0.8 | 12 | See `docs/level-8.md`, "The soldier" |
+| Melting rat (`melter`) | 50 | 40 | 2 | 1.3 | 4 | Swarms like the rat: a 20 frame wind-up, then a lunge bite from up to 34 px (power 0.75). When it dies, by any means, it bursts: a 22 px `goo` splash (power 0.5, `slow` for 60 frames) and `melt`. Kill it from range, or with area attacks |
+| Flayed (`flayed`) | 140 | 40 | 4 | 0.55 | 11 | Shambles at the hero, and light hits don't stop it: only knockback 3 or more staggers it or breaks its wind-up. In reach (30 px), a 22 frame wind-up under the "!", then a 10 frame reach forward at 2.4 px a frame. On contact it grabs the active hero (`grab` sfx, pose `grab`), who is held for 40 frames: no moving, no attacking. The grab deals power 0.8, then a shove (knockback 3) at the end. A swap frees the held hero, and the incoming hero gets the swap's usual invulnerability. A hit on the Flayed with knockback 3 or more frees the hero too (Nancy's Shotgun, Eleven's Push, Steve's third swing). Then it recovers for 40 frames |
+| Russian soldier (`soldier`) | 90 | 38 | 5 | 0.8 | 12 | See `docs/level-8.md`, "The soldier" |
 
 - **Rising from goo.** A dormant Flayed rises when its group wakes: pose `rise` for 40 frames, where it can't be hit and doesn't attack, then it hunts. A Flayed that starts awake just walks. gfx draws a dormant Flayed as a goo puddle.
 - Elites follow the usual rule (more HP and damage, faster, double XP). An elite Flayed's hold lasts 50 frames.
@@ -194,3 +194,27 @@ The owner picks the look before Art builds. Art makes three standalone pages at 
 - `heroes3-variations.html`: four designs each for Robin, Nancy and Erica, each the sprite in four directions with a walk frame, plus the portrait.
 - `mall-variations.html`: five looks for Starcourt. Each is one sample mall room (floor, cap and wall, shop fronts and a shutter, the fountain, a planter, the Scoops counter, goo, by day or after closing as the look says) beside a matching sample base room for 3.2 (see `docs/level-8.md`).
 - `grigori-variations.html`: see `docs/level-8.md`.
+
+## Result
+
+Measured with `node scripts/measure-stage.ts 3.1` at `enemyMult` 1.7. "Boss" in the script's output is the ambush.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared | 18 | 86, none stuck | 18 | 20 | 8 |
+| Damage taken | 262 | 267 | 251 | 130 | 350 |
+| KOs | 1.6 | 1.65 | 1.35 | 0.55 | 3.2 |
+| Lowest party HP | 36% | 32% | 35% | 72% | 13% |
+| Time | 98 s | 98 s | 98 s | 88 s | 101 s |
+
+Stage XP is 207.
+
+- **The first chapter 3 numbers made a walkover.** At a factor of 1 the bot cleared 20 of 20 for about 30 damage, and the stage needed 3.3. The melting rats died in two hits and their rat's lunge rarely landed. No Flayed ever landed a grab: the bat swings every 11 frames, and each light hit staggered it on its way in.
+- **Now:**
+  - The rat has 50 HP and 40 ATK and lunges from 34 px.
+  - The Flayed has 140 HP and 40 ATK, reaches from 30 px and shambles through light hits, so knockback really is the counter.
+  - The soldier has 90 HP and 38 ATK.
+  - The stage sits at 1.7, like 1.3.
+- **The roster is smaller than the spec's,** to keep the XP inside 170 to 210: 21 melting rats, seven Flayed and two soldiers.
+- **The ambush is about a quarter of the run,** like the other ambush stages.
+

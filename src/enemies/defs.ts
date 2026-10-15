@@ -132,28 +132,31 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     },
   },
   // Chapter 3 (docs/level-7.md, "New enemies", docs/level-8.md). HP, ATK and DEF are sized for the party a real run brings to 3.1
-  // (a Lv 6 lead, the bench at 4 and 5), so the chapter's stages keep enemyMult near 1.
+  // (a Lv 6 lead, the bench at 4 and 5). The first numbers (30/26 for the melting rat, 90/32 for the Flayed, 70/30 for the soldier)
+  // needed a stage factor of 3.3 in 3.1: the rats died in two hits and their short lunge rarely landed, and no Flayed ever got a grab
+  // in. Now the rat lunges farther and bites harder, the Flayed reaches faster and shambles through light hits (combat/damage.ts), and
+  // 3.1 sits at 1.7, as 1.3 does.
   // The melting rat swarms like the rat (enemies/rat.ts, same x). When it dies, by any cause, it bursts (combat/kills.ts): burst px
   // around it, power x.power, slow for x.slow frames.
   melter: {
-    kind: 'melter', name: 'Melting rat', hp: 30, atk: 26, def: 2, speed: 1.3, xp: 4, aggro: 80,
-    windup: 24, power: 0.75, cooldown: 80, drop: 0.15, weight: 1.3,
-    x: { range: 20, lungeT: 9, lungeSpeed: 2.8, recover: 20, burst: 22, power: 0.5, slow: 60 },
+    kind: 'melter', name: 'Melting rat', hp: 50, atk: 40, def: 2, speed: 1.3, xp: 4, aggro: 80,
+    windup: 20, power: 0.75, cooldown: 80, drop: 0.15, weight: 1.3,
+    x: { range: 34, lungeT: 11, lungeSpeed: 3.4, recover: 20, burst: 22, power: 0.5, slow: 60 },
   },
   // The Flayed (enemies/flayed.ts). range: px at which it commits to a reach. reachT and reachSpeed: the reach, in frames and px a frame.
   // hold and eliteHold: frames it holds the hero. kb: the shove that ends the hold. rise: frames coming up out of the goo.
   // recover: frames after a hold or a miss. A hit with knockback 3 or more (hold.ts, HOLD_BREAK_KB) frees the hero.
   flayed: {
-    kind: 'flayed', name: 'Flayed', hp: 90, atk: 32, def: 4, speed: 0.55, xp: 11, aggro: 100,
-    windup: 30, power: 0.8, cooldown: 110, drop: 0.25, weight: 1.6,
-    x: { range: 22, reachT: 10, reachSpeed: 1.5, recover: 40, hold: 40, eliteHold: 50, kb: 3, rise: 40 },
+    kind: 'flayed', name: 'Flayed', hp: 140, atk: 40, def: 4, speed: 0.55, xp: 11, aggro: 100,
+    windup: 22, power: 0.8, cooldown: 110, drop: 0.25, weight: 1.6,
+    x: { range: 30, reachT: 10, reachSpeed: 2.4, recover: 40, hold: 40, eliteHold: 50, kb: 3, rise: 40 },
   },
   // The Russian soldier (enemies/soldier.ts). near and far bound the band in px, panic is the distance it steps back from, back is the
   // px a frame it does it, stamina the frames it will before it plants. speed, range, r and kb are the bullet's: px a frame, reach in
   // px, size, shove. burst and eliteBurst: rounds, gap: frames between rounds, recover: frames after. butt: px at which it clubs
   // instead, with buttWindup, buttPower, buttKb, buttReach, buttRecover and buttGap (frames between butts).
   soldier: {
-    kind: 'soldier', name: 'Soldier', hp: 70, atk: 30, def: 5, speed: 0.8, xp: 12, aggro: 130,
+    kind: 'soldier', name: 'Soldier', hp: 90, atk: 38, def: 5, speed: 0.8, xp: 12, aggro: 130,
     windup: 30, power: 0.45, cooldown: 120, drop: 0.3, weight: 1.2,
     x: {
       near: 80, far: 120, panic: 60, back: 0.7, stamina: 50, speed: 3.2, range: 180, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6,

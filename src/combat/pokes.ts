@@ -29,7 +29,7 @@ const FIGHT_RANGE = 200;
 /** Is this prop a shut puzzle? */
 function shut(p: Prop): boolean {
   if (!PUZZLE_KINDS.has(p.kind) || p.state === 'open' || p.state === 'lit') return false;
-  return p.kind === 'gate' || p.kind === 'door' || p.hitBy !== undefined || p.pushBy !== undefined;
+  return p.kind === 'gate' || p.kind === 'door' || p.kind === 'shutter' || p.hitBy !== undefined || p.pushBy !== undefined;
 }
 
 function report(s: S, p: Prop, hero: HeroId): void {
@@ -43,7 +43,7 @@ function report(s: S, p: Prop, hero: HeroId): void {
 /** Share of max HP a hero stands back up with when a gate needs them. The same as Eleven's for the pinned Demogorgon. */
 const STAND_HP = 0.3;
 
-/** What a shut prop asks for: a gap asks for the dash, anything else for its hitBy or pushBy. Gates and doors ask nothing. */
+/** What a shut prop asks for: a gap asks for the dash, anything else for its hitBy or pushBy. Gates, doors and shutters ask nothing. */
 function needs(p: Prop): Utility | undefined {
   return p.kind === 'gap' ? 'dash' : p.hitBy ?? p.pushBy;
 }

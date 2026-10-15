@@ -117,12 +117,14 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   e.noLure = 240;
 
   const rooted = e.kind === 'vine' || e.kind === 'pod';
-  // A Flayed that holds the hero has its feet planted: a hit with less than HOLD_BREAK_KB neither moves it nor staggers it, and one
-  // with more makes it let go.
+  // A Flayed shambles through light hits: one with less than HOLD_BREAK_KB neither moves it, staggers it nor breaks its reach, and one
+  // with more knocks it back and makes it let go of a held hero. Knockback is the counter the design names. Without this a bat
+  // swinging every 11 frames kept it staggered all the way in, and no Flayed ever landed a grab.
   const holding = e.kind === 'flayed' && isHolding(s, e);
-  const breaksHold = holding && (o.kb ?? 0) >= HOLD_BREAK_KB;
-  if (breaksHold) releaseHold(s, e);
-  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e))) || rooted || (holding && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const planted = e.kind === 'flayed';
+  const breaksHold = planted && (o.kb ?? 0) >= HOLD_BREAK_KB;
+  if (holding && breaksHold) releaseHold(s, e);
+  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e))) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
@@ -135,7 +137,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
     // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.
     demoSettle(s, e, o.beam === true, by.id);
   } else if (!shielded) {
-    if (!(holding && !breaksHold)) {
+    if (!(planted && !breaksHold)) {
       e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));
       if (e.mode === 'windup' || e.mode === 'lunge') { e.mode = 'chase'; e.modeT = 0; }
     }

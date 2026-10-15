@@ -146,11 +146,10 @@ export const STAGE_31: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(10), y: fy(3) }, to: { x: px(10), y: fy(3) }, frames: 1 },
-  // The chapter 3 enemies carry the spec's numbers, and at a factor of 1 the stage is a walkover for the party it opens with: the bot
-  // clears it on chief 20 of 20 for about 30 damage, no KOs. Melting rats and Flayed barely touch a party with a pistol, a lobbed
-  // scoop and the d20 burst (which reaches 200 px through walls), so the factor has to carry it. Measured with
-  // node scripts/measure-stage.ts 3.1 chief 20 [--careless]: chief clears 18 of 20 (89 of 100, none stuck) for about 276 damage,
-  // 1.5 KOs and 115 s, careless 19, kid 20, upside 7. The ambush is about a third of the run.
-  enemyMult: 3.3,
+  // On the spec's first chapter 3 numbers the stage needed 3.3: the rats died in two hits and no Flayed ever landed a grab. With the
+  // retuned rat and Flayed (enemies/defs.ts) it sits at 1.7, like 1.3. Measured with node scripts/measure-stage.ts 3.1 chief 20
+  // [--careless]: chief clears 18 of 20 (86 of 100, none stuck) for about 262 damage, 1.6 KOs, 36% lowest HP and 98 s; careless
+  // 18, kid 20, upside 8. The ambush is about a quarter of the run.
+  enemyMult: 1.7,
   waypoints: WAYPOINTS,
 };

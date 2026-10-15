@@ -1,4 +1,4 @@
-// Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, and the Demogorgon.
+// Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, the Demogorgon, and chapter 2's demodog, vine and pod.
 import type { Difficulty, EnemyKind } from '../core/types.ts';
 
 export interface EnemyDef {
@@ -83,24 +83,27 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
     },
   },
-  // The Level 4 enemies (docs/level-4.md, "New enemies"). The demodog circles `orbit` px out (between near and far), and a
-  // hero inside `range` px can be lunged at after the `windup`. lungeT frames at lungeSpeed px a frame, recover frames after.
+  // Chapter 2 (docs/level-4.md, "New enemies"). HP, ATK and DEF are sized for the Lv 5 party that arrives at 2.1, so the
+  // chapter's stages keep enemyMult near 1 instead of scaling chapter 1 numbers. At 2.1's 1.15 a Lv 5 Mike kills a demodog in
+  // three to five swings, and a bite takes about a third of his HP.
+  // The demodog circles `orbit` px out (between near and far), and a hero inside `range` px can be lunged at after the
+  // `windup`. lungeT frames at lungeSpeed px a frame, recover frames after.
   // gap: the least frames between one pack lunge ending and the next wind-up. kb: the bite's knockback.
   demodog: {
-    kind: 'demodog', name: 'Demodog', hp: 34, atk: 12, def: 2, speed: 1.2, xp: 9, aggro: 110,
+    kind: 'demodog', name: 'Demodog', hp: 60, atk: 30, def: 4, speed: 1.2, xp: 9, aggro: 110,
     windup: 28, power: 0.9, cooldown: 90, drop: 0.2, weight: 1.1,
     x: { orbit: 48, near: 38, far: 58, range: 64, lungeT: 14, lungeSpeed: 4, recover: 30, gap: 20, kb: 2.4 },
   },
   // Rooted. The vine lashes `reach` px after its windup, the lash slows for slowT frames, and fire does burnMul times the damage.
   vine: {
-    kind: 'vine', name: 'Vine', hp: 30, atk: 9, def: 2, speed: 0, xp: 5, aggro: 40,
+    kind: 'vine', name: 'Vine', hp: 50, atk: 18, def: 4, speed: 0, xp: 5, aggro: 40,
     windup: 30, power: 0.8, cooldown: 100, drop: 0, weight: 99,
     x: { reach: 34, slowT: 90, burnMul: 2, recover: 24, swing: 10, kb: 2 },
   },
   // Rooted. A hero inside aggro starts the windup (the swell); at its end the pod bursts into a cloud of cloud px that hurts and
   // slows (slowT frames) whoever is in it, and dies doing it for no XP. cloudT: frames the spores are drawn.
   pod: {
-    kind: 'pod', name: 'Spore pod', hp: 16, atk: 6, def: 0, speed: 0, xp: 3, aggro: 48,
+    kind: 'pod', name: 'Spore pod', hp: 28, atk: 16, def: 2, speed: 0, xp: 3, aggro: 48,
     windup: 40, power: 0.6, cooldown: 160, drop: 0.1, weight: 99,
     x: { cloud: 28, slowT: 90, cloudT: 50, kb: 1.5 },
   },

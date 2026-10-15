@@ -14,7 +14,7 @@ One stage, five to eight minutes, and the start of chapter 2 (Halloween 1984). E
 - Light: `time: 'day'`. No pools.
 - Music: `hawkins`.
 - Party: Mike (active), Dustin, Lucas, Will. The carry rule (`partyFor` in `core/campaign.ts`) drops Eleven and brings Will in at the others' average level minus one. `?stage=2.1` starts them at Lv 5, 5, 4, 3. There's no recruit beat.
-- `enemyMult: 3.15` (see "Result").
+- `enemyMult: 1.15`. The chapter 2 enemies carry their own numbers (see "New enemies" and "Result").
 
 ## Rooms
 
@@ -77,9 +77,18 @@ Will is Wizard, in `heroes/will.ts`, and `HERO_DEFS.will` replaces the stand-in.
 
 | Enemy | HP | ATK | DEF | Speed | XP | Behavior |
 |---|---|---|---|---|---|---|
-| Young demodog (`demodog`) | 34 | 12 | 2 | 1.2 | 9 | Circles at about 48 px, then winds up for 28 frames under the "!" and lunges 14 frames at 4 px a frame (power 0.9, `lunge`, `chomp` on a hit), then recovers for 30 frames. In a pack, only one lunges at a time, with at least 20 frames between lunges |
-| Vine (`vine`) | 30 | 9 | 2 | 0 | 5 | Rooted. Lashes in a 34 px reach after a 30 frame wind-up (power 0.8, applies `slow` for 90 frames). Burn deals double damage to it. Often spawned `hidden: true` in the corn |
-| Pod (`pod`) | 16 | 6 | 0 | 0 | 3 | Rooted. A hero within 48 px starts a 40 frame swell, then it bursts into a 28 px `spore` cloud: power 0.6 and `slow`. It dies in the burst and gives no XP that way. Killed first, it's worth 3 |
+| Young demodog (`demodog`) | 60 | 30 | 4 | 1.2 | 9 | Circles at about 48 px, then winds up for 28 frames under the "!" and lunges 14 frames at 4 px a frame (power 0.9, `lunge`, `chomp` on a hit), then recovers for 30 frames. In a pack, only one lunges at a time, with at least 20 frames between lunges |
+| Vine (`vine`) | 50 | 18 | 4 | 0 | 5 | Rooted. Lashes in a 34 px reach after a 30 frame wind-up (power 0.8, applies `slow` for 90 frames). Burn deals double damage to it. Often spawned `hidden: true` in the corn |
+| Pod (`pod`) | 28 | 16 | 2 | 0 | 3 | Rooted. A hero within 48 px starts a 40 frame swell, then it bursts into a 28 px `spore` cloud: power 0.6 and `slow`. It dies in the burst and gives no XP that way. Killed first, it's worth 3 |
+
+HP, ATK and DEF are sized for the Lv 5 party that arrives at 2.1, so chapter 2 stages keep `enemyMult` near 1 instead of scaling chapter 1 numbers. At 2.1's 1.15, against the arrival party (Mike 5, Dustin 5, Lucas 4, Will 3):
+
+- A demodog has 69 HP: five of a Lv 5 Mike's swings at an average roll, or three or four when his talent crits the first hit of the fight. A bite takes 26 of his 76 HP and 29 of Will's 46.
+- A vine has 57 HP, about four of Mike's swings. A lash takes 11 of his HP, 15 of Will's, and slows.
+- A pod has 32 HP, two swings. The spores take six of Mike's HP and nine of Will's, and slow.
+- The rats in 2.1 keep their chapter 1 numbers and die in one hit.
+
+The first numbers in this spec were 34, 12 and 2 for the demodog, 30, 9 and 2 for the vine, and 16, 6 and 0 for the pod.
 
 ## Spawns and the XP budget
 
@@ -127,19 +136,22 @@ The bot opens `vines1`, `gate1` and `hidden1` by flag. The ambush is real.
 
 ## Result
 
-Measured with `node scripts/measure-stage.ts 2.1` at `enemyMult` 3.15. Here "boss" in the script's output is the ambush.
+Measured with `node scripts/measure-stage.ts 2.1` at `enemyMult` 1.15. Here "boss" in the script's output is the ambush.
 
 | | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
 |---|---|---|---|---|---|
-| Cleared | 17 | 92, none stuck (300 clean) | 14 of 20 (68 of 100) | 20 | 5 |
-| Damage taken | 211 | | | | |
-| KOs | 1.05 | | | | |
-| Lowest party HP | 41% | | | | |
-| Time | 101 s | | | | |
+| Cleared | 17 | 90, none stuck (279 of 300, none stuck) | 20 of 20 (91 of 100) | 20 | 11 |
+| Damage taken | 237 | 217 | 170 | 94 | 331 |
+| KOs | 1.50 | 1.22 | 0.70 | 0 | 2.55 |
+| Lowest party HP | 35% | 40% | 50% | 70% | 13% |
+| Time | 105 s | 102 s | 92 s | 88 s | 108 s |
 
-Stage XP is 166. In the browser the bot clears 2.1 in 1:45 for 157 XP.
+Stage XP is 166. In the browser the bot clears 2.1 in 1:55 for 157 XP.
 
-- **The factor is high.** At the spec's 1.15 the bot took 15 damage and finished in 79 s. The enemy base numbers were set for a chapter 1 party, and the party arrives at Lv 5. A later pass should give chapter 2 enemies their own numbers in `enemies/defs.ts` and bring the factor back near 1.
+- **The factor is back at 1.15.** It was 3.15, because the demodog, vine and pod had numbers for a chapter 1 party. At 3.15 a demodog had 107 HP, seven of a Lv 5 Mike's swings. Now it has 69, five swings, and its bite is a little harder (26 to Mike, was 20).
+- **All the damage is bites.** In 20 careful runs the bot takes about nine bites of 27 and nothing else. The vines, pods and rats never land a hit on it, so their numbers come from the sums above, not from the measurements.
+- **The careless bot clears more than the careful one.** Dogs that go down in a few hits reward trading blows over dodging. The careless bot keeps swinging, takes about six bites a run to the careful bot's nine, and ends the ambush sooner. At 3.15 it was the other way round, 14 to 17.
+- **Upside clears 11 of 20,** up from 5. The floor is 4.
 - **Demodogs replaced rats.** The barn and street rats were traded for demodogs, so the stage has 13 demodogs and three rats: a pack of three at the barn, then waves of 3, 3 and 4.
 - **The route is longer.** The pumpkin rows zigzag.
 - **Eleven is named once,** by Mike, and never explained.

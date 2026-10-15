@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PARTY_SIZE, STAGE_ORDER, chapterOf, defaultParty, isFinalStage, levelNumber, mergeHeroes, needsPicks, nextStage, opensChapter, partyFor, pickParty, requiredFor, rosterFor, seedsFrom } from '../src/core/campaign.ts';
+import { PARTY_SIZE, STAGE_ORDER, chapterOf, defaultParty, isFinalStage, levelNumber, mergeHeroes, needsPicks, nextStage, opensChapter, partyFor, pickParty, poolFor, requiredFor, rosterFor, seedsFrom } from '../src/core/campaign.ts';
 import { isOpen, nextUncleared, parseProgress, recordClear, withPicks } from '../src/core/progress.ts';
 import { HERO_IDS } from '../src/heroes/index.ts';
 import type { HeroSnapshot } from '../src/core/types.ts';
@@ -131,4 +131,11 @@ test('progress remembers the last picks, keeps them across a clear and drops a b
   assert.ok(back, 'a bad pick list does not spoil the record');
   assert.equal(back?.picks, undefined);
   assert.equal(parseProgress({ ...bad, picks: ['will', 'will'] })?.picks, undefined);
+});
+
+test('the picks panel sees the whole pool at the levels they would play at', () => {
+  const known = [{ id: 'mike' as const, level: 7, xp: 0 }, { id: 'dustin' as const, level: 6, xp: 0 }, { id: 'lucas' as const, level: 5, xp: 0 }, { id: 'will' as const, level: 4, xp: 0 }];
+  assert.deepEqual(poolFor('2.2', known).map((s) => [s.id, s.level]), [['mike', 7], ['dustin', 6], ['lucas', 5], ['will', 4], ['max', 4], ['steve', 4]]);
+  assert.deepEqual(poolFor('2.2', []).map((s) => s.id), ['mike', 'dustin', 'lucas', 'will', 'max', 'steve']);
+  assert.equal(poolFor('2.2', []).find((s) => s.id === 'max')?.level, 4, 'the arrival level with nothing known');
 });

@@ -141,6 +141,19 @@ export function mergeHeroes(known: PartySeed[], later: PartySeed[]): PartySeed[]
   return out;
 }
 
+/** The level a hero nobody has met yet joins stage `id` at: the met heroes in its pool, averaged, minus one. Null if none are met. */
+function joinLevel(id: string, known: PartySeed[]): number | null {
+  const have = rosterFor(id).map((h) => known.find((k) => k.id === h)).filter((s): s is PartySeed => !!s);
+  if (have.length === 0) return null;
+  const avg = have.reduce((n, s) => n + (s.level ?? 1), 0) / have.length;
+  return Math.max(1, Math.floor(avg) - 1);
+}
+
+const seedOf = (h: HeroId, known: PartySeed[], join: number): PartySeed => {
+  const k = known.find((s) => s.id === h);
+  return k ? { ...k, bonus: k.bonus ? { ...k.bonus } : undefined } : { id: h, level: join };
+};
+
 /**
  * The party for stage `id` built from the heroes met so far and, on a stage with picks, the player's picks (see
  * pickParty). A hero nobody has met yet joins at the average level of the met heroes in the stage's pool minus one
@@ -148,13 +161,18 @@ export function mergeHeroes(known: PartySeed[], later: PartySeed[]): PartySeed[]
  * arrival party.
  */
 export function partyFor(id: string, known: PartySeed[], picks?: readonly HeroId[]): PartySeed[] {
-  const ids = pickParty(id, picks);
-  const have = rosterFor(id).map((h) => known.find((k) => k.id === h)).filter((s): s is PartySeed => !!s);
-  if (have.length === 0) return defaultParty(id);
-  const avg = have.reduce((n, s) => n + (s.level ?? 1), 0) / have.length;
-  const join = Math.max(1, Math.floor(avg) - 1);
-  return ids.map((h) => {
-    const k = known.find((s) => s.id === h);
-    return k ? { ...k, bonus: k.bonus ? { ...k.bonus } : undefined } : { id: h, level: join };
-  });
+  const join = joinLevel(id, known);
+  if (join === null) return defaultParty(id);
+  return pickParty(id, picks).map((h) => seedOf(h, known, join));
+}
+
+/**
+ * Every hero in stage `id`'s pool as a seed, in pool order, at the level they would play it at: their own, or the join
+ * level for one nobody has met. For the party picks panel. With nothing known, the arrival levels (1 for a hero the
+ * arrival party leaves out).
+ */
+export function poolFor(id: string, known: PartySeed[]): PartySeed[] {
+  const join = joinLevel(id, known);
+  const arrival = defaultParty(id);
+  return rosterFor(id).map((h) => (join === null ? arrival.find((s) => s.id === h) ?? { id: h, level: 1 } : seedOf(h, known, join)));
 }

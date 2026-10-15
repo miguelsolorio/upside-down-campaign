@@ -29,7 +29,7 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] `?stage=` seeds are the levels and XP a real run walks in with (`ARRIVAL`). Every stage measured again: 1.3's `enemyMult` went from 1.7 to 1.5, the rest kept theirs
 - [x] Two bot stalls the weaker party showed on 2.2 upside: a knocked-out Max at a gap, and a pod over a wall. Both fixed
 - [x] 1.3: the van is parked in the lot across a two-tile side door, the scare fires mid-room (the level holds still while it plays), and the gym's lines frame the court
-- [x] Verified: typecheck clean, all tests pass. Not merged; waiting on the owner
+- [x] Verified: typecheck clean, 1053 tests pass, the production build passes. Merged into main
 
 ## Status
 

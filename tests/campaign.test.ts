@@ -152,6 +152,8 @@ test('Eleven comes back to 3.3 at the level of the party she joins, less one, an
   assert.deepEqual(party.find((s) => s.id === 'eleven'), { id: 'eleven', level: 4, xp: 0, bonus: undefined });
   const ahead = known.map((s) => (s.id === 'eleven' ? { ...s, level: 6, xp: 30 } : s));
   assert.equal(partyFor('3.3', ahead, ['mike', 'dustin', 'robin', 'nancy']).find((s) => s.id === 'eleven')?.level, 6, 'a hero ahead keeps her level');
+  // The picks panel shows her at the level she will play at.
+  assert.equal(poolFor('3.3', known, ['mike', 'dustin', 'robin', 'nancy']).find((s) => s.id === 'eleven')?.level, 4);
   // Robin is locked in 3.2 too, but she played 3.1, so she walks in as she is.
   assert.equal(partyFor('3.2', known, ['mike', 'dustin', 'nancy']).find((s) => s.id === 'robin')?.level, 4);
 });

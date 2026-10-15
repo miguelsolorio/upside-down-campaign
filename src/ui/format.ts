@@ -112,7 +112,7 @@ export function countUp(target: number, t: number, from: number, dur: number): n
 const FOE_NAMES: Record<string, string> = {
   agent: 'AGENTS', rat: 'RATS', guard: 'GUARDS', warden: 'WARDEN', demogorgon: 'DEMOGORGON', demodog: 'DEMODOGS', vine: 'VINES', pod: 'PODS',
   alpha: 'ALPHA', melter: 'MELTING RATS', flayed: 'FLAYED', soldier: 'SOLDIERS', grigori: 'GRIGORI',
-  billy: 'BILLY', flayer: 'MIND FLAYER', flayerleg: 'LEGS',
+  billy: 'BILLY', flayer: 'MIND FLAYER',
 };
 /** What the foes row calls a kind. A kind it doesn't know gets an S. */
 export const foeName = (kind: string): string => FOE_NAMES[kind] ?? `${kind.toUpperCase()}S`;

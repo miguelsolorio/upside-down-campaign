@@ -231,8 +231,13 @@ export function partyFor(id: string, known: PartySeed[], picks?: readonly HeroId
  * level for one nobody has met. For the party picks panel. With nothing known, the arrival levels (1 for a hero the
  * arrival party leaves out).
  */
-export function poolFor(id: string, known: PartySeed[]): PartySeed[] {
+export function poolFor(id: string, known: PartySeed[], picks?: readonly HeroId[]): PartySeed[] {
   const join = joinLevel(id, known);
   const arrival = defaultParty(id);
-  return rosterFor(id).map((h) => (join === null ? arrival.find((s) => s.id === h) ?? { id: h, level: 1 } : seedOf(h, known, join)));
+  const pool = rosterFor(id).map((h) => (join === null ? arrival.find((s) => s.id === h) ?? { id: h, level: 1 } : seedOf(h, known, join)));
+  // A hero who comes back here shows the level she will play at in the party the picks make (CATCH_UP).
+  const back = CATCH_UP[id] ?? [];
+  if (join === null || back.length === 0) return pool;
+  const party = partyFor(id, known, picks);
+  return pool.map((s) => (back.includes(s.id) ? party.find((p) => p.id === s.id) ?? s : s));
 }

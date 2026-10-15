@@ -70,7 +70,7 @@ export function createMapScene(opts: MapOpts): Scene {
   /** Opens the picks panel for a stage with a pool bigger than the party, on the last party picked, fixed up for it. */
   const openPicks = (id: string): void => {
     picks = createPicksPanel({
-      pool: poolFor(id, progress?.heroes ?? []),
+      pool: poolFor(id, progress?.heroes ?? [], progress?.picks),
       locked: requiredFor(id),
       seed: pickParty(id, progress?.picks, progress?.heroes),
       onStart: (who) => leave(() => opts.onPlay(id, who)),

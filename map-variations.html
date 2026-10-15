@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hawkins Map Designs</title>
-<meta name="description" content="Five designs for the Hawkins map between stages, drawn with the game's own code, beside the current one.">
+<meta name="description" content="Five designs for the Hawkins map between stages, drawn with the game's own code. Design 4 was chosen and is the map in the game.">
 <style>
   :root {
     color-scheme: dark;
@@ -37,9 +37,10 @@
   .sub { margin: 0 0 14px; color: var(--mist); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 18px; }
   .card { border: 2px solid var(--shadow); padding: 14px; background: var(--night); }
+  .card.chosen { border-color: var(--amber); }
+  .pick { margin-left: auto; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); background: var(--amber); padding: 5px 8px; align-self: center; }
   .head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
   .badge { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; background: var(--amber); color: var(--ink); font: 700 16px/1 var(--mono); }
-  .ref .badge { background: var(--dusk); color: var(--bone); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
   .head h3 { margin: 0; font-size: 18px; }
   .blurb { margin: 0 0 10px; color: var(--mist); min-height: 3em; }
 </style>
@@ -49,7 +50,8 @@
 <header class="hero"><div class="wrap">
   <p class="kicker">Map review</p>
   <h1>Five designs for the Hawkins map</h1>
-  <p>The screen between stages: walk the party to a stage, see who is coming, and see what's still locked. Each card draws the whole 256 by 224 screen with the game's own sprites, font and palette, at 2x. The first card is the map in the game now, for comparison.</p>
+  <p>The screen between stages: walk the party to a stage, see who is coming, and see what's still locked. Each card draws the whole 256 by 224 screen with the game's own sprites, font and palette, at 2x.</p>
+  <p><b>Chosen: 4, Two Hawkins.</b> It is now the map in the game, and its card here calls the game's own drawing code, so what you see is what the game draws. The other four are kept for the record.</p>
   <p>Change the state above to see each design at the start of the campaign, after the school, and with everything cleared. Walk sends the token back and forth between the last two open stages.</p>
 </div></header>
 
@@ -67,9 +69,9 @@
 </main>
 
 <script type="module">
-import { initGfx, drawMap, drawText } from '/src/gfx/index.ts';
+import { initGfx, hopLength } from '/src/gfx/index.ts';
 import { VARIANTS } from '/src/gfx/mapvar/index.ts';
-import { MAP_NODES, MAP_PLACE } from '/src/core/mapdata.ts';
+import { MAP_PLACE } from '/src/core/mapdata.ts';
 import { CHAPTERS, partyFor, STAGE_ORDER, STAGES_AHEAD } from '/src/core/campaign.ts';
 import { stageName } from '/src/world/index.ts';
 
@@ -108,12 +110,12 @@ function viewAt(t) {
   const last = open[open.length - 1].id, prev = (open[open.length - 2] ?? open[0]).id;
   let selected = last, walk = null;
   if (st.walk && last !== prev) {
-    // 90 frames standing, 120 walking, each way.
-    const c = t % 420, k = (f) => Math.min(1, Math.max(0, f / 120));
+    // 90 frames standing, then the walk at the game's speed, each way.
+    const w = Math.ceil(hopLength(last, prev) / 1.75), c = t % (2 * (90 + w)), k = (f) => Math.min(1, Math.max(0, f / w));
     if (c < 90) selected = last;
-    else if (c < 210) { selected = prev; walk = { from: last, to: prev, k: k(c - 90) }; }
-    else if (c < 300) selected = prev;
-    else { selected = last; walk = { from: prev, to: last, k: k(c - 300) }; }
+    else if (c < 90 + w) { selected = prev; walk = { from: last, to: prev, k: k(c - 90) }; }
+    else if (c < 180 + w) selected = prev;
+    else { selected = last; walk = { from: prev, to: last, k: k(c - 180 - w) }; }
   }
   const party = partyFor(selected, s.heroes).map((p) => ({ id: p.id, level: p.level ?? 1 }));
   const ch = Number.parseInt(selected, 10);
@@ -124,24 +126,13 @@ function viewAt(t) {
   };
 }
 
-/** The current map, drawn the way ui/map.ts draws it, for the reference card. */
-function drawCurrent(ctx, v) {
-  const at = (id) => MAP_NODES[id];
-  let pos = at(v.selected);
-  if (v.walk) { const a = at(v.walk.from), b = at(v.walk.to); pos = { x: a.x + (b.x - a.x) * v.walk.k, y: a.y + (b.y - a.y) * v.walk.k }; }
-  drawMap(ctx, { nodes: v.nodes.map((n) => ({ id: n.id, x: at(n.id).x, y: at(n.id).y, state: n.state, place: n.place })), token: { x: pos.x, y: pos.y, who: v.lead, walking: !!v.walk }, selected: v.selected, t: v.t });
-  ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, 256, 14); ctx.fillRect(0, 176, 256, 48);
-  drawText(ctx, v.chapter, 6, 4, 'mist'); drawText(ctx, v.stage, 250, 4, 'yellow', { align: 'right' });
-  drawText(ctx, v.hint, 128, 214, 'mist', { align: 'center' });
-}
-
-const CARDS = [{ id: 'now', name: 'The map now', blurb: 'For comparison: the screen in the game today.', draw: drawCurrent, ref: true }, ...VARIANTS];
+const CARDS = [...VARIANTS.map((v) => ({ ...v, chosen: v.id === 4 }))];
 const screens = [];
 const cardsEl = document.getElementById('cards');
 for (const c of CARDS) {
   const card = document.createElement('section');
-  card.className = 'card' + (c.ref ? ' ref' : '');
-  card.innerHTML = `<div class="head"><span class="badge">${c.ref ? 'Now' : c.id}</span><h3></h3></div><p class="blurb"></p>`;
+  card.className = 'card' + (c.chosen ? ' chosen' : '');
+  card.innerHTML = `<div class="head"><span class="badge">${c.id}</span><h3></h3>${c.chosen ? '<span class="pick">Chosen, now in the game</span>' : ''}</div><p class="blurb"></p>`;
   card.querySelector('h3').textContent = c.name;
   card.querySelector('.blurb').textContent = c.blurb;
   const big = document.createElement('canvas'); big.width = 512; big.height = 448;

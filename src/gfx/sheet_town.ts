@@ -2,16 +2,16 @@
 // they face, the last sub page is a live scene), Will's bolt and the reveal shimmer, and the map screen in each state it
 // has. The tiles, the stages and the props are in sheet_patch.ts.
 import type { ActorView, Dir, FxKind, FxView } from '../core/types.ts';
-import type { NodeState } from '../core/mapdata.ts';
-import { MAP_NODES, MAP_PLACE } from '../core/mapdata.ts';
+import type { MapView, NodeState } from '../core/mapdata.ts';
+import { MAP_PLACE } from '../core/mapdata.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import type { Ctx } from './canvas.ts';
 import { drawText, drawTinyText } from './font.ts';
 import { drawActor } from './actors.ts';
 import { drawFx } from './fx.ts';
 import { drawProp } from './props.ts';
-import { drawMap } from './map.ts';
-import { bendOf, trailPoints } from './map_land.ts';
+import { drawMapScreen } from './map.ts';
+import { hopLength } from './map_geo.ts';
 import { drawPortrait } from './ui.ts';
 import { PAL } from './palette.ts';
 import { bakeStage, drawStage } from './tiles.ts';
@@ -120,42 +120,37 @@ const effects: Page = {
 
 // ---------------------------------------------------------------- the map
 const IDS = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3'];
-const mapView = (states: NodeState[], selected: string, token: { x: number; y: number; walking: boolean }, t: number) => ({
-  nodes: IDS.map((id, i) => ({ id, x: (MAP_NODES[id] as { x: number }).x, y: (MAP_NODES[id] as { y: number }).y, state: states[i] as NodeState, place: MAP_PLACE[id] as 'woods' })),
-  token: { ...token, who: 'mike' as const }, selected, t,
+const NAMES = ['The woods', 'The lab', 'The school', 'The palace', 'The tunnels', 'The gate'];
+const PARTY = [{ id: 'mike' as const, level: 5 }, { id: 'dustin' as const, level: 4 }, { id: 'lucas' as const, level: 4 }, { id: 'eleven' as const, level: 4 }];
+const mapView = (states: NodeState[], selected: string, walk: MapView['walk'], t: number): MapView => ({
+  nodes: IDS.map((id, i) => ({ id, state: states[i] as NodeState, place: MAP_PLACE[id] as 'woods', name: NAMES[i] as string })),
+  selected, walk, lead: 'mike', party: PARTY, chapter: `Chapter ${selected.startsWith('1') ? 'one' : 'two'}`, stage: NAMES[IDS.indexOf(selected)] as string,
+  hint: 'ARROWS MOVE   Z PLAY   ESC BACK', t, calm: false,
 });
 const STATES: NodeState[][] = [
   ['open', 'locked', 'locked', 'locked', 'locked', 'locked'],
   ['cleared', 'cleared', 'open', 'locked', 'locked', 'locked'],
   ['cleared', 'cleared', 'cleared', 'cleared', 'locked', 'locked'],
 ];
-const LABELS = ['A NEW GAME', 'THE SCHOOL IS NEXT', 'CHAPTER 1 AND THE PATCH CLEARED', 'LIVE: THE TOKEN WALKS THE TRAIL'];
+const LABELS = ['A NEW GAME', 'THE SCHOOL IS NEXT', 'CHAPTER 1 AND THE PATCH CLEARED', 'LIVE: THE TOKEN WALKS THE ROUTE'];
 
 const map: Page = {
   title: 'MAP',
   subs: 4,
   draw(ctx, t, sub) {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
     if (sub < 3) {
-      const at = sub === 0 ? '1.1' : sub === 1 ? '1.3' : '2.1';
-      const n = MAP_NODES[at] as { x: number; y: number };
-      drawMap(ctx, mapView(STATES[sub] as NodeState[], at, { x: n.x, y: n.y, walking: false }, t));
+      drawMapScreen(ctx, mapView(STATES[sub] as NodeState[], sub === 0 ? '1.1' : sub === 1 ? '1.3' : '2.1', null, t));
     } else {
-      // Walk 1.1 to 2.1 and back, two pixels a frame, along the trails and with the states of the last page.
-      const legs = [0, 1, 2].map((i) => trailPoints(MAP_NODES[IDS[i] as string] as { x: number; y: number }, MAP_NODES[IDS[i + 1] as string] as { x: number; y: number }, bendOf(i)));
-      const pts = legs.flat();
-      const n = pts.length, u = (t * 2) % (2 * n), idx = Math.min(n - 1, u < n ? u : 2 * n - 1 - u);
-      const leg = Math.min(2, Math.floor(idx / (n / 3)));
-      const [x, y] = pts[Math.floor(idx)] as [number, number];
-      drawMap(ctx, mapView(STATES[2] as NodeState[], IDS[u < n ? leg + 1 : leg] as string, { x, y, walking: true }, t));
+      // Walk 1.1 to 2.1 and back, 1.75 px a frame along the route, with the states of the last page.
+      const len = hopLength('1.1', '2.1'), cycle = Math.ceil(len / 1.75) + 40;
+      const u = t % (2 * cycle), fwd = u < cycle, k = Math.min(1, (fwd ? u : u - cycle) / (cycle - 40));
+      const from = fwd ? '1.1' : '2.1', to = fwd ? '2.1' : '1.1';
+      drawMapScreen(ctx, mapView(STATES[2] as NodeState[], to, { from, to, k: k >= 1 ? 1 : k }, t));
     }
     ctx.fillStyle = PAL.ink;
-    ctx.fillRect(0, 0, SCREEN_W, 16);
-    ctx.fillRect(0, SCREEN_H - 48, SCREEN_W, 48);
-    drawText(ctx, LABELS[sub] as string, 6, 4, 'white');
-    drawText(ctx, 'THE TOP 16 AND BOTTOM 48 ARE UI', 6, SCREEN_H - 44, 'slate');
-    drawText(ctx, 'UP DOWN', 200, 4, 'slate');
+    ctx.fillRect(0, 10, SCREEN_W, 9);
+    drawText(ctx, LABELS[sub] as string, 4, 11, 'white');
+    drawText(ctx, 'UP DOWN', 200, 11, 'slate');
   },
 };
 

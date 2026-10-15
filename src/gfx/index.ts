@@ -22,7 +22,7 @@ export { paintGlow } from './glow.ts';
 export type { Glow } from './glow.ts';
 export { drawPortrait, drawIcon, drawPanel, drawBar, drawBarV } from './ui.ts';
 export { drawLogo, drawAlphabetWall, LOGO_SIZE, WALL_SIZE } from './logo.ts';
-export { drawMap } from './map.ts';
+export { drawMapScreen, hopLength } from './map.ts';
 
 /** Build atlases and fonts once at boot. Synchronous, under 200 ms. */
 export function initGfx(): void {

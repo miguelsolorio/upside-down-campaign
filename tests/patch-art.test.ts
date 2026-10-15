@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { TILES } from '../src/core/tiles.ts';
 import type { TileName } from '../src/core/tiles.ts';
 import type { ActorView, FxKind, FxView } from '../src/core/types.ts';
-import { MAP_NODES, MAP_PLACE } from '../src/core/mapdata.ts';
+import type { NodeState } from '../src/core/mapdata.ts';
 import { px32 } from '../src/gfx/canvas.ts';
 import { PAL } from '../src/gfx/palette.ts';
 import type { ColorName } from '../src/gfx/palette.ts';
@@ -24,8 +24,8 @@ import { composeFrame } from '../src/gfx/actor_pose.ts';
 import { MAX } from '../src/gfx/data/max.ts';
 import { PORTRAITS } from '../src/gfx/data/portraits.ts';
 import { drawFx } from '../src/gfx/fx.ts';
-import { MAP_H, MAP_W, QUIET_BOTTOM, QUIET_TOP, paintLand, trailPoints } from '../src/gfx/map_land.ts';
-import type { LandNode, Place } from '../src/gfx/map_land.ts';
+import { paintLand } from '../src/gfx/map_land.ts';
+import { BAND_Y, HZ, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H } from '../src/gfx/map_geo.ts';
 
 const around = (n: TileName): Near => ({ n, e: n, s: n, w: n });
 const ctxAt = (tx: number, ty: number, near: Near): TileCtx => ({ tx, ty, near });
@@ -301,47 +301,59 @@ test('the reveal is a shimmer over the prop that sweeps down it and fades out', 
 });
 
 // ---------------------------------------------------------------- the map
-const IDS = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3'];
-const landNodes = (locked: boolean[]): LandNode[] => IDS.map((id, i) => ({ id, x: (MAP_NODES[id] as { x: number }).x, y: (MAP_NODES[id] as { y: number }).y, place: MAP_PLACE[id] as Place, locked: locked[i] === true }));
+const states = (...s: NodeState[]): Record<string, NodeState> => Object.fromEntries(ORDER.map((id, i) => [id, s[i] as NodeState]));
+const SCHOOLED = states('cleared', 'cleared', 'cleared', 'open', 'locked', 'locked');
+const FRESH = states('open', 'locked', 'locked', 'locked', 'locked', 'locked');
+const rows = (px: Px, y0: number, y1: number, names: ColorName[]): number => {
+  const s = set5(...names);
+  let n = 0;
+  for (let y = y0; y < y1; y++) for (let x = 0; x < SCREEN_W; x++) if (s.has(px.get(x, y))) n++;
+  return n;
+};
 
 test('the land of the map is the whole 256 by 224 screen, opaque, and the same every time', () => {
-  const a = paintLand(landNodes([false, false, false, false, true, true])), b = paintLand(landNodes([false, false, false, false, true, true]));
-  assert.equal(a.w, MAP_W);
-  assert.equal(a.h, MAP_H);
+  const a = paintLand(SCHOOLED).px, b = paintLand(SCHOOLED).px;
+  assert.equal(a.w, SCREEN_W);
+  assert.equal(a.h, SCREEN_H);
   assert.ok(opaque(a), 'no see-through pixels');
   assert.deepEqual(a.d, b.d);
 });
 
+test('below the horizon the same land hangs in the Upside Down palette: no sky, no green, only ink, purple and blood', () => {
+  const land = paintLand(SCHOOLED).px;
+  assert.ok(rows(land, TOP_H, 30, ['blue', 'sky']) > 1500, 'Hawkins has its sky');
+  assert.ok(rows(land, 40, HZ - 6, ['pine2', 'pine3', 'leaf']) > 2500, 'and its green');
+  assert.equal(rows(land, HZ + 8, BAND_Y, ['blue', 'sky', 'cream', 'leaf', 'pine2', 'pine3', 'pine1', 'pine0', 'orange', 'amber']), 0);
+  assert.ok(rows(land, HZ + 8, BAND_Y, ['ink', 'night', 'purple0', 'purple', 'blood0', 'blood1']) > 0.85 * 256 * (BAND_Y - HZ - 8));
+});
+
 test('a locked place is dimmed to greys and an open one keeps its colors', () => {
-  const open = paintLand(landNodes([false, false, false, false, false, false])), locked = paintLand(landNodes([false, false, false, false, true, true]));
-  const grey = set5('ink', 'grey1', 'grey2', 'grey3');
-  let greyCount = 0, total = 0, colorful = 0;
-  for (let y = 20; y < 100; y++) for (let x = 232; x < 256; x++) { total++; if (grey.has(locked.get(x, y))) greyCount++; if (!grey.has(open.get(x, y))) colorful++; }
-  assert.ok(greyCount / total > 0.95, `the locked gate is grey: ${(greyCount / total).toFixed(2)}`);
-  assert.ok(colorful > total * 0.5, `and has its colors when open: ${(colorful / total).toFixed(2)}`);
+  const open = paintLand(states('cleared', 'cleared', 'cleared', 'open', 'locked', 'locked')).px, locked = paintLand(FRESH).px;
+  // The school's brick: red-brown when its stage is open, grey when locked. The patch's pumpkins likewise.
+  const brick = ['soil2', 'soil1', 'blood1', 'blood0'], pumpkins = ['orange', 'red', 'amber'];
+  const sch = (px: Px): number => { let n = 0; for (let y = 52; y < 79; y++) for (let x = 135; x < 165; x++) if (set5(...brick).has(px.get(x, y))) n++; return n; };
+  assert.ok(sch(open) > 150, `the open school has its bricks: ${sch(open)}`);
+  assert.ok(sch(locked) < 20, `the locked school does not: ${sch(locked)}`);
+  assert.ok(rows(open, 70, 98, pumpkins) > 40 && rows(locked, 70, 98, pumpkins) === 0, 'pumpkins in color or not at all');
   assert.ok(count(locked, ['pine1', 'pine2', 'pine3']) > 4000, 'the woods are still green');
 });
 
-test('the top 16 px and the bottom 48 px are ground only: no buildings, trees or trails for the text to fight', () => {
-  const land = paintLand(landNodes([false, false, false, false, true, true]));
-  const ground = set5('pine0', 'pine1', 'pine2', 'pine3', 'grey1', 'grey2', 'grey3', 'soil0', 'soil1', 'soil2', 'soil3', 'ink', 'blood0');
-  for (const [y0, y1] of [[0, QUIET_TOP], [MAP_H - QUIET_BOTTOM, MAP_H]] as [number, number][]) {
-    let busy = 0;
-    for (let y = y0; y < y1; y++) for (let x = 0; x < MAP_W; x++) if (!ground.has(land.get(x, y))) busy++;
-    assert.ok(busy < 40, `${busy} busy pixels in rows ${y0} to ${y1}`);
+test('the nodes sit between the bars, and the route starts and ends on them without gaps', () => {
+  for (const id of ORDER) {
+    const n = POS[id] as { x: number; y: number };
+    assert.ok(n.y > TOP_H + 8 && n.y < BAND_Y - 8, `${id} sits between the bars`);
   }
-  for (const id of IDS) {
-    const n = MAP_NODES[id] as { x: number; y: number };
-    assert.ok(n.y > QUIET_TOP + 8 && n.y < MAP_H - QUIET_BOTTOM - 8, `${id} sits between the strips`);
-  }
+  LEGS.forEach((leg, i) => {
+    const a = POS[ORDER[i] as string] as { x: number; y: number }, b = POS[ORDER[i + 1] as string] as { x: number; y: number };
+    assert.deepEqual(leg.pts[0], [a.x, a.y]);
+    assert.ok(Math.hypot((leg.pts[leg.pts.length - 1] as number[])[0]! - b.x, (leg.pts[leg.pts.length - 1] as number[])[1]! - b.y) < 1e-9);
+    assert.ok(leg.len > Math.hypot(b.x - a.x, b.y - a.y), 'longer than a straight line');
+    for (let k = 1; k < leg.pts.length; k++) assert.ok(Math.hypot((leg.pts[k] as number[])[0]! - (leg.pts[k - 1] as number[])[0]!, (leg.pts[k] as number[])[1]! - (leg.pts[k - 1] as number[])[1]!) <= 1, 'no gaps in the route');
+  });
 });
 
-test('the trail between nodes is a curve that starts and ends on them and winds either way', () => {
-  const a = MAP_NODES['1.1'] as { x: number; y: number }, b = MAP_NODES['1.2'] as { x: number; y: number };
-  const pts = trailPoints(a, b, 9), back = trailPoints(a, b, -9);
-  assert.deepEqual(pts[0], [a.x, a.y]);
-  assert.deepEqual(pts[pts.length - 1], [b.x, b.y]);
-  assert.ok(pts.length > Math.hypot(b.x - a.x, b.y - a.y), 'longer than a straight line has pixels');
-  assert.notDeepEqual(pts[Math.floor(pts.length / 2)], back[Math.floor(back.length / 2)], 'it bends to the side asked for');
-  for (let i = 1; i < pts.length; i++) assert.ok(Math.hypot((pts[i] as number[])[0]! - (pts[i - 1] as number[])[0]!, (pts[i] as number[])[1]! - (pts[i - 1] as number[])[1]!) <= 2.9, 'no gaps in the trail');
+test('every sign plate names its place and sits clear of the bars', () => {
+  const plates = paintLand(SCHOOLED).plates;
+  assert.deepEqual(plates.map((p) => p.name).sort(), ['GATE', 'LAB', 'MIRKWOOD', 'PATCH', 'SCHOOL', 'TUNNELS']);
+  for (const p of plates) assert.ok(p.y > TOP_H + 4 && p.y + 9 < BAND_Y - 4, `${p.name}`);
 });

@@ -13,7 +13,7 @@ One stage, five to eight minutes, under Starcourt in July 1985. The freight lift
   - the lab, cells and rat cages
   - the control room, a window over the chamber
   - the Key chamber (end, south-east), an arena about 18 by 12 tiles, the machine on its north wall
-- Light: the owner's base look pick decides. The draft is `time: 'night'`: dim steel, pools at the `lights` entries on the ceiling lamps, the machine's glow and the consoles, and at the lights props.
+- Light: `time: 'night'`, the Brass base look: pools at the `lights` entries on the ceiling lamps, the machine's glow and the consoles, and at the lights props.
 - Music: `starcourt` until Grigori wakes, then the `music` step switches to `clock` to the end.
 - Party: picked on the map from the nine. Robin is locked in, because `cipher1` is on the route. `?stage=3.2` starts Mike (lead), Eleven, Robin and Nancy at the levels in `ARRIVAL`, set from a chained bot run through 3.1 once it exists.
 - `enemyMult`: start at 1 on the chapter 3 numbers and set it by measuring.
@@ -147,7 +147,7 @@ The same bands as `docs/level-3.md`, "Targets", measured with `node scripts/meas
 
 ## What Art draws for this level
 
-Art builds only after the owner picks from the variation sheets. The base look comes with the mall look on `mall-variations.html`.
+Art builds only after the owner picks from the variation sheets. The base look comes with the mall look on `mall-variations.html`. The owner picked **Greatcoat** for Grigori (`src/gfx/var/grigori.ts`) and the **Brass** base look (`src/gfx/var/base_rust.ts`, the riveted iron base half of Brass on the sheet, with its warm light), under a Confetti mall. The sheet draws him on Hopper's big body. In the game he is a size up, in a 24 px cell like the Warden, so he looms over the party.
 
 - The base tiles in `core/tiles.ts` (`basefloor` to `keyfloor`), with variants. They must survive the night remap.
 - Props:
@@ -155,7 +155,7 @@ Art builds only after the owner picks from the variation sheets. The base look c
   - `powerbox`: a floor plate with warning stripes, live and arcing when `lit`
   - `breaker`: a wall switch box, down when `closed`, thrown and sparking when `lit`
   - `door`: the existing door, recolored for the base if needed
-- Grigori, from the chosen design: the big body, walk in four directions, the haymaker wind-up and swing, `grab`, `stun`.
+- Grigori, from the Greatcoat design, a size up (a 24 px cell, like the Warden): walk in four directions, the haymaker wind-up and swing, `grab`, `stun`.
 - The soldier: walk, aim, fire, recover, in four directions, with an elite trim.
 - FX: `arcs` (the power box firing). `bullet` is in `docs/level-7.md`.
 - A `?sheet=1` page for the base, Grigori and the soldier.

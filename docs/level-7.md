@@ -14,7 +14,7 @@ One stage, five to eight minutes, and the start of chapter 3 (Starcourt, July 19
   - the service corridor behind the shops
   - the loading dock (end, north-east), the ambush, and the freight lift down to the base (3.2)
 - Concourses are three or four tiles wide. The court and the dock are bigger.
-- Light: the owner's mall look pick decides. The draft is `time: 'night'`, the mall after closing: pools at `lights` entries on the neon shop signs, the fountain and the exit signs, and at the lights props.
+- Light: `time: 'night'`, the mall after closing (the owner picked Confetti): pools at `lights` entries on the neon shop signs, the fountain and the exit signs, and at the lights props.
 - Music: `starcourt`.
 - Party: picked on the map from Mike, Dustin, Lucas, Will, Eleven, Max, Steve, Robin and Nancy (see "Party picks" in `docs/map-screen.md`). Nobody is locked. `?stage=3.1` starts Mike (lead) at Lv 6, Eleven 5, Robin 4 and Nancy 4 (`ARRIVAL` in `core/campaign.ts`), a little ahead of a real run, as 2.2's was.
 - `enemyMult`: start at 1 on the chapter 3 enemy numbers and set it by measuring (see "Targets").
@@ -167,7 +167,7 @@ The same bands as `docs/level-3.md`, "Targets", measured with `node scripts/meas
 
 ## What Art draws for this level
 
-Art builds only after the owner picks from the variation sheets (see "Variation sheets"). The owner picked **Sailor** for Robin, **Overalls** for Nancy and **Boss** for Erica (`src/gfx/var/`).
+Art builds only after the owner picks from the variation sheets (see "Variation sheets"). The owner picked **Sailor** for Robin, **Overalls** for Nancy, **Boss** for Erica and **Confetti** for the mall, after closing (`src/gfx/var/mall_confetti.ts`). The base under it takes the **Brass** look instead of Confetti's own (see `docs/level-8.md`). Thin the confetti on the floor a little, so the heroes and foes still read on it.
 
 - The mall tiles in `core/tiles.ts` (`mallfloor` to `lift`), with variants so the concourses don't look stamped. They must survive the night remap (`tests/night.test.ts` runs every tile name through it). The stand-ins in `gfx/tile_objects.ts` (`PLACEHOLDER`) go once each tile is painted.
 - Props:

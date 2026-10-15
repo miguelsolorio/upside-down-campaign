@@ -137,9 +137,38 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     talent: TALENTS.will,
   },
+  // Max and Steve join in 2.2. Stand-in numbers until Sim writes their kits (docs/level-5.md, "Max" and "Steve").
+  max: {
+    id: 'max', name: CHAR_NAMES.max, role: 'Monk',
+    base: st(36, 16, 8, 3, 11), growth: st(5, 2, 1.4, 0.7, 0.7), weights: st(1, 1, 3, 1, 3),
+    speed: 1.1, crit: 0.03, utilities: ['dash'],
+    basic: {
+      name: 'Board', mp: 0, cd: 9, power: 0.9, dur: 10, at: 4, lock: 0.4, reach: 24, kb: 1.8, sfx: 'swing',
+      x: { half: 55, chainGap: 14, secondPower: 1.2 },
+    },
+    special: {
+      name: 'Skate dash', mp: 4, cd: 30, power: 0.9, dur: 18, at: 2, lock: 0, reach: 72, kb: 3, sfx: 'skate',
+      x: { speed: 4.5, frames: 16, r: 10 },
+    },
+    talent: TALENTS.max,
+  },
+  steve: {
+    id: 'steve', name: CHAR_NAMES.steve, role: 'Fighter',
+    base: st(54, 14, 10, 6, 7), growth: st(7.5, 1.5, 1.6, 1.3, 0.3), weights: st(3, 1, 3, 3, 0),
+    speed: 0.9, crit: 0, utilities: ['smash'],
+    basic: {
+      name: 'Nail bat', mp: 0, cd: 13, power: 1.1, dur: 16, at: 7, lock: 0.35, reach: 30, kb: 2.8, sfx: 'swing',
+      x: { half: 60, chainGap: 18, thirdPower: 1.5, thirdKb: 2.2 },
+    },
+    special: {
+      name: 'Babysit', mp: 6, cd: 60, power: 0, dur: 20, at: 6, lock: 0.2, reach: 72, kb: 0, sfx: 'taunt',
+      x: { life: 300, guard: 0.4, partyDef: 0.15 },
+    },
+    talent: TALENTS.steve,
+  },
 };
 
-export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will'];
+export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'max', 'steve'];
 
 /** The stat at `level`: base, plus floored fixed growth, plus the d20 bonus received so far (in stat units). */
 export function statsAt(def: HeroDef, level: number, bonus: Stats = emptyStats()): Stats {

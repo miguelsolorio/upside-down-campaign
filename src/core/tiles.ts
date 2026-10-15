@@ -18,7 +18,11 @@ export type TileName =
   | 'trophy' | 'table' | 'counter' | 'bleachers' | 'brick'
   // The Palace Arcade, Main Street and Merrill's pumpkin patch (stage 2.1, day).
   | 'arcadecarpet' | 'arcadewall' | 'sidewalk' | 'storefront' | 'furrow' | 'pumpkin' | 'rotpumpkin' | 'haybale'
-  | 'barnwall' | 'barnroof' | 'corn' | 'rot' | 'hole';
+  | 'barnwall' | 'barnroof' | 'corn' | 'rot' | 'hole'
+  // The tunnels under Hawkins (stage 2.2, night).
+  | 'tunnelfloor' | 'tunnelcap' | 'tunnelwall' | 'roots' | 'veins' | 'nest' | 'ladder'
+  // The Lab's overrun sublevel and the Gate (stage 2.3, night). The rest of 2.3 is lab tiles.
+  | 'fleshfloor' | 'fleshwall' | 'tear';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -105,6 +109,21 @@ export const TILES: Record<string, TileDef> = {
   '|': { name: 'corn', solid: true },
   ';': { name: 'rot', solid: false },
   '<': { name: 'hole', solid: false },
+  // Stage 2.2: the tunnels. Root walls are a tunnelcap row over a tunnelwall row facing the floor below, like the Lab.
+  // Roots and glowing veins grow over the floor and are walked over. A nest is a clump of pods and membrane you walk
+  // around. The ladder at the end is walkable.
+  '1': { name: 'tunnelfloor', solid: false },
+  '2': { name: 'tunnelcap', solid: true },
+  '3': { name: 'tunnelwall', solid: true },
+  '4': { name: 'roots', solid: false },
+  '5': { name: 'veins', solid: false, animated: true },
+  '6': { name: 'nest', solid: true },
+  '7': { name: 'ladder', solid: false },
+  // Stage 2.3: the Lab swallowed by the Upside Down. Flesh grows over the lab floor and walls; a tear is a glowing
+  // crack in the floor near the Gate, walked over. The Gate itself is a rift prop.
+  '8': { name: 'fleshfloor', solid: false },
+  '9': { name: 'fleshwall', solid: true },
+  '!': { name: 'tear', solid: false, animated: true },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

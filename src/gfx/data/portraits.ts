@@ -261,6 +261,7 @@ const BASE_PORTRAITS = {
       '.........eeeeee.........',
     ] }],
   },
-} satisfies Record<CharId, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'steve' | 'hopper'>, PortraitSpec>;
 
-export const PORTRAITS: Record<CharId, PortraitSpec> = BASE_PORTRAITS;
+// Steve borrows Mike's portrait and Hopper borrows Joyce's until Art draws theirs (docs/level-5.md, docs/level-6.md).
+export const PORTRAITS: Record<CharId, PortraitSpec> = { ...BASE_PORTRAITS, steve: BASE_PORTRAITS.mike, hopper: BASE_PORTRAITS.joyce };

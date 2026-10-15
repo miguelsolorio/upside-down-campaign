@@ -145,6 +145,8 @@ export function buildView(s: S): SimView {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,
       quarters: s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
+      // Stand-in until Sim writes the defense (docs/level-6.md).
+      ward: null,
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

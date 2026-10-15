@@ -2,7 +2,7 @@
 // apart from the autosave inside a stage (save.ts), which only lives while a stage is being played. Pure and
 // DOM-free so Node tests can run it. A bad or old record reads as "no progress", it never throws.
 import type { HeroId, HeroSnapshot, PartySeed, StatKey } from './types.ts';
-import { STAGE_ORDER, mergeHeroes, seedsFrom } from './campaign.ts';
+import { PARTY_SIZE, STAGE_ORDER, mergeHeroes, seedsFrom } from './campaign.ts';
 import { savingAllowed } from './save.ts';
 import { storage } from './storage.ts';
 import { HERO_IDS } from '../heroes/index.ts';
@@ -14,6 +14,8 @@ export interface Progress {
   cleared: string[];
   /** Every hero met so far with their level, XP and d20 bonus. Replays only ever move a hero forward. */
   heroes: PartySeed[];
+  /** The last party picked on the map, lead first (docs/map-screen.md, "Party picks"). Absent until the first pick. */
+  picks?: HeroId[];
 }
 
 const KEY = 'upside-down:progress:v1';
@@ -41,13 +43,25 @@ export function parseProgress(raw: unknown): Progress | null {
     heroes.push(seed);
   }
   const cleared = STAGE_ORDER.filter((id) => (raw.cleared as string[]).includes(id));
-  return { v: 1, cleared, heroes };
+  const out: Progress = { v: 1, cleared, heroes };
+  // Picks are a convenience: a bad list is dropped, it never spoils the rest of the record.
+  const picks = raw.picks;
+  if (Array.isArray(picks) && picks.length > 0 && picks.length <= PARTY_SIZE && new Set(picks).size === picks.length &&
+    picks.every((h) => (HERO_IDS as unknown[]).includes(h))) out.picks = picks as HeroId[];
+  return out;
 }
 
-/** A clear of `stage` added to `p` (or to a fresh record): the stage is marked and the party merged in. */
+/** A clear of `stage` added to `p` (or to a fresh record): the stage is marked and the party merged in. Picks carry. */
 export function recordClear(p: Progress | null, stage: string, party: HeroSnapshot[]): Progress {
   const cleared = STAGE_ORDER.filter((id) => id === stage || (p?.cleared ?? []).includes(id));
-  return { v: 1, cleared, heroes: mergeHeroes(p?.heroes ?? [], seedsFrom(party)) };
+  const out: Progress = { v: 1, cleared, heroes: mergeHeroes(p?.heroes ?? [], seedsFrom(party)) };
+  if (p?.picks) out.picks = [...p.picks];
+  return out;
+}
+
+/** `p` with the party the player just picked remembered, lead first. */
+export function withPicks(p: Progress | null, picks: readonly HeroId[]): Progress {
+  return { v: 1, cleared: [...(p?.cleared ?? [])], heroes: (p?.heroes ?? []).map((h) => ({ ...h })), picks: picks.slice(0, PARTY_SIZE) };
 }
 
 /** The first stage in play order not cleared yet, or null when every stage of this build is cleared. */

@@ -137,6 +137,9 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
       }
     },
     openProp: (id) => openPropById(s, id),
+    // Stand-ins until Sim writes the seals and the defense (docs/level-6.md).
+    closeProp: () => undefined,
+    defend: () => undefined,
     healParty: (frac) => healParty(s, frac),
     heroPos() { const h = activeHero(s); return { x: h.x, y: h.y }; },
     party: () => snapshot(s),

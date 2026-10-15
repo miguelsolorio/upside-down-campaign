@@ -175,4 +175,7 @@ export const STINGERS: Record<StingerId, Cue> = {
     ...line(140, 'tri', 0.28, [[0, 0.5, 'G4'], [0.5, 0.5, 'D5']]),
     ...line(140, 'tri', 0.28, [[1, 1, 'Bb4']], { to: note('A4'), vib: true }),
   ], [], 3, 0.9),
+  // Max and Steve: stand-ins until Audio writes theirs. Two quick notes each.
+  max: cue(line(200, 'p25', 0.24, [[0, 0.2, 'A4'], [0.2, 0.6, 'E5']]), [], 3),
+  steve: cue(line(160, 'p50', 0.25, [[0, 0.3, 'D4'], [0.3, 0.8, 'A4']]), [], 3),
 };

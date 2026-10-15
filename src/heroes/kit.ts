@@ -13,6 +13,8 @@ export function useBasic(s: S, h: Hero): void {
     case 'lucas': lucasBasic(s, h); break;
     case 'eleven': elevenBasic(s, h); break;
     case 'will': willBasic(s, h); break;
+    // Stand-ins until Sim writes Max's and Steve's kits (docs/level-5.md).
+    case 'max': case 'steve': mikeBasic(s, h); break;
   }
 }
 
@@ -23,5 +25,6 @@ export function useSpecial(s: S, h: Hero): void {
     case 'lucas': lucasSpecial(s, h); break;
     case 'eleven': elevenSpecial(s, h); break;
     case 'will': willSpecial(s, h); break;
+    case 'max': case 'steve': mikeSpecial(s, h); break;
   }
 }

@@ -279,7 +279,17 @@ function mailbox(c: TileCtx): Px {
   return px;
 }
 
+// Flat stand-ins for the tunnels (2.2) and the Gate (2.3) tiles until Art paints them: a fill and a frame.
+const PLACEHOLDER: Partial<Record<TileName, [ColorName, ColorName]>> = {
+  tunnelfloor: ['soil0', 'soil1'], tunnelcap: ['ink', 'blood0'], tunnelwall: ['soil1', 'blood0'], roots: ['soil1', 'soil0'],
+  veins: ['soil0', 'blood1'], nest: ['blood0', 'rose'], ladder: ['soil2', 'soil0'],
+  fleshfloor: ['blood0', 'soil0'], fleshwall: ['blood1', 'ink'], tear: ['ink', 'hot'],
+};
+const placeholder = ([fill, edge]: [ColorName, ColorName]): Px => new Px(16).rect(0, 0, 16, 16, fill).frame(0, 0, 16, 16, edge);
+
 export function objectTile(name: TileName, c: TileCtx): Px | null {
+  const flat = PLACEHOLDER[name];
+  if (flat) return placeholder(flat);
   switch (name) {
     case 'pine': return pine(c);
     case 'deadtree': return deadtree(c);

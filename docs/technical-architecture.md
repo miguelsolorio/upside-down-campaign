@@ -1,6 +1,6 @@
 # Technical architecture
 
-Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each folder's `index.ts` is the public API of that module (stubs until the owner replaces them). The design lives in `docs/game-design.md`. Level 1 lives in `docs/level-1.md`, Level 2 (stage 1.2, Hawkins Lab) in `docs/level-2.md`, Level 3 (stage 1.3, the middle school and the Demogorgon) in `docs/level-3.md`, Level 4 (stage 2.1, the arcade and the pumpkin patch) in `docs/level-4.md`, and the map screen in `docs/map-screen.md`. The stage order, who plays each stage and what carries between stages is `src/core/campaign.ts`. Campaign progress for the map is `src/core/progress.ts`, and the map's view type is `src/core/mapdata.ts` (its layout is in `src/gfx/map_geo.ts`).
+Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each folder's `index.ts` is the public API of that module (stubs until the owner replaces them). The design lives in `docs/game-design.md`. Level 1 lives in `docs/level-1.md`, Level 2 (stage 1.2, Hawkins Lab) in `docs/level-2.md`, Level 3 (stage 1.3, the middle school and the Demogorgon) in `docs/level-3.md`, Level 4 (stage 2.1, the arcade and the pumpkin patch) in `docs/level-4.md`, Level 5 (stage 2.2, the tunnels, with Max and Steve) in `docs/level-5.md`, Level 6 (stage 2.3, the Gate, the Demodog Alpha and the defense) in `docs/level-6.md`, and the map screen and party picks in `docs/map-screen.md`. The stage order, who plays each stage and what carries between stages is `src/core/campaign.ts`. Campaign progress for the map is `src/core/progress.ts`, and the map's view type is `src/core/mapdata.ts` (its layout is in `src/gfx/map_geo.ts`).
 
 ## Rules
 
@@ -30,6 +30,7 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 | `src/ui/` | UI |
 | `src/story/` | Story |
 | `src/core/`, `src/main.ts`, `src/flow.ts`, `docs/`, root configs | Lead (read-only for agents) |
+| A `*-variations.html` page at the root | The agent whose brief names it |
 
 ## Units and conventions
 

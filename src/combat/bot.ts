@@ -49,6 +49,8 @@ const STYLE: Record<HeroId, { hold: number; reach: number }> = {
   dustin: { hold: 70, reach: 110 },
   lucas: { hold: 92, reach: 140 },
   will: { hold: 80, reach: 120 },
+  max: { hold: 18, reach: 30 },
+  steve: { hold: 20, reach: 34 },
 };
 
 /** Just above the sim's 0.15 dead zone: turns the hero to face a target without walking anywhere. */

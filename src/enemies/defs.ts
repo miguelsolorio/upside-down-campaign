@@ -104,6 +104,12 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 40, power: 0.6, cooldown: 160, drop: 0.1, weight: 99,
     x: { cloud: 28, slowT: 90, cloudT: 50, kb: 1.5 },
   },
+  // The chapter 2 boss (docs/level-6.md, "Demodog Alpha"). Stand-in numbers until Sim writes enemies/alpha.ts.
+  alpha: {
+    kind: 'alpha', name: 'Demodog Alpha', hp: 700, atk: 20, def: 5, speed: 1.25, xp: 70, aggro: 200,
+    windup: 26, power: 1, cooldown: 80, drop: 1, weight: 4,
+    x: {},
+  },
 };
 
 /** Enemy HP and damage multiplier. */

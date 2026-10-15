@@ -1,5 +1,5 @@
 // World types: the options for the play scene and the shape of stage data. Pure types, no DOM.
-import type { HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
+import type { Burrow, DefenseDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
 import type { BotWaypoint } from '../combat/bot.ts';
 import type { SaveData } from '../core/save.ts';
 
@@ -32,6 +32,10 @@ export type BeatStep =
   | { t: 'alarm' }
   | { t: 'recruit'; hero: HeroId }
   | { t: 'open'; prop: string }
+  /** Shuts an open prop again (Sim.closeProp), such as the vine seals across the Alpha's den. It does not wait. */
+  | { t: 'close'; prop: string }
+  /** Starts the stage's defense (Sim.defend). It does not wait: a `defended` beat follows when the clock runs out. */
+  | { t: 'defend' }
   /** Switches the stage music, such as to `clock` when a boss wakes. It does not wait. */
   | { t: 'music'; track: TrackId }
   | { t: 'finish' };
@@ -44,7 +48,9 @@ export type BeatWhen =
   | { after: string }
   | { event: 'targetHit' | 'propCleared' | 'spotted'; prop: string }
   /** The boss with this spawn id is pinned (the sim's `pinned` event). */
-  | { event: 'pinned'; spawn: string };
+  | { event: 'pinned'; spawn: string }
+  /** The defense clock ran out with the ward standing (the sim's `defended` event). */
+  | { event: 'defended' };
 
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
@@ -96,5 +102,9 @@ export interface StageData {
   hazards?: HazardDef[];
   /** How much tougher this stage's enemies are than the difficulty setting makes them: HP and damage dealt. 1 if left out. */
   enemyMult?: number;
+  /** Tiles the sim brings run-time enemies up from: the Alpha's howl and the defense waves (docs/level-6.md). */
+  burrows?: Burrow[];
+  /** The stage's defense, started by a `defend` beat step (docs/level-6.md, "The defense"). */
+  defense?: DefenseDef;
   waypoints: BotWaypoint[];
 }

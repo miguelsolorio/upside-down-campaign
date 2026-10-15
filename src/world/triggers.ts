@@ -104,6 +104,8 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
         break;
       }
       case 'open': env.open(s.prop); break;
+      case 'close': env.sim().closeProp(s.prop); break;
+      case 'defend': env.sim().defend(); break;
       case 'finish': over = true; env.finish(); break;
       case 'end': completed.add(s.id); for (const b of beats) if ('after' in b.when && b.when.after === s.id) fire(b); break;
     }
@@ -129,6 +131,8 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
           for (const b of beats) if ('event' in b.when && b.when.event === e.t && b.when.prop === e.propId) fire(b);
         } else if (e.t === 'pinned') {
           for (const b of beats) if ('event' in b.when && b.when.event === 'pinned' && b.when.spawn === e.spawnId) fire(b);
+        } else if (e.t === 'defended') {
+          for (const b of beats) if ('event' in b.when && b.when.event === 'defended') fire(b);
         }
       }
     },

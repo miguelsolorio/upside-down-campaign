@@ -111,12 +111,12 @@ const ui: Page = {
 // The numbers the sim really sends: life in frames, w and h as combat/index.ts describes them.
 const FX_LIFE: Record<FxKind, number> = {
   slash: 12, push: 10, beam: 24, flame: 36, shield: 120, nova: 20, spark: 12, dust: 16, rock: 30, candy: 90, dart: 30, blast: 14, heal: 24, ring: 16, spore: 160,
-  acid: 40, mark: 50, bolt: 40, reveal: 30,
+  acid: 40, mark: 50, bolt: 40, reveal: 30, trail: 16, howl: 40, taunt: 24,
 };
 const FX_SIZE: Record<FxKind, [number, number]> = {
   slash: [28, 51], push: [30, 49], beam: [70, 8], flame: [54, 57], shield: [30, 30], nova: [60, 60], spark: [0, 0], dust: [0, 0], rock: [10, 10],
   candy: [6, 14], dart: [6, 6], blast: [40, 40], heal: [14, 14], ring: [40, 20], spore: [32, 32],
-  acid: [8, 8], mark: [32, 16], bolt: [8, 8], reveal: [32, 32],
+  acid: [8, 8], mark: [32, 16], bolt: [8, 8], reveal: [32, 32], trail: [64, 10], howl: [96, 96], taunt: [64, 64],
 };
 const FX_KINDS = Object.keys(FX_LIFE) as FxKind[];
 const ANGLES = [0, Math.PI / 2, Math.PI, -Math.PI / 2];

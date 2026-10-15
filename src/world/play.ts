@@ -9,6 +9,7 @@ import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
 import { toSimInput } from '../core/input.ts';
+import { rumble } from '../core/rumble.ts';
 import { createSim, setReduceFlashing, setShakeScale } from '../combat/index.ts';
 import { createBot } from '../combat/bot.ts';
 import type { Bot } from '../combat/bot.ts';
@@ -25,6 +26,7 @@ import { isLoss, lossReason } from './loss.ts';
 import { createDirector, musicAfter } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
+import { takenItems } from './taken.ts';
 import { nearUsable } from './interact.ts';
 import { TITLES, arcadeBoard, createArcadeScene, gameFor, postScore } from '../arcade/index.ts';
 import type { ArcadeVisit } from '../arcade/index.ts';
@@ -107,6 +109,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** The MADMAX prize is paid once a visit. Frames since it was paid, for Max's line, or -1. */
   let madmaxPaid = false;
   let maxLine = -1;
+  /** Quarters the whole run had picked up when the last string of lights was lit (SaveData.quarters). A retry or a load starts here. */
+  let banked = 0;
+  /** What `banked` was when the live sim was built. The sim counts its own pickups from 0, so the run's total is this plus its stats. */
+  let baseQuarters = 0;
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -116,9 +122,16 @@ export function createPlayScene(opts: PlayOptions): Scene {
     return g.flags.level > 1 ? out.map((s) => ({ ...s, level: g.flags.level })) : out;
   }
 
+  /** Every quarter the run has picked up, retries and CONTINUEs included: the bank plus what the live sim has counted since. */
+  const runQuarters = (): number => baseQuarters + sim.stats().quarters;
+
   function build(party: PartySeed[], at: Vec2, skip: string[], openProps: string[]): void {
+    // The purse is what the party walked in with plus the quarters the run banked at its lit lights, so the HUD's COINS carry on from
+    // there after a retry. The stash is read afresh: an item the sim spent was written back at once and does not come back.
+    baseQuarters = banked;
     sim = createSim(stage.sim({
       party, start: at, difficulty: game.settings.difficulty, seed: game.flags.seed, god: game.flags.god, skipSpawns: skip, openProps,
+      purse: (opts.purse ?? 0) + banked, ...(opts.stash ? { stash: opts.stash() } : {}),
     }));
     view = sim.view();
     cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
@@ -136,7 +149,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     scare(done) { scare = { t: 0, done }; },
     open(prop) {
       // The sim queues its own gate sound for the next step. The dialogue holds the sim, so play it now and drop the copy.
-      if (view.props.some((p) => p.id === prop && (p.kind === 'gate' || p.kind === 'door'))) { audio.sfx('gateOpen'); swallow.add('gateOpen'); }
+      if (view.props.some((p) => p.id === prop && (p.kind === 'gate' || p.kind === 'door' || p.kind === 'shutter'))) { audio.sfx('gateOpen'); swallow.add('gateOpen'); }
       sim.openProp(prop);
     },
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
@@ -153,6 +166,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** window.__ud is created after the first scene starts, so this runs again on every tick until it sticks. */
   const play = {
     get sim() { return sim; }, get stage() { return stage; }, get director() { return director; },
+    /** The puzzle hint the party would see now, as the puzzle, the hero it names and its line, or null. For tests and the console. */
+    get hint() { const h = puzzles.highlight(); return h ? { puzzle: h.id, hero: h.hero, text: h.hint } : null; },
+    /** Rebuilds the sim at the last lit string with the party's progress, as RETRY on the game over card does. For tests and the console. */
+    retry(): void { retry(); },
     /** Dev only: finishes a run at a cabinet with this score, as if it had been played, to check the board and the prize. */
     arcade(cabinet: string, score: number): void {
       if (!game.flags.dev) return;
@@ -228,6 +245,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     writeSave({
       v: 1, stage: stage.id, party: p.party, checkpoint, killed: [...killed],
       openProps: p.open.includes(lit.id) ? p.open : [...p.open, lit.id],
+      quarters: banked,
     });
     saved = { x: lit.x + lit.w / 2, y: lit.y - 2, t: 0 };
   }
@@ -282,6 +300,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
   // ---------------------------------------------------------------- events, lights
   function forward(ev: SimEvent[]): void {
+    rumble(ev);
     for (const e of ev) {
       switch (e.t) {
         case 'sfx': if (!swallow.delete(e.id)) audio.sfx(e.id); break;
@@ -294,6 +313,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         // The whole party down, or the one it guards in a defense: either loses the stage (world/loss.ts).
         case 'allDown': case 'wardDown': if (wipeT < 0 && isLoss(e)) { wipeT = 0; wipeReason = lossReason(e); } break;
         case 'poked': puzzles.poke(e.propId, e.hero); break;
+        case 'stashUsed': opts.onStashUsed?.(e.item); break;
         default: break;
       }
     }
@@ -336,6 +356,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
     const cp = stage.checkpoints.find((c) => c.prop === pr.id);
     if (cp) {
       checkpoint = { x: cp.x, y: cp.y, state: director.snapshot() };
+      // The quarters picked up so far are banked, and the items taken stay gone after a retry, so they can't be picked up twice.
+      banked = runQuarters();
+      for (const id of takenItems(stage.spawns, sim.view().items, new Set(killed))) killed.add(id);
       autosave(pr);
     }
   }
@@ -366,6 +389,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (load) {
         // A load is a retry that starts from disk: stand at the saved lights with the saved party and kills.
         checkpoint = { x: load.checkpoint.x, y: load.checkpoint.y, state: load.checkpoint.state };
+        banked = load.quarters ?? 0;
         for (const id of load.killed) killed.add(id);
         restart({ party: load.party, skip: skipFor(load.party), open: load.openProps });
       } else {
@@ -427,7 +451,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         if (prompt.kind === 'arcade') openArcade(prompt); else lightUp(prompt);
       }
       if (wipeT >= 0 && ++wipeT === WIPE_FRAMES) pushGameOver();
-      if (clearT >= 0 && ++clearT === CLEAR_FRAMES) opts.onClear({ stats: sim.stats(), party: sim.party() });
+      if (clearT >= 0 && ++clearT === CLEAR_FRAMES) opts.onClear({ stats: sim.stats(), party: sim.party(), quarters: runQuarters() });
 
       audio.intensity(sim.aggro() ? 1 : 0);
       cameraFollow(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);

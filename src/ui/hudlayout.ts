@@ -5,7 +5,7 @@
 // beside it (MP, coins, Crit) stay against the band's left edge (leftShift), the bench against its right edge
 // (rightShift), and everything is moved down by the band's `top` so it sits centered in the strip.
 import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
-import type { PartyHud } from '../core/types.ts';
+import type { PartyHud, Stash, StashItem } from '../core/types.ts';
 import type { Rect } from '../core/pointer.ts';
 
 /** The width the constants below are laid out for. */
@@ -40,6 +40,30 @@ export const VALUE_H = 7;
 /** MP: the caption over one segment per cast. */
 export const MP_X = 100;
 export const MP_BAR_W = 28;
+/** Erica's stash (docs/level-7.md, "Erica and the stash"): the Eggos and Cokes the party carries, a mini icon and a tiny count each.
+ * The strip has no room for a fourth column at 256 wide (the columns leave 8 px before the bench), so it rides the MP column's
+ * caption row, in the 19 px right of the "MP" caption: 2 px past the caption, ending where the MP bar ends. Nothing shows
+ * when there is none. A Coke is the thing that refills MP, so it sits where it is read. */
+export const STASH_X = MP_X + 9;
+export const STASH_Y = CAPTION_Y;
+/** The mini icons are 5 px tall, the height of the caption row. An Eggo is 5 wide, a Coke 3, each followed by a 1 px gap and a
+ * 3 px digit, and a 3 px gap before the next. */
+export const STASH_ICON_W: Record<StashItem, number> = { eggo: 5, coke: 3 };
+export const STASH_CELL_GAP = 3;
+export interface StashCell { item: StashItem; /** Left edge, in strip px. */ x: number; count: number }
+/** The cells to draw, left to right, Eggo first. An item with none left has no cell, and the next slides left. */
+export function stashCells(stash: Stash | undefined): StashCell[] {
+  const out: StashCell[] = [];
+  let x = STASH_X;
+  for (const item of ['eggo', 'coke'] as const) {
+    const count = Math.max(0, Math.min(9, Math.floor(stash?.[item] ?? 0)));
+    if (count === 0) continue;
+    out.push({ item, x, count });
+    x += STASH_ICON_W[item] + 1 + 3 + STASH_CELL_GAP;
+  }
+  return out;
+}
+
 /** Coins: the caption over the 7 px coin, a 2 px gap and "x99" in 6 px glyphs. The Inspiration timer takes the caption's
  * place while a natural 20 has it running. */
 export const COIN_X = 137;

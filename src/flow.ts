@@ -5,7 +5,7 @@ import type { Game } from './core/scene.ts';
 import type { HeroId, PartySeed } from './core/types.ts';
 import { CHAPTERS, STAGE_ORDER, chapterOf, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
 import { flags } from './core/flags.ts';
-import { clearProgress, loadProgress, recordClear, withPicks, writeProgress } from './core/progress.ts';
+import { clearProgress, loadProgress, purseOf, recordClear, spendStash, stashOf, withPicks, withPurse, writeProgress } from './core/progress.ts';
 import type { Progress } from './core/progress.ts';
 import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
@@ -17,10 +17,15 @@ import { createPlayScene, stageName, stageStart } from './world/index.ts';
 const FIRST = STAGE_ORDER[0] as string;
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five'];
 
-/** The save that waits at the start of a stage: the party that walks in, nothing fired, nothing killed. */
-function entrySave(stage: string, party: PartySeed[]): SaveData {
+/**
+ * The save that waits at the start of a stage: the party that walks in, nothing fired, nothing killed. A hero who is new
+ * to the party has no XP in the seed (Will in 2.1, Max and Steve in 2.2), and the loader refuses a hero without a level
+ * and XP, so the whole save would read as none. The sim treats a missing level as 1 and a missing XP as 0, so fill them in.
+ */
+export function entrySave(stage: string, party: PartySeed[]): SaveData {
   const at = stageStart(stage);
-  return { v: 1, stage, party, checkpoint: { x: at.x, y: at.y, state: { fired: [], cleared: [] } }, killed: [], openProps: [] };
+  const seeds = party.map((p) => ({ ...p, level: p.level ?? 1, xp: p.xp ?? 0 }));
+  return { v: 1, stage, party: seeds, checkpoint: { x: at.x, y: at.y, state: { fired: [], cleared: [] } }, killed: [], openProps: [] };
 }
 
 export function startGame(g: Game): void {
@@ -63,6 +68,8 @@ export function startGame(g: Game): void {
       if (picks) { progress = withPicks(progress, picks); writeProgress(progress); }
       toStage(id, partyFor(id, known(), picks ?? progress?.picks));
     },
+    // Erica's cart (docs/map-screen.md): what it leaves in the purse and the stash is saved at once.
+    onShop: (p) => { progress = withPurse(progress, purseOf(p), stashOf(p)); writeProgress(progress); },
     onQuit: toTitle,
   }));
   /** A stage opens on its own card, unless the story is skipped. A chapter's first stage shows the chapter the first time. */
@@ -74,17 +81,23 @@ export function startGame(g: Game): void {
     g.scenes.go(createChapterCard({ title: `Level ${WORDS[levelNumber(id)] ?? levelNumber(id)}`, subtitle: stageName(id), onDone: () => toPlay(id, party) }));
   };
   const toPlay = (id: string, party: PartySeed[], resume?: SaveData): void => {
-    // A save from the stage's first moment holds the party it was entered with. A mid-stage save does not, so
-    // START OVER falls back to the party a stage normally opens with.
-    entry = resume ? (resume.checkpoint.state.fired.length === 0 ? resume.party : defaultParty(id)) : party;
+    // A save from the stage's first moment holds the party it was entered with. A mid-stage save does not, so START OVER
+    // builds the party the map would give now: the last picks and the best level of each hero, not the stage's default.
+    entry = resume ? (resume.checkpoint.state.fired.length === 0 ? resume.party : partyFor(id, known(), progress?.picks)) : party;
     g.scenes.go(createPlayScene({
       stageId: id,
       time: flags.time ?? undefined,
       party,
       resume,
-      onClear: ({ stats, party: after }) => {
-        // Progress marks the stage and keeps every hero at their best. The map is the way on, so the stage save goes.
-        progress = recordClear(progress, id, after);
+      // The purse and Erica's stash ride into every stage. An item the sim spends is written back at once, so a retry or a quit
+      // never gives it back.
+      purse: purseOf(progress),
+      stash: () => stashOf(progress),
+      onStashUsed: (item) => { progress = spendStash(progress, item); writeProgress(progress); },
+      onClear: ({ stats, party: after, quarters }) => {
+        // Progress marks the stage, keeps every hero at their best and banks the run's quarters. The map is the way on, so the
+        // stage save goes.
+        progress = recordClear(progress, id, after, quarters ?? stats.quarters);
         writeProgress(progress);
         clearSave();
         g.scenes.go(createResultsScene({

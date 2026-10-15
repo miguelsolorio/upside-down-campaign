@@ -1,5 +1,5 @@
 // Props (log, gate, target, lights, bike, sign, van, floodlight, crate, door, console, camera, tank, rack, generator, firebox,
-// vines, arcade, hidden, gap, crack, rift) and pickup items.
+// vines, arcade, hidden, gap, crack, rift, shutter, cipher, powerbox, breaker) and pickup items.
 // Static art is cached per kind, size and state; blinking bulbs, glare and sparkles are drawn live.
 //
 // State meaning: log closed = in the way, open = cleared. gate open = swung wide. target closed or off = unhit,
@@ -7,6 +7,8 @@
 // arcade ignores its state; hidden closed = corn, open = a dark gap. van open = tipped on its side (shoved clear). firebox lit or open = released, vines open = burned away. crate open = smashed. door open = slid back. console lit (or open) = on. camera alert = dark and
 // red-lit, lit or off = shot and dead, any other state = calm. tank, rack and generator ignore their state. gap ignores its state. crack open = rubble.
 // rift ignores its state and shows PropView.k (0 wide open, 1 a seam). vines open = burned, or low roots for a seal (props_gate.ts).
+// shutter open = rolled up, over its first 18 frames. cipher shows PropView.k (the letters turn to English), open = slid into the wall. powerbox lit =
+// arcing, breaker lit = thrown and sparking (props_l78.ts). A crate 32 wide or more is the mall's toppled kiosk.
 import type { ItemView, PropView } from '../core/types.ts';
 import { settings } from '../core/settings.ts';
 import { createRng } from '../core/rng.ts';
@@ -21,6 +23,7 @@ import { drawLab2Prop } from './props_lab2.ts';
 import { drawSchoolProp, vanTippedArt } from './props_school.ts';
 import { drawTownProp } from './props_town.ts';
 import { drawGateProp } from './props_gate.ts';
+import { drawL78Prop, kioskArt } from './props_l78.ts';
 
 const cache = new Map<string, HTMLCanvasElement>();
 function cached(key: string, build: () => HTMLCanvasElement): HTMLCanvasElement {
@@ -209,7 +212,11 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
   switch (v.kind) {
     case 'log': ctx.drawImage(art(`log${w}x${h}${v.state === 'open'}`, () => logArt(w, h, v.state === 'open')), x - 1, y - 1); return;
     case 'gate': ctx.drawImage(art(`gate${w}x${h}${v.state === 'open'}`, () => gateArt(w, h, v.state === 'open')), x, y); return;
-    case 'crate': ctx.drawImage(art(`crate${w}x${h}${v.state === 'open'}`, () => crateArt(w, h, v.state === 'open')), x - 1 + ((w - Math.min(w, 16)) >> 1), y - 1 + (h - Math.min(h, 16))); return;
+    case 'crate':
+      // A crate wider than a crate is the mall's toppled kiosk (docs/level-7.md).
+      if (w >= 32) { ctx.drawImage(art(`kiosk${w}x${h}${v.state === 'open'}`, () => kioskArt(w, h, v.state === 'open')), x, y); return; }
+      ctx.drawImage(art(`crate${w}x${h}${v.state === 'open'}`, () => crateArt(w, h, v.state === 'open')), x - 1 + ((w - Math.min(w, 16)) >> 1), y - 1 + (h - Math.min(h, 16)));
+      return;
     case 'target': {
       const hit = v.state === 'open' || v.state === 'lit';
       const sway = hit && v.t < 120 ? Math.round(Math.sin(v.t / 6) * 2 * (1 - v.t / 120)) : 0;
@@ -231,6 +238,7 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
     }
     case 'van': ctx.drawImage(art(`van${w}x${h}${v.state === 'open'}`, () => vanArt(w, h, v.state === 'open')), x - 1, y - 1); return;
     case 'door': ctx.drawImage(art(`door${w}x${h}${v.state === 'open'}`, () => rimmed(doorArt(w, h, v.state === 'open'))), x - 1, y - 1); return;
+    case 'shutter': case 'cipher': case 'powerbox': case 'breaker': drawL78Prop(ctx, v, art, calm()); return;
     case 'console': {
       const lit = v.state === 'lit' || v.state === 'open';
       const cx = x + ((w - 16) >> 1), cy = y + (h - 16);

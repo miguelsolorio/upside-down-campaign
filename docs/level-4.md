@@ -188,3 +188,21 @@ A real run now walks in at Lv 4, 4, 3 and Will at 2, and the stage pays 260 XP (
 
 - **Upside is under its floor**: 18 of 100 against 4 of 20. A lower factor brings it back but makes chief a walk: at 1.05 chief clears 40 of 40 and the party never drops under 56 percent. Chief is in every band, so the factor stays. The arena ambush test (`tests/level4-bot.test.ts`) asks upside for 3 of 12, not 4.
 - A higher `xpMult` doesn't help upside (18 of 100 at 1.8).
+
+## After the balance pass
+
+The careful and the careless bot played 2.1 alike except for one thing: the careful one backed away from a vine's lash and a pod's swell. A hit breaks a wind-up, so trading blows beats backing off, and nothing here but demodog bites hurts the bot, so the back-off only cost it. Before the ambush it took 97 damage and 0.54 KOs to the careless bot's 69 and 0.13 (all of its wipes are in the ambush, where the two play alike), and a pod that burst unkilled paid nothing. Now the bot doesn't back off a lash or a swell while a demodog is within 240 px (`combat/bot_threat.ts`). The factor is 1.153, the spec's 1.15 and a hair: it puts the first twenty chief seeds at 19 clears, where 1.15 gave 20 of 20.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared, before | 18 | 83 (261 of 300), none stuck | 17 of 20 (88 of 100, 273 of 300) | 20 | 2 (18 of 100, 58 of 300) |
+| Cleared, after | 19 | 92 (278 of 300), none stuck | 17 of 20 (92 of 100, 276 of 300) | 20 | 5 (35 of 100, 89 of 300) |
+| Damage taken, before and after | 211 and 209 | 234 and 216 | 217 and 198 | 112 and 108 | 347 and 294 |
+| KOs | 1.40 and 1.15 | 1.74 and 1.33 | 1.75 and 1.50 | 0 and 0 | 3.85 and 3.50 |
+| Lowest party HP | 39% and 43% | 33% and 40% | 32% and 39% | 66% and 70% | 1% and 7% |
+| Time | 99 s and 97 s | 103 s and 98 s | 92 s and 92 s | 88 s and 87 s | 110 s and 101 s |
+
+- **Careful and careless tie.** 278 to 276 of 300, 92 to 92 of the first 100, 19 to 17 of the first 20. That is the most the bot's play allows. Neither dodges a demodog's lunge, so there is no dodge for the dogs' numbers to reward. A bot that backs away from the wind-up and leaves the lunge short does separate them (chief 99 of 100 against the careless 87, upside 78), and so does a `WINDED` penalty on a missed lunge, but it needs the stage factors raised to about 1.6 and moves the carried run past `ARRIVAL`. It is not in; see `TODO.md`, "Balance pass".
+- **Upside is over its floor.** 35 of 100 and 5 of 20, up from 18 and 2. The bot change did it, not the factor: upside runs died to a pack that closed in while the bot backed off a pod.
+- **A higher `xpMult` still doesn't help upside**, and the factor can't go lower: at 1.05 chief clears 295 of 300 for 166 damage and a lowest party HP of 53%.
+- The arena ambush test (`tests/level4-bot.test.ts`) is unchanged.

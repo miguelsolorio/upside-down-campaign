@@ -1,4 +1,4 @@
-// Status effects. Burn and stun are live. Slow is a cheap speed cut. Confuse and curse exist as types only.
+// Status effects. Burn, stun and confuse are live on enemies and slow is a cheap speed cut. Curse exists as a type only.
 import type { Hero, Statuses, S } from './state.ts';
 import { floater } from './fx.ts';
 import { UNHURT_CAP } from './state.ts';
@@ -19,6 +19,8 @@ export function tickEnemyStatus(s: S): void {
     const st = e.stat;
     if (st.stun > 0) st.stun--;
     if (st.slow > 0) st.slow--;
+    // Confusion ends: a bump wind-up that was under way goes back to chasing, so the enemy's own brain does not read it.
+    if (st.confuse > 0 && --st.confuse === 0 && e.mode === 'windup') { e.mode = 'chase'; e.modeT = 0; }
     if (e.taunt > 0) e.taunt--;
     if (st.burn > 0) {
       st.burn--;

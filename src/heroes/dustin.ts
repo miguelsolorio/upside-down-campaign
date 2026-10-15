@@ -9,7 +9,7 @@ import { newProj } from '../combat/proj.ts';
 import { beginAct, later, rad } from './common.ts';
 
 /** Walks from (ox, oy) toward (tx, ty) and stops at the last open point, so a throw never lands in a tree. */
-function clipThrow(s: S, ox: number, oy: number, tx: number, ty: number): Pos {
+export function clipThrow(s: S, ox: number, oy: number, tx: number, ty: number): Pos {
   const n = Math.max(1, Math.ceil(dist(ox, oy, tx, ty) / 4));
   let lx = ox, ly = oy;
   for (let i = 1; i <= n; i++) {

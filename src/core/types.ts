@@ -10,18 +10,22 @@ export interface Vec2 { x: number; y: number }
 export interface Rect { x: number; y: number; w: number; h: number }
 
 // ---------------------------------------------------------------- identity
-/** Playable so far. Will joins in chapter 2, Max and Steve in 2.2. Later: nancy, hopper, robin, eddie. */
-export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | 'steve';
+/** Playable so far. Will joins in chapter 2, Max and Steve in 2.2, Robin and Nancy in 3.1. Later: hopper, eddie. */
+export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | 'steve' | 'robin' | 'nancy';
 /** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1 and plays from
- *  2.2 on. Hopper is an npc at the Gate in 2.3. */
-export type CharId = HeroId | 'joyce' | 'hopper';
+ *  2.2 on. Hopper is an npc at the Gate in 2.3. Erica is an npc at Scoops Ahoy in 3.1 and runs the cart on the map. */
+export type CharId = HeroId | 'joyce' | 'hopper' | 'erica';
 /**
  * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
  * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
  * vine: a rooted tendril that lashes and slows. pod: a rooted spore pod that bursts into a slowing cloud. Both burn.
  * alpha: the Demodog Alpha, the chapter 2 boss (docs/level-6.md).
+ * melter: a melting rat that bursts into goo when it dies. flayed: a slow grabber that rises from goo (docs/level-7.md).
+ * soldier: a Russian soldier with burst fire. grigori: the 3.2 mini-boss, who shrugs off frontal hits (docs/level-8.md).
  */
-export type EnemyKind = 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha';
+export type EnemyKind =
+  | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
+  | 'melter' | 'flayed' | 'soldier' | 'grigori';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -60,12 +64,17 @@ export interface ActorView {
   /** A guard or warden whose shield is up. It stops hits from the front, so gfx can show the shield raised or dropped. */
   guarding?: boolean;
   /** A boss's pose, when it is doing something other than walking. The Demogorgon uses charge to pinned
-   *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md). */
-  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl';
+   *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md).
+   *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. */
+  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab';
   /** The Demogorgon's head petals are open (below 60% HP). */
   petals?: boolean;
   /** A hidden enemy that only Will's Cold spot shows. gfx draws it faint or not at all. */
   hidden?: boolean;
+  /** An enemy confused by Robin's Word vomit: it fights the other enemies. gfx draws a swirl over its head. */
+  confused?: boolean;
+  /** A dormant Flayed, waiting as a goo puddle until its group wakes. */
+  puddle?: boolean;
 }
 
 export type FxKind =
@@ -76,7 +85,11 @@ export type FxKind =
   | 'acid' | 'mark' | 'bolt' | 'reveal'
   /** trail: the streak behind Max's Skate dash, w its length, angle its heading. howl: the Alpha's howl, a ring that
    *  grows to w. taunt: Steve's Babysit pulse, a ring that grows to w. */
-  | 'trail' | 'howl' | 'taunt';
+  | 'trail' | 'howl' | 'taunt'
+  /** scoop: Robin's ice cream in flight and its splat. babble: her Word vomit cone, w its reach. bullet: a pistol or rifle round
+   *  in flight. goo: a melting rat's burst, w its diameter. trap: one of Nancy's bear traps on the floor. arcs: the power box
+   *  firing, w and h its size. */
+  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs';
 
 export interface FxView {
   kind: FxKind;
@@ -104,10 +117,15 @@ export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
  *   crossing sets it 'open' (the puzzle is solved) but it stays solid. Drawn the same in both states.
  * crack: a cracked wall across a passage, hitBy 'smash'. Steve's nail bat breaks it: open and walkable.
  * rift: the Gate, a tear in the Lab's floor and wall. Solid. Its PropView.k is how far it has closed during the defense.
+ * shutter: a mall's rolling security grille across a concourse. Solid until the `open` step rolls it up.
+ * cipher: a steel door with a Russian keypad, hitBy 'read'. Robin standing near it decodes it (PropView.k), then it opens.
+ * powerbox: a floor plate that fires when a breaker is shot. Not solid. Lit while it fires.
+ * breaker: a wall switch, hitBy 'shoot'. Lit by a shot, it fires every powerbox, then goes back to closed to be shot again.
  */
 export type PropKind =
   | 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console'
-  | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade' | 'gap' | 'crack' | 'rift';
+  | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade' | 'gap' | 'crack' | 'rift'
+  | 'shutter' | 'cipher' | 'powerbox' | 'breaker';
 /** alert: a camera that has just spotted the party. */
 export type PropState = 'closed' | 'open' | 'lit' | 'off' | 'alert';
 export interface PropView {
@@ -117,7 +135,8 @@ export interface PropView {
   state: PropState; t: number;
   /** A camera's current cone. angle is in radians, 0 = right, y down. live is false once it is shot. */
   cam?: { angle: number; range: number; half: number; live: boolean };
-  /** 0..1 progress a prop shows: how far the Gate (a rift) has closed during the defense. Absent means 0. */
+  /** 0..1 progress a prop shows: how far the Gate (a rift) has closed during the defense, or how far a cipher door is
+   *  decoded. Absent means 0. */
   k?: number;
 }
 
@@ -184,6 +203,8 @@ export interface HudView {
    * total to 0. The HUD draws it where the boss bar goes. Null outside a defense.
    */
   ward: { name: string; hp: number; hpMax: number; left: number; total: number } | null;
+  /** What is left of the stash bought from Erica (docs/level-7.md, "Erica and the stash"). */
+  stash: Stash;
 }
 export interface SimView {
   /** Y-sorted, painter's order: heroes, followers, enemies, npcs. */
@@ -231,6 +252,10 @@ export type SfxId =
   /** howl: the Alpha calling its pack. skate: Max's dash rolling. crack: a cracked wall breaking. taunt: Steve's Babysit.
    *  rumble: the Gate tearing at the floor during the defense. gateShut: the Gate closing for good. */
   | 'howl' | 'skate' | 'crack' | 'taunt' | 'rumble' | 'gateShut'
+  /** pistol and shotgun: Nancy. scoop and babble: Robin. rifle: a soldier's burst, one per round. melt: a melting rat bursting.
+   *  grab: a Flayed or Grigori taking hold. decode: a cipher door opening. stash: an item from Erica's stash used. buy: a
+   *  purchase at Erica's cart. */
+  | 'pistol' | 'shotgun' | 'scoop' | 'babble' | 'rifle' | 'melt' | 'grab' | 'decode' | 'stash' | 'buy'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
@@ -267,6 +292,8 @@ export type SimEvent =
   | { t: 'wardDown'; id: CharId }
   /** The defense clock ran out with the ward standing: the Gate is shut. Once. */
   | { t: 'defended' }
+  /** An item from Erica's stash was used. The play scene writes the stash back to progress at once. */
+  | { t: 'stashUsed'; item: StashItem }
   | { t: 'burst' }
   | { t: 'natTwenty'; hero: HeroId; source: 'crit' | 'levelUp' };
 
@@ -300,6 +327,10 @@ export interface DefenseDef {
   waves: DefenseWave[];
 }
 
+/** What Erica sells and the sim spends by itself (docs/level-7.md, "Erica and the stash"). */
+export type StashItem = 'eggo' | 'coke';
+export type Stash = Record<StashItem, number>;
+
 export interface PartySeed {
   id: HeroId; level?: number; xp?: number;
   /** d20 bonus received from level-ups so far, in stat units per stat. Carried between stages so stats survive a retry. */
@@ -324,6 +355,10 @@ export interface SimOptions {
   burrows?: Burrow[];
   /** The stage's defense, started by Sim.defend(). */
   defense?: DefenseDef;
+  /** Quarters the party walked in with. The HUD's coins show this plus what the run picks up. 0 if left out. */
+  purse?: number;
+  /** Items bought from Erica, spent by the sim on its own. Empty if left out. */
+  stash?: Stash;
   /** Spawn ids already cleared (retry from a checkpoint). Run-time spawns are never skipped. */
   skipSpawns?: string[];
   /** Prop ids already opened or cleared. */
@@ -414,8 +449,8 @@ export type PanelStyle = 'dialog' | 'hud' | 'menu';
 export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
 
 // ---------------------------------------------------------------- audio vocabulary
-/** upside: 1.3's halls (and 2.2 later). clock: every boss fight. hawkins: the map screen and 2.1. */
-export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins';
+/** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen and 2.1. starcourt: 3.1 and 3.2. */
+export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins' | 'starcourt';
 export type JingleId = 'levelUp' | 'recruit' | 'clear' | 'gameOver' | 'item' | 'dice';
 export type StingerId = 'scare' | HeroId;
 export interface AudioMetrics {

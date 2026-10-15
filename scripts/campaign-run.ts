@@ -1,4 +1,4 @@
-// A whole run, 1.1 to 2.3, played headlessly by the bot and carried between stages the way flow.ts carries it:
+// A whole run, 1.1 to 3.2, played headlessly by the bot and carried between stages the way flow.ts carries it:
 // partyFor and the map's picks build each party, recordClear keeps every hero at their best. Inside a stage it does
 // what the play scene does for a person: lights each string of lights it walks past (half heal, new checkpoint) and,
 // on a wipe, rebuilds at the last lights with levels, XP and kills kept. scripts/measure-campaign.ts prints it, and
@@ -22,8 +22,10 @@ import { STAGE_13 } from '../src/world/stages/stage13.ts';
 import { STAGE_21 } from '../src/world/stages/stage21.ts';
 import { STAGE_22 } from '../src/world/stages/stage22.ts';
 import { STAGE_23 } from '../src/world/stages/stage23.ts';
+import { STAGE_31 } from '../src/world/stages/stage31.ts';
+import { STAGE_32 } from '../src/world/stages/stage32.ts';
 
-export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23 };
+export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32 };
 
 /** Props a retry leaves open, as the play scene's KEPT_PROPS. */
 const KEPT = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap']);
@@ -130,7 +132,7 @@ export function runCampaign(seed: number, o: RunOpts = {}, stages: readonly stri
   const out: CampaignRun = { stages: [], after: {} };
   for (const id of stages) {
     // The map's picks panel opens on the last picks, fixed up for the stage, and the player confirms it.
-    if (needsPicks(id)) progress = withPicks(progress, pickParty(id, o.picks ?? progress?.picks));
+    if (needsPicks(id)) progress = withPicks(progress, pickParty(id, o.picks ?? progress?.picks, progress?.heroes));
     const party = partyFor(id, progress?.heroes ?? [], progress?.picks);
     const r = runStage(id, party, seed, o);
     out.stages.push(r);

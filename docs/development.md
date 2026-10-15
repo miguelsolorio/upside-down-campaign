@@ -39,7 +39,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?stage=1.2` | Jump to a stage (`1.1` to `2.3`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, and Mike, Dustin, Max and Steve for 2.2 and 2.3 |
+| `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Eleven, Robin and Nancy for 3.1 and 3.2 |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
@@ -78,11 +78,11 @@ src/combat      the simulation, enemy AI, the bot
 src/heroes      hero stats, abilities, growth
 src/enemies     enemy stats and behavior
 src/progression XP curve, the d20 level-up
-src/world       stages 1.1 to 2.3 and the play scene
+src/world       stages 1.1 to 3.2 and the play scene
 src/ui          HUD, dialogue, title, menus
 src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy
-docs            game design, architecture, specs for Levels 1 to 4 and the map, screenshots
+docs            game design, architecture, specs for Levels 1 to 8 and the map, screenshots
 music           rendered WAVs of the tracks
 public/social   the link preview and README images, drawn by social.html
 public/icons    the app icon, with public/favicon.ico, drawn by social.html

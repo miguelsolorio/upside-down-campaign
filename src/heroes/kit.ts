@@ -7,6 +7,8 @@ import { elevenBasic, elevenSpecial } from './eleven.ts';
 import { willBasic, willSpecial } from './will.ts';
 import { maxBasic, maxSpecial } from './max.ts';
 import { steveBasic, steveSpecial } from './steve.ts';
+import { robinBasic, robinSpecial } from './robin.ts';
+import { nancyBasic, nancySpecial } from './nancy.ts';
 
 export function useBasic(s: S, h: Hero): void {
   switch (h.id) {
@@ -17,6 +19,8 @@ export function useBasic(s: S, h: Hero): void {
     case 'will': willBasic(s, h); break;
     case 'max': maxBasic(s, h); break;
     case 'steve': steveBasic(s, h); break;
+    case 'robin': robinBasic(s, h); break;
+    case 'nancy': nancyBasic(s, h); break;
   }
 }
 
@@ -29,5 +33,7 @@ export function useSpecial(s: S, h: Hero): void {
     case 'will': willSpecial(s, h); break;
     case 'max': maxSpecial(s, h); break;
     case 'steve': steveSpecial(s, h); break;
+    case 'robin': robinSpecial(s, h); break;
+    case 'nancy': nancySpecial(s, h); break;
   }
 }

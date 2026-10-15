@@ -1,6 +1,6 @@
 // The Hawkins motif: six notes over two bars in D minor, defined here once.
 // Static plays it as written. The scare stinger, the Upside Down and the Clock play it upside down through
-// invert(). Hawkins plays the same degrees in F major.
+// invert(). Hawkins plays the same degrees in F major and Starcourt in C Lydian.
 import type { NoteEv, Scale } from './types.ts';
 import { ev, invert, makeScale, note } from './theory.ts';
 
@@ -86,6 +86,26 @@ export function motifInMajor(): number[] {
 /** The major motif as two bars of events. */
 export function motifMajorBars(shift = 0): NoteEv[][] {
   const pitches = motifInMajor();
+  const bars: NoteEv[][] = [[], []];
+  MOTIF.forEach((m, i) => bars[m.step >= 16 ? 1 : 0].push(ev(m.step % 16, m.len, pitches[i] + shift)));
+  return bars;
+}
+
+// ------------------------------------------------------------------ Starcourt
+
+export const C_LYDIAN = makeScale('C', 'lydian');
+
+/**
+ * The motif in C Lydian, from the same degrees: 5 b6 5 b3 4 1 of D minor becomes 5 6 5 3 #4 1 of C Lydian, G A G E F# C.
+ * The old fourth is the raised fourth, so the phrase now leans on F sharp one note before it lands home.
+ */
+export function motifInLydian(): number[] {
+  return remode(MOTIF_PITCHES, D_MINOR, MOTIF_AXIS, C_LYDIAN, note('C5'));
+}
+
+/** The Lydian motif as two bars of events. */
+export function motifLydianBars(shift = 0): NoteEv[][] {
+  const pitches = motifInLydian();
   const bars: NoteEv[][] = [[], []];
   MOTIF.forEach((m, i) => bars[m.step >= 16 ? 1 : 0].push(ev(m.step % 16, m.len, pitches[i] + shift)));
   return bars;

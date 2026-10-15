@@ -5,15 +5,16 @@ import type { CharId } from './types.ts';
 
 export type NodeState = 'cleared' | 'open' | 'locked';
 
-export type Place = 'woods' | 'lab' | 'school' | 'patch' | 'tunnels' | 'gate';
+export type Place = 'woods' | 'lab' | 'school' | 'patch' | 'tunnels' | 'gate' | 'mall' | 'base' | 'foodcourt';
 
 /** Which part of Hawkins each stage sits in. */
 export const MAP_PLACE: Record<string, Place> = {
   '1.1': 'woods', '1.2': 'lab', '1.3': 'school', '2.1': 'patch', '2.2': 'tunnels', '2.3': 'gate',
+  '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt',
 };
 
 export interface MapNode {
-  /** Stage id, '1.1' to '2.3', in play order. */
+  /** Stage id, '1.1' to '3.2' (and '3.3' locked ahead), in play order. */
   id: string;
   state: NodeState;
   place: Place;

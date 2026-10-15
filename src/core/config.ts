@@ -53,4 +53,7 @@ export const CHAR_NAMES: Record<CharId, string> = {
   max: 'Max',
   steve: 'Steve',
   hopper: 'Hopper',
+  robin: 'Robin',
+  nancy: 'Nancy',
+  erica: 'Erica',
 };

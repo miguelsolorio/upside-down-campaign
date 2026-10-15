@@ -119,26 +119,36 @@ const effects: Page = {
 };
 
 // ---------------------------------------------------------------- the map
-const IDS = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3'];
-const NAMES = ['The woods', 'The lab', 'The school', 'The palace', 'The tunnels', 'The gate'];
+const IDS = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3'];
+const NAMES = ['The woods', 'The lab', 'The school', 'The palace', 'The tunnels', 'The gate', 'Starcourt Mall', 'The base', 'The food court'];
 const PARTY = [{ id: 'mike' as const, level: 5 }, { id: 'dustin' as const, level: 4 }, { id: 'lucas' as const, level: 4 }, { id: 'eleven' as const, level: 4 }];
 const mapView = (states: NodeState[], selected: string, walk: MapView['walk'], t: number): MapView => ({
-  nodes: IDS.map((id, i) => ({ id, state: states[i] as NodeState, place: MAP_PLACE[id] as 'woods', name: NAMES[i] as string })),
-  selected, walk, lead: 'mike', party: PARTY, chapter: `Chapter ${selected.startsWith('1') ? 'one' : 'two'}`, stage: NAMES[IDS.indexOf(selected)] as string,
+  nodes: IDS.map((id, i) => ({ id, state: states[i] ?? 'locked', place: MAP_PLACE[id] as 'woods', name: NAMES[i] as string })),
+  selected, walk, lead: 'mike', party: PARTY, chapter: `Chapter ${selected.startsWith('1') ? 'one' : selected.startsWith('2') ? 'two' : 'three'}`, stage: NAMES[IDS.indexOf(selected)] as string,
   hint: 'ARROWS MOVE   Z PLAY   ESC BACK', t, calm: false,
 });
 const STATES: NodeState[][] = [
   ['open', 'locked', 'locked', 'locked', 'locked', 'locked'],
   ['cleared', 'cleared', 'open', 'locked', 'locked', 'locked'],
   ['cleared', 'cleared', 'cleared', 'cleared', 'locked', 'locked'],
+  ['cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'open', 'locked', 'locked'],
+  ['cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'cleared', 'open', 'locked'],
 ];
-const LABELS = ['A NEW GAME', 'THE SCHOOL IS NEXT', 'CHAPTER 1 AND THE PATCH CLEARED', 'LIVE: THE TOKEN WALKS THE ROUTE'];
+const LABELS = ['A NEW GAME', 'THE SCHOOL IS NEXT', 'CHAPTER 1 AND THE PATCH CLEARED', 'LIVE: THE TOKEN WALKS THE ROUTE', 'THE MALL IS NEXT', 'LIVE: UP FROM THE GATE'];
 
 const map: Page = {
   title: 'MAP',
-  subs: 4,
+  subs: 6,
   draw(ctx, t, sub) {
-    if (sub < 3) {
+    if (sub === 4) {
+      drawMapScreen(ctx, mapView(STATES[3] as NodeState[], '3.1', null, t));
+    } else if (sub === 5) {
+      // Up from the Gate to the mall, then down to the bunker, and again: the token turns over at the horizon.
+      const a = hopLength('2.3', '3.1'), b = hopLength('3.1', '3.2'), cycle = Math.ceil((a + b) / 1.75) + 40;
+      const at = Math.min(a + b, (t % cycle) * 1.75);
+      const [from, to, k] = at < a ? ['2.3', '3.1', at / a] as const : ['3.1', '3.2', (at - a) / b] as const;
+      drawMapScreen(ctx, mapView(STATES[4] as NodeState[], to, { from, to, k: Math.min(1, k) }, t));
+    } else if (sub < 3) {
       drawMapScreen(ctx, mapView(STATES[sub] as NodeState[], sub === 0 ? '1.1' : sub === 1 ? '1.3' : '2.1', null, t));
     } else {
       // Walk 1.1 to 2.1 and back, 1.75 px a frame along the route, with the states of the last page.

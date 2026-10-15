@@ -2,7 +2,8 @@
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
 // A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat.
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
-// for any hero who swings at it from up close.
+// for any hero who swings at it from up close. A cipher door (docs/level-8.md) decodes while a hero with `read` stands near. A breaker
+// lit by a shot fires the power boxes (powerbox.ts).
 import type { PropKind, PropState, Utility } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import type { Hero, Prop, S } from './state.ts';
@@ -10,6 +11,7 @@ import { activeHero } from './state.ts';
 import { addFx, dust, sfx } from './fx.ts';
 import { FOOT_H, FOOT_W, angleDiff, dist, footBlocked, nearestOnRect, rectsOverlap } from './space.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
+import { fireBoxes } from './powerbox.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
@@ -17,6 +19,9 @@ export const VINE_BURN = 30;
 const DEFAULT_SHUT: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 /** How close a hero who can sense it must stand to show a hidden path, in px from the nearest point of the prop. */
 export const SENSE_RANGE = 40;
+/** Frames a hero with `read` takes to decode a cipher door standing at it, and to lose it again once she steps away. */
+export const DECODE_FRAMES = 45;
+export const DECODE_FADE = 90;
 /** How close a basic attack has to start to smash a prop, in px from the hero's feet to the nearest edge of it. */
 const SMASH_REACH = 18;
 /** How wide a cone a close swing covers, either side of the aim. The same as a swing that tries a door (pokes.ts). */
@@ -39,6 +44,8 @@ export function lightTarget(s: S, p: Prop): void {
   p.t = 0;
   s.events.push({ t: 'targetHit', propId: p.id });
   sfx(s, 'targetHit');
+  // A breaker fires every power box in the stage (combat/powerbox.ts).
+  if (p.kind === 'breaker') fireBoxes(s);
 }
 
 /** Fire reaches a prop that asked to be burned: vines catch, anything else lights like a target. */
@@ -78,12 +85,32 @@ function revealHidden(s: S, p: Prop): void {
   addFx(s, 'reveal', p.x + p.w / 2, p.y + p.h / 2, 'down', 0, 40, p.w, p.h);
 }
 
-/** A hero who has the utility the path asks for (Will's `sense`), alive and active, and within 40 px of it. */
-function sensed(s: S, p: Prop): boolean {
+/** A hero who has the utility the prop asks for (Will's `sense`, Robin's `read`), alive and active, and within 40 px of it. */
+function sensed(s: S, p: Prop, fallback: Utility = 'sense'): boolean {
   const h = activeHero(s);
-  if (h.ko || !HERO_DEFS[h.id].utilities.includes(p.hitBy ?? 'sense')) return false;
+  if (h.ko || !HERO_DEFS[h.id].utilities.includes(p.hitBy ?? fallback)) return false;
   const q = nearestOnRect(p, h.x, h.y - 2);
   return Math.hypot(q.x - h.x, q.y - (h.y - 2)) <= SENSE_RANGE;
+}
+
+/** The cipher door is decoded: `decode` and a `reveal`, propCleared, open and walkable, its letters all English (k 1). */
+function decodeCipher(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  p.solid = false;
+  p.t = 0;
+  p.k = 1;
+  s.events.push({ t: 'propCleared', propId: p.id });
+  sfx(s, 'decode');
+  addFx(s, 'reveal', p.x + p.w / 2, p.y + p.h / 2, 'down', 0, 40, p.w, p.h);
+}
+
+/** A shut cipher door follows its reader: k climbs by 1/45 a frame while she is near and falls by 1/90 when she is not. */
+function updateCipher(s: S, p: Prop): void {
+  if (p.state !== 'closed') return;
+  if (sensed(s, p, 'read')) p.k = Math.min(1, p.k + 1 / DECODE_FRAMES);
+  else p.k = Math.max(0, p.k - 1 / DECODE_FADE);
+  if (p.k >= 1 - 1e-9) decodeCipher(s, p);
 }
 
 /** A hero starts a basic attack. Every unlit `smash` prop within arm's reach in front of him lights, whoever he is. */
@@ -158,11 +185,12 @@ export function openPropById(s: S, id: string): void {
   if (p.kind === 'hidden') { revealHidden(s, p); return; }
   if (p.kind === 'gap') { crossGap(s, p); return; }
   if (p.kind === 'crack') { breakCrack(s, p); return; }
-  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox') { lightTarget(s, p); return; }
+  if (p.kind === 'cipher') { decodeCipher(s, p); return; }
+  if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox' || p.kind === 'breaker') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;
   p.t = 0;
-  if (p.kind === 'gate' || p.kind === 'door') sfx(s, 'gateOpen');
+  if (p.kind === 'gate' || p.kind === 'door' || p.kind === 'shutter') sfx(s, 'gateOpen');
 }
 
 /** How far from a hero's feet closeProp looks for open floor, in tiles. */
@@ -195,6 +223,7 @@ export function closePropById(s: S, id: string): void {
   p.state = DEFAULT_SHUT[p.kind] ?? 'closed';
   p.solid = p.shutSolid;
   p.t = 0;
+  p.k = 0;
   p.burnT = 0;
   sfx(s, 'thud');
   dust(s, p.x + p.w / 2, p.y + p.h, 5);
@@ -214,5 +243,6 @@ export function updateProps(s: S): void {
     if (p.pokeCd > 0) p.pokeCd--;
     if (p.kind === 'vines' && p.state === 'lit' && --p.burnT <= 0) clearVines(s, p);
     if (p.kind === 'hidden' && p.state === 'closed' && sensed(s, p)) revealHidden(s, p);
+    if (p.kind === 'cipher') updateCipher(s, p);
   }
 }

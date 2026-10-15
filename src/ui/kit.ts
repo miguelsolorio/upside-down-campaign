@@ -22,6 +22,26 @@ export function outline(ctx: Ctx, x: number, y: number, w: number, h: number, co
   box(ctx, x + w - 1, y + 1, 1, h - 2, color);
 }
 
+/** A panel: ink with a one pixel slate edge and the four corner pixels left out, like the game's own panels. */
+export function plate(ctx: Ctx, x: number, y: number, w: number, h: number): void {
+  box(ctx, x + 1, y, w - 2, h, 'ink');
+  box(ctx, x, y + 1, w, h - 2, 'ink');
+  box(ctx, x + 1, y, w - 2, 1, 'slate');
+  box(ctx, x + 1, y + h - 1, w - 2, 1, 'slate');
+  box(ctx, x, y + 1, 1, h - 2, 'slate');
+  box(ctx, x + w - 1, y + 1, 1, h - 2, 'slate');
+}
+
+/** The map's selection corners, in white: the arms run along the edges of the box given. */
+export function brackets(ctx: Ctx, x: number, y: number, w: number, h: number): void {
+  const a = 3;
+  for (const [sx, sy] of [[0, 0], [1, 0], [0, 1], [1, 1]] as const) {
+    const cx = sx ? x + w - 1 : x, cy = sy ? y + h - 1 : y;
+    box(ctx, sx ? cx - a + 1 : cx, cy, a, 1, 'white');
+    box(ctx, cx, sy ? cy - a + 1 : cy, 1, a, 'white');
+  }
+}
+
 /** Runs `fn` with the origin moved to the left edge of a BASE_W wide layout centered on the screen. Screens laid out
  * for 256 px draw inside this, and their full-width backgrounds outside it. Inside, center on BASE_W, never SCREEN_W. */
 export function inFrame(ctx: Ctx, fn: () => void): void {

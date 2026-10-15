@@ -5,6 +5,11 @@
 // the props and the hero every tick, and the sim's `poked` events as they come.
 //
 // A puzzle whose hero is not in the party never shows its hint: with Steve benched in 2.2 the cache stays shut and nothing nags.
+// A puzzle with an `alt` list (the mall's panel, docs/level-7.md) is live while any of its heroes is in the party, and the first of
+// them who is, in order, is the one the hint names and the bench pulses for (`namedFor`).
+//
+// A puzzle stays solved once its prop has been seen lit or open, even if the prop goes back to closed: the breaker in 3.2 re-arms 300
+// frames after a shot, and the hint does not come back with it (docs/level-8.md, "Puzzles"). A retry or a load forgets (`reset`).
 //
 // A puzzle can watch an enemy instead of a prop (`PuzzleDef.enemy`, the pinned Demogorgon). `puzzleProps` stands a prop
 // in for it, at its feet and about its size, so the tracker and the caret work the same way: the hint follows it while it
@@ -50,6 +55,15 @@ export interface PuzzleTracker {
 /** Same test the play scene uses to carry a prop across a retry. */
 export const isSolved = (p: PropView): boolean => p.state === 'open' || p.state === 'lit';
 
+/**
+ * The hero a puzzle's hint names for this party: `hero` if they are in it (or no party is given), else the first of `alt` who is.
+ * Null when none of them is, and then the puzzle is not live.
+ */
+export function namedFor(d: PuzzleDef, party?: readonly HeroId[]): { hero: HeroId; hint: string } | null {
+  if (!party || party.includes(d.hero)) return { hero: d.hero, hint: d.hint };
+  return d.alt?.find((a) => party.includes(a.hero)) ?? null;
+}
+
 /** The hero is at the puzzle: the clock counts, and the play scene shows the hint subtitle. */
 export const isNear = (p: PropView, hero: Vec2): boolean => Math.hypot(hero.x - (p.x + p.w / 2), hero.y - (p.y + p.h / 2)) <= NEAR_PX;
 
@@ -77,7 +91,8 @@ export function puzzleProps(defs: readonly PuzzleDef[], props: readonly PropView
   for (const d of defs) {
     if (!d.enemy) continue;
     const kind = kinds.get(d.prop);
-    const foe = kind === undefined ? undefined : actors.find((a) => a.kind === 'enemy' && a.id === kind && a.anim !== 'ko');
+    // A dormant Flayed is a puddle actor (ActorView.puddle): it is not on the field yet, so it is not a foe to point at.
+    const foe = kind === undefined ? undefined : actors.find((a) => a.kind === 'enemy' && a.id === kind && a.anim !== 'ko' && a.puddle !== true);
     if (!foe) continue;
     (out ??= [...props]).push({ id: d.prop, kind: 'target', x: foe.x - FOE_W / 2, y: foe.y - FOE_H, w: FOE_W, h: FOE_H, state: 'closed', t: 0 });
   }
@@ -90,26 +105,37 @@ export function createPuzzleTracker(defs: readonly PuzzleDef[]): PuzzleTracker {
   const live = new Map<string, PuzzleDef>();
   /** Puzzle id to the prop someone tried it on with the wrong hero. */
   const tried = new Map<string, string>();
+  /** Puzzles whose prop has been lit or open at some point since the last reset. */
+  const solved = new Set<string>();
+  /** The party as the last tick saw it, to know which hero a try is the wrong one for. Unknown until the first tick. */
+  let party: readonly HeroId[] | undefined;
 
   return {
     tick(s) {
       live.clear();
+      party = s.party;
       for (const d of defs) {
         const prop = s.props.find((p) => p.id === d.prop);
-        if (!prop || isSolved(prop) || s.busy || !s.hasFired(d.beat)) continue;
-        if (s.party && !s.party.includes(d.hero)) continue;
+        if (prop && isSolved(prop)) solved.add(d.id);
+        if (!prop || solved.has(d.id) || s.busy || !s.hasFired(d.beat)) continue;
+        if (!namedFor(d, s.party)) continue;
         live.set(d.id, d);
         if (isNear(prop, s.hero)) spent.set(d.id, (spent.get(d.id) ?? 0) + 1);
       }
     },
     poke(propId, hero) {
       for (const d of defs) {
-        if (hero !== d.hero && (propId === d.prop || d.blocks?.includes(propId))) tried.set(d.id, propId);
+        if (hero !== (namedFor(d, party)?.hero ?? d.hero) && (propId === d.prop || d.blocks?.includes(propId))) tried.set(d.id, propId);
       }
     },
-    reset() { spent.clear(); live.clear(); tried.clear(); },
+    reset() { spent.clear(); live.clear(); tried.clear(); solved.clear(); },
     highlight() {
-      for (const d of defs) if (live.has(d.id) && (tried.has(d.id) || (spent.get(d.id) ?? 0) >= HINT_AFTER)) return d;
+      for (const d of defs) {
+        if (!live.has(d.id) || !(tried.has(d.id) || (spent.get(d.id) ?? 0) >= HINT_AFTER)) continue;
+        // The hero and the hint are the named one's, so the caller reads `hero` and `hint` and never needs to know about `alt`.
+        const named = namedFor(d, party);
+        return named && named.hero !== d.hero ? { ...d, ...named } : d;
+      }
       return null;
     },
     triedProp: (d) => tried.get(d.id) ?? null,

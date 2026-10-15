@@ -29,7 +29,7 @@ export function patrol(s: S, e: Enemy, speed: number): void {
   setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
 }
 
-function backOff(s: S, e: Enemy, hero: Hero, speed: number): boolean {
+export function backOff(s: S, e: Enemy, hero: Hero, speed: number): boolean {
   const a = Math.atan2(e.y - hero.y, e.x - hero.x);
   for (const off of [0, 0.7, -0.7, 1.4, -1.4]) {
     const vx = Math.cos(a + off) * speed, vy = Math.sin(a + off) * speed;

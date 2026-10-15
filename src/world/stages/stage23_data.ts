@@ -67,12 +67,13 @@ export const BURROWS: Burrow[] = [
   { tx: 35, ty: 4 }, { tx: 44, ty: 4 }, { tx: 36, ty: 10 }, { tx: 44, ty: 10 },
 ];
 
-// Eleven's HP is the lever that makes chief lose now and then: at 160 she falls in about one chief run in twenty. Her damage scales
+// Eleven's HP is the lever that makes chief lose now and then: at 95 she falls in about one chief run in ten (at 160, one in thirty).
+// The Alpha's 560 HP (enemies/defs.ts) keeps upside above its floor while she does. Her damage scales
 // with the difficulty and enemyMult, so upside is harder on her too. The waves are sparse on purpose: 17 demodogs, one elite, no wave
 // bigger than three, so the party can keep up. The spec's 23 piled up faster than they died and made the defense a cliff.
 const S = 60;
 export const DEFENSE: DefenseDef = {
-  npc: 'eleven', hp: 160, frames: 45 * S, prop: 'rift',
+  npc: 'eleven', hp: 95, frames: 45 * S, prop: 'rift',
   waves: [
     { at: 0, n: 2, type: 'demodog' }, { at: 6 * S, n: 2, type: 'demodog' }, { at: 12 * S, n: 3, type: 'demodog' },
     { at: 18 * S, n: 2, type: 'demodog' }, { at: 24 * S, n: 2, type: 'demodog' }, { at: 24 * S, n: 1, type: 'demodog', tier: 'elite' },

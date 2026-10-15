@@ -4,9 +4,12 @@
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
 // Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's
 // Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
-// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). Against the Alpha it steps off the lunge
-// line and the marks and hits it while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and
-// casts Babysit with Steve when two are on her (bot_ward.ts). It ignores hazards and cameras.
+// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a
+// pod's swell unless a demodog is closing in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it
+// while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
+// are on her (bot_ward.ts). Robin casts Word vomit with three foes within 56 px and Nancy her Shotgun with one within 40. Rifle
+// bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
+// recovers, with the power box when there is a shooter (bot_grigori.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -19,6 +22,10 @@ import { createBossSense } from './bot_boss.ts';
 import { createDashCross } from './bot_dash.ts';
 import { createAlphaSense, howlFirst } from './bot_alpha.ts';
 import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
+import { createGrigoriSense } from './bot_grigori.ts';
+import { holdSwap } from './bot_hold.ts';
+import { pickupNear } from './bot_pick.ts';
+import { backOffFrom, slamThreat } from './bot_threat.ts';
 
 export interface BotWaypoint extends Vec2 {
   /** Prop id to open when reached. */ open?: string;
@@ -64,6 +71,8 @@ const STYLE: Record<HeroId, { hold: number; reach: number }> = {
   will: { hold: 80, reach: 120 },
   max: { hold: 18, reach: 30 },
   steve: { hold: 20, reach: 34 },
+  robin: { hold: 64, reach: 90 },
+  nancy: { hold: 90, reach: 150 },
 };
 
 /** Just above the sim's 0.15 dead zone: turns the hero to face a target without walking anywhere. */
@@ -156,7 +165,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     const out: Foe[] = [];
     for (const a of v.actors) {
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
-      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true) continue;
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise') continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -210,9 +219,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   /** The nearest inbound dart that will pass within a body width of the hero: its time to impact and a side to step. */
   function dartThreat(v: SimView, hx: number, hy: number): { tti: number; sx: number; sy: number } | null {
     let best: { tti: number; sx: number; sy: number } | null = null;
-    const speed = ENEMY_DEFS.agent.x.dart;
     for (const f of v.fx) {
-      if (f.kind !== 'dart') continue;
+      if (f.kind !== 'dart' && f.kind !== 'bullet') continue;
+      const speed = f.kind === 'dart' ? ENEMY_DEFS.agent.x.dart : ENEMY_DEFS.soldier.x.speed;
       const vx = Math.cos(f.angle), vy = Math.sin(f.angle);
       const rx = hx - f.x, ry = hy - 7 - f.y;
       const along = rx * vx + ry * vy;
@@ -255,23 +264,6 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return null;
   }
 
-  /** A wind-up whose reach the hero is in: the vine's lash or the pod's swell. */
-function reachThreatOf(f: Foe): boolean {
-  if (f.kind === 'vine') return f.d <= ENEMY_DEFS.vine.x.reach + 10;
-  if (f.kind === 'pod') return f.d <= ENEMY_DEFS.pod.x.cloud + 10;
-  return false;
-}
-
-/** A Warden winding up a slam close enough to reach the hero: the growing ring is on it. */
-  function slamThreat(v: SimView, foes: Foe[]): Foe | null {
-    const w = ENEMY_DEFS.warden.x;
-    for (const f of foes) {
-      if (f.kind !== 'warden' || !f.windup || f.d > w.slamRadius + 12) continue;
-      if (v.fx.some((r) => r.kind === 'ring' && r.life === w.slamWindup && Math.hypot(r.x - f.x, r.y - f.y) < 8)) return f;
-    }
-    return null;
-  }
-
   /** A step straight away from a foe, bending around walls. */
   function awayFrom(f: Foe, hx: number, hy: number): [number, number] {
     const a = Math.atan2(hy - f.y, hx - f.x);
@@ -286,6 +278,7 @@ function reachThreatOf(f: Foe): boolean {
   const cross = createDashCross();
   const alpha = createAlphaSense();
   const guardWard = createWardSense();
+  const grig = createGrigoriSense({ walkable, walkTo });
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -339,7 +332,8 @@ function reachThreatOf(f: Foe): boolean {
 
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
     const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable);
-    const fin = boss.finish(v, hx, hy);
+    const pin = boss.finish(v, hx, hy);
+    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style));
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
     const ward = guardWard.read(v);
@@ -360,8 +354,11 @@ function reachThreatOf(f: Foe): boolean {
     let mx = 0, my = 0;
     const hpFrac = me.hp / me.hpMax;
 
+    // A Flayed or Grigori has hold of the hero: a swap frees him.
+    const held = careless ? -1 : holdSwap(v, hx, hy);
+    if (held >= 0) { out.swapTo = held; lastSwap = frame; }
     // Swap out a hurt hero for the healthiest bench hero.
-    if (hpFrac < 0.35 && frame - lastSwap > 100 && !fin) {
+    if (hpFrac < 0.35 && frame - lastSwap > 100 && !pin) {
       let best = -1, bestFrac = hpFrac + 0.3;
       v.hud.party.forEach((p, i) => {
         if (!p.ko && !p.active && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
@@ -382,8 +379,9 @@ function reachThreatOf(f: Foe): boolean {
     if (fin) {
       // Pinned: Eleven's Mind Blast is the only thing that hurts it. Swap to her, walk up and fire.
       [mx, my] = fin.mv;
-      out.swapTo = fin.swapTo;
+      if (fin.swapTo >= 0) out.swapTo = fin.swapTo;
       out.specialPressed = fin.cast;
+      out.attackHeld = fin.attack === true;
     } else if (fighting && near) {
       // Inbound dart: step aside.
       const threat = desperate || careless ? null : dartThreat(v, hx, hy);
@@ -395,13 +393,13 @@ function reachThreatOf(f: Foe): boolean {
       const bash = dodged || careless ? null : foes.find((f) => isGuard(f.kind) && f.windup && f.up && f.d <= defOf(f.kind).x.reach + 8 && inArc(f, hx, hy));
       if (!dodged && bash) { [mx, my] = awayFrom(bash, hx, hy); dodged = true; }
       // A vine's lash reaches 34 px and a swelling pod's cloud 28: back out of it.
-      const near2 = dodged || careless ? null : foes.find((f) => f.windup && reachThreatOf(f));
+      const near2 = dodged || careless ? null : backOffFrom(foes);
       if (!dodged && near2) { [mx, my] = awayFrom(near2, hx, hy); dodged = true; }
       if (!dodged) {
         const a8 = snap8(near.ang);
         const miss = near.d * Math.sin(angDiff(near.ang, a8));
         // Rockets need a line within a body width; Push, bat and spray cover wide cones.
-        const aligned = desperate || (me.id !== 'lucas' && me.id !== 'will') || miss < 9;
+        const aligned = desperate || (me.id !== 'lucas' && me.id !== 'will' && me.id !== 'nancy') || miss < 9;
         const hold = desperate ? 16 : style.hold;
         // A guard with its shield up and the hero in front of it: Dustin burns it, Eleven's Push breaks it, the rest circle
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
@@ -435,6 +433,9 @@ function reachThreatOf(f: Foe): boolean {
             else if (me.id === 'eleven') use = near.d < 120 && me.mp >= cost && miss < 12 && (group >= 2 || near.kind === 'agent' || shielded);
             // Babysit when two or more are on him.
             else if (me.id === 'steve') use = me.mp >= cost && foes.filter((f) => f.d < BABYSIT_CROWD).length >= 2;
+            // Word vomit on a crowd, the Shotgun up close.
+            else if (me.id === 'robin') use = me.mp >= cost && foes.filter((f) => f.d < 56).length >= 3;
+            else if (me.id === 'nancy') use = me.mp >= cost && near.d < 40;
             if (use) { out.specialPressed = true; lastSpecial = frame; }
           }
         }
@@ -458,7 +459,7 @@ function reachThreatOf(f: Foe): boolean {
     if (out.specialPressed) lastSpecial = frame;
 
     // Off a mark, out of the charge line, out of the swipe: that comes before whatever else the bot was doing.
-    if (leave && !careless && !fin) {
+    if (leave && !careless && !pin) {
       [mx, my] = leave;
       // A hero swinging at the bat moves at a third of his pace. Dodging means moving.
       out.attackHeld = false;
@@ -488,16 +489,4 @@ function reachThreatOf(f: Foe): boolean {
   }
 
   return { next, done: () => wi >= opts.waypoints.length };
-}
-
-/** A pickup worth a detour: Eggos when hurt, Cokes when dry, quarters when they are right there. */
-function pickupNear(v: SimView, hx: number, hy: number, hpFrac: number, mpFrac: number): Vec2 | null {
-  let best: Vec2 | null = null;
-  let bestD = 1e9;
-  for (const it of v.items) {
-    const d = dist(hx, hy, it.x, it.y);
-    const reach = it.kind === 'quarter' ? 40 : it.kind === 'eggo' ? (hpFrac < 0.7 ? 120 : 24) : mpFrac < 0.5 ? 100 : 24;
-    if (d < reach && d < bestD) { best = { x: it.x, y: it.y }; bestD = d; }
-  }
-  return best;
 }

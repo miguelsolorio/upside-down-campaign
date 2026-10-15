@@ -1,5 +1,5 @@
 // World types: the options for the play scene and the shape of stage data. Pure types, no DOM.
-import type { Burrow, DefenseDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
+import type { Burrow, DefenseDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, Stash, StashItem, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
 import type { BotWaypoint } from '../combat/bot.ts';
 import type { SaveData } from '../core/save.ts';
 
@@ -11,11 +11,20 @@ export interface PlayOptions {
   party: PartySeed[];
   /** Pick up from this save instead of the stage start. Its party replaces `party`. */
   resume?: SaveData;
-  /** Fired when the level-clear beat finishes. */
-  onClear(result: { stats: RunStats; party: HeroSnapshot[] }): void;
+  /**
+   * Fired when the level-clear beat finishes. `quarters` is every quarter the whole run picked up, retries and CONTINUEs included
+   * (the play scene banks them at each lit light, SaveData.quarters), where stats.quarters only counts since the last retry.
+   */
+  onClear(result: { stats: RunStats; party: HeroSnapshot[]; quarters?: number }): void;
   onQuit(): void;
   /** Pause menu, START OVER: the save is wiped and the level begins again. */
   onStartOver(): void;
+  /** Quarters the party walks in with (Progress.purse). The HUD's coins start here. 0 if left out. */
+  purse?: number;
+  /** Erica's stash as the stage starts, and again for every retry (docs/level-7.md, "Erica and the stash"). */
+  stash?(): Stash;
+  /** The sim used an item from the stash. Flow writes it to progress at once, so a retry never gives it back. */
+  onStashUsed?(item: StashItem): void;
 }
 
 /** A rectangle in tile coordinates. */
@@ -74,6 +83,12 @@ export interface PuzzleDef {
   blocks?: string[];
   /** The subtitle line. Names the hero and what to try, never a key, so it stays true after a rebind. One row. */
   hint: string;
+  /**
+   * Other heroes who solve it too, in order, each with their own hint. When `hero` isn't in the party, the first of these who is
+   * takes over the hint and the bench pulse (docs/level-7.md, the mall's panel; docs/level-8.md, the breaker). The puzzle is live
+   * while any of them, or `hero`, is in the party.
+   */
+  alt?: { hero: HeroId; hint: string }[];
 }
 
 /** Where the party stands again after a retry, once this lights prop has been lit. Feet position in px. */

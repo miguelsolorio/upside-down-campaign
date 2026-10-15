@@ -6,12 +6,16 @@ import type { HeroId, PartySeed } from '../core/types.ts';
 import { CHAR_NAMES } from '../core/config.ts';
 import { PARTY_SIZE } from '../core/campaign.ts';
 import type { PromptDevice } from '../core/bindings.ts';
+import type { Rect } from '../core/pointer.ts';
+import { BAND_Y, TOP_H } from '../gfx/map_geo.ts';
 
 /** Cards per row in the Grid layout. */
 export const COLS = 3;
 
 /** The word for the gate each hero opens. Mike opens none. */
-const GATES: Partial<Record<HeroId, string>> = { dustin: 'BURN', lucas: 'SHOOT', will: 'SENSE', max: 'DASH', steve: 'SMASH' };
+const GATES: Partial<Record<HeroId, string>> = {
+  dustin: 'BURN', lucas: 'SHOOT', will: 'SENSE', max: 'DASH', steve: 'SMASH', eleven: 'PUSH', robin: 'READ', nancy: 'SHOOT',
+};
 
 export interface PicksState {
   /** Everyone in the stage's pool, in order, with the level they would play at. */
@@ -31,7 +35,7 @@ export interface PickRow {
   id: HeroId;
   name: string;
   level: number;
-  /** DASH, SMASH, BURN, SHOOT or SENSE, or empty. */
+  /** DASH, SMASH, BURN, SHOOT, SENSE, PUSH or READ, or empty. */
   gate: string;
   /** 1 to 4 in party order, 0 on the bench. Slot 1 is the lead. */
   slot: number;
@@ -137,6 +141,51 @@ export function makeLead(s: PicksState, i: number = s.cursor): PicksState {
   return { ...s, picked: [id, ...s.picked.filter((h) => h !== id)] };
 }
 
+// ---------------------------------------------------------------- the layout
+/** Where everything sits, in frame px, for a pool of `n`. Six heroes are three cards by two. Nine are three by three, on
+ * shorter cards (the face, the text and the mark each a pixel or two higher), so the panel still fits between the map's top
+ * strip and its party band with START and the legend. Pure, so a test can check the fit. */
+export interface PicksLayout {
+  rows: number;
+  compact: boolean;
+  panel: Rect;
+  /** A card's width and height, and the pitch from one to the next. */
+  cw: number; ch: number; gx: number; gy: number;
+  /** The first card's top left. */
+  x0: number; y0: number;
+  start: Rect;
+  /** Top of the one-line legend, level with START's label. */
+  legendY: number;
+  /** Offsets inside a card: the face's top, the gate word's, and the mark under the face (LEAD, the party number, the lock). */
+  top: number; gateY: number; markY: number;
+}
+
+export function picksLayout(n: number): PicksLayout {
+  const rows = Math.max(1, rowsCount(n));
+  const compact = rows > 2;
+  const ch = compact ? 40 : 44, gy = ch + (compact ? 4 : 6);
+  const startDy = 17 + (rows - 1) * gy + ch + 8;
+  const ph = startDy + 11 + 6;
+  const py = Math.round(TOP_H + (BAND_Y - TOP_H - ph) / 2);
+  return {
+    rows, compact, panel: { x: 4, y: py, w: 248, h: ph }, cw: 74, ch, gx: 80, gy, x0: 11, y0: py + 17,
+    start: { x: 11, y: py + startDy, w: 56, h: 11 }, legendY: py + startDy + 3,
+    top: compact ? 4 : 5, gateY: compact ? 25 : 26, markY: compact ? 32 : 34,
+  };
+}
+
+/** Card `i`'s box, and the click cell round it: the cells meet, so the mouse is always over one card. */
+export const cardRect = (l: PicksLayout, i: number): Rect => ({ x: l.x0 + (i % COLS) * l.gx, y: l.y0 + Math.floor(i / COLS) * l.gy, w: l.cw, h: l.ch });
+export function cellRect(l: PicksLayout, i: number): Rect {
+  const c = cardRect(l, i);
+  return { x: c.x - 3, y: c.y - 3, w: l.gx, h: l.gy };
+}
+/** The mark under card `i`'s face: a click on a picked hero's makes them lead. */
+export function markRect(l: PicksLayout, i: number): Rect {
+  const c = cardRect(l, i);
+  return { x: c.x + 2, y: c.y + l.markY - 3, w: 32, h: 11 };
+}
+
 // ---------------------------------------------------------------- the legend
 /**
  * The one-line legend for the device, one entry per key. A keyboard names the arrows and Escape, which always work, and the
@@ -144,7 +193,8 @@ export function makeLead(s: PicksState, i: number = s.cursor): PicksState {
  * card, and its B leads, and PAUSE goes back, since its B is also the special key.
  */
 export function legend(device: PromptDevice, attack: string, special: string): string[] {
-  if (device === 'gamepad') return ['STICK MOVE', 'A PICK', 'X LEAD', 'B BACK'];
+  // A picks and B backs out on every controller. Special can be rebound, so it is named from the bindings like the keys are.
+  if (device === 'gamepad') return ['STICK MOVE', 'A PICK', `${special} LEAD`, 'B BACK'];
   if (device === 'touch') return ['TAP PICK', `${special} LEAD`, 'PAUSE BACK'];
   return ['ARROWS MOVE', `${attack} PICK`, `${special} LEAD`, 'ESC BACK'];
 }

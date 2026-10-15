@@ -206,3 +206,26 @@ The stage pays 233 XP (`docs/pace.md`). The arrival levels are the old ones, now
 | Boss time | 81 s (69%) | 81 s (70%) | | | |
 
 - **Chief sits at the top of its band**: 98 of 100, 97 before. A factor of 1.05 brings it to 96 but drops upside to 11 of 100, under its floor, so the factor stays and the whole-run test allows 20 of 20.
+
+## After the balance pass
+
+Chief cleared 98 of 100, at the top of its band, and lowering the factor wrecked upside. Two numbers moved instead:
+
+- **Eleven has 95 HP**, not 160. It is the lever that makes chief lose now and then: she falls in 10 of 100 chief runs (37 of 300) and 1 of the first 20 (the band says at most 3), and only those runs are lost. It was 1 of 100.
+- **The Alpha has 560 HP**, not 700. Eleven's HP alone moves upside as much as chief (chief 99 to 92 cost upside 23 to 14 percent). A shorter Alpha fight, about 14 s on chief, gives upside the room back. Of upside's 76 losses in 100 runs, 5 are in the Alpha fight, 7 between it and the Gate, 34 are party wipes in the defense and 30 are Eleven falling. Chief's 11 losses are 10 falls and 1 wipe in the defense. The Alpha's ATK did nothing for upside.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
+|---|---|---|---|---|---|
+| Cleared, before | 20 | 98 (297 of 300), none stuck | 20 of 20 (99 of 100, 298 of 300) | 20 | 8 (28 of 100, 89 of 300) |
+| Cleared, after | 19 | 89 (262 of 300), none stuck | 18 of 20 (87 of 100, 268 of 300) | 20 | 7 (24 of 100, 60 of 300) |
+| Eleven fell, before and after | 0 and 1 | 1 and 10 (2 and 37 of 300) | 0 and 2 | 0 and 0 | 3 and 8 (11 and 30 of 100) |
+| Damage taken | 405 and 402 | 416 and 404 | 401 and 399 | 180 and 160 | 676 and 586 |
+| KOs | 0.60 and 0.50 | 0.63 and 0.57 | 0.30 and 0.50 | 0.05 and 0 | 4.25 and 3.30 |
+| Lowest party HP | 42% and 43% | 39% and 41% | 43% and 41% | 68% and 70% | 8% and 12% |
+| Boss time | 81 s and 75 s | 81 s and 76 s | | | |
+
+- **Upside sits on its floor**: 24 of 100 and 60 of 300 (20 percent), 7 of 20 against the floor of 4. It has no room to give. Every lever that makes chief lose more costs upside about as many clears.
+- **The KO band is at its edge**: 0.57 over 100 seeds and 0.51 over 300, against the band's 0.5. A bot that dodged demodogs would take fewer.
+- The careless bot clears 87 of 100, two clears under the careful one, which is noise at this sample (268 and 262 of 300).
+- The other bands are as before: damage taken about 400 and the boss share about 68 percent are over, for the same reasons.
+- `tests/alpha.test.ts` pins 560, `tests/alpha-bot.test.ts` asks for an average Alpha fight of at least 12 s (it was 15), and the retry scene test uses seed 15, a run on which Eleven falls.

@@ -1,7 +1,7 @@
 // Campaign progress for the map screen: which stages are cleared and every hero met so far, at their best. Kept
 // apart from the autosave inside a stage (save.ts), which only lives while a stage is being played. Pure and
 // DOM-free so Node tests can run it. A bad or old record reads as "no progress", it never throws.
-import type { HeroId, HeroSnapshot, PartySeed, StatKey } from './types.ts';
+import type { HeroId, HeroSnapshot, PartySeed, StatKey, Stash, StashItem } from './types.ts';
 import { PARTY_SIZE, STAGE_ORDER, mergeHeroes, seedsFrom } from './campaign.ts';
 import { savingAllowed } from './save.ts';
 import { storage } from './storage.ts';
@@ -16,6 +16,35 @@ export interface Progress {
   heroes: PartySeed[];
   /** The last party picked on the map, lead first (docs/map-screen.md, "Party picks"). Absent until the first pick. */
   picks?: HeroId[];
+  /** Quarters carried between stages (docs/map-screen.md, "Erica's cart"). Absent on a save from before the purse: see purseOf. */
+  purse?: number;
+  /** What the party bought from Erica and hasn't used. Absent means nothing. */
+  stash?: Stash;
+}
+
+/** Most of one item the party can carry. */
+export const STASH_MAX = 3;
+
+/** What a save from before the purse existed starts with, per cleared stage: about what those stages left lying around. */
+export const OLD_PURSE_PER_STAGE = 10;
+
+/** The quarters in the purse. A save from before the purse gets OLD_PURSE_PER_STAGE for each stage it has cleared. */
+export function purseOf(p: Progress | null): number {
+  if (!p) return 0;
+  return p.purse ?? OLD_PURSE_PER_STAGE * p.cleared.length;
+}
+
+/** The stash, never absent. */
+export function stashOf(p: Progress | null): Stash {
+  return { eggo: p?.stash?.eggo ?? 0, coke: p?.stash?.coke ?? 0 };
+}
+
+/** A copy of `p` with every field, purse and stash included, so the helpers below never drop one. */
+function copyOf(p: Progress | null): Progress {
+  const out: Progress = { v: 1, cleared: [...(p?.cleared ?? [])], heroes: (p?.heroes ?? []).map((h) => ({ ...h })) };
+  if (p?.picks) out.picks = [...p.picks];
+  if (p) { out.purse = purseOf(p); out.stash = stashOf(p); }
+  return out;
 }
 
 const KEY = 'upside-down:progress:v1';
@@ -48,20 +77,50 @@ export function parseProgress(raw: unknown): Progress | null {
   const picks = raw.picks;
   if (Array.isArray(picks) && picks.length > 0 && picks.length <= PARTY_SIZE && new Set(picks).size === picks.length &&
     picks.every((h) => (HERO_IDS as unknown[]).includes(h))) out.picks = picks as HeroId[];
+  // The purse and the stash are small whole numbers. A bad value is dropped (the old-save rule then applies to the purse).
+  if (num(raw.purse) && raw.purse >= 0) out.purse = Math.floor(raw.purse);
+  if (isRecord(raw.stash)) {
+    const n = (v: unknown): number => (num(v) && v >= 0 ? Math.min(STASH_MAX, Math.floor(v)) : 0);
+    out.stash = { eggo: n(raw.stash.eggo), coke: n(raw.stash.coke) };
+  }
   return out;
 }
 
-/** A clear of `stage` added to `p` (or to a fresh record): the stage is marked and the party merged in. Picks carry. */
-export function recordClear(p: Progress | null, stage: string, party: HeroSnapshot[]): Progress {
-  const cleared = STAGE_ORDER.filter((id) => id === stage || (p?.cleared ?? []).includes(id));
-  const out: Progress = { v: 1, cleared, heroes: mergeHeroes(p?.heroes ?? [], seedsFrom(party)) };
-  if (p?.picks) out.picks = [...p.picks];
+/**
+ * A clear of `stage` added to `p` (or to a fresh record): the stage is marked, the party merged in and the run's `quarters`
+ * added to the purse. Picks and the stash carry.
+ */
+export function recordClear(p: Progress | null, stage: string, party: HeroSnapshot[], quarters = 0): Progress {
+  const out = copyOf(p);
+  out.cleared = STAGE_ORDER.filter((id) => id === stage || (p?.cleared ?? []).includes(id));
+  out.heroes = mergeHeroes(p?.heroes ?? [], seedsFrom(party));
+  out.purse = purseOf(p) + Math.max(0, Math.floor(quarters));
+  out.stash = stashOf(p);
   return out;
 }
 
 /** `p` with the party the player just picked remembered, lead first. */
 export function withPicks(p: Progress | null, picks: readonly HeroId[]): Progress {
-  return { v: 1, cleared: [...(p?.cleared ?? [])], heroes: (p?.heroes ?? []).map((h) => ({ ...h })), picks: picks.slice(0, PARTY_SIZE) };
+  const out = copyOf(p);
+  out.picks = picks.slice(0, PARTY_SIZE);
+  return out;
+}
+
+/** `p` with one `item` spent from the stash (the sim's stashUsed). Nothing changes when there is none left. */
+export function spendStash(p: Progress | null, item: StashItem): Progress {
+  const out = copyOf(p);
+  const stash = stashOf(p);
+  stash[item] = Math.max(0, stash[item] - 1);
+  out.stash = stash;
+  return out;
+}
+
+/** `p` with its purse and stash replaced, as Erica's cart leaves them. */
+export function withPurse(p: Progress | null, purse: number, stash: Stash): Progress {
+  const out = copyOf(p);
+  out.purse = Math.max(0, Math.floor(purse));
+  out.stash = { eggo: Math.min(STASH_MAX, Math.max(0, stash.eggo)), coke: Math.min(STASH_MAX, Math.max(0, stash.coke)) };
+  return out;
 }
 
 /** The first stage in play order not cleared yet, or null when every stage of this build is cleared. */

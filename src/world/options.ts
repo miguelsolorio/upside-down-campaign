@@ -1,5 +1,5 @@
 // Turns stage data into the grid and SimOptions. Pure: the play scene and the Node tests both use it.
-import type { Difficulty, Grid, PartySeed, SimOptions, Vec2 } from '../core/types.ts';
+import type { Difficulty, Grid, PartySeed, SimOptions, Stash, Vec2 } from '../core/types.ts';
 import type { BotWaypoint } from '../combat/bot.ts';
 import { buildGrid } from '../core/tiles.ts';
 import type { StageData } from './types.ts';
@@ -15,11 +15,15 @@ export interface SimBuild {
   skipSpawns?: string[];
   /** Prop ids already opened (retry). */
   openProps?: string[];
+  /** Quarters the party walks in with, and Erica's stash (docs/level-7.md, "Erica and the stash"). */
+  purse?: number;
+  stash?: Stash;
 }
 
 /** Props that stay open across a retry or a load, and the ones the dev panel offers to open. */
 export const KEPT_PROPS: ReadonlySet<string> = new Set([
   'gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap',
+  'shutter', 'cipher',
 ]);
 
 export function stageGrid(data: StageData): Grid {
@@ -42,6 +46,8 @@ export function simOptions(data: StageData, grid: Grid, b: SimBuild): SimOptions
     difficulty: b.difficulty,
     seed: b.seed,
     god: b.god,
+    purse: b.purse,
+    stash: b.stash,
   };
 }
 

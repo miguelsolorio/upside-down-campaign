@@ -9,6 +9,8 @@ import { lab2Ground } from './tile_lab2.ts';
 import { schoolGround } from './tile_school.ts';
 import { townGround } from './tile_town.ts';
 import { patchGround } from './tile_patch.ts';
+import { mallGround } from './tile_mall.ts';
+import { baseGround } from './tile_base.ts';
 
 type Rnd = () => number;
 
@@ -16,8 +18,18 @@ type Rnd = () => number;
 export interface Near { n: TileName; e: TileName; s: TileName; w: TileName }
 /** A rectangle of tiles. */
 export interface TileBox { tx: number; ty: number; w: number; h: number }
+/**
+ * Where a tile sits in a run of its own kind: how many of its kind lie unbroken to its west and north, and how long the run is across and
+ * down. It is set for the tiles that paint one big picture over a block of them (the fountain, the lift, the machine), so each tile knows
+ * which piece of the picture is its own.
+ */
+export interface Block { ox: number; oy: number; w: number; h: number }
 /** court: the gym court a tile is painted in (findCourts in tile_school.ts), so its lines frame the court. Absent elsewhere. */
-export interface TileCtx { tx: number; ty: number; near: Near; court?: TileBox }
+export interface TileCtx {
+  tx: number; ty: number; near: Near; court?: TileBox; blk?: Block;
+  /** Set on a tile of a stage that has the mall in it: the school's checker is Scoops Ahoy's floor there, and goes as dim as the mall at night (night.ts). */
+  mall?: boolean;
+}
 
 export const isWater = (n: TileName): boolean => n === 'shallows' || n === 'creek';
 export const isTree = (n: TileName): boolean => n === 'pine' || n === 'deadtree';
@@ -171,6 +183,14 @@ export function groundTile(name: TileName, c: TileCtx): Px | null {
     case 'rot':
     case 'hole':
       return patchGround(name, c, r);
+    case 'mallfloor':
+    case 'mallband':
+    case 'servicefloor':
+      return mallGround(name, c);
+    case 'basefloor':
+    case 'basegrate':
+    case 'keyfloor':
+      return baseGround(name, c);
     default:
       return null;
   }

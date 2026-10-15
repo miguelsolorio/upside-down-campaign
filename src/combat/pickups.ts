@@ -1,5 +1,6 @@
-// Eggos, Cokes and quarters. Items within the magnet radius drift to the active hero and are collected on contact.
-import type { Item, S } from './state.ts';
+// Eggos, Cokes and quarters. Items within the magnet radius drift to the active hero and are collected on contact. Erica's stash
+// (docs/level-7.md) is spent here too: an Eggo when the active hero is low, a Coke when a special is pressed short of MP.
+import type { Hero, Item, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { addFx, floater, sfx } from './fx.ts';
 import { dist } from './space.ts';
@@ -7,6 +8,9 @@ import { dist } from './space.ts';
 export const MAGNET_RADIUS = 18;
 export const EGGO_HEAL = 0.4;
 export const COKE_MP = 0.5;
+/** Share of max HP below which the stash feeds the active hero an Eggo, and the least frames between two of them. */
+export const STASH_EGGO_BELOW = 0.25;
+export const STASH_EGGO_GAP = 120;
 const GRAB = 5;
 const DRIFT = 1.7;
 
@@ -56,4 +60,37 @@ export function updateItems(s: S): void {
     }
   }
   if (taken) s.items = s.items.filter((it) => it.t >= 0);
+}
+
+/** One stash item gone: the floater, the heal fx, the sound, the event and one less in the stash. */
+function spendStash(s: S, h: Hero, item: 'eggo' | 'coke', gain: number): void {
+  const eggo = item === 'eggo';
+  floater(s, eggo ? 'EGGO' : 'COKE', h.x, h.y - 26, eggo ? 'leaf' : 'cyan', false, 36);
+  if (Math.round(gain) > 0) floater(s, `+${Math.round(gain)}`, h.x, h.y - 18, eggo ? 'leaf' : 'cyan');
+  addFx(s, 'heal', h.x, h.y - 6, h.dir, 0, 24, 14, 14);
+  sfx(s, 'stash');
+  s.stash[item]--;
+  s.events.push({ t: 'stashUsed', item });
+}
+
+/** The active hero stands and is under a quarter of their HP: an Eggo from the stash heals them, at most once every 120 frames. */
+export function updateStash(s: S): void {
+  const h = activeHero(s);
+  if (s.over || h.ko || s.stash.eggo <= 0 || h.hp >= h.st.hp * STASH_EGGO_BELOW || s.frame - s.eggoAt < STASH_EGGO_GAP) return;
+  const gain = Math.min(h.st.hp - h.hp, Math.round(h.st.hp * EGGO_HEAL));
+  h.hp += gain;
+  s.eggoAt = s.frame;
+  spendStash(s, h, 'eggo', gain);
+}
+
+/**
+ * Special was pressed short of MP. If the stash has a Coke the hero drinks it, for the same MP a picked-up one gives. Returns
+ * true when one was drunk, and the caller checks again whether the special can now be paid for.
+ */
+export function drinkCoke(s: S, h: Hero): boolean {
+  if (s.stash.coke <= 0 || h.ko) return false;
+  const gain = Math.min(h.st.mp - h.mp, Math.round(h.st.mp * COKE_MP));
+  h.mp += gain;
+  spendStash(s, h, 'coke', gain);
+  return true;
 }

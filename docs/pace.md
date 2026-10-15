@@ -1,6 +1,6 @@
 # Pace
 
-How fast the party levels over a real run, measured over the six stages built so far (1.1 to 2.3). The target is in `docs/game-design.md`, "Leveling rules": Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4. `tests/pace.test.ts` holds the run to it.
+How fast the party levels over a real run, measured over the stages built so far (1.1 to 3.2). The target is in `docs/game-design.md`, "Leveling rules": Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4. `tests/pace.test.ts` holds the run to it.
 
 ## What the target means
 
@@ -17,7 +17,7 @@ The test checks two players:
 node scripts/measure-campaign.ts chief 20
 ```
 
-`scripts/measure-campaign.ts` plays 1.1 to 2.3 with the bot and carries the party between stages the way the game does: `partyFor` builds each party, the map's picks panel is confirmed as it opens, and `recordClear` keeps every hero at their best. Inside a stage it does what a person does: it lights each string of lights it passes (half heal, new save point) and, after a wipe, retries from the last lights with levels, XP and kills kept. It prints each hero's level and XP after every stage, what a real run walks into each stage with next to the `?stage=` seeds, and new seeds for `ARRIVAL` in `core/campaign.ts`. `--rotate=20` shares the lead, `--careless` uses the bot that never dodges, `--picks=mike,dustin,max,steve` sets the party for 2.2 and 2.3.
+`scripts/measure-campaign.ts` plays 1.1 to 3.2 with the bot and carries the party between stages the way the game does: `partyFor` builds each party, the map's picks panel is confirmed as it opens, and `recordClear` keeps every hero at their best. Inside a stage it does what a person does: it lights each string of lights it passes (half heal, new save point) and, after a wipe, retries from the last lights with levels, XP and kills kept. It prints each hero's level and XP after every stage, what a real run walks into each stage with next to the `?stage=` seeds, and new seeds for `ARRIVAL` in `core/campaign.ts`. `--rotate=20` shares the lead, `--careless` uses the bot that never dodges, `--picks=mike,dustin,max,steve` sets the party for 2.2 and 2.3.
 
 The run itself is `scripts/campaign-run.ts`, which the test imports.
 
@@ -80,9 +80,18 @@ Every stage was measured again at these seeds (each stage doc's "After the pace 
 
 ## Gaps
 
-- **2.1 on upside** clears 18 of 100, under the floor of 4 of 20. The party reaches it a level lower than the stage was tuned for. A lower factor fixes upside but makes chief a walk: at 1.05 the party never drops under 56 percent. Chief is in every band.
-- **2.3 on chief** clears 98 of 100 (97 before), at the top of the 15 to 19 of 20 band. A higher factor drops upside under its floor (11 of 100 at 1.05).
-- **Recruits start low.** Will joins 2.1 at Lv 2, and Max and Steve join 2.2 at Lv 3: the recruit rule, the average minus one, of a party that is now a level lower. With the default picks Lucas and Will sit out 2.2 and 2.3, so they end chapter 2 at Lv 4 and 3.
+- **Closed in the balance pass** (`TODO.md`, "Balance pass"). 2.1 on upside clears 35 of 100 (it was 18, under the floor of 4 of 20), and 2.3 on chief clears 89 of 100 (it was 98, at the top of the band). The Lab's careless bot at 78 of 100 is not a stall: the losses are the Warden, and the party arrives a level lower. None of it moves the carried run: the medians are still within 25 XP of `ARRIVAL`, where the test allows 40.
+- **A bot that dodges demodogs would move the run.** The careful bot never dodges a lunge (it only backs off vines and pods), so in 2.1 and 2.2 it clears about as often as the careless one. A bot that does keeps Mike healthier, he swaps out less, and the XP split between Mike and Dustin moves 48 to 100 XP against `ARRIVAL` at every stage factor tried. It needs `ARRIVAL` regenerated, so it waits for a decision (`TODO.md`).
+- **Recruits start low.** Will joins 2.1 at Lv 2, and Max and Steve join 2.2 at Lv 3: the recruit rule, the average minus one, of a party that is now a level lower. With the default picks Lucas and Will sit out 2.2 and 2.3, so they end chapter 2 at Lv 4 and 3. Dropping the minus one puts them at 3 and 4 and ends the chapter with the party average at 5.3, not 4.85, the lead unmoved (`TODO.md`, for the owner to decide, since it moves `ARRIVAL` and chapter 3).
 - **The bot opens gates by flag,** so it never swaps for a puzzle. A person has to, so even one who keeps the lead spreads more XP than the bot does. The bot's lead is the most XP a hero can have at each point.
 - **MADMAX's prize** (25 XP for beating her at Dig Dug in 2.1) is not in the run, since the bot doesn't play the cabinets. It is a tenth of a level at that point.
 - Nobody has played a carried run by hand.
+
+## Chapter 3 (Levels 7 and 8)
+
+The run now carries on through 3.1 and 3.2 (`docs/level-7.md`, `docs/level-8.md`). Their stage XP is the spec's, 207 and 236, with no `xpMult`.
+
+- **Newcomers walk in.** Nobody is locked in 3.1, so the picks panel used to open on chapter 2's party and the run played 3.1 with Mike, Dustin, Max and Steve. Now a hero who joins at a stage and hasn't been met yet takes one of the last picks that aren't the lead (`JOINS` in `core/campaign.ts`): the run plays 3.1 and 3.2 with Mike, Dustin, Robin and Nancy.
+- **Arrival:** 3.1 is Mike 6, Dustin 5, Robin 3, Nancy 3. 3.2 is Mike 7, Dustin 6, Robin 3, Nancy 3.
+- **Pace:** the lead ends 3.2 at Lv 7, the party at 5.3 on average. The target is Lv 8 after chapter 3, so 3.3 has a level to give.
+

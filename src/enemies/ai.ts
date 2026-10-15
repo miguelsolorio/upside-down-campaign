@@ -1,16 +1,22 @@
 // Enemy AI driver: shared per-tick upkeep (cooldowns, knockback, stagger, stun, the candy lure), then the
-// kind-specific brain (the Demogorgon's and the Alpha's skip the stagger, the stun and the lure), then a soft push so enemies do not stack on one pixel.
+// kind-specific brain (the bosses skip the stun and the lure: the Demogorgon and the Alpha the stagger too), then a soft push so enemies do not stack on one pixel.
+// Holds (hold.ts) are checked first every tick, because a confused, stunned or staggered holder never reaches its own brain.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
 import { dist, moveBody } from '../combat/space.ts';
 import { speedMul } from '../combat/status.ts';
+import { confusedUpdate } from '../combat/confuse.ts';
 import { ratUpdate } from './rat.ts';
 import { agentUpdate } from './agent.ts';
 import { guardUpdate } from './guard.ts';
 import { demogorgonUpdate, updateGlobs } from './demogorgon.ts';
 import { demodogUpdate } from './demodog.ts';
 import { alphaUpdate } from './alpha.ts';
+import { flayedUpdate } from './flayed.ts';
+import { soldierUpdate } from './soldier.ts';
+import { grigoriUpdate } from './grigori.ts';
+import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
@@ -34,15 +40,19 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   if (s.over || hero.ko) { setEnemyAnim(e, 'idle'); return; }
 
-  // The bosses ignore the candy bar, and nothing staggers them. They run their own moves.
+  // A confused enemy (Robin's Word vomit) runs the shared brain in combat/confuse.ts, whatever its kind.
+  if (e.stat.confuse > 0) { confusedUpdate(s, e); return; }
+  // The bosses ignore the candy bar, and no hit staggers them. They run their own moves.
   if (e.demo) { demogorgonUpdate(s, e, hero); return; }
   if (e.alpha) { alphaUpdate(s, e, hero); return; }
+  if (e.grigori) { grigoriUpdate(s, e, hero); return; }
   // The vine and the pod are rooted: no lure moves them.
   if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
   if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }
 
   const def = ENEMY_DEFS[e.kind];
-  const lure = s.lure;
+  // A Flayed coming up out of the goo or holding the hero is not drawn off by the candy.
+  const lure = e.flayed !== null && (e.flayed.move === 'rise' || e.flayed.move === 'hold') ? null : s.lure;
   if (e.mode === 'lured') {
     if (!lure || e.noLure > 0) e.mode = e.aware ? 'chase' : e.patrol.length > 0 ? 'patrol' : 'idle';
   } else if (lure && e.noLure <= 0 && e.mode !== 'windup' && e.mode !== 'lunge' && dist(e.x, e.y, lure.x, lure.y) <= lure.pull) {
@@ -53,7 +63,10 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
     setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
     return;
   }
-  if (e.kind === 'rat') ratUpdate(s, e, hero);
+  // The melting rat swarms like the rat (docs/level-7.md). Grigori is above, with the other bosses.
+  if (e.kind === 'rat' || e.kind === 'melter') ratUpdate(s, e, hero);
+  else if (e.flayed) flayedUpdate(s, e, hero);
+  else if (e.soldier) soldierUpdate(s, e, hero);
   else if (e.kind === 'guard' || e.kind === 'warden') guardUpdate(s, e, hero);
   else if (e.kind === 'demodog') { demodogUpdate(s, e, hero); unhide(e); }
   else agentUpdate(s, e, hero);
@@ -90,6 +103,7 @@ function separate(s: S): void {
 export function updateEnemies(s: S): void {
   const hero = activeHero(s);
   updateGlobs(s);
+  updateHolds(s);
   for (const e of s.enemies) {
     if (e.dead || e.dormant) continue;
     updateOne(s, e, hero);

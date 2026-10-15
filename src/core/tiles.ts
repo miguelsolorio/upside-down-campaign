@@ -22,7 +22,12 @@ export type TileName =
   // The tunnels under Hawkins (stage 2.2, night).
   | 'tunnelfloor' | 'tunnelcap' | 'tunnelwall' | 'roots' | 'veins' | 'nest' | 'ladder'
   // The Lab's overrun sublevel and the Gate (stage 2.3, night). The rest of 2.3 is lab tiles.
-  | 'fleshfloor' | 'fleshwall' | 'tear';
+  | 'fleshfloor' | 'fleshwall' | 'tear'
+  // Starcourt Mall (stage 3.1).
+  | 'mallfloor' | 'mallband' | 'mallcap' | 'mallwall' | 'mallglass' | 'shopfront' | 'shopshut' | 'planter' | 'fountain'
+  | 'railing' | 'scoops' | 'goo' | 'servicefloor' | 'lift'
+  // The Russian base under the mall (stage 3.2).
+  | 'basefloor' | 'basegrate' | 'basecap' | 'basewall' | 'ammo' | 'bunk' | 'cell' | 'machine' | 'keyfloor';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -124,6 +129,38 @@ export const TILES: Record<string, TileDef> = {
   '8': { name: 'fleshfloor', solid: false },
   '9': { name: 'fleshwall', solid: true },
   '!': { name: 'tear', solid: false, animated: true },
+  // Chapter 3. The printable ASCII is nearly used up, so these take the last free punctuation and then Latin-1 signs. Each is
+  // one UTF-16 unit, so row[x] still reads one tile.
+  // Stage 3.1: Starcourt Mall. Walls are a mallcap row over a mallwall row facing the floor below, like the Lab, with shop
+  // fronts (lit windows), shut shops (a rolled-down grille) and glass doors set in the wall row. The band is the floor's
+  // inlaid stripe. The fountain, planters, the upper balcony's railing and the Scoops Ahoy counter are walked around.
+  // Goo is the Flayed's mess, walked over. The service floor is bare concrete behind the shops. The lift is the freight lift
+  // down to the base, walked onto.
+  '¢': { name: 'mallfloor', solid: false },
+  '"': { name: 'mallband', solid: false },
+  '(': { name: 'mallcap', solid: true },
+  ')': { name: 'mallwall', solid: true },
+  '?': { name: 'mallglass', solid: true },
+  '{': { name: 'shopfront', solid: true },
+  '}': { name: 'shopshut', solid: true },
+  'y': { name: 'planter', solid: true },
+  '>': { name: 'fountain', solid: true, animated: true },
+  '`': { name: 'railing', solid: true },
+  '£': { name: 'scoops', solid: true },
+  '¨': { name: 'goo', solid: false, animated: true },
+  '÷': { name: 'servicefloor', solid: false },
+  'Þ': { name: 'lift', solid: false },
+  // Stage 3.2: the Russian base. Walls are a basecap row over a basewall row. Grating is walked over. Ammo crates, bunks,
+  // cells and the Key's machine are solid; the crates are cover from rifle fire. The key floor is the chamber's ringed floor.
+  '·': { name: 'basefloor', solid: false },
+  '°': { name: 'basegrate', solid: false },
+  '¯': { name: 'basecap', solid: true },
+  '¦': { name: 'basewall', solid: true },
+  '±': { name: 'ammo', solid: true },
+  '§': { name: 'bunk', solid: true },
+  '×': { name: 'cell', solid: true },
+  '¤': { name: 'machine', solid: true, animated: true },
+  'º': { name: 'keyfloor', solid: false },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

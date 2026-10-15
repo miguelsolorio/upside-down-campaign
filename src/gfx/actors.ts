@@ -1,12 +1,18 @@
 // Actor sprites: one atlas canvas per character (13 frames by 4 directions), plus flash and tint variants.
-// Overlays (shadow, nosebleed, "!" and HP bar) are drawn with plain rects around the sprite. A cell is 16 by 16, or
-// 24 by 24 for the warden. A guard with its shield down and an elite enemy each have an atlas of their own. The
-// Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts, actor_dog.ts, actor_alpha.ts, actor_plant.ts).
+// Overlays (shadow, nosebleed, "!", the swirl of a confused enemy and HP bar) are drawn with plain rects around the sprite. A cell is
+// 16 by 16, or 24 by 24 for the warden and Grigori. A guard with its shield down and an elite enemy each have an atlas of their own.
+// Which frame of the atlas a view asks for is actor_pick.ts. A dormant Flayed is a puddle and a rising one comes up out of it
+// (actor_goo.ts). The Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts,
+// actor_dog.ts, actor_alpha.ts, actor_plant.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
 import { ANIM_ORDER, CELL, POSES, bodyShift, composeFrame, composeRat } from './actor_pose.ts';
 import { composeGuard, composeWarden, FOE_CELL } from './actor_foes.ts';
+import { composeGrigori } from './actor_grigori.ts';
+import { composeMelter, MELTER_PAL } from './actor_melter.ts';
+import { slotOf } from './actor_pick.ts';
+import { PUDDLE_H, PUDDLE_W, RISE_FRAMES, puddlePx, puddleStep, swirl } from './actor_goo.ts';
 import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
 import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
 import { ALPHA_H, ALPHA_W, alphaFrame } from './actor_alpha.ts';
@@ -17,6 +23,12 @@ import { ADULTS } from './data/adultchars.ts';
 import { MAX } from './data/max.ts';
 import { STEVE } from './data/steve.ts';
 import { HOPPER } from './data/hopper.ts';
+import { ROBIN } from './data/robin.ts';
+import { NANCY } from './data/nancy.ts';
+import { ERICA } from './data/erica.ts';
+import { SOLDIER } from './data/soldier.ts';
+import { FLAYED } from './data/flayed.ts';
+import { GRIGORI_CELL, GRIGORI_PAL } from './data/grigori.ts';
 import { AGENT, RAT_PAL } from './data/foes.ts';
 import { PALS, TRIM } from './data/guard.ts';
 import { canvasFromPixels, mirrorRoles, px32, rect } from './canvas.ts';
@@ -28,24 +40,9 @@ const FRAME_BASE = {} as Record<AnimId, number>;
 let FRAME_COUNT = 0;
 for (const a of ANIM_ORDER) { FRAME_BASE[a] = FRAME_COUNT; FRAME_COUNT += POSES[a].length; }
 
-/**
- * Frames of the walk cycle hold for 7 ticks, idle breathes every 30, the attack and cast poses switch at 6 and 8. An npc who is
- * channeling (Eleven holding the Gate shut, anim cast and strained) holds the third cast frame, her arms thrown up.
- */
-function frameIndex(anim: AnimId, t: number, channeling = false): number {
-  if (channeling) return 2;
-  switch (anim) {
-    case 'idle': return ((t / 30) | 0) & 1;
-    case 'walk': return ((t / 7) | 0) & 3;
-    case 'attack': return t < 6 ? 0 : 1;
-    case 'cast': return t < 8 ? 0 : 1;
-    default: return 0;
-  }
-}
-
 interface Sheet {
   id: string;
-  /** Side of one square frame: 16, or 24 for the warden. */
+  /** Side of one square frame: 16, or 24 for the warden and Grigori. */
   cell: number;
   roles: Uint8Array[];
   /** First opaque row of each direction's standing and walking frames, for placing the bar and the "!". */
@@ -57,7 +54,7 @@ interface Sheet {
 }
 
 const specs = new Map<string, CharSpec>();
-for (const s of [...KIDS, ...ADULTS, MAX, STEVE, HOPPER, AGENT]) specs.set(s.id, s);
+for (const s of [...KIDS, ...ADULTS, MAX, STEVE, HOPPER, ROBIN, NANCY, ERICA, SOLDIER, FLAYED, AGENT]) specs.set(s.id, s);
 const sheets = new Map<string, Sheet>();
 
 /** The red band of an elite: the second row of the sprite, across the head. */
@@ -68,21 +65,25 @@ function eliteBand(buf: Uint8Array, C: number): void {
   for (let x = 0; x < C; x++) { const v = buf[(top + 1) * C + x] as number; if (v && v !== 107) buf[(top + 1) * C + x] = 82; }
 }
 
+/** The ids drawn by hand rather than from a paper doll: the rats, the guards, the warden and Grigori. */
+const NO_SPEC = new Set(['rat', 'melter', 'guard', 'warden', 'grigori']);
+
 /** key is the actor id, then ":low" for a guard with its shield down, then ":elite". */
 function buildSheet(key: string): Sheet {
   const [id, ...flags] = key.split(':') as [string, ...string[]];
   const elite = flags.includes('elite'), low = flags.includes('low');
   const foe = id === 'guard' || id === 'warden';
-  const C = foe ? (FOE_CELL[id] as number) : CELL;
-  const spec = specs.get(id) ?? (id === 'rat' || foe ? undefined : specs.get('mike'));
+  const C = foe ? (FOE_CELL[id] as number) : id === 'grigori' ? GRIGORI_CELL : CELL;
+  const spec = specs.get(id) ?? (NO_SPEC.has(id) ? undefined : specs.get('mike'));
   const roles: Uint8Array[] = [];
   for (const dir of DIRS) {
     const view = dir === 'down' ? 'down' : dir === 'up' ? 'up' : 'side';
     for (const anim of ANIM_ORDER) {
       for (let f = 0; f < POSES[anim].length; f++) {
         const buf = id === 'guard' ? composeGuard(view, anim, f, low) : id === 'warden' ? composeWarden(view, anim, f, low)
+          : id === 'grigori' ? composeGrigori(view, anim, f) : id === 'melter' ? composeMelter(view, anim, f)
           : spec ? composeFrame(spec, view, anim, f) : composeRat(view, anim, f);
-        if (elite && !foe && anim !== 'ko') eliteBand(buf, C);
+        if (elite && !foe && id !== 'grigori' && anim !== 'ko') eliteBand(buf, C);
         roles.push(dir === 'left' ? mirrorRoles(buf, C, C) : buf);
       }
     }
@@ -95,7 +96,8 @@ function buildSheet(key: string): Sheet {
     }
     return top;
   });
-  const pal: Record<string, ColorName> = id === 'guard' || id === 'warden' ? { ...PALS[id], ...TRIM[id][elite ? 'elite' : 'normal'] }
+  const pal: Record<string, ColorName> = foe ? { ...PALS[id], ...TRIM[id][elite ? 'elite' : 'normal'] }
+    : id === 'grigori' ? { ...GRIGORI_PAL } : id === 'melter' ? { ...MELTER_PAL, ...(elite ? { R: 'hot' as ColorName } : {}) }
     : spec ? { ...spec.pal, ...(elite ? { b: 'red', R: 'hot' } : {}) } : { ...RAT_PAL, ...(elite ? { R: 'red' } : {}) };
   return { id: key, cell: C, roles, tops, pal, tints: new Map() };
 }
@@ -270,8 +272,34 @@ function drawFramed(ctx: Ctx, v: ActorView, f: Frame, cw: number, ch: number, sh
     if (shadow !== 'none' && !v.hidden) drawShadow(ctx, cx, cy, z, shadow === 'huge' ? 2 : shadow === 'big' ? 1 : 0);
     ctx.drawImage(f.img, cx - (cw >> 1), oy);
     if (v.bar && !v.hidden) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
+    if (v.confused && v.kind === 'enemy' && !v.hidden) swirl(ctx, cx, head - (v.bar ? 8 : 3), v.t);
   }
   if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar ? 15 : 10) + ((v.t >> 2) & 1));
+}
+
+const puddles = new Map<number, HTMLCanvasElement>();
+function puddleCanvas(step: number): HTMLCanvasElement {
+  let c = puddles.get(step);
+  if (!c) { c = puddlePx(step).toCanvas(); puddles.set(step, c); }
+  return c;
+}
+
+/** A dormant Flayed: a puddle of goo where it will stand, breathing. It has no shadow, no bar and is never hit. */
+function drawPuddle(ctx: Ctx, v: ActorView): void {
+  if (v.blink) return;
+  ctx.drawImage(puddleCanvas(puddleStep(v.t)), Math.round(v.x) - (PUDDLE_W >> 1), Math.round(v.y) - PUDDLE_H + 2);
+}
+
+/** A Flayed rising out of its puddle: the head comes up first, a row at a time, and the front of the puddle stays over its feet. */
+function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
+  const C = sh.cell, cx = Math.round(v.x), cy = Math.round(v.y);
+  const p = Math.max(0, Math.min(1, v.t / RISE_FRAMES));
+  const shift = Math.round((1 - p) * (C - 2));
+  const pud = puddleCanvas(puddleStep(v.t));
+  const px = cx - (PUDDLE_W >> 1), py = cy - PUDDLE_H + 2;
+  ctx.drawImage(pud, px, py);
+  if (C - shift > 0) ctx.drawImage(atlasFor(sh, v), FRAME_BASE.idle * C, DIR_ROW[v.dir] * C, C, C - shift, cx - (C >> 1), cy - C + shift, C, C - shift);
+  ctx.drawImage(pud, 0, PUDDLE_H - 4, PUDDLE_W, 4, px, py + PUDDLE_H - 4, PUDDLE_W, 4);
 }
 
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
@@ -284,6 +312,7 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
     case 'pod': drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none'); return;
     default: break;
   }
+  if (v.puddle) { drawPuddle(ctx, v); return; }
   const sh = sheetOf(keyOf(v.id, v.guarding, v.elite, v.kind));
   const C = sh.cell;
   const cx = Math.round(v.x), cy = Math.round(v.y);
@@ -291,29 +320,34 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
   const ox = cx - (C >> 1), oy = cy - C - z;
   const row = DIR_ROW[v.dir];
   const head = oy + (sh.tops[row] as number);
+  if (v.pose === 'rise' && v.id === 'flayed') { if (!v.blink) drawRise(ctx, v, sh); return; }
+  const bar = v.bar && v.kind === 'enemy';
   if (!v.blink) {
     drawShadow(ctx, cx, cy, z, C > CELL);
-    const frame = frameIndex(v.anim, v.t, v.kind === 'npc' && v.strained && v.anim === 'cast');
-    ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[v.anim] + frame) * C, row * C, C, C, ox, oy, C, C);
+    const [anim, frame] = slotOf(v);
+    ctx.drawImage(atlasFor(sh, v), (FRAME_BASE[anim] + frame) * C, row * C, C, C, ox, oy, C, C);
     if (v.strained) drawNosebleed(ctx, v, ox, oy, frame);
     // A hero's bar is drawn later, on top of the whole scene, by drawHeroBar.
-    if (v.bar && v.kind === 'enemy') drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
+    if (bar) drawHpBar(ctx, cx, head - 5, (v.bar as { hp: number }).hp, (v.bar as { hpMax: number }).hpMax, v.elite === true);
+    if (v.confused && v.kind === 'enemy') swirl(ctx, cx, head - (bar ? 8 : 3), v.t);
   }
-  if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar && v.kind === 'enemy' ? 15 : 10) + ((v.t >> 2) & 1));
+  if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (bar ? 15 : 10) + ((v.t >> 2) & 1));
 }
 
 /** Builds every sheet and the main atlases up front. */
 export function warmActors(): void {
-  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'steve', 'hopper', 'agent', 'rat', 'guard', 'warden']) {
+  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'steve', 'hopper', 'robin', 'nancy', 'erica', 'agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori']) {
     const sh = sheetOf(id);
     sh.main = render(sh, 'main');
   }
   shadowSprite(0, 0); shadowSprite(0, 1); shadowSprite(0, 0, true); shadowSprite(0, 1, true); shadowSprite(0, 0, 2); shadowSprite(0, 1, 2); alertSprite();
 }
 
+const ENEMY_IDS = new Set(['agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori']);
+
 /** For the sheet scene: draws one raw frame at x, y (top-left). A guard or warden can have its shield down, and any enemy can be an elite. */
 export function drawActorFrame(ctx: Ctx, id: string, dir: Dir, anim: AnimId, frame: number, x: number, y: number, opts: { guarding?: boolean; elite?: boolean } = {}): void {
-  const sh = sheetOf(keyOf(id, opts.guarding, opts.elite, id === 'agent' || id === 'rat' || id === 'guard' || id === 'warden' ? 'enemy' : 'hero'));
+  const sh = sheetOf(keyOf(id, opts.guarding, opts.elite, ENEMY_IDS.has(id) ? 'enemy' : 'hero'));
   const C = sh.cell;
   ctx.drawImage(sh.main ?? (sh.main = render(sh, 'main')), (FRAME_BASE[anim] + frame) * C, DIR_ROW[dir] * C, C, C, x, y, C, C);
 }

@@ -23,7 +23,7 @@ test('alpha: the contract numbers, and the stage factor scales its HP like anyon
   assert.deepEqual([AX.reach, AX.kb, AX.lungeWindup, AX.lungeT, AX.lungeSpeed, AX.lungePower, AX.lungeMin, AX.lungeMax], [28, 4, 30, 18, 4.6, 1.1, 50, 120]);
   assert.deepEqual([AX.crouch, AX.air, AX.shock, AX.pouncePower, AX.pounceKb, AX.stunT, AX.stunMul], [30, 40, 36, 1.2, 5, 40, 1.5]);
   assert.deepEqual([AX.howl1, AX.howl2, AX.howl3, AX.howlT, AX.howlMul, AX.pack], [0.75, 0.5, 0.25, 50, 2, 3]);
-  assert.deepEqual([ALPHA.hp, ALPHA.atk], [700, 16]);
+  assert.deepEqual([ALPHA.hp, ALPHA.atk], [560, 16]);
   assert.equal(alphaRig().boss.hpMax, Math.round(ALPHA.hp * 1.15));
 });
 

@@ -63,3 +63,7 @@ Items: 4 Eggos, 2 Cokes, 12 quarters. Props: `lights_yard` and `lights_shed` (li
 - Actors: mike, dustin, lucas, eleven, will, joyce, agent, rat. Anims: idle, walk, attack, cast, dash, hurt, ko.
 - Props, items, icons, portraits (six characters, six expressions), every `FxKind`, the night tile art and light pools, panels, the logo, the alphabet wall.
 - Character signatures are in `docs/game-design.md`, "Voice and look".
+
+## After the balance pass
+
+Measured again with `node scripts/measure-stage.ts 1.1` at 20 and 100 seeds, nothing moved: chief 20 of 20 and 100 of 100 (damage 43, no KOs, lowest party HP 89%, 74 s), the careless bot 20 and 100, kid 20 and 100, upside 20 and 100. None stuck.

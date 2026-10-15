@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { HeroId } from '../src/core/types.ts';
 import { PARTY_SIZE, pickParty, poolFor, requiredFor } from '../src/core/campaign.ts';
 import {
-  COLS, createPicks, heroAt, legend, makeLead, moveTo, onStart, ready, result, rowOf, rowsOf, step, toggle,
+  COLS, blockedBy, createPicks, heroAt, legend, makeLead, moveTo, onStart, ready, result, rowOf, rowsOf, step, toggle,
 } from '../src/ui/picks_logic.ts';
 import type { PicksState } from '../src/ui/picks_logic.ts';
 import { cardRect, cellRect, markRect, picksLayout } from '../src/ui/picks_logic.ts';
@@ -194,11 +194,14 @@ test('nine heroes: the pool is the whole chapter, in order, with Robin locked in
   assert.equal(rowsOf(s).length, 9);
 });
 
-test('Eleven opens PUSH, Robin READ and Nancy SHOOT, beside the gate words the others had', () => {
+test('Eleven opens PUSH, Robin READ and Nancy SHOOT, and BURN too from her Lv 6 Molotov', () => {
   const s = open9();
   assert.equal(rowOf(s, at9(s, 'eleven')).gate, 'PUSH');
   assert.equal(rowOf(s, at9(s, 'robin')).gate, 'READ');
-  assert.equal(rowOf(s, at9(s, 'nancy')).gate, 'SHOOT');
+  assert.equal(s.pool[at9(s, 'nancy')]?.level, 6);
+  assert.equal(rowOf(s, at9(s, 'nancy')).gate, 'SHOOT BURN');
+  const five = createPicks(poolFor('3.2', NINE.map((id) => ({ id, level: 5 }))), requiredFor('3.2'), ['mike', 'dustin', 'robin', 'nancy']);
+  assert.equal(rowOf(five, at9(five, 'nancy')).gate, 'SHOOT');
   assert.equal(rowOf(s, at9(s, 'lucas')).gate, 'SHOOT');
   assert.equal(rowOf(s, at9(s, 'mike')).gate, '');
   assert.deepEqual(rowOf(s, at9(s, 'robin')), { id: 'robin', name: 'Robin', level: rowOf(s, at9(s, 'robin')).level, gate: 'READ', slot: 3, locked: true });
@@ -314,5 +317,33 @@ test('the legend and START share a line without meeting, for every device', () =
     const text = legend(dev, 'Z', 'X').join('  ');
     const left = l.panel.x + l.panel.w - 8 - tinyWidth(text);
     assert.ok(left >= l.start.x + l.start.w + 8, `${dev}: the legend starts at ${left}`);
+  }
+});
+
+// A pick the rules refuse used to change nothing on screen. The panel flashes the cards in the way, and blockedBy names them.
+test('a fifth hero is blocked by the whole party, and a locked hero by their own card', () => {
+  const s = open(['mike', 'dustin', 'lucas', 'max']);
+  const party = ['mike', 'dustin', 'lucas', 'max'].map((id) => at(s, id as HeroId));
+  assert.deepEqual(blockedBy(s, at(s, 'will')), party, 'will has no slot: the four picked cards');
+  assert.deepEqual(blockedBy(s, at(s, 'steve')), party);
+  assert.deepEqual(blockedBy(s, at(s, 'max')), [at(s, 'max')], 'max is locked in: his own card');
+  assert.deepEqual(blockedBy(cursorOn(s, 'will')), party, 'the cursor card is the default');
+});
+
+test('nothing blocks a pick the rules allow, or the START row', () => {
+  const s = open(['mike', 'dustin', 'max']);
+  assert.deepEqual(blockedBy(s, at(s, 'will')), [], 'a free slot');
+  assert.deepEqual(blockedBy(s, at(s, 'dustin')), [], 'an unlocked hero can come out');
+  assert.deepEqual(blockedBy(s, s.pool.length), [], 'START is not a hero');
+  assert.deepEqual(blockedBy(open(), 99), [], 'off the list');
+});
+
+test('blockedBy names cards exactly when toggle refuses, over every state of the picks', () => {
+  const seeds: HeroId[][] = [[], ['max'], ['mike', 'max'], ['mike', 'dustin', 'max'], ['mike', 'dustin', 'lucas', 'max'], ['max', 'steve', 'will', 'lucas']];
+  for (const seed of seeds) {
+    const s = open(seed);
+    for (let i = 0; i < s.pool.length; i++) {
+      assert.equal(blockedBy(s, i).length > 0, toggle(s, i) === s, `seed ${seed.join()}, card ${i}`);
+    }
   }
 });

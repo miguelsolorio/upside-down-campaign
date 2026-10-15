@@ -229,3 +229,24 @@ Chief cleared 98 of 100, at the top of its band, and lowering the factor wrecked
 - The careless bot clears 87 of 100, two clears under the careful one, which is noise at this sample (268 and 262 of 300).
 - The other bands are as before: damage taken about 400 and the boss share about 68 percent are over, for the same reasons.
 - `tests/alpha.test.ts` pins 560, `tests/alpha-bot.test.ts` asks for an average Alpha fight of at least 12 s (it was 15), and the retry scene test uses seed 15, a run on which Eleven falls.
+
+## After the Lv 6 talents
+
+Mike is Lv 6 here, so his DM screen is also Rally (+20% party ATK for 10 s), and the bot puts it up outside the defense (`combat/bot_talents.ts`). The party takes less damage (353 against 404) and Eleven falls more: in 23 of 100 careful runs at 95 HP, where it was 10. Seeds 1 to 20 cleared 14 where the whole-run test wants 15, and upside 2 of 20 where its floor is 4. A probe found no difference before the defense, and with Mike's special switched off the falls only drop to 18, so the screen is not the whole story. The stage sits at the edge of its fall limit, where small shifts in who dies when swing the count. Two levers, measured over 100 seeds:
+
+- **The factor stays at 1.** Under 1 clears more but takes the KOs out of their band. At 0.97 chief clears 89 to 92 and upside 27 to 39, but the KOs fall from 0.55 to 0.28 and the lowest party HP rises to 44%. At 0.95 the KOs are 0.26.
+- **Eleven has 110 HP**, not 95. It brings the falls back to where they were. From 95 to 120 HP in steps of 5 the falls per 100 are 23, 18, 13, 12, 10 and 7. Above 112 seed 15 stops being a fall, and the retry scene test (`tests/stage23-scene.test.ts`) needs a fall there.
+
+| | Before the talents (95 HP) | Talents, 95 HP | Talents, 110 HP |
+|---|---|---|---|
+| Chief, 20 seeds: cleared, Eleven fell | 19, 1 | 14, 5 | 17, 2 |
+| Chief, 100 seeds: cleared, Eleven fell | 89, 10 | 76, 23 | 87, 12 |
+| Careless, chief, 100 seeds: cleared | 87 | 89 | 93 |
+| Upside, 100 seeds: cleared (of the first 20) | 24 (7) | 22 (2) | 27 (4) |
+| Chief damage taken, KOs, lowest party HP | 404, 0.57, 41% | 353, 0.51, 41% | 361, 0.55, 40% |
+| Chief time, boss time | 112 s, 76 s | 107 s, 74 s | 109 s, 75 s |
+
+- **Over 300 seeds** at 110 HP chief clears 265 (Eleven falls in 34), careless 286 and upside 93, with 0.47 KOs and 41% lowest HP. The KOs are under the band's 0.5 over 300 seeds, and over 0.5 over the first 100.
+- **Upside sits on its floor**: 4 of 20 and 27 of 100. No Eleven HP raises the first 20 above 4, and the factor that would costs the KOs.
+- **Kid** clears 20 of 20. **NORMAL** clears 96 of 100 (18 of the first 20, and 93 of 100 at 95 HP), so the 19 of 20 that `docs/difficulty.md` asks of it holds over 100 seeds and misses by one on the first 20.
+- The other bands are as before: damage taken about 360 and the boss share about 69 percent are over, for the reasons under "Result".

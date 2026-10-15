@@ -84,6 +84,7 @@ Max is a Monk, in `heroes/max.ts`, and `HERO_DEFS.max` replaces the stand-in. Nu
   - It stops early at a solid tile or a solid prop, except a `gap`, which it passes over.
   - If the roll would end over a gap it carries on until her collision box is clear of it, at most 16 px more. If the far side is blocked she stops on the near side, never inside the gap.
 - **High score** (Lv 3 talent): +10 percent quarter drops and +5 percent crit.
+- **Kickflip** (Lv 6 talent, moved up from Lv 9 since the Walkman became a 4.2 story item): wherever the roll ends, cut short or not, a shockwave hits every foe within 24 px of her for power 0.7 with knockback 2.5, as a `nova` fx 48 px across. Her Lv 9 is open.
 - **Utility:** `dash`. **Crit signature:** `trail`.
 - **Bot style:** melee, hold about 18, reach about 30.
 
@@ -96,6 +97,7 @@ Steve is a Fighter, in `heroes/steve.ts`, and `HERO_DEFS.steve` replaces the sta
   - Every enemy inside it turns on Steve for 3 s. In a defense that pulls them off the ward too (`docs/level-6.md`).
   - For 5 s he takes 40 percent less damage and the whole party's DEF is up 15 percent.
 - **Hair of steel** (Lv 3 talent): the first hit after 5 s without taking damage does nothing, with a SAVED floater.
+- **Ahoy** (Lv 6 talent, `heroes/ahoy.ts`): a charged swap to him (the one with the shockwave, a forced one after a KO too) leaps him at the nearest foe he can see within 80 px. He flies 14 frames along an arc 16 px high, lands 8 px short of it, and the landing hits everything within 16 px for power 1.2 and stuns it 30 frames (a boss takes the hit, not the stun), with a `nova`, dust and an AHOY floater. No foe in reach, no leap. A quick swap never leaps.
 - **Utility:** `smash`. **Crit signature:** a wide `slash`.
 - **Bot style:** melee, hold about 20, reach about 34. It casts Babysit when two or more enemies are close.
 

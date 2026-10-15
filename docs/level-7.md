@@ -91,6 +91,7 @@ Robin is a Rogue, in `heroes/robin.ts`, and `HERO_DEFS.robin` replaces the stand
   - A boss (Grigori, any spawn in group `boss`) isn't confused. It staggers for 30 frames instead.
   - Hurting a confused enemy doesn't wake it up.
 - **Linguist** (Lv 3 talent): confusion lasts 240 frames. Reading cipher doors is her `read` utility, not the talent.
+- **Triple scoop** (Lv 6 talent): each toss throws two more scoops, 10 degrees either side of where the first went and as far, at 60 percent of its power. Each splashes and slows as the first does.
 - **Utility:** `read`. **Crit signature:** a wide `babble`.
 - **Bot style:** a mid-range hero (hold about 64, reach about 90). It casts Word vomit when three or more enemies are within 56 px.
 
@@ -103,7 +104,9 @@ Nancy is a Gunslinger, in `heroes/nancy.ts`, and `HERO_DEFS.nancy` replaces the 
 - **Trap kit** (Lv 3 talent): the design's version drops a trap on a dash, and the game has no dash. Instead, each Shotgun also drops a bear trap at her feet.
   - It lasts 600 frames, at most two at once, drawn as a `trap` fx.
   - The first non-boss enemy to step on it is held for 120 frames (it can't move or attack) and takes power 0.8.
-- **Utility:** `shoot`. The design also gives her `burn`, from the Lv 6 Molotov. No hero has Lv 6 talents yet, so it waits for them.
+- **Molotov** (Lv 6 talent, `heroes/molotov.ts`): holding Special for 24 frames (`heroes/hold.ts`) lobs a bottle for 8 MP, 22 frames to a spot up to 64 px out, aim-assisted like the scoop. It leaves a pool of fire 24 px round for 240 frames that hits each foe in it every 20 frames for power 0.25 and sets it burning (120 frames, each tick 0.22 of her ATK), and burns away any vines it reaches. A tap still fires the Shotgun.
+- **Utility:** `shoot`, and `burn` from Lv 6 (`utilitiesAt`), so her picks card says SHOOT BURN from then.
+- **Bot:** from Lv 6 it holds Special for the Molotov when two foes stand within 24 px of each other, 30 to 64 px out.
 - **Crit signature:** a long `bullet` streak.
 - **Bot style:** a ranged hero (hold about 90, reach about 150). It casts Shotgun when an enemy is within 40 px.
 
@@ -197,6 +200,8 @@ The owner picks the look before Art builds. Art makes three standalone pages at 
 
 ## Result
 
+The difficulty pass moved the factor from 1.4 to 1.15, and NORMAL came in as the default. Its numbers are under "The difficulty pass" at the end of this section. The table here is the 1.4 tuning.
+
 Measured with `node scripts/measure-stage.ts 3.1` at `enemyMult` 1.4, with the party a real run brings (Mike 6, Dustin 5, Robin 3, Nancy 3). "Boss" in the script's output is the ambush.
 
 | | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside |
@@ -217,3 +222,41 @@ Stage XP is 207.
 - **Robin and Nancy walk in.** Nobody is locked in 3.1, so the picks panel opened on chapter 2's party and they only played if the player swapped them in. Now they take the last two picks on the first visit. The campaign run (`docs/pace.md`) brings them in at Lv 3 with a Lv 6 Mike and a Lv 5 Dustin, a weaker party than the first guess (Mike 6, Eleven 5, Robin 4, Nancy 4). That moved the factor from 1.75 to 1.4.
 - **The roster is smaller than the spec's,** to keep the XP inside 170 to 210: 21 melting rats, seven Flayed and two soldiers.
 - **The ambush is about a quarter of the run,** like the other ambush stages.
+
+### The difficulty pass
+
+The owner played Starcourt and found it a little tough. HARD is `chief`, the balance every band in these docs is measured at. NORMAL is `normal`, enemy HP and damage at 0.85, and the default. The mall hit harder than the chapter 1 and 2 curve on HARD, so its factor went from 1.4 to 1.15.
+
+Measured with `node scripts/measure-stage.ts 3.1 chief 100 [--careless]` (`--mult=1.4` for before) and `normal` for NORMAL:
+
+| 100 seeds | HARD before (1.4) | HARD after (1.15) | NORMAL after | Careless, HARD before | Careless, HARD after | Careless, NORMAL after |
+|---|---|---|---|---|---|---|
+| Cleared | 85 | 96, none stuck | 100 | 87 | 94 | 100 |
+| Damage taken | 241 | 260 | 78 | 246 | 221 | 140 |
+| KOs | 1.82 | 1.51 | 0.16 | 1.43 | 1.60 | 0.58 |
+| Lowest party HP | 38% | 41% | 81% | 34% | 43% | 65% |
+| Time | 91 s | 84 s | 81 s | 93 s | 94 s | 89 s |
+
+Over 20 seeds at 1.15: HARD 19 of 20 (259 damage, 1.6 KOs, 40% lowest, 83 s), careless 18, kid 20, upside 16, NORMAL 20 for 77 damage.
+
+- **Against the curve.** Chapters 1 and 2 on HARD clear 19 or 20 of 20 with the careful bot, for 0.5 to 1.15 KOs and 36 to 44% lowest HP. The mall's damage and lowest HP were in line, but it cleared 16 of 20 (85 of 100) with 1.75 KOs, the most of any stage. At 1.15 it clears 96 of 100 with 41% lowest HP.
+- **The Flayed's grab is a cliff.** About 70% of the damage and nearly every KO is a Flayed's grab, about 36 damage at 1.1 and 44 at 1.4. Under an effective factor of about 1.05 (difficulty times `enemyMult`), the party kills a Flayed (140 HP before the factors) before it grabs: 1.7 grabs a run at 1.0 and 4.9 at 1.1. So the stage has two settings with little between them. Under the cliff it is a walk (85 damage, 80% lowest HP at 1.0 on HARD). Over it the damage stays near 240 from 1.1 to 1.4, and only the KOs and the wipes climb.
+- **Why 1.15.** It is the smallest cut that brings the clears and lowest HP back in line, and it keeps HARD over the cliff with some margin (a party a level up could tip 1.1 under it). 1.2 cleared 90 of 100 with 36% lowest. The KOs (1.51) stay over chapter 2's, since that is the grab.
+- **NORMAL plays the mall as a walk.** At 1.15 times 0.85, about 0.98, NORMAL sits under the cliff. NORMAL with the factor left at 1.4 (about 1.19) would have changed almost nothing: 93 of 100 and 258 damage. Smoothing the cliff (the grab's damage, or the Flayed's HP against a combo) is a call for the Flayed's numbers in `enemies/defs.ts`, not made here.
+- **The time band slips.** The foes fall sooner, so clears run 78 s and up and 84 s on average, under the 90 to 150 s band (91 s at 1.4). `tests/stage31-sim.test.ts` floors a clear at 75 s, not 80.
+
+### After the Lv 6 talents
+
+Mike is Lv 6 here, so the bot's DM screen is also Rally. The factor stays at 1.15 and every band still holds. Measured with `node scripts/measure-stage.ts 3.1 chief 100 [--careless]`, and `normal` for NORMAL:
+
+| 100 seeds | HARD before | HARD after | Careless, HARD before | Careless, HARD after | NORMAL before | NORMAL after |
+|---|---|---|---|---|---|---|
+| Cleared | 96 | 97, none stuck | 94 | 79 | 100 | 100 |
+| Damage taken | 260 | 257 | 221 | 208 | 78 | 182 |
+| KOs | 1.51 | 1.38 | 1.60 | 1.61 | 0.16 | 0.37 |
+| Lowest party HP | 41% | 39% | 43% | 43% | 81% | 59% |
+
+Over 20 seeds: HARD 20 of 20 (252 damage, 1.35 KOs, 40% lowest, 84 s), careless 16, kid 20, upside 18 (75 of 100), NORMAL 20 for 179 damage.
+
+- **The careless bot clears 79 of 100, not 94.** That is still inside its band (at least 12 of 20, and chapters 1 and 2 clear 14 to 20 on HARD), so the factor stays.
+- **NORMAL is no longer a walk.** The bot casts the screen when two foes are within 60 px, and the cast slows Mike. On NORMAL, under the Flayed's grab cliff, that lets grabs land: with Mike's special switched off in the bot, NORMAL takes 75 damage and keeps 82% lowest HP, with it 182 and 59%. On HARD, over the cliff, it changes nothing (262 damage without it, 257 with). The cause is the bot's rule in `combat/bot_talents.ts`, not the stage, and NORMAL still clears 100 of 100.

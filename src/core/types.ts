@@ -31,7 +31,8 @@ export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
 export type StatKey = 'hp' | 'mp' | 'atk' | 'def' | 'spd';
 export type StatusId = 'burn' | 'stun' | 'slow' | 'confuse' | 'curse';
-export type Difficulty = 'kid' | 'chief' | 'upside';
+/** normal and chief are the player's NORMAL and HARD. kid and upside are for the measure scripts and the tests, in no menu. */
+export type Difficulty = 'kid' | 'normal' | 'chief' | 'upside';
 
 // ---------------------------------------------------------------- what gets drawn
 // The sim produces these each frame (Sim.view()). gfx draws them. Nobody else invents draw state.
@@ -69,8 +70,10 @@ export interface ActorView {
   pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab';
   /** The Demogorgon's head petals are open (below 60% HP). */
   petals?: boolean;
-  /** A hidden enemy that only Will's Cold spot shows. gfx draws it faint or not at all. */
+  /** A hidden enemy that only Will's Cold spot shows, or Lucas under his Camo. gfx draws it faint or not at all. */
   hidden?: boolean;
+  /** A held Special filling toward its Lv 6 variant, 0..1 (heroes/hold.ts). gfx draws a ring round the hero. */
+  charge?: number;
   /** An enemy confused by Robin's Word vomit: it fights the other enemies. gfx draws a swirl over its head. */
   confused?: boolean;
   /** A dormant Flayed, waiting as a goo puddle until its group wakes. */
@@ -89,7 +92,10 @@ export type FxKind =
   /** scoop: Robin's ice cream in flight and its splat. babble: her Word vomit cone, w its reach. bullet: a pistol or rifle round
    *  in flight. goo: a melting rat's burst, w its diameter. trap: one of Nancy's bear traps on the floor. arcs: the power box
    *  firing, w and h its size. */
-  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs';
+  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs'
+  /** pet: Dustin's Dart, w 1 while he bites. bottle: Nancy's Molotov in flight, h its height off the ground. fire: its pool on the
+   *  floor, w the diameter. */
+  | 'pet' | 'bottle' | 'fire';
 
 export interface FxView {
   kind: FxKind;
@@ -410,6 +416,8 @@ export interface Sim {
   /** Starts the stage's defense (SimOptions.defense). Does nothing without one, or once it has started. */
   defend(): void;
   healParty(frac: number): void;
+  /** Switches the difficulty mid-stage: hits land at the new factor at once, and each living enemy keeps its share of HP. */
+  setDifficulty(d: Difficulty): void;
   /** A prize outside a fight (the arcade's high score): XP shared the usual way, quarters, and floaters over the hero. */
   bonus(xp: number, quarters: number): void;
   heroPos(): Vec2;

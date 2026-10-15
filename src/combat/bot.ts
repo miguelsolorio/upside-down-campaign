@@ -7,7 +7,7 @@
 // charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a
 // pod's swell unless a demodog is closing in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it
 // while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
-// are on her (bot_ward.ts). Robin casts Word vomit with three foes within 56 px and Nancy her Shotgun with one within 40. Rifle
+// are on her (bot_ward.ts). When to cast each hero's Special, and the Lv 6 holds, are in bot_talents.ts. Rifle
 // bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
 // recovers, with the power box when there is a shooter (bot_grigori.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
@@ -26,6 +26,7 @@ import { createGrigoriSense } from './bot_grigori.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
 import { backOffFrom, slamThreat } from './bot_threat.ts';
+import { createCaster } from './bot_talents.ts';
 
 export interface BotWaypoint extends Vec2 {
   /** Prop id to open when reached. */ open?: string;
@@ -77,8 +78,6 @@ const STYLE: Record<HeroId, { hold: number; reach: number }> = {
 
 /** Just above the sim's 0.15 dead zone: turns the hero to face a target without walking anywhere. */
 const NUDGE = 0.2;
-/** Steve casts Babysit when two foes are this close. */
-const BABYSIT_CROWD = 48;
 const ENGAGE = 120;
 const CHASE = 260;
 const TAU = Math.PI * 2;
@@ -279,6 +278,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   const alpha = createAlphaSense();
   const guardWard = createWardSense();
   const grig = createGrigoriSense({ walkable, walkTo });
+  const caster = createCaster();
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -423,21 +423,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
         }
         if (near.d <= style.reach && aligned && !orbit) {
           out.attackHeld = true;
-          if (frame - lastSpecial > 60) {
-            const cost = HERO_DEFS[me.id].special.mp;
-            const group = foes.filter((f) => f.d < 60).length;
-            let use = false;
-            if (me.id === 'lucas') use = near.d > 28 && me.mp >= cost;
-            else if (me.id === 'dustin') use = (near.d < 50 || group >= 2) && me.mp >= cost && !(isGuard(near.kind) && near.burning);
-            else if (me.id === 'will') use = near.d > 26 && me.mp >= cost && (foes.filter((f) => dist(f.x, f.y, near.x, near.y) < 36).length >= 2 || me.mp >= me.mpMax * 0.6);
-            else if (me.id === 'eleven') use = near.d < 120 && me.mp >= cost && miss < 12 && (group >= 2 || near.kind === 'agent' || shielded);
-            // Babysit when two or more are on him.
-            else if (me.id === 'steve') use = me.mp >= cost && foes.filter((f) => f.d < BABYSIT_CROWD).length >= 2;
-            // Word vomit on a crowd, the Shotgun up close.
-            else if (me.id === 'robin') use = me.mp >= cost && foes.filter((f) => f.d < 56).length >= 3;
-            else if (me.id === 'nancy') use = me.mp >= cost && near.d < 40;
-            if (use) { out.specialPressed = true; lastSpecial = frame; }
-          }
+          // Each hero's Special, and the Lv 6 holds, are in bot_talents.ts.
+          if (frame - lastSpecial > 60 && caster.cast(me, { near, foes, miss, shielded, dart: threat !== null, ward: ward !== null }, out)) lastSpecial = frame;
         }
       }
       if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => (f.pose === 'stun' || f.pose === 'howl') && f.d < 190))) {
@@ -456,6 +443,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
 
     // In a defense: no straying from the ward, and Babysit when two are on her.
     if (ward) [mx, my] = guardWard.steer(v, ward, foes, hx, hy, mx, my, out, walkTo);
+    // Will's heal, and a hold already going.
+    caster.keep(v, me, out, !fighting);
     if (out.specialPressed) lastSpecial = frame;
 
     // Off a mark, out of the charge line, out of the swipe: that comes before whatever else the bot was doing.

@@ -88,6 +88,8 @@ Will is Wizard, in `heroes/will.ts`, and `HERO_DEFS.will` replaces the stand-in.
   - A 20 doubles the radius and shows NAT 20.
   - The roll uses the sim's rng, so a seed replays it.
 - **Cold spot** (Lv 3 talent): while Will is the active hero, enemies spawned `hidden: true` within 72 px show (`ActorView.hidden` false), and they take 15 percent more damage from the party.
+- **Cleric** (Lv 6 talent, `heroes/cleric.ts`): his class reads Cleric from Lv 6 (`roleAt`). Holding Special for 24 frames (`heroes/hold.ts`) heals every living hero, the bench too, by 30 percent of max HP for 12 MP, with a `heal` fx on each and the total over him. Then the heal waits 600 frames, and a hold before then says NOT YET and costs nothing. A KO'd hero stays down. A tap still throws the Fireball, on the key coming up.
+- **Bot:** from Lv 6 it holds Special for the heal when the party's standing heroes are under half their HP together, at most once per wait.
 - **Utility:** `sense`. **Crit signature:** `blast`.
 - **Bot style:** a ranged hero (hold about 80, reach about 120).
 

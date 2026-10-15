@@ -7,7 +7,7 @@ import { damageRange } from '../combat/damage.ts';
 import { emptyStats } from '../progression/xp.ts';
 import type { Stats } from '../progression/xp.ts';
 import { TALENTS, hasTalent } from '../progression/talents.ts';
-import { HERO_DEFS, critChance, statsAt } from './defs.ts';
+import { HERO_DEFS, critChance, roleAt, statsAt } from './defs.ts';
 
 export type SheetMoveKind = 'basic' | 'special' | 'crit' | 'talent';
 
@@ -114,13 +114,14 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
 export function heroSheet(id: HeroId, level: number, bonus: Stats = emptyStats()): HeroSheet {
   const def = HERO_DEFS[id];
   const stats = statsAt(def, level, bonus);
-  const talent = TALENTS[id];
   const moves: SheetMove[] = [
     ...heroMoves(id, level, stats.atk),
     { kind: 'crit', name: 'Crit', mp: 0, dmg: damageRange(BURST_POWER, stats.atk, 0), hits: 1, note: 'Hits all nearby, through shields' },
-    { kind: 'talent', name: talent.name, mp: 0, dmg: null, hits: 1, note: talent.text, locked: !hasTalent(id, level), level: talent.level },
+    ...TALENTS[id].map((t): SheetMove => ({
+      kind: 'talent', name: t.name, mp: 0, dmg: null, hits: 1, note: t.text, locked: !hasTalent(id, level, t.level), level: t.level,
+    })),
   ];
-  return { id, name: def.name, role: def.role, level, stats, bonus: { ...bonus }, crit: critChance(def, level), moves };
+  return { id, name: def.name, role: roleAt(id, level), level, stats, bonus: { ...bonus }, crit: critChance(def, level), moves };
 }
 
 /** The damage as the sheet prints it: `11-13`, or `8-9 x3` for a move that lands several hits. Empty for none. */

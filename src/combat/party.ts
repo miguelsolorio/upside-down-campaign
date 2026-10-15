@@ -9,6 +9,8 @@ import type { Hero, S, Stats } from './state.ts';
 import { UNHURT_CAP, activeHero, noStatus } from './state.ts';
 import { hitEnemy } from './damage.ts';
 import { dist } from './space.ts';
+import { resetTalentState } from './talent_state.ts';
+import { startAhoy } from '../heroes/ahoy.ts';
 import { addFx, dust, flashScreen, floater, hitstop, schedule, sfx, shake } from './fx.ts';
 
 /** Frames after a swap that lands its shockwave and invulnerability before the next one does. */
@@ -30,7 +32,7 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
     x, y, dir: 'down', aim: Math.PI / 2, vx: 0, vy: 0, z: 0, moving: false, anim: 'idle', animT: 0,
     flash: 0, invuln: 0, blink: false, hurtT: 0,
     actT: 0, act: null, lock: 1, actId: 0, cdBasic: 0, cdSpecial: 0, combo: 0, comboT: 0,
-    stat: noStatus(), nosebled: false, dash: null, unhurt: UNHURT_CAP,
+    stat: noStatus(), nosebled: false, dash: null, unhurt: UNHURT_CAP, holdT: 0,
   };
 }
 
@@ -67,10 +69,10 @@ export function trySwap(s: S, idx: number, forced = false): boolean {
   if (!forced && activeHero(s).dash) return false;
   const charged = forced || s.swapCd <= 0;
   const from = activeHero(s);
-  from.actId++; from.actT = 0; from.act = null; from.vx = 0; from.vy = 0;
+  from.actId++; from.actT = 0; from.act = null; from.vx = 0; from.vy = 0; from.holdT = 0;
   to.x = from.x; to.y = from.y;
   to.dir = from.dir; to.aim = from.aim; to.vx = 0; to.vy = 0;
-  to.actId++; to.actT = 0; to.act = null; to.hurtT = 0;
+  to.actId++; to.actT = 0; to.act = null; to.hurtT = 0; to.holdT = 0;
   to.z = 12;
   if (charged) { to.invuln = SWAP_INVULN; to.blink = true; }
   s.active = idx;
@@ -80,6 +82,8 @@ export function trySwap(s: S, idx: number, forced = false): boolean {
   s.events.push({ t: 'swap', from: from.id, to: to.id });
   sfx(s, 'swap');
   if (charged) schedule(s, 8, () => { if (activeHero(s) === to && !to.ko) shockwave(s, to); });
+  // Steve's Ahoy: a charged swap to him leaps at a foe (heroes/ahoy.ts).
+  if (charged) startAhoy(s, to);
   return true;
 }
 
@@ -208,6 +212,7 @@ export function healParty(s: S, frac: number): void {
   if (s.over) {
     // Getting up after a wipe: drop whatever was in flight.
     s.hitstop = 0; s.projs = []; s.globs = []; s.zones = []; s.timers = []; s.seq = null; s.hold = null;
+    resetTalentState(s.t6);
   }
   for (const h of s.heroes) {
     if (h.ko) { h.ko = false; h.hp = 0; h.anim = 'idle'; h.animT = 0; }

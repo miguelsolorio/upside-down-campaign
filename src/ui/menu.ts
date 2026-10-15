@@ -2,7 +2,7 @@
 // The keys move the selection and the mouse can too: a row takes it when the mouse moves onto it, and a click picks it.
 import type { Game } from '../core/scene.ts';
 import type { InputState } from '../core/input.ts';
-import { applySettings, cycleShell, saveSettings } from '../core/settings.ts';
+import { applySettings, cycleDifficulty, cycleShell, difficultyLabel, saveSettings } from '../core/settings.ts';
 import { rumbleCue } from '../core/rumble.ts';
 import { hitIndex, inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
@@ -133,7 +133,7 @@ export function reshape(m: Menu, items: MenuItem[]): void {
 }
 
 /**
- * Music, sfx, scanlines, shake, reduce flashing and skip story, then RUMBLE while a controller is the input in use, then
+ * Difficulty, music, sfx, scanlines, shake, reduce flashing and skip story, then RUMBLE while a controller is the input in use, then
  * CONTROLS, or on a touch screen GAME BOY in its place. Every change is saved, applied and pushed to the mixer.
  */
 export function settingItems(g: Game): MenuItem[] {
@@ -153,10 +153,13 @@ export function settingItems(g: Game): MenuItem[] {
   const flip = (key: 'scanlines' | 'reduceFlashing') => (): void => { s[key] = !s[key]; commit(); };
   const shake = (dir: -1 | 1): void => { s.shake = cycleShake(s.shake, dir); commit(); };
   const shell = (dir: -1 | 1): void => { s.shell = cycleShell(s.shell, dir); commit(); };
+  // NORMAL or HARD. A stage in play takes it up as the pause menu resumes it (world/play.ts).
+  const difficulty = (dir: -1 | 1): void => { s.difficulty = cycleDifficulty(s.difficulty, dir); commit(); };
   // Switching it on gives one short pulse, so the player can feel what they asked for.
   const rumble = (): void => { s.rumble = !s.rumble; commit(); if (s.rumble) rumbleCue('hurt'); };
   const onOff = (v: boolean): string => (v ? 'ON' : 'OFF');
   return [
+    { label: 'DIFFICULTY', value: () => difficultyLabel(s.difficulty), adjust: difficulty, activate: () => difficulty(1) },
     { label: 'MUSIC', level: () => s.musicVol, set: setVolume('musicVol'), adjust: volume('musicVol') },
     { label: 'SFX', level: () => s.sfxVol, set: setVolume('sfxVol'), adjust: volume('sfxVol') },
     { label: 'SCANLINES', value: () => onOff(s.scanlines), adjust: flip('scanlines'), activate: flip('scanlines') },

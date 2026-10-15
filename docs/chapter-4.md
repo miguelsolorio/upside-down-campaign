@@ -83,7 +83,7 @@ It builds over the chapter.
 
 A story item from 4.2, not her Lv 9 talent, since the pace puts Max near Lv 8 in chapter 4. Max gets her Walkman back in a 4.2 beat. With Max in the party, swapping to her plays it: 8 s in which the party ignores the curse, and any curse already counting is cleared. Then a 30 s cooldown (a placeholder until chapter 3's numbers land); in Vecna's Burn phase the clock chimes faster than that, so the orbs still matter.
 
-**Max's talents, rearranged** (the owner's call). `docs/game-design.md` had High score (Lv 3), Walkman (Lv 6), Kickflip (Lv 9). With the Walkman a story item, Kickflip (the dash leaves a shockwave) moves up to Lv 6, and her new Lv 9 is **Extra life**: once per stage, a KO, a curse's included, leaves her at 1 HP with 2 s of invulnerability instead. The arcade's 1UP, and a nod to her outlasting Vecna once. `docs/game-design.md` still shows the old row until the build.
+**Max's talents.** With the Walkman a story item, Kickflip (the dash ends in a shockwave), her old Lv 9, is her Lv 6 talent now (built 2026-10-15). Her new Lv 9 is **Extra life** (the owner's call): once per stage, a KO, a curse's included, leaves her at 1 HP with 2 s of invulnerability instead. The arcade's 1UP, and a nod to her outlasting Vecna once.
 
 ## Bosses
 

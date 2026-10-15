@@ -4,7 +4,7 @@ import type { HeroId, SfxId, Utility } from '../core/types.ts';
 import { CHAR_NAMES } from '../core/config.ts';
 import { STAT_KEYS, emptyStats } from '../progression/xp.ts';
 import type { Stats } from '../progression/xp.ts';
-import { TALENTS, hasTalent } from '../progression/talents.ts';
+import { LV6, TALENTS, hasTalent } from '../progression/talents.ts';
 import type { Talent } from '../progression/talents.ts';
 
 export interface AbilityDef {
@@ -47,7 +47,8 @@ export interface HeroDef {
   utilities: Utility[];
   basic: AbilityDef;
   special: AbilityDef;
-  talent: Talent;
+  /** Lv 3 then Lv 6. */
+  talents: Talent[];
 }
 
 const st = (hp: number, mp: number, atk: number, def: number, spd: number): Stats => ({ hp, mp, atk, def, spd });
@@ -67,9 +68,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'DM screen', mp: 6, cd: 30, power: 0, dur: 18, at: 8, lock: 0.2, reach: 20, kb: 0, sfx: 'shield',
       // life: frames the screen stands. half: radius in px of the dome the art draws and the sim blocks with.
-      x: { life: 300, half: 15 },
+      // Rally (Lv 6): the cast lifts the party's ATK by rallyAtk for rally frames.
+      x: { life: 300, half: 15, rally: 600, rallyAtk: 0.2 },
     },
-    talent: TALENTS.mike,
+    talents: TALENTS.mike,
   },
   dustin: {
     id: 'dustin', name: CHAR_NAMES.dustin, role: 'Bard',
@@ -85,9 +87,14 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'Farrah spray', mp: 8, cd: 40, power: 0.45, dur: 30, at: 8, lock: 0.25, reach: 54, kb: 0.6, sfx: 'flame',
       // half: cone half angle in degrees. life and tick in frames. burn: burn frames. burnTick: frames between burn ticks.
       // burnAtk: each burn tick deals this much of Dustin's ATK, ignoring DEF.
-      x: { half: 32, life: 36, tick: 6, burn: 180, burnTick: 30, burnAtk: 0.22 },
+      // Dart (Lv 6): the spray calls Dart for dart frames, then he rests dartRest frames from the call. He runs dartSpeed px a
+      // frame at the nearest foe within dartSeek px and bites one in dartReach px every dartBite frames for dartPower.
+      x: {
+        half: 32, life: 36, tick: 6, burn: 180, burnTick: 30, burnAtk: 0.22,
+        dart: 720, dartRest: 1800, dartSpeed: 1.5, dartSeek: 110, dartReach: 10, dartBite: 40, dartPower: 0.5,
+      },
     },
-    talent: TALENTS.dustin,
+    talents: TALENTS.dustin,
   },
   lucas: {
     id: 'lucas', name: CHAR_NAMES.lucas, role: 'Ranger',
@@ -100,10 +107,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     special: {
       name: 'Triple shot', mp: 5, cd: 28, power: 0.85, dur: 16, at: 8, lock: 0.45, reach: 130, kb: 2, sfx: 'rock',
-      // fan: degrees between shots. n: shots.
-      x: { speed: 3.8, r: 5, fan: 18, n: 3 },
+      // fan: degrees between shots. n: shots. Camo (Lv 6): the shot hides him for camo frames, at most once every camoCd frames.
+      x: { speed: 3.8, r: 5, fan: 18, n: 3, camo: 180, camoCd: 480 },
     },
-    talent: TALENTS.lucas,
+    talents: TALENTS.lucas,
   },
   eleven: {
     id: 'eleven', name: CHAR_NAMES.eleven, role: 'Sorcerer',
@@ -117,9 +124,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'Mind Blast', mp: 8, cd: 40, power: 2.4, dur: 26, at: 10, lock: 0.15, reach: 132, kb: 3.2, sfx: 'beam',
       // width: beam half width px. life: frames the beam is drawn.
-      x: { width: 8, life: 12 },
+      // Sensory tank (Lv 6, a held Special): senseMp MP, sense frames, hidden foes and paths within senseR px of her.
+      x: { width: 8, life: 12, senseMp: 6, sense: 480, senseR: 160 },
     },
-    talent: TALENTS.eleven,
+    talents: TALENTS.eleven,
   },
   // Will joins in chapter 2 (docs/level-4.md, "Will"). Wizard: a slow bolt that reaches, and a Fireball sized by a d20.
   will: {
@@ -134,9 +142,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'Fireball', mp: 10, cd: 50, power: 2, dur: 24, at: 10, lock: 0.2, reach: 96, kb: 3, sfx: 'flame',
       // speed: px per frame. r: the ball's size. base: the burst's radius in px before the d20 is added.
-      x: { speed: 2.6, r: 4, base: 16 },
+      // Cleric (Lv 6, a held Special): healMp MP heals every living hero heal of their max HP, then waits healCd frames.
+      x: { speed: 2.6, r: 4, base: 16, healMp: 12, heal: 0.3, healCd: 600 },
     },
-    talent: TALENTS.will,
+    talents: TALENTS.will,
   },
   // Max and Steve join in 2.2 (docs/level-5.md, "Max" and "Steve"). Max is the Monk: a quick two-hit board and the Skate dash.
   max: {
@@ -152,10 +161,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'Skate dash', mp: 4, cd: 30, power: 0.9, dur: 16, at: 0, lock: 0, reach: 72, kb: 3, sfx: 'skate',
       // speed: px per frame. frames: the roll's length in frames (speed x frames is the reach). r: how close an enemy's center
       // is to her path for her to hit it. after: frames of invulnerability once it ends. extra: the most px it carries on to
-      // clear a gap it would end over.
-      x: { speed: 4.5, frames: 16, r: 10, after: 6, extra: 16 },
+      // clear a gap it would end over. Kickflip (Lv 6): where the roll ends, a shockwave of kickR px, kickPower and kickKb.
+      x: { speed: 4.5, frames: 16, r: 10, after: 6, extra: 16, kickR: 24, kickPower: 0.7, kickKb: 2.5 },
     },
-    talent: TALENTS.max,
+    talents: TALENTS.max,
   },
   // Steve is the Fighter: a three-hit nail bat with a heavy third, and Babysit.
   steve: {
@@ -171,9 +180,11 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'Babysit', mp: 6, cd: 60, power: 0, dur: 20, at: 6, lock: 0.2, reach: 72, kb: 0, sfx: 'taunt',
       // life: frames his guard and the party's DEF bonus hold. guard: the share of damage he does not take. partyDef: the
       // party's DEF bonus. taunt: frames an enemy in reach stays taunted onto him.
-      x: { life: 300, guard: 0.4, partyDef: 0.15, taunt: 180 },
+      // Ahoy (Lv 6): a charged swap to him leaps leap frames onto the nearest foe within leapR px. The landing hits everything in
+      // leapHit px for leapPower and stuns it leapStun frames.
+      x: { life: 300, guard: 0.4, partyDef: 0.15, taunt: 180, leap: 14, leapR: 80, leapHit: 16, leapPower: 1.2, leapStun: 30 },
     },
-    talent: TALENTS.steve,
+    talents: TALENTS.steve,
   },
   // Robin and Nancy join in 3.1 (docs/level-7.md, "Robin" and "Nancy"). Robin is the Rogue: a lobbed scoop that splashes and slows,
   // and Word vomit, a cone that makes foes fight each other (combat/confuse.ts).
@@ -185,14 +196,15 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'Scoop toss', mp: 0, cd: 26, power: 0.9, dur: 14, at: 6, lock: 0.5, reach: 72, kb: 1.5, sfx: 'scoop',
       // land: flight frames. blast: splash radius px. slow: frames every enemy in the splash is slowed. assist: auto-aim range px.
       // cone: auto-aim half angle in degrees. It lands on the nearest enemy in the cone, but never farther than reach.
-      x: { land: 22, blast: 16, slow: 60, assist: 80, cone: 40 },
+      // Triple scoop (Lv 6): two more scoops, sideFan degrees either side, at sidePower of the toss.
+      x: { land: 22, blast: 16, slow: 60, assist: 80, cone: 40, sideFan: 10, sidePower: 0.6 },
     },
     special: {
       name: 'Word vomit', mp: 5, cd: 40, power: 0, dur: 20, at: 6, lock: 0.3, reach: 56, kb: 0, sfx: 'babble',
       // half: cone half angle in degrees. confuse: frames of confusion, linguist: the same from Lv 3. life: frames the fx is drawn.
       x: { half: 40, confuse: 180, linguist: 240, life: 20 },
     },
-    talent: TALENTS.robin,
+    talents: TALENTS.robin,
   },
   // Nancy is the Gunslinger: a steady pistol, and a shotgun that throws five pellets and, from Lv 3, drops a bear trap.
   nancy: {
@@ -209,9 +221,15 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // fan: degrees between pellets (n pellets, so 4 x 12.5 is the 50 degree cone). kbCap: the most a volley shoves one enemy,
       // before its weight. Trap kit (Lv 3): trapLife frames a trap lasts, traps the most at once, trapR the px an enemy's feet must
       // come within, hold the frames it holds the first non-boss enemy and trapPower the hit.
-      x: { speed: 5, r: 4, fan: 12.5, n: 5, kbCap: 5.2, trapLife: 600, traps: 2, trapR: 9, hold: 120, trapPower: 0.8 },
+      // Molotov (Lv 6, a held Special): molMp MP lobs a bottle molLand frames to a spot up to molReach px out. It leaves a pool of
+      // poolR px for poolLife frames that hits each foe in it every poolTick frames for poolPower and sets it burning (poolBurn frames,
+      // each tick poolBurnAtk of her ATK).
+      x: {
+        speed: 5, r: 4, fan: 12.5, n: 5, kbCap: 5.2, trapLife: 600, traps: 2, trapR: 9, hold: 120, trapPower: 0.8,
+        molMp: 8, molReach: 64, molLand: 22, poolR: 24, poolLife: 240, poolTick: 20, poolPower: 0.25, poolBurn: 120, poolBurnAtk: 0.22,
+      },
     },
-    talent: TALENTS.nancy,
+    talents: TALENTS.nancy,
   },
 };
 
@@ -231,6 +249,17 @@ export function fixedGain(def: HeroDef, level: number): Stats {
   const out = emptyStats();
   for (const k of STAT_KEYS) out[k] = b[k] - a[k];
   return out;
+}
+
+/** The class a hero plays at `level`. Will turns from Wizard to Cleric with his Lv 6 talent, as he does in the show. */
+export function roleAt(id: HeroId, level: number): string {
+  return id === 'will' && hasTalent('will', level, LV6) ? 'Cleric' : HERO_DEFS[id].role;
+}
+
+/** The gates a hero opens at `level`. Nancy's Molotov (Lv 6) burns, so she opens `burn` from then on. */
+export function utilitiesAt(id: HeroId, level: number): Utility[] {
+  const own = HERO_DEFS[id].utilities;
+  return id === 'nancy' && hasTalent('nancy', level, LV6) ? [...own, 'burn'] : own;
 }
 
 /** Crit chance 0..1: 5 percent, the hero's bonus, Lucas's Sharp eye and Max's High score. */

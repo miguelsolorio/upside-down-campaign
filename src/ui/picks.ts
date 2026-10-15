@@ -10,11 +10,12 @@ import { getPromptDevice, labelOf } from '../core/bindings.ts';
 import { hitIndex, inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
 import { PARTY_SIZE } from '../core/campaign.ts';
+import { settings } from '../core/settings.ts';
 import { audio } from '../audio/index.ts';
 import { drawPortrait, drawText, drawTinyText, tinyWidth } from '../gfx/index.ts';
 import { box, brackets, outline, plate, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
-import { cardRect, cellRect, createPicks, heroAt, legend, makeLead, markRect, moveTo, onStart, picksLayout, ready, result, rowOf, step, toggle } from './picks_logic.ts';
+import { blockedBy, cardRect, cellRect, createPicks, heroAt, legend, makeLead, markRect, moveTo, onStart, picksLayout, ready, result, rowOf, step, toggle } from './picks_logic.ts';
 import type { PickRow, PicksLayout, PicksState } from './picks_logic.ts';
 
 export interface PicksOpts {
@@ -38,12 +39,17 @@ export interface PicksPanel {
   state(): PicksState;
 }
 
+/** How long the cards that refuse a pick flash, in frames: three blinks, or one steady stretch with REDUCE FLASH on. */
+const FLASH = 24;
+
 export function createPicksPanel(opts: PicksOpts): PicksPanel {
   let s = createPicks(opts.pool, opts.locked, opts.seed);
   /** Laid out once for the pool: three rows of shorter cards for nine, the roomy two rows for six. */
   const L = picksLayout(opts.pool.length);
   const START: Rect = L.start;
   let done = false;
+  /** The cards a refused pick flashes (the party, for a fifth hero) and the frames since. */
+  let flash: { cards: readonly number[]; t: number } | null = null;
 
   /** Applies a change. The same object back means the rules refused it. */
   const apply = (next: PicksState, okSound: boolean): boolean => {
@@ -64,9 +70,12 @@ export function createPicksPanel(opts: PicksOpts): PicksPanel {
     audio.sfx('cancel');
     opts.onBack();
   };
-  /** Takes a hero in or out. A locked hero staying put, or a fifth, gets the refusal sound. */
+  /** Takes a hero in or out. A locked hero staying put, or a fifth, gets a buzz and a flash on the cards in the way. */
   const flip = (i: number): void => {
-    if (!apply(toggle(s, i), true)) audio.sfx('cancel');
+    if (apply(toggle(s, i), true)) return;
+    audio.sfx('noMp');
+    const cards = blockedBy(s, i);
+    if (cards.length) flash = { cards, t: 0 };
   };
 
   /** The mouse: moving onto a card or START takes the cursor, a click on a card flips it, on a mark leads, on START starts. */
@@ -94,6 +103,7 @@ export function createPicksPanel(opts: PicksOpts): PicksPanel {
     state: () => s,
     update(g) {
       if (done) return;
+      if (flash && ++flash.t >= FLASH) flash = null;
       const i = g.input;
       // X is special and cancel together, so Esc and Backspace are cancel without special. A touch screen's B is that
       // pair too, so its way back is the pause button.
@@ -113,8 +123,9 @@ export function createPicksPanel(opts: PicksOpts): PicksPanel {
       const { x: px, y: py, w: pw, h: ph } = L.panel;
       plate(ctx, px, py, pw, ph);
       drawText(ctx, 'PARTY', px + 8, py + 6, 'white');
-      drawText(ctx, `${s.picked.length} OF ${PARTY_SIZE}`, px + pw - 8, py + 6, ready(s) ? 'yellow' : 'hot', { align: 'right' });
-      s.pool.forEach((_, k) => { const c = cardRect(L, k); drawCard(ctx, L, rowOf(s, k), c.x, c.y); });
+      const lit = flash !== null && (settings.reduceFlashing || ((flash.t >> 2) & 1) === 0);
+      drawText(ctx, `${s.picked.length} OF ${PARTY_SIZE}`, px + pw - 8, py + 6, lit || !ready(s) ? 'hot' : 'yellow', { align: 'right' });
+      s.pool.forEach((_, k) => { const c = cardRect(L, k); drawCard(ctx, L, rowOf(s, k), c.x, c.y, lit && !!flash?.cards.includes(k)); });
       if (!onStart(s)) { const c = cardRect(L, s.cursor); brackets(ctx, c.x - 3, c.y - 3, c.w + 6, c.h + 6); }
       drawStart(ctx, START, ready(s), onStart(s));
       const line = legend(getPromptDevice(), labelOf('attack'), labelOf('special')).join('  ');
@@ -131,9 +142,9 @@ function look(r: PickRow): { frame: ColorName; name: ColorName; level: ColorName
   return { frame: 'slate', name: 'mist', level: 'mist' };
 }
 
-function drawCard(ctx: Ctx, L: PicksLayout, r: PickRow, x: number, y: number): void {
+function drawCard(ctx: Ctx, L: PicksLayout, r: PickRow, x: number, y: number, refused = false): void {
   const l = look(r);
-  outline(ctx, x, y, L.cw, L.ch, l.frame);
+  outline(ctx, x, y, L.cw, L.ch, refused ? 'hot' : l.frame);
   drawPortrait(ctx, r.id, 'neutral', x + 5, y + L.top);
   drawText(ctx, r.name.toUpperCase(), x + 34, y + L.top + 1, l.name);
   drawText(ctx, `LV${r.level}`, x + 34, y + L.top + 11, l.level);

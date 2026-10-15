@@ -1,5 +1,5 @@
 // Builds the starting state from SimOptions: party, enemies, items, props and npcs.
-import type { DefenseDef, PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
+import type { DefenseDef, Difficulty, EnemyKind, PropKind, PropState, SimOptions, SimSpawn, Utility } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { createRng } from '../core/rng.ts';
 import { ENEMY_DEFS, DIFFICULTY_MULT, ELITE } from '../enemies/defs.ts';
@@ -8,6 +8,7 @@ import type { Defense, Enemy, S, Stats } from './state.ts';
 import { noStatus } from './state.ts';
 import { makeHero } from './party.ts';
 import { hazardAt } from './hazards.ts';
+import { newTalentState } from './talent_state.ts';
 import { newDemo } from '../enemies/demo_hit.ts';
 import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
@@ -34,13 +35,19 @@ const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
 };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
+/** An enemy's full HP at the state's difficulty and stage factor. */
+function enemyHp(s: S, kind: EnemyKind, elite: boolean): number {
+  const def = ENEMY_DEFS[kind];
+  return Math.max(1, Math.round(elite ? def.hp * ELITE.hp * s.mult * s.foeMult : def.hp * s.mult * s.foeMult));
+}
+
 /** Builds an enemy from its spawn. The run-time spawns (spawns.ts) use it too. */
 export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy {
   const def = ENEMY_DEFS[sp.type];
   const f = tileFeet(sp.tx, sp.ty);
   const uid = s.nextUid++;
   const elite = sp.tier === 'elite';
-  const hp = Math.max(1, Math.round(elite ? def.hp * ELITE.hp * s.mult * s.foeMult : def.hp * s.mult * s.foeMult));
+  const hp = enemyHp(s, sp.type, elite);
   const patrol = (sp.patrol ?? []).map((p) => tileFeet(p.tx, p.ty));
   return {
     uid, id: sp.id, kind: sp.type, group: sp.group,
@@ -59,6 +66,21 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' ? newSoldier() : null,
     grigori: sp.type === 'grigori' ? newGrigori() : null,
   };
+}
+
+/**
+ * Sim.setDifficulty. Damage reads s.mult on every hit, so only the HP built at spawn needs redoing: each living enemy gets the
+ * full HP a stage started on the new difficulty builds, and keeps its share of it.
+ */
+export function setDifficulty(s: S, d: Difficulty): void {
+  if (DIFFICULTY_MULT[d] === s.mult) return;
+  s.mult = DIFFICULTY_MULT[d];
+  for (const e of s.enemies) {
+    if (e.dead || e.hp <= 0) continue;
+    const max = enemyHp(s, e.kind, e.elite);
+    e.hp = Math.max(1, Math.min(max, Math.round(e.hp * max / e.hpMax)));
+    e.hpMax = max;
+  }
 }
 
 /** A defense that has not started: she stands where her npc does once it does (combat/defense.ts). */
@@ -96,7 +118,7 @@ export function createState(opts: SimOptions): S {
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
     purse: Math.max(0, Math.floor(opts.purse ?? 0)), stash: { eggo: opts.stash?.eggo ?? 0, coke: opts.stash?.coke ?? 0 }, eggoAt: -9999,
-    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
+    burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, t6: newTalentState(), over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
     },

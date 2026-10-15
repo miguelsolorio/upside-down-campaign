@@ -3,9 +3,10 @@ import type { HeroSnapshot, RunStats, Sim, SimEvent, SimInput, SimOptions } from
 import { updateEnemies, anyAggro } from '../enemies/ai.ts';
 import type { S, Stats, Timer } from './state.ts';
 import { activeHero } from './state.ts';
-import { createState } from './init.ts';
+import { createState, setDifficulty } from './init.ts';
 import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
+import { updateTalents } from '../heroes/talents6.ts';
 import { ageBodies, awardXp, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
 import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
@@ -92,6 +93,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   }
   runTimers(s);
   updateActive(s, input);
+  updateTalents(s);
   updateFollowers(s);
   tickEnemyStatus(s);
   tickHeroStatus(s);
@@ -152,6 +154,7 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     closeProp: (id) => closePropById(s, id),
     defend: () => startDefense(s),
     healParty: (frac) => healParty(s, frac),
+    setDifficulty: (d) => setDifficulty(s, d),
     bonus(xp, quarters) {
       const h = activeHero(s);
       awardXp(s, xp);

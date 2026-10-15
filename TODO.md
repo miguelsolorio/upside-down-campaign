@@ -9,12 +9,14 @@ Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level
 - [x] Sim A: Max, Steve, `gap`, `crack`, the bot's dash crossing (805 tests pass)
 - [x] Art: `heroes2-variations.html` (Max, Steve, Hopper), `alpha-variations.html`, `tunnel-variations.html`, sent to the owner one image per option
 - [x] Sim B: the Alpha, the seals, run-time spawns, the defense (850 tests pass). The Alpha's ATK is 26, not the spec's 34: at 34 the bot never won the den
-- [ ] UI: `picks-variations.html`
-- [ ] Owner picks from the four sheets. Picked: Max Walkman, Steve Letterman, Hopper Uniform, Alpha Stalker, tunnels Roots. The picks panel sheet is still to come
+- [x] UI: `picks-variations.html`. The owner picked Grid
+- [x] Owner picks from the four sheets: Max Walkman, Steve Letterman, Hopper Uniform, Alpha Stalker, tunnels Roots, picks panel Grid
 - [x] World 2.2: the tunnels at `enemyMult` 1.25, 166 XP. Chief 18 of 20 (252 damage, 1.6 KOs, 34% low, 101 s), 100 seeds 90 cleared and none stuck, careless 19, kid 20, upside 8
 - [x] A knocked-out hero stands back up when the party tries a gate only they can open (it soft-locked 2.2 at a gap)
 - [x] Paused at 84% of the 5-hour window (19:52 PT), resumed after the 20:40 reset with the UI picks sheet and World 2.3
-- [ ] World 2.3, Audio, Art build, UI build (picks panel, ward bar), flow glue
+- [x] World 2.3, then tuned by the lead: the spec's Alpha and 23-dog defense were a cliff (stage factor 0.7, no chief KOs). Alpha 700 HP and 16 ATK, 17 defense dogs, Eleven 160 HP, and the gate beat lights `lights_gate` (a new `light` step). Chief 19 of 20 (Eleven fell once), 426 damage, 0.8 KOs, 38% low, 116 s; 100 seeds 97, none stuck; careless 20, kid 20, upside 6. Damage and the boss share (70%) are over their bands because of the 45 s defense
+- [x] Art build (Max, Steve, Hopper, the Alpha, the tunnels and flesh tiles, gap, crack, rift, the new fx, sheet pages 18 to 24), UI build (the Grid picks panel, the ward bar), Audio (six effects, two stingers, two blips, a saw voice), flow glue (picks remembered in progress)
+- [ ] Art fix for 2.3: the Gate chamber's flesh is too loud, the tears read as worms, the lab tiles are bright at night
 - [ ] Measured with the bot on chief inside the targets, map chains 2.1 to 2.2 to 2.3, typecheck and tests clean
 
 ## Status

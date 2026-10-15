@@ -39,7 +39,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?sheet=1` | Sprite sheet review pages (`&page=N&sub=M` opens one) |
 | `?time=day` or `?time=night` | Draw the stage in that light, whatever the stage says. Level 1 is a night stage and the Lab is a day stage |
 | `?audio=1` | Audio lab: play every track, jingle and effect, render a WAV into `music/` |
-| `?stage=1.2` | Jump to a stage (`1.1`, `1.2`, `1.3` or `2.1`) with the party a normal run brings: three kids for Mirkwood, all four at Lv 3 for the Lab, Lv 5 and 4 for the school, and Will in place of Eleven for 2.1 |
+| `?stage=1.2` | Jump to a stage (`1.1` to `2.3`) with the party a normal run brings: three kids for Mirkwood, all four at Lv 3 for the Lab, Lv 5 and 4 for the school, Will in place of Eleven for 2.1, and Mike, Dustin, Max and Steve for 2.2 and 2.3 |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
@@ -78,7 +78,7 @@ src/combat      the simulation, enemy AI, the bot
 src/heroes      hero stats, abilities, growth
 src/enemies     enemy stats and behavior
 src/progression XP curve, the d20 level-up
-src/world       stages 1.1 to 2.1 and the play scene
+src/world       stages 1.1 to 2.3 and the play scene
 src/ui          HUD, dialogue, title, menus
 src/story       scripts, barks, the prologue
 tests           Node tests for the rules, the stage, the music data and the copy

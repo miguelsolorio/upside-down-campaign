@@ -4,7 +4,9 @@
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
 // Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's
 // Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
-// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It ignores hazards and cameras.
+// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). Against the Alpha it steps off the lunge
+// line and the marks and hits it while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and
+// casts Babysit with Steve when two are on her (bot_ward.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -15,6 +17,8 @@ import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
 import { createBossSense } from './bot_boss.ts';
 import { createDashCross } from './bot_dash.ts';
+import { createAlphaSense, howlFirst } from './bot_alpha.ts';
+import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 
 export interface BotWaypoint extends Vec2 {
   /** Prop id to open when reached. */ open?: string;
@@ -276,6 +280,8 @@ function reachThreatOf(f: Foe): boolean {
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
   const cross = createDashCross();
+  const alpha = createAlphaSense();
+  const guardWard = createWardSense();
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
   function goalOf(w: BotWaypoint): Vec2 {
@@ -328,14 +334,20 @@ function reachThreatOf(f: Foe): boolean {
     }
 
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
-    const leave = boss.dodge(v, hx, hy);
+    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable);
     const fin = boss.finish(v, hx, hy);
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
+    // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
+    const ward = guardWard.read(v);
+    if (ward) foes.sort((p, q) => dist(p.x, p.y, ward.x, ward.y) - dist(q.x, q.y, ward.x, ward.y));
+    howlFirst(foes);
     const near = foes[0];
     // An idle enemy the bot cannot see (behind a wall, say) does not pull it into a fight: at the engage radius that
     // would flip the goal every pixel between "go and get it" and "carry on along the route".
     const seen = near !== undefined && (near.d < 60 || clearLine(hx, hy, near.x, near.y));
-    const fighting = near !== undefined && ((near.d < ENGAGE && seen) || (sim.aggro() && near.d < CHASE));
+    const fighting = near !== undefined && (ward
+      ? dist(near.x, near.y, ward.x, ward.y) < WARD_REACH || near.d < ENGAGE
+      : (near.d < ENGAGE && seen) || (sim.aggro() && near.d < CHASE));
 
     // Stuck detection: learn the tile ahead is blocked and route around it.
     // Stuck means going nowhere: within 3 px of where it was for the whole spell, even if corner assist rocks it back and forth.
@@ -421,15 +433,23 @@ function reachThreatOf(f: Foe): boolean {
           }
         }
       }
-      if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => f.pose === 'stun' && f.d < 190))) {
+      if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => (f.pose === 'stun' || f.pose === 'howl') && f.d < 190))) {
         out.burstPressed = true;
         frozenUntil = frame + 170;
       }
+    } else if (ward) {
+      // Nothing to fight yet: wait beside her.
+      const post = holdPost(ward, hx, hy);
+      if (post) [mx, my] = walkTo(hx, hy, post.x, post.y);
     } else if (wp) {
       const item = pickupGoal(v, hx, hy, hpFrac, me.mp / me.mpMax);
       const goal = item ?? wp;
       [mx, my] = walkTo(hx, hy, goal.x, goal.y);
     }
+
+    // In a defense: no straying from the ward, and Babysit when two are on her.
+    if (ward) [mx, my] = guardWard.steer(v, ward, foes, hx, hy, mx, my, out, walkTo);
+    if (out.specialPressed) lastSpecial = frame;
 
     // Off a mark, out of the charge line, out of the swipe: that comes before whatever else the bot was doing.
     if (leave && !careless && !fin) {

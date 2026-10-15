@@ -6,6 +6,7 @@ import { HERO_DEFS, critChance } from '../heroes/defs.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
 import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
+import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
@@ -74,7 +75,8 @@ export function alertEnemy(s: S, e: Enemy): void {
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.dead || e.dormant || e.hp <= 0) return 0;
-  const boss = e.demo !== null;
+  // A boss has poise: the Demogorgon and the Alpha are never staggered, stunned or broken off a wind-up by a hit.
+  const boss = e.demo !== null || e.alpha !== null;
   // A pinned Demogorgon shrugs off everything but the beam. It reports the try and takes nothing.
   if (boss && demoPoke(s, by.id, e, o.beam === true)) return 0;
   const spread = spreadRoll(s.rng);
@@ -94,6 +96,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
   // Dazed against a wall, the Demogorgon takes half again as much.
   if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS.demogorgon.x.stunMul);
+  // The Alpha takes double while it howls and half again while it is dazed.
+  if (e.alpha) dmg = Math.round(dmg * alphaTakes(e));
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
@@ -102,10 +106,11 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   e.flash = 1;
   e.hurtSeen = true;
   e.by = by.id;
+  e.hitAt = s.frame;
   e.noLure = 240;
 
   const rooted = e.kind === 'vine' || e.kind === 'pod';
-  const kb = (boss && demoImmovable(e)) || rooted ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const kb = (boss && (demoImmovable(e) || alphaImmovable(e))) || rooted ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;

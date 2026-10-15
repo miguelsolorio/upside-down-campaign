@@ -1,5 +1,6 @@
 // Deaths: kill events, XP, quarter drops, group-cleared, and removing bodies after their death animation.
 import { cancelAttack } from '../enemies/shield.ts';
+import { clearAlpha } from '../enemies/alpha_hit.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
 import { activeHero } from './state.ts';
@@ -19,6 +20,7 @@ function dropChance(s: S, base: number): number {
 
 function kill(s: S, e: Enemy): void {
   cancelAttack(s, e);
+  clearAlpha(s, e);
   e.dead = true;
   e.deadT = 0;
   e.aware = false;
@@ -34,8 +36,9 @@ function kill(s: S, e: Enemy): void {
   sfx(s, 'kill');
   dust(s, e.x, e.y, 4);
   if (!s.seq) s.burst = Math.min(1, s.burst + 0.06);
-  // The roll is always drawn so the random stream does not depend on the Compass talent.
-  if (s.rng() < dropChance(s, e.drop)) {
+  // The roll is always drawn so the random stream does not depend on the Compass talent. A run-time spawn (a howl's pup or a
+  // defense wave's enemy) drops nothing: a failed defense, retried, can't be farmed.
+  if (s.rng() < dropChance(s, e.drop) && e.rt === null) {
     s.items.push({ id: `drop${s.nextDrop++}`, kind: 'quarter', x: e.x, y: e.y, t: 0 });
   }
   awardXp(s, e.xp);

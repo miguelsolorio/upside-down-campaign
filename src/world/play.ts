@@ -31,6 +31,7 @@ import { nearUsable } from './interact.ts';
 import { TITLES, arcadeBoard, createArcadeScene, gameFor, postScore } from '../arcade/index.ts';
 import type { ArcadeVisit } from '../arcade/index.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
+import { boomView, deadBilly, leavers } from './aftermath.ts';
 import { devHooks } from './devhooks.ts';
 import { createKlaxon } from './klaxon.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, inView, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
@@ -64,6 +65,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const dialog = createDialogueBox();
   const seen = new Set<string>();
   const killed = new Set<string>();
+  /** Where each kill fell, px: a freed Billy's body is stood there again after a retry (aftermath.ts). */
+  const fell = new Map<string, Vec2>();
   const swallow = new Set<string>();
   /** Dialogue-finished callbacks, run on the next tick so a beat can start its next script outside the box's own update. */
   const deferred: (() => void)[] = [];
@@ -100,6 +103,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let clearT = -1;
   /** How strong the pools of light are at night. 1 is normal; the scare stutters it. */
   let glowLevel = 1;
+  /** Frames since the Key's machine blew up (the boom step), or -1: it shakes the screen for a while and the lights stay dark. */
+  let boom = -1;
   /** Where the SAVED callout floats and how many frames it has shown. Null = hidden. */
   let saved: { x: number; y: number; t: number } | null = null;
   /** Frames since the last hero swap, to flash the new active portrait. Null before the first one. */
@@ -129,10 +134,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
     // The purse is what the party walked in with plus the quarters the run banked at its lit lights, so the HUD's COINS carry on from
     // there after a retry. The stash is read afresh: an item the sim spent was written back at once and does not come back.
     baseQuarters = banked;
-    sim = createSim(stage.sim({
+    sim = createSim(deadBilly(stage.sim({
       party, start: at, difficulty: game.settings.difficulty, seed: game.flags.seed, god: game.flags.god, skipSpawns: skip, openProps,
       purse: (opts.purse ?? 0) + banked, ...(opts.stash ? { stash: opts.stash() } : {}),
-    }));
+    }), skip, fell));
     view = sim.view();
     cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
     camW = SCREEN_W;
@@ -153,6 +158,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       sim.openProp(prop);
     },
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
+    boom() { audio.sfx('boom'); boom = 0; },
     music: (track) => audio.music(track),
     // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
     light(prop) {
@@ -197,9 +203,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
     if (overlay === sc) overlay = null;
   }
 
-  /** Eleven's npc spawn goes once she has joined, so she is never at the shed twice. */
+  /** Eleven's npc spawn goes once she has joined, so she is never at the shed twice. So does an npc a fired beat sent away (Hopper). */
   function skipFor(party: PartySeed[]): string[] {
-    return party.some((p) => p.id === 'eleven') ? [...killed, 'eleven'] : [...killed];
+    const gone = leavers(stage.beats, checkpoint.state.fired);
+    return party.some((p) => p.id === 'eleven') ? [...killed, 'eleven', ...gone] : [...killed, ...gone];
   }
 
   /** The live party, kills and open props: what a retry or a save carries forward. */
@@ -215,6 +222,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     director.restore(checkpoint.state);
     levelFx.clear();
     klaxon.clear();
+    boom = -1;
     swapAge = null;
     deferred.length = 0;
     swallow.clear();
@@ -304,7 +312,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     for (const e of ev) {
       switch (e.t) {
         case 'sfx': if (!swallow.delete(e.id)) audio.sfx(e.id); break;
-        case 'kill': killed.add(e.spawnId); break;
+        case 'kill': killed.add(e.spawnId); fell.set(e.spawnId, { x: e.x, y: e.y }); break;
         case 'levelUp': levelFx.push(e.info); break;
         case 'natTwenty': if (e.source === 'crit') speak(e.hero, 'crit'); break;
         case 'heroKO': speak(e.hero, 'ko', true); break;
@@ -414,6 +422,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       setReduceFlashing(g.settings.reduceFlashing);
       expose();
       klaxon.tick();
+      if (boom >= 0) boom++;
       if (deferred.length > 0) for (const fn of deferred.splice(0)) fn();
       if (dialog.active) { prompt = null; burstCall = false; dialog.update(g); return; }
       // Esc or Start, and also the window losing focus or the controller being played with going away: the level waits for the player.
@@ -474,7 +483,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         camW = SCREEN_W;
       }
       const fig = figure();
-      drawWorld(ctx, stage, view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
+      drawWorld(ctx, stage, boom >= 0 ? boomView(view, boom, g.settings.shake) : view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
       drawFlash(ctx, view);
       drawLevelFx(ctx, levelFx.list(), view, cam);
       drawKlaxon(ctx, klaxon.level(g.settings.reduceFlashing));

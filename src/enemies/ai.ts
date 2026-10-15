@@ -5,6 +5,7 @@ import type { Enemy, Hero, S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
 import { dist, moveBody } from '../combat/space.ts';
 import { speedMul } from '../combat/status.ts';
+import { confusedUpdate } from '../combat/confuse.ts';
 import { ratUpdate } from './rat.ts';
 import { agentUpdate } from './agent.ts';
 import { guardUpdate } from './guard.ts';
@@ -34,6 +35,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   if (s.over || hero.ko) { setEnemyAnim(e, 'idle'); return; }
 
+  // A confused enemy (Robin's Word vomit) runs the shared brain in combat/confuse.ts, whatever its kind.
+  if (e.stat.confuse > 0) { confusedUpdate(s, e); return; }
   // The bosses ignore the candy bar, and nothing staggers them. They run their own moves.
   if (e.demo) { demogorgonUpdate(s, e, hero); return; }
   if (e.alpha) { alphaUpdate(s, e, hero); return; }

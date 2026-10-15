@@ -9,11 +9,11 @@ export type { Rng, Stats };
 
 export interface Pos { x: number; y: number }
 
-/** Burn and stun are live. Slow is cheap, so it works too. Confuse and curse are types only. */
-export interface Statuses { burn: number; burnTick: number; burnDmg: number; stun: number; slow: number }
+/** Burn, stun, slow and confuse are live (confuse is on enemies only, combat/confuse.ts). Curse is a type only. */
+export interface Statuses { burn: number; burnTick: number; burnDmg: number; stun: number; slow: number; confuse: number }
 /** The most frames `Hero.unhurt` counts up to. A hero starts a level fully unhurt. */
 export const UNHURT_CAP = 600;
-export const noStatus = (): Statuses => ({ burn: 0, burnTick: 0, burnDmg: 0, stun: 0, slow: 0 });
+export const noStatus = (): Statuses => ({ burn: 0, burnTick: 0, burnDmg: 0, stun: 0, slow: 0, confuse: 0 });
 
 /**
  * Max's Skate dash while it runs (heroes/skate.ts plans it when she casts). She rolls `len` px along (ux, uy), `gone` so far,
@@ -210,7 +210,7 @@ export interface Defense {
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;
@@ -225,6 +225,8 @@ export interface Proj {
   ox: number; oy: number;
   /** Enemy uids already hit. */
   hit: number[];
+  /** The most a hit may leave an enemy's shove at (before its weight), so a volley that all lands does not stack (Nancy's Shotgun). */
+  kbCap?: number;
   /** Candy lobs: start and end, and what happens on landing. */
   lob: { sx: number; sy: number; ex: number; ey: number; onLand: () => void } | null;
   /** A fireball: called with where it ended (an enemy, a solid prop or the end of its flight). It does the damage; the shot itself does none. */
@@ -240,6 +242,8 @@ export interface Zone {
   cds: Map<number, number>;
 }
 
+/** One of Nancy's bear traps on the floor (heroes/nancy.ts). It holds the first non-boss enemy that steps on it. */
+export interface Trap { x: number; y: number; age: number; life: number; by: HeroId }
 export interface Lure { x: number; y: number; age: number; life: number; pull: number }
 /** The DM screen: a dome of radius `half` px centered at x, y (chest height). `angle` is the way Mike faced. */
 export interface Shield { x: number; y: number; angle: number; half: number; age: number; life: number }
@@ -258,6 +262,8 @@ export interface Prop {
   cam?: CamDef; camT: number;
   /** Frames before this prop can report another attempt (see pokes.ts). */
   pokeCd: number;
+  /** A cipher door only: how far it is decoded, 0..1 (docs/level-8.md). */
+  k: number;
   /** Vines only: frames of burning left before they are gone. */
   burnT: number;
 }
@@ -308,6 +314,8 @@ export interface S {
   projs: Proj[];
   zones: Zone[];
   lure: Lure | null;
+  /** Nancy's bear traps, oldest first. */
+  traps: Trap[];
   shield: Shield | null;
   fx: FxView[];
   floaters: Floater[];
@@ -331,6 +339,8 @@ export interface S {
   purse: number;
   /** What is left of Erica's stash (SimOptions.stash). The sim spends it on its own (docs/level-7.md). */
   stash: Stash;
+  /** The frame the stash last fed an Eggo to a hero in trouble, so it does not eat one every tick. */
+  eggoAt: number;
   /** Frames since an enemy last knew where the hero was. */
   calm: number;
   /** Mike's DM fiat: the next hit he lands is a crit. */

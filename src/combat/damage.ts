@@ -43,6 +43,8 @@ export interface HitOpts {
   power: number;
   /** Knockback speed in px per frame, before the target's weight. */
   kb?: number;
+  /** The most a shove may leave the enemy moving at, before its weight. A volley of pellets sets it so five hits do not stack. */
+  kbCap?: number;
   /** Knockback direction in radians. */
   angle?: number;
   stagger?: number;
@@ -115,6 +117,9 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
     e.vy += Math.sin(a) * kb;
+    const cap = o.kbCap === undefined ? Infinity : o.kbCap / ENEMY_DEFS[e.kind].weight;
+    const speed = Math.hypot(e.vx, e.vy);
+    if (speed > cap) { e.vx *= cap / speed; e.vy *= cap / speed; }
   }
   if (boss) {
     // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.

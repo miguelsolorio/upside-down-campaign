@@ -175,33 +175,41 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     talent: TALENTS.steve,
   },
-  // Robin and Nancy join in 3.1. Stand-in moves until Sim writes their kits (docs/level-7.md, "Robin" and "Nancy"): both
-  // borrow Lucas's shots for now, so the x numbers are his.
+  // Robin and Nancy join in 3.1 (docs/level-7.md, "Robin" and "Nancy"). Robin is the Rogue: a lobbed scoop that splashes and slows,
+  // and Word vomit, a cone that makes foes fight each other (combat/confuse.ts).
   robin: {
     id: 'robin', name: CHAR_NAMES.robin, role: 'Rogue',
     base: st(40, 20, 8, 3, 10), growth: st(5.5, 2.5, 1.4, 0.8, 0.6), weights: st(2, 2, 3, 1, 2),
     speed: 1, crit: 0.02, utilities: ['read'],
     basic: {
       name: 'Scoop toss', mp: 0, cd: 26, power: 0.9, dur: 14, at: 6, lock: 0.5, reach: 72, kb: 1.5, sfx: 'scoop',
-      x: { speed: 3, r: 5 },
+      // land: flight frames. blast: splash radius px. slow: frames every enemy in the splash is slowed. assist: auto-aim range px.
+      // cone: auto-aim half angle in degrees. It lands on the nearest enemy in the cone, but never farther than reach.
+      x: { land: 22, blast: 16, slow: 60, assist: 80, cone: 40 },
     },
     special: {
       name: 'Word vomit', mp: 5, cd: 40, power: 0, dur: 20, at: 6, lock: 0.3, reach: 56, kb: 0, sfx: 'babble',
-      x: { speed: 3, r: 5, fan: 18, n: 3 },
+      // half: cone half angle in degrees. confuse: frames of confusion, linguist: the same from Lv 3. life: frames the fx is drawn.
+      x: { half: 40, confuse: 180, linguist: 240, life: 20 },
     },
     talent: TALENTS.robin,
   },
+  // Nancy is the Gunslinger: a steady pistol, and a shotgun that throws five pellets and, from Lv 3, drops a bear trap.
   nancy: {
     id: 'nancy', name: CHAR_NAMES.nancy, role: 'Gunslinger',
     base: st(42, 18, 9, 3, 9), growth: st(5.5, 2, 1.5, 0.9, 0.5), weights: st(2, 1, 3, 1, 2),
     speed: 1, crit: 0.03, utilities: ['shoot'],
     basic: {
       name: 'Pistol', mp: 0, cd: 18, power: 1.1, dur: 12, at: 4, lock: 0.6, reach: 160, kb: 2, sfx: 'pistol',
+      // speed: px per frame. r: hit radius px.
       x: { speed: 4.4, r: 4 },
     },
     special: {
       name: 'Shotgun', mp: 7, cd: 40, power: 0.6, dur: 18, at: 6, lock: 0.3, reach: 72, kb: 4, sfx: 'shotgun',
-      x: { speed: 5, r: 4, fan: 12.5, n: 5 },
+      // fan: degrees between pellets (n pellets, so 4 x 12.5 is the 50 degree cone). kbCap: the most a volley shoves one enemy,
+      // before its weight. Trap kit (Lv 3): trapLife frames a trap lasts, traps the most at once, trapR the px an enemy's feet must
+      // come within, hold the frames it holds the first non-boss enemy and trapPower the hit.
+      x: { speed: 5, r: 4, fan: 12.5, n: 5, kbCap: 5.2, trapLife: 600, traps: 2, trapR: 9, hold: 120, trapPower: 0.8 },
     },
     talent: TALENTS.nancy,
   },

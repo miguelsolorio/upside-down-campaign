@@ -86,11 +86,11 @@ export function createState(opts: SimOptions): S {
     grid: opts.grid, rng: createRng(seed), frng: createRng((seed ^ 0x9e3779b9) >>> 0),
     mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], foeMult: opts.enemyMult ?? 1, frame: 0,
     heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1, standT: 0, walkDir: 'right', bump: null,
-    enemies: [], globs: [], lungeEnd: -999, projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [],
+    enemies: [], globs: [], lungeEnd: -999, projs: [], zones: [], lure: null, traps: [], shield: null, fx: [], floaters: [], items: [], props: [],
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
-    purse: Math.max(0, Math.floor(opts.purse ?? 0)), stash: { eggo: opts.stash?.eggo ?? 0, coke: opts.stash?.coke ?? 0 },
+    purse: Math.max(0, Math.floor(opts.purse ?? 0)), stash: { eggo: opts.stash?.eggo ?? 0, coke: opts.stash?.coke ?? 0 }, eggoAt: -9999,
     burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
@@ -127,6 +127,7 @@ export function createState(opts: SimOptions): S {
       s.props.push({
         id: sp.id, kind: sp.prop, x: sp.tx * TILE, y: sp.ty * TILE, w: sp.w ?? size[0], h: sp.h ?? size[1],
         solid, shutSolid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
+        k: sp.prop === 'cipher' && state === 'open' ? 1 : 0,
       });
     }
   }

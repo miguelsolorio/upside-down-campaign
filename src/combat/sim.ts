@@ -10,13 +10,14 @@ import { ageBodies, awardXp, handleSwap, healParty, reapHeroes, recruitHero, set
 import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
-import { updateItems } from './pickups.ts';
+import { updateItems, updateStash } from './pickups.ts';
 import { closePropById, openPropById, updateProps } from './props.ts';
 import { startDefense, updateDefense } from './defense.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
 import { stepBurst, tryBurst } from './burst.ts';
 import { dust, floater, sfx } from './fx.ts';
+import { updateTraps } from '../heroes/nancy.ts';
 import { buildView } from './view.ts';
 
 function runTimers(s: S): void {
@@ -96,7 +97,9 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   updateDefense(s);
   updateProjectiles(s);
   updateAreas(s);
+  updateTraps(s);
   updateItems(s);
+  updateStash(s);
   updateProps(s);
   updateCameras(s);
   updateHazards(s);

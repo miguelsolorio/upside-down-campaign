@@ -77,6 +77,23 @@
 //   ids made up (rt1, rt2, ...) that are never looked up in skipSpawns. Their groups are howl1 to howl3 and defense. A defense wave
 //   uses the burrows nearest the ward (the nearest and any within 128 px of it) in turn; with no burrows listed they come up on
 //   open floor round the Alpha or the ward.
+// - Robin (heroes/robin.ts): Scoop toss is a lob like Dustin's candy that lands on the nearest enemy in a 40 degree cone (never farther
+//   than 72 px), flies 22 frames and splashes 16 px for power 0.9 and a 60 frame slow (an enemy under slow is tinted purple). In flight
+//   it is a 'scoop' fx 6 wide, h its height; the splat is a 'scoop' fx, w its diameter. Word vomit (5 MP) is a 'babble' fx (w the reach,
+//   56) and confuses every enemy in the cone for 180 frames (240 with Linguist, Lv 3): ActorView.confused, and the shared brain in
+//   combat/confuse.ts walks it to the nearest other enemy and bumps it (20 frame wind-up under the "!", then 0.8 of its ATK against
+//   the other's DEF). A boss (group 'boss', the Demogorgon, the Alpha, Grigori) staggers 30 frames instead and is never a bump target.
+// - Nancy (heroes/nancy.ts): the Pistol is a 'bullet' fx in eight directions (4.4 px a frame, reach 160, power 1.1). The Shotgun (7 MP)
+//   is five 'bullet' pellets across 50 degrees (5 px a frame, reach 72, power 0.6 each, knockback 4 capped so a volley shoves one
+//   enemy once) and 'spark' fx at the muzzle. Both carry `shoot`. Trap kit (Lv 3): each Shotgun drops a 'trap' fx at her feet (600
+//   frames, at most two, the oldest goes). The first non-boss enemy within 9 px of one is held 120 frames (a stun, so it tints yellow)
+//   and takes power 0.8; the trap is spent.
+// - A 'cipher' prop (hitBy 'read', solid) decodes while the active hero with `read` stands within 40 px: PropView.k climbs 1/45 a frame
+//   and falls 1/90 when she steps away. At 1: 'decode' sfx, a 'reveal' fx, propCleared, open and walkable. openProp opens it at once.
+//   Anyone without `read` who pushes it or swings or fires at it is 'poked'; Robin never is.
+// - The stash (combat/pickups.ts): SimOptions.stash is spent by the sim. An Eggo when the active hero stands under 25 percent HP (at
+//   most once every 120 frames), a Coke when Special is pressed short of MP (the special then fires on that press). Each is
+//   { t: 'stashUsed', item }, an EGGO or COKE floater, the 'stash' sfx and one less in view().hud.stash.
 // - closeProp(id) shuts an open prop: solid again if it is solid when shut, no event, a thud sfx. A vines prop spawned `state: 'open'`
 //   has no default hitBy, so nothing burns a seal. A hero standing in the prop is moved to the nearest open tile (the tie goes to the
 //   Alpha's side).

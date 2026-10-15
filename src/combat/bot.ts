@@ -6,7 +6,8 @@
 // Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
 // charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). Against the Alpha it steps off the lunge
 // line and the marks and hits it while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and
-// casts Babysit with Steve when two are on her (bot_ward.ts). It ignores hazards and cameras.
+// casts Babysit with Steve when two are on her (bot_ward.ts). Robin casts Word vomit with three foes within 56 px and Nancy her
+// Shotgun with one within 40. It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, HeroId, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -397,7 +398,7 @@ function reachThreatOf(f: Foe): boolean {
         const a8 = snap8(near.ang);
         const miss = near.d * Math.sin(angDiff(near.ang, a8));
         // Rockets need a line within a body width; Push, bat and spray cover wide cones.
-        const aligned = desperate || (me.id !== 'lucas' && me.id !== 'will') || miss < 9;
+        const aligned = desperate || (me.id !== 'lucas' && me.id !== 'will' && me.id !== 'nancy') || miss < 9;
         const hold = desperate ? 16 : style.hold;
         // A guard with its shield up and the hero in front of it: Dustin burns it, Eleven's Push breaks it, the rest circle
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
@@ -431,6 +432,9 @@ function reachThreatOf(f: Foe): boolean {
             else if (me.id === 'eleven') use = near.d < 120 && me.mp >= cost && miss < 12 && (group >= 2 || near.kind === 'agent' || shielded);
             // Babysit when two or more are on him.
             else if (me.id === 'steve') use = me.mp >= cost && foes.filter((f) => f.d < BABYSIT_CROWD).length >= 2;
+            // Word vomit on a crowd, the Shotgun up close.
+            else if (me.id === 'robin') use = me.mp >= cost && foes.filter((f) => f.d < 56).length >= 3;
+            else if (me.id === 'nancy') use = me.mp >= cost && near.d < 40;
             if (use) { out.specialPressed = true; lastSpecial = frame; }
           }
         }

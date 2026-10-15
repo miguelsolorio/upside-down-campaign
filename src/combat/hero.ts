@@ -10,6 +10,7 @@ import { floater, sfx } from './fx.ts';
 import { speedMul } from './status.ts';
 import { pokeAimed, trackBump } from './pokes.ts';
 import { smashAimed } from './props.ts';
+import { drinkCoke } from './pickups.ts';
 import { endDash, stepDash } from '../heroes/skate.ts';
 
 export const DEADZONE = 0.15;
@@ -42,6 +43,8 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
   const casting = h.act === 'special' && h.actT > 0;
   if (!casting && s.buf.special > 0 && h.cdSpecial <= 0) {
     s.buf.special = 0;
+    // Short of MP with a Coke in the stash: drink it, and the special fires on this press if that was enough.
+    if (h.mp < def.special.mp) drinkCoke(s, h);
     if (h.mp >= def.special.mp) {
       h.mp -= def.special.mp;
       // A special that does no damage (the DM screen) is not a try at anything.

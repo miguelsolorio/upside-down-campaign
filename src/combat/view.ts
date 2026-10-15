@@ -37,12 +37,13 @@ function enemyView(s: S, e: Enemy): ActorView {
     kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir,
     anim: e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
     blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1, strained: false,
-    tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : null,
+    tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : e.stat.slow > 0 ? 'purple' : null,
     alert: !e.dead && e.mode === 'windup',
     z: e.dead ? 0 : Math.max(e.z, Math.min(5, Math.hypot(e.vx, e.vy) * 1.2)),
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
   if (e.elite) v.elite = true;
+  if (e.stat.confuse > 0 && !e.dead) v.confused = true;
   if (isShielded(e)) v.guarding = guarding(e);
   // A hidden enemy is faint until Cold spot has it or it strikes. Revealed, it says so, so gfx can tell the two apart.
   if (e.cloaked && !e.dead) v.hidden = e.hidden && !coldSpot(s, e);
@@ -63,6 +64,7 @@ function propView(s: S, p: Prop): PropView {
   if (p.cam) v.cam = camView(p);
   const k = riftK(s, p);
   if (k !== undefined) v.k = k;
+  else if (p.kind === 'cipher') v.k = p.k;
   return v;
 }
 
@@ -82,7 +84,8 @@ function projFx(p: Proj): FxView {
   if (p.lob) {
     const t = Math.min(1, p.age / p.life);
     const arc = 4 * 20 * t * (1 - t);
-    return { kind: 'candy', x: p.x, y: p.y - arc - BODY_Y * (1 - t) - 2, dir: 'down', angle: 0, t: p.age, life: p.life, w: 6, h: Math.round(arc) };
+    // A scoop in flight is a 6 wide 'scoop' fx, h its height off the ground. The splat (heroes/robin.ts) is the same kind, w its diameter.
+    return { kind: p.kind === 'scoop' ? 'scoop' : 'candy', x: p.x, y: p.y - arc - BODY_Y * (1 - t) - 2, dir: 'down', angle: 0, t: p.age, life: p.life, w: 6, h: Math.round(arc) };
   }
   // A fireball is drawn as a small flame pointing the way it flies (w its reach, h its width).
   if (p.kind === 'fireball') return { kind: 'flame', x: p.x, y: p.y, dir: dirOfVec(p.vx, p.vy, 'right'), angle, t: p.age, life: p.life, w: 12, h: 10 };
@@ -110,6 +113,8 @@ function fxList(s: S): FxView[] {
   for (const z of s.zones) {
     out.push({ kind: 'flame', x: z.x, y: z.y, dir: dirOfVec(Math.cos(z.angle), Math.sin(z.angle), 'right'), angle: z.angle, t: z.age, life: z.life, w: z.r, h: Math.round(2 * z.r * Math.sin(z.half)) });
   }
+  // A bear trap on the floor: one 'trap' fx for as long as it lasts, w by h its size. It is gone once an enemy springs it.
+  for (const t of s.traps) out.push({ kind: 'trap', x: t.x, y: t.y, dir: 'down', angle: 0, t: t.age, life: t.life, w: 14, h: 8 });
   if (s.lure) out.push({ kind: 'candy', x: s.lure.x, y: s.lure.y - 2, dir: 'down', angle: 0, t: s.lure.age, life: s.lure.life, w: 8, h: 0 });
   if (s.shield) {
     const sh = s.shield;

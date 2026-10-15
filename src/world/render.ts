@@ -88,7 +88,8 @@ function drawFloater(ctx: Ctx, f: Floater): void {
 function drawBoxes(ctx: Ctx, view: SimView): void {
   ctx.lineWidth = 1;
   for (const a of view.actors) {
-    if (a.kind === 'npc') continue;
+    // A dormant Flayed is a puddle on the floor, not a body: it has no hitbox to show.
+    if (a.kind === 'npc' || a.puddle) continue;
     ctx.strokeStyle = PAL.leaf;
     ctx.strokeRect(Math.round(a.x) - 5 + 0.5, Math.round(a.y) - 8 + 0.5, 9, 7);
     ctx.strokeStyle = PAL.hot;

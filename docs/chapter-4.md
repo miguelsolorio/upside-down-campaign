@@ -17,6 +17,13 @@ Chapter 4 is spring 1986. Hopper is alive in a Soviet prison in Kamchatka. In Ha
 - **Eddie is playable in 4.2 and 4.3 only.** He falls on the 4.3 rooftop as he does in the show, and he is not in chapter 5. A replay of 4.2 or 4.3 brings him back for that run (`partyFor`), the way a chapter 1 replay brings Eleven. His mirrors appear only in 4.2 and 4.3, and chapter 5 must not need a riff.
 - **The party.** 4.2 to 4.4 pick four from everyone the save has, as chapter 3 does. Who is locked in where is set by the gates on each route: Eddie in 4.3 (mirrors), Max nowhere (the Walkman helps but is never required).
 
+## Hopper in Kamchatka
+
+**Look: Telogreika** (`hopper4-variations.html`, `HOPPER4_OPTS[0]`). Round 2's picks were made by the pre-production session under the owner's standing instruction to go with its own recommendations; the owner can swap any of them before the build. His head is shaved to a buzzed scalp, the mustache stays, and he wears the camp's quilted black-grey jacket with a pale number patch on the chest and trousers to match, on the big body with thick arms. Five fill colors: skin, a darker skin for the stubble, two greys, bone. The portrait has the same buzz and mustache over the quilted collar.
+
+- **Why.** It's the prison look people remember, the mustache keeps him Hopper at 1x, and the pale patch gives the dark jacket something to read by on the night snow.
+- **On the build.** The spec is a `CharSpec` on the big body and a `PortraitSpec`, ready for `src/gfx/data`. The quilting reads as a checker at 4x; a stitch line every other row would be calmer. The Greatcoat look (5, a guard's coat over the prison clothes) is drawn and could be his look for the escape at the end of 4.1.
+
 ## Eddie
 
 | | |
@@ -50,6 +57,7 @@ The Creel ghouls (4.2) step out of mirrors in the dark. A mirror is a gate: the 
 ## The looks of the places
 
 - **Kamchatka (4.1): Blizzard.** Deep blue night snow, a sodium amber floodlight in the yard, grey panel concrete inside the block. The light leads the eye to the doorway.
+- **The Hellfire Club (4.2): Storm** (`hellfire-variations.html`, round 2's pick under the standing instruction). A Hawkins High classroom after hours: the chalkboard, posters and the club's banner (the red demon face) on the north wall, windows, a door and a bookcase, desks in rows, an AV cart, and in the middle the D&D table, desks pushed together under a cloth with the dungeon map, minis and dice, the DM screen at its head and Eddie behind it. Storm is the room at night: cold blue through the windows with lightning and rain on the glass, and candles on the table for the only warm light. Why: 4.2 runs from the recruit scene into the Creel House at night, so a night room leads into it; the candles put the eye on Eddie and the table while the rest of the room stays readable, where Red lamp leaves it near black; and the storm is a first taste of 4.3's. Room letters: `#` wall top, `W` wall, `C` chalkboard, `P` poster, `w` window, `D` door, `S` bookcase, `.` floor, `d` desk.
 - **The Creel House: one tile set, three skins, one per time.** The owner's call: Abandoned is the house now, Upside Down is the house in the Upside Down, and Blood red is the house in memory. They share the room letters, the mirrors, the clock and the props, and differ only in paint, the way a night stage repaints its tiles, so the build paints the house once.
   - **Abandoned (1986)** is 4.2: peeling blue-grey paper over lath, boarded windows with moonlight through the gaps, dusty boards and rubble, a moth-eaten rug. The mirrors here are Eddie's gate.
   - **Upside Down** is 4.4, Vecna's lair: the same rooms rotted and overgrown, red veins across the floor, a window flashing red, spores.
@@ -105,6 +113,12 @@ Look: **Rooted** (owner's pick, `vecna-variations.html`, `src/gfx/var/vecna_scar
 | Demobat | 4.3, 5.x | Flies in groups, ignores walls | Eddie's solo, Lucas |
 | Demodog, vine, spore pod | 4.3, 4.4 | As in chapter 2 | As in chapter 2 |
 
+The new foes' looks, all picked in round 2 under the standing instruction:
+
+- **Guard: Greatcoat** (`guard-variations.html`, `KGUARD_OPTS[0]`). The 3.2 soldier in winter: a long grey greatcoat, snow caught on the ushanka and the shoulders, a scarf over the mouth, and the same rifle that aims and fires. Five fills: skin, grey, white, brown for the stock, yellow for the star and the flash. A `CharSpec` built like `SOLDIER`, so it drops into `src/gfx/data`. Why: it's the soldier the player already knows, made cold, and grey reads on the blue snow where the winter whites don't. The Camp guard (4, a baton) is drawn if 4.1 wants a melee guard.
+- **Creel ghoul: Glass wraith** (`ghoul-variations.html`). A tall pale woman whose skin is cracked like a broken mirror, cyan on the cracks, hollow black eyes, a gown that ends in shards; she floats, and dies by breaking into glass. Five fills: bone, mist, black, cyan, white. A 22 by 26 frame, about 21 px tall, a head over the kids, with eight poses: in the glass, stepping out, stand, two drift frames, lunge, hurt and shatter. Why: she is made of the mirror she comes out of, so the riff that shatters a mirror and her death read as the same thing, and she is the brightest of the four on the dark Abandoned rooms.
+- **Demobat: Pale** (`demobat-variations.html`, `demobatFrame('pale', frame)`). Bone-pale skin with red veins, the Demogorgon's colors, wings out from above, a long whip tail, and a red petal head that opens in the dive. A 17 by 14 frame with eight frames: four of the flap, glide, dive, stunned (three yellow stars, which count among its five fills) and hit (a white flash). Why: a flock has to read at a glance in Blue storm and over the rooftop, and the pale ones do where the grey Show bat sinks into the road. It has replaced the stand-in on the solo sheet (`solo_kit.ts`).
+
 ## The looks
 
 | Sheet | Page | Pick |
@@ -116,8 +130,13 @@ Look: **Rooted** (owner's pick, `vecna-variations.html`, `src/gfx/var/vecna_scar
 | Kamchatka | `kamchatka-variations.html` | **1 Blizzard** |
 | The Creel House | `creel-variations.html` | **2 Abandoned** now (4.2), **4 Upside Down** for the lair (4.4), **3 Blood red** for memories |
 | Upside Down Hawkins | `hawkinsud-variations.html` | **Blue storm**: 1 Blue night and 2 Red storm mixed |
+| Hopper in Kamchatka | `hopper4-variations.html` | **1 Telogreika** (round 2) |
+| The Kamchatka guard | `guard-variations.html` | **1 Greatcoat** (round 2) |
+| The Creel ghoul | `ghoul-variations.html` | **1 Glass wraith** (round 2) |
+| The demobat | `demobat-variations.html` | **2 Pale** (round 2) |
+| The Hellfire Club room | `hellfire-variations.html` | **4 Storm** (round 2) |
 
-Each sheet is drawn by the game's own code, and its image is in `docs/screenshots/ch4-*.png`.
+Each sheet is drawn by the game's own code, and its image is in `docs/screenshots/ch4-*.png`. Round 1's picks are the owner's. Round 2's were made by the pre-production session under the owner's standing instruction to go with its recommendations, and can be swapped before the build.
 
 ## Still open
 

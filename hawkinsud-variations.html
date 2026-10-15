@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upside Down Hawkins Looks</title>
+<meta name="description" content="Four looks for stage 4.3, Hawkins in the Upside Down: houses, lawns, the street, a car, a streetlight and the gate. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for Upside Down Hawkins</h1>
+  <p>Stage 4.3 crosses Hawkins in the Upside Down, the town as it was on the night Will vanished, rotted and grown over. Grandfather clocks left in the yards chime and curse a hero, demobats come in over the roofs, and the stage ends with Eddie's rooftop solo. Each card is one sample room, 16 by 10 tiles: two houses, their dead lawns, the sidewalk and the road, veins across the ground, an abandoned car, a streetlight, a tear in the ground and a clock in a yard.</p>
+  <p class="muted">The big picture is 3x. The same room at its real size, every tile and the props are on the right of each card. The veins pulse.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <span>Your pick</span><span id="pick">none yet</span>
+  <label class="chk"><input id="anim" type="checkbox" checked> Pulse the veins</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec">The looks</h2>
+  <p class="sub">Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { HAWKINSUD_OPTS, HAWKINSUD_ROOM } from '/src/gfx/var/hawkinsud.ts';
+import { LOOK_W, lookCard } from '/src/gfx/var/look_card.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: HAWKINSUD_OPTS, width: LOOK_W, title: 'Chapter 4: Upside Down Hawkins, four looks', file: 'ch4-hawkinsud', tick: 300,
+  make: (o) => lookCard(HAWKINSUD_ROOM, o, 'hawkinsud'),
+});
+</script>
+</body>
+</html>

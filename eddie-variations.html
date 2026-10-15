@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eddie Designs</title>
+<meta name="description" content="Five designs for Eddie Munson, chapter 4's Warlock, drawn with the game's own paper-doll and portrait formats. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Five looks for Eddie</h1>
+  <p>Eddie joins in 4.2 and plays through 4.3, where he falls on the rooftop. He is the Warlock: a Flying V swung like an axe, and the Hellfire solo, which he plays planted while the notes come down the highway. The long dark curls stay the same on every card. The clothes and the guitar change.</p>
+  <p class="muted">Each card is drawn by the game's own code on the adult body, in five fill colors and the ink outline. The top row is 3x: facing down, up and side, a walk frame, the wind up and the hit with the guitar, the solo facing you, and the solo from the side. Under it, the portrait in two expressions and the frames at their real size beside Steve and Max. At rest the guitar is slung on his back.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span></div></div>
+
+<main class="wrap">
+  <h2 class="sec">Eddie</h2>
+  <p class="sub">Adult body, a head taller than the kids. Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { CARD_W, EDDIE_OPTS, colorsOf, eddieCard } from '/src/gfx/var/eddie.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: EDDIE_OPTS, width: CARD_W, title: 'Chapter 4: Eddie, five looks', file: 'ch4-eddie',
+  make: (o) => ({ canvas: eddieCard(o), meta: `${colorsOf(o)} fill colors and the ink outline` }),
+});
+</script>
+</body>
+</html>

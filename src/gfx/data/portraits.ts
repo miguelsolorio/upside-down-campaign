@@ -6,6 +6,7 @@ import type { ColorName } from '../palette.ts';
 import type { CharId, Expr } from '../../core/types.ts';
 import type { Part } from './types.ts';
 import { HOPPER_PORTRAIT, MAX_PORTRAIT, STEVE_PORTRAIT } from './portraits_l56.ts';
+import { ERICA_PORTRAIT, NANCY_PORTRAIT, ROBIN_PORTRAIT } from './portraits_l78.ts';
 
 export type Shirt = 'stripes' | 'plaid' | 'plain' | 'jacket' | 'cardigan';
 
@@ -221,7 +222,10 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper'>, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica'>, PortraitSpec>;
 
-// Max, Steve and Hopper are in portraits_l56.ts.
-export const PORTRAITS: Record<CharId, PortraitSpec> = { ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT };
+// Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica are in portraits_l78.ts.
+export const PORTRAITS: Record<CharId, PortraitSpec> = {
+  ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT,
+  robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT,
+};

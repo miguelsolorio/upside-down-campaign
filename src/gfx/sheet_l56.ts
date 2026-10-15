@@ -27,8 +27,8 @@ const FRAMES: [string, AnimId, number][] = [
 ];
 const EXPRS: Expr[] = ['neutral', 'happy', 'worried', 'determined', 'hurt', 'shocked'];
 
-/** One hero: every frame at twice its size (sub 0 to 3 turns him to face a direction), the portraits, and a live row with the flags the game sets. */
-function heroPage(id: CharId, title: string, note: string): Page {
+/** One hero: every frame at twice its size (sub 0 to 3 turns him to face a direction), the portraits, and a live row with the flags the game sets. An npc has no bar; `extra` draws the effects that go with the hero. */
+export function heroPage(id: CharId, title: string, note: string, kind: 'hero' | 'npc' = 'hero', extra?: (ctx: Ctx, t: number, dir: Dir) => void): Page {
   return {
     title,
     subs: 4,
@@ -59,9 +59,10 @@ function heroPage(id: CharId, title: string, note: string): Page {
       ];
       live.forEach(([name, over], i) => {
         const x = 20 + i * 40;
-        drawActor(ctx, view(id, x, 184, { dir, kind: id === 'hopper' ? 'npc' : 'hero', ...over }));
+        drawActor(ctx, view(id, x, 184, { dir, kind, ...over }));
         drawTinyText(ctx, name, x - ((name.length * 4 - 1) >> 1), 196, 'mist');
       });
+      extra?.(ctx, t, dir);
       if (id === 'max') drawFx(ctx, { kind: 'trail', x: 140, y: 178, dir: 'right', angle: 0, t: t % 40, life: 24, w: 72, h: 10 });
       if (id === 'steve') drawFx(ctx, { kind: 'taunt', x: 140, y: 184, dir: 'right', angle: 0, t: t % 50, life: 34, w: 72, h: 0 });
       drawText(ctx, note, 4, 212, 'slate');
@@ -73,7 +74,7 @@ function heroPage(id: CharId, title: string, note: string): Page {
 export const HERO_PAGES: Page[] = [
   heroPage('max', 'MAX', 'WALKMAN: BOARD IN ATTACK AND DASH'),
   heroPage('steve', 'STEVE', 'LETTERMAN: BIG HAIR, NAIL BAT'),
-  heroPage('hopper', 'HOPPER', 'UNIFORM: BIG BODY, AN NPC'),
+  heroPage('hopper', 'HOPPER', 'UNIFORM: BIG BODY, AN NPC', 'npc'),
 ];
 
 // ---------------------------------------------------------------- the Alpha

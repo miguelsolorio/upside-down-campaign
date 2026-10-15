@@ -1,7 +1,7 @@
 // Internal state of one simulation. Only src/combat, src/heroes and src/enemies import this.
 import type {
   AnimId, CamDef, CharId, Dir, EnemyKind, Floater, FxView, Grid, HazardDef, HeroId, ItemKind, PropKind, PropState,
-  RunStats, SimEvent, SfxId, Utility, Burrow, DefenseDef, DefenseWave,
+  RunStats, SimEvent, SfxId, Utility, Burrow, DefenseDef, DefenseWave, Stash,
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
 
@@ -9,11 +9,11 @@ export type { Rng, Stats };
 
 export interface Pos { x: number; y: number }
 
-/** Burn and stun are live. Slow is cheap, so it works too. Confuse and curse are types only. */
-export interface Statuses { burn: number; burnTick: number; burnDmg: number; stun: number; slow: number }
+/** Burn, stun, slow and confuse are live (confuse is on enemies only, combat/confuse.ts). Curse is a type only. */
+export interface Statuses { burn: number; burnTick: number; burnDmg: number; stun: number; slow: number; confuse: number }
 /** The most frames `Hero.unhurt` counts up to. A hero starts a level fully unhurt. */
 export const UNHURT_CAP = 600;
-export const noStatus = (): Statuses => ({ burn: 0, burnTick: 0, burnDmg: 0, stun: 0, slow: 0 });
+export const noStatus = (): Statuses => ({ burn: 0, burnTick: 0, burnDmg: 0, stun: 0, slow: 0, confuse: 0 });
 
 /**
  * Max's Skate dash while it runs (heroes/skate.ts plans it when she casts). She rolls `len` px along (ux, uy), `gone` so far,
@@ -117,6 +117,34 @@ export interface AlphaState {
   mark: FxView | null;
 }
 
+/**
+ * What a Flayed is doing (enemies/flayed.ts). walk: shambling at the hero. rise: coming up out of the goo, untouchable. wind: the
+ * "!" before the reach. reach: the arm out. hold: holding the hero. recover: after a hold or a miss.
+ */
+export type FlayedMove = 'walk' | 'rise' | 'wind' | 'reach' | 'hold' | 'recover';
+
+/** A Flayed's own state. Every other enemy has `flayed: null`. */
+export interface FlayedState { move: FlayedMove; t: number }
+
+/**
+ * What a Russian soldier is doing (enemies/soldier.ts). walk: keeping its distance. wind: the "!" before a burst. fire: the burst, one
+ * round every few frames along the aim locked when the wind-up ended. butt: the rifle butt wind-up. recover: after either.
+ */
+export type SoldierMove = 'walk' | 'wind' | 'fire' | 'butt' | 'recover';
+
+/** A soldier's own state. Every other enemy has `soldier: null`. `shots` is how many rounds of the burst are left, `backing` that it is stepping back. */
+export interface SoldierState { move: SoldierMove; t: number; shots: number; aim: number; backing: boolean; buttCd: number }
+
+/**
+ * What Grigori is doing (enemies/grigori.ts). walk: coming at the hero, facing him. hay: the haymaker wind-up. grab: the wind-up of
+ * the lunge. lunge: the lunge. hold: holding the hero. recover: after a haymaker, a missed lunge or a throw, not turning. stun: on
+ * the power box.
+ */
+export type GrigoriMove = 'walk' | 'hay' | 'grab' | 'lunge' | 'hold' | 'recover' | 'stun';
+
+/** Grigori's own state. Every other enemy has `grigori: null`. `raged` is set once, at half HP. */
+export interface GrigoriState { move: GrigoriMove; t: number; grabCd: number; raged: boolean }
+
 export interface Enemy {
   uid: number;
   id: string;
@@ -188,7 +216,17 @@ export interface Enemy {
   onWard: boolean;
   /** The frame a hero last hit it. The defense's targeting reads it. */
   hitAt: number;
+  /** A Flayed, a soldier or Grigori only (docs/level-7.md, docs/level-8.md). */
+  flayed: FlayedState | null;
+  soldier: SoldierState | null;
+  grigori: GrigoriState | null;
 }
+
+/** A Flayed or Grigori holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */
+export interface Hold { by: Enemy; hero: Hero; t: number }
+
+/** The power box firing (combat/powerbox.ts): frames left in the window, and the uids of the enemies it has already hit. */
+export interface Zap { left: number; hit: Set<number> }
 
 /**
  * The stage's defense while it runs (combat/defense.ts). `left` counts frames down from `total`. `down` is set once her HP
@@ -210,7 +248,7 @@ export interface Defense {
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;
@@ -225,6 +263,10 @@ export interface Proj {
   ox: number; oy: number;
   /** Enemy uids already hit. */
   hit: number[];
+  /** The most a hit may leave an enemy's shove at (before its weight), so a volley that all lands does not stack (Nancy's Shotgun). */
+  kbCap?: number;
+  /** Enemy rounds only: the frames of invulnerability a hit leaves the hero, where it isn't the usual 45 (a soldier's burst). */
+  invuln?: number;
   /** Candy lobs: start and end, and what happens on landing. */
   lob: { sx: number; sy: number; ex: number; ey: number; onLand: () => void } | null;
   /** A fireball: called with where it ended (an enemy, a solid prop or the end of its flight). It does the damage; the shot itself does none. */
@@ -240,6 +282,8 @@ export interface Zone {
   cds: Map<number, number>;
 }
 
+/** One of Nancy's bear traps on the floor (heroes/nancy.ts). It holds the first non-boss enemy that steps on it. */
+export interface Trap { x: number; y: number; age: number; life: number; by: HeroId }
 export interface Lure { x: number; y: number; age: number; life: number; pull: number }
 /** The DM screen: a dome of radius `half` px centered at x, y (chest height). `angle` is the way Mike faced. */
 export interface Shield { x: number; y: number; angle: number; half: number; age: number; life: number }
@@ -258,6 +302,8 @@ export interface Prop {
   cam?: CamDef; camT: number;
   /** Frames before this prop can report another attempt (see pokes.ts). */
   pokeCd: number;
+  /** A cipher door only: how far it is decoded, 0..1 (docs/level-8.md). */
+  k: number;
   /** Vines only: frames of burning left before they are gone. */
   burnT: number;
 }
@@ -310,6 +356,12 @@ export interface S {
   projs: Proj[];
   zones: Zone[];
   lure: Lure | null;
+  /** Nancy's bear traps, oldest first. */
+  traps: Trap[];
+  /** The hero a Flayed or Grigori is holding right now, or null. */
+  hold: Hold | null;
+  /** The power box while it fires, or null. */
+  zap: Zap | null;
   shield: Shield | null;
   fx: FxView[];
   floaters: Floater[];
@@ -329,6 +381,12 @@ export interface S {
   seq: BurstSeq | null;
   /** Frames of Inspiration left. */
   inspire: number;
+  /** Quarters the party walked in with (SimOptions.purse). The HUD's coins add the run's own. */
+  purse: number;
+  /** What is left of Erica's stash (SimOptions.stash). The sim spends it on its own (docs/level-7.md). */
+  stash: Stash;
+  /** The frame the stash last fed an Eggo to a hero in trouble, so it does not eat one every tick. */
+  eggoAt: number;
   /** Frames since an enemy last knew where the hero was. */
   calm: number;
   /** Mike's DM fiat: the next hit he lands is a crit. */

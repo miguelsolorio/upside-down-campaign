@@ -51,13 +51,23 @@ export function stepHop(h: Hop, speed = WALK_SPEED): { hop: Hop; k: number; done
   return { hop: { ...h, dist }, k: h.len > 0 ? dist / h.len : 1, done: dist >= h.len };
 }
 
+/** The cart's key and the way out once the cart is open, for the hint line. */
+export interface ShopHint { key: string; pause: string }
+
 /**
  * The one line of hints at the bottom. A keyboard names the arrows and Escape, which always work, and the attack key as
  * the player has bound it. A controller names the stick, A and B, and the touch screen's Game Boy its D-pad, A and B.
- * None names a key another device doesn't have.
+ * None names a key another device doesn't have. The band holds three lines, so once Erica's cart is open (`shop`: the
+ * special key's label, and the pause button's for a touch screen, whose B is special and back in one) it names SHOP in
+ * place of the move line, which every player has found by then.
  */
-export function hintLine(device: PromptDevice, attack: string): string {
+export function hintLine(device: PromptDevice, attack: string, shop?: ShopHint): string {
+  if (shop) {
+    const back = device === 'gamepad' ? 'B' : device === 'touch' ? shop.pause : 'ESC';
+    return `${attack} PLAY   ${shop.key} SHOP   ${back} BACK`;
+  }
   if (device === 'gamepad') return `STICK MOVE   ${attack} PLAY   B BACK`;
-  if (device === 'touch') return `D-PAD MOVE   ${attack} PLAY   B BACK`;
+  // The 3 by 5 font has no hyphen, so the D-pad is one word.
+  if (device === 'touch') return `DPAD MOVE   ${attack} PLAY   B BACK`;
   return `ARROWS MOVE   ${attack} PLAY   ESC BACK`;
 }

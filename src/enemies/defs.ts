@@ -1,4 +1,5 @@
-// Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, the Demogorgon, and chapter 2's demodog, vine and pod.
+// Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, the Demogorgon, chapter 2's demodog, vine, pod and Alpha, and
+// chapter 3's melting rat, Flayed, soldier and Grigori.
 import type { Difficulty, EnemyKind } from '../core/types.ts';
 
 export interface EnemyDef {
@@ -129,6 +130,58 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       pounceEvery: 240, pounceLow: 150, pounceMin: 24, pounceMax: 200, crouch: 30, air: 40, height: 28, shock: 36, pouncePower: 1.2, pounceKb: 5,
       stunT: 40, stunMul: 1.5,
       howl1: 0.75, howl2: 0.5, howl3: 0.25, howlT: 50, howlMul: 2, howlRing: 160, pack: 3,
+    },
+  },
+  // Chapter 3 (docs/level-7.md, "New enemies", docs/level-8.md). HP, ATK and DEF are sized for the party a real run brings to 3.1
+  // (a Lv 6 lead, the bench at 4 and 5). The first numbers (30/26 for the melting rat, 90/32 for the Flayed, 70/30 for the soldier)
+  // needed a stage factor of 3.3 in 3.1: the rats died in two hits and their short lunge rarely landed, and no Flayed ever got a grab
+  // in. Now the rat lunges farther and bites harder, the Flayed reaches faster and shambles through light hits (combat/damage.ts), and
+  // 3.1 sits at 1.7, as 1.3 does.
+  // The melting rat swarms like the rat (enemies/rat.ts, same x). When it dies, by any cause, it bursts (combat/kills.ts): burst px
+  // around it, power x.power, slow for x.slow frames.
+  melter: {
+    kind: 'melter', name: 'Melting rat', hp: 50, atk: 40, def: 2, speed: 1.3, xp: 4, aggro: 80,
+    windup: 20, power: 0.75, cooldown: 80, drop: 0.15, weight: 1.3,
+    x: { range: 34, lungeT: 11, lungeSpeed: 3.4, recover: 20, burst: 22, power: 0.5, slow: 60 },
+  },
+  // The Flayed (enemies/flayed.ts). range: px at which it commits to a reach. reachT and reachSpeed: the reach, in frames and px a frame.
+  // hold and eliteHold: frames it holds the hero. kb: the shove that ends the hold. rise: frames coming up out of the goo.
+  // recover: frames after a hold or a miss. A hit with knockback 3 or more (hold.ts, HOLD_BREAK_KB) frees the hero.
+  flayed: {
+    kind: 'flayed', name: 'Flayed', hp: 140, atk: 40, def: 4, speed: 0.55, xp: 11, aggro: 100,
+    windup: 22, power: 0.8, cooldown: 110, drop: 0.25, weight: 1.6,
+    x: { range: 30, reachT: 10, reachSpeed: 2.4, recover: 40, hold: 40, eliteHold: 50, kb: 3, rise: 40 },
+  },
+  // The Russian soldier (enemies/soldier.ts). near and far bound the band in px, panic is the distance it steps back from, back is the
+  // px a frame it does it, stamina the frames it will before it plants. speed, range, r and kb are the bullet's: px a frame, reach in
+  // px, size, shove. burst and eliteBurst: rounds, gap: frames between rounds, recover: frames after. butt: px at which it clubs
+  // instead, with buttWindup, buttPower, buttKb, buttReach, buttRecover and buttGap (frames between butts).
+  soldier: {
+    kind: 'soldier', name: 'Soldier', hp: 90, atk: 38, def: 5, speed: 0.8, xp: 12, aggro: 130,
+    windup: 30, power: 0.3, cooldown: 120, drop: 0.3, weight: 1.2,
+    x: {
+      near: 80, far: 120, panic: 60, back: 0.7, stamina: 50, speed: 3.2, range: 180, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6,
+      recover: 50, butt: 22, buttWindup: 20, buttPower: 0.8, buttKb: 3, buttReach: 28, buttRecover: 30, buttGap: 60, patrol: 0.5, lose: 240,
+    },
+  },
+  // The 3.2 mini-boss (enemies/grigori.ts, grigori_hit.ts). Walk, windup, power and cooldown are the haymaker's. HP is up from the spec's
+  // 800 to 1200: the careful bot never takes a hit from him, so the fight is all HP against how fast it can flank. His hits are down
+  // from 26 ATK and power 1.2 (a throw of 1.0) to 12, 1.0 and 0.7, his guard drops while he recovers, and at half HP he calls `call`
+  // soldiers: at the first numbers the careless bot, which stands in front and never dodges, cleared 3.2 0 times in 20. On the stage at
+  // enemyMult 1 he takes about 44 s on chief with a shooter's party and 95 s with none.
+  // reach, arc (half angle in degrees), kb: the haymaker. range: px at which he commits to one. recover and rageRecover: frames after it.
+  // hold: px he stops short of the hero. block: the share of a hit that gets through his front (arc is the same half angle).
+  // rageAt: the HP share that enrages him, rageSpeed his walk then. grabFirst, grabEvery and grabLow (enraged): frames between grabs,
+  // grabMin and grabMax: the hero's distance band. grabWindup, lungeT and lungeSpeed: the lunge. holdT: frames he holds. throwPower
+  // and throwKb: the throw. grabRecover: frames after a miss or a throw. stunT: frames stunned on the power box, stunHp: the share of
+  // his max HP it takes, stunMul: damage taken meanwhile. call: soldiers he calls in when he rages.
+  grigori: {
+    kind: 'grigori', name: 'Grigori', hp: 1200, atk: 12, def: 8, speed: 0.7, xp: 80, aggro: 200,
+    windup: 30, power: 1, cooldown: 100, drop: 1, weight: 4,
+    x: {
+      reach: 32, arc: 70, kb: 5, range: 28, recover: 50, rageRecover: 36, hold: 18, block: 0.25, rageAt: 0.5, rageSpeed: 0.9,
+      grabFirst: 150, grabEvery: 220, grabLow: 160, grabMin: 30, grabMax: 80, grabWindup: 24, lungeT: 12, lungeSpeed: 3.5, holdT: 45,
+      throwPower: 0.7, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5, call: 2,
     },
   },
 };

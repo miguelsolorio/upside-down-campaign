@@ -66,6 +66,14 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   // square at the same peak, so it has a little more volume.
   steve: { wave: 'p50', midi: 61, spread: 2, dur: 0.06, vol: 0.2, attack: 0.004, bend: -1 },
   hopper: { wave: 'saw', midi: 45, spread: 2, dur: 0.085, vol: 0.24, attack: 0.006, bend: -1 },
+  // Robin is the fastest and highest pulse, and every blip leans a semitone up, as if she is already on the next word.
+  // Nancy is the lowest triangle and the most level one: a third of the pitch spread of the others, no bend, a soft
+  // start and a steady length. Erica is a bright square above them all, short and hard, with no attack at all. Levels
+  // are set by ear-weighted energy (A-weighted, from an offline render), not by peak: a low triangle needs a higher
+  // peak than a bright square to be heard at the same level, so Nancy's is 0.38 and Erica's 0.14.
+  robin: { wave: 'p25', midi: 77, spread: 4, dur: 0.028, vol: 0.22, attack: 0.001, bend: 1 },
+  nancy: { wave: 'tri', midi: 55, spread: 1, dur: 0.07, vol: 0.38, attack: 0.012 },
+  erica: { wave: 'p50', midi: 83, spread: 2, dur: 0.03, vol: 0.14, attack: 0.001 },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };

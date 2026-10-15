@@ -100,6 +100,19 @@ function weapon(buf: Uint8Array, spec: CharSpec, view: View, pose: ArmPose, hand
   }
 }
 
+/** The hand drawn things the front hand holds in a pose (CharSpec.held, heldBy), anchored on the hand. */
+function held(buf: Uint8Array, spec: CharSpec, view: View, pose: ArmPose, hand: [number, number], dx: number, dy: number): void {
+  const list = spec.heldBy?.[pose]?.[view] ?? spec.held?.[view];
+  for (const st of list ?? []) {
+    st.rows.forEach((row, j) => {
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i] as string;
+        if (ch !== '.' && ch !== ' ') put(buf, hand[0] + dx + st.ox + i, hand[1] + dy + st.oy + j, ch);
+      }
+    });
+  }
+}
+
 /** Torso rows with the shirt pattern applied. */
 function shirt(spec: CharSpec, part: Part): Part {
   if (spec.torso === 'plain' || spec.torso === 'dress') return part;
@@ -164,15 +177,17 @@ export function composeFrame(spec: CharSpec, view: View, anim: AnimId, frame: nu
   // Gear: the nail bat and the board are drawn on a wider buffer and cropped (actor_gear.ts). A swing or a dash hides the carried one.
   const aim = isGear(spec.weapon) && anim !== 'ko' ? aimOf(spec.weapon, view, pose.arms) : null;
   const riding = spec.weapon === 'board' && anim === 'dash';
-  const dx = view === 'side' ? pose.lean : 0;
-  const dy = riding ? 0 : pose.bob + (view === 'down' ? pose.leanV : 0);
+  const dx = view === 'side' ? pose.lean + (spec.lean ?? 0) : 0;
+  const dy = riding ? 0 : pose.bob + (view === 'down' ? pose.leanV : 0) + (spec.stoop ?? 0);
   const sh = body.shoulder[view];
-  const hands = body.arms[view][pose.arms].map((h) => [...h]) as [number, number][];
+  const hands = (spec.arms?.[view]?.[pose.arms] ?? body.arms[view][pose.arms]).map((h) => [...h]) as [number, number][];
   const front = sh[1] as [number, number];
+  const near = spec.near?.[view]?.[pose.arms];
+  if (near) hands[1] = [...near];
   if (aim) hands[1] = [front[0] + aim.rx, front[1] + aim.ry];
   if (pose.up) for (const h of hands) { h[1] -= pose.up; h[0] += view === 'side' ? 2 : h[0] < 8 ? -1 : 1; }
   const trim = [...(spec.trim?.[view] ?? []), ...(aim || riding ? [] : spec.carry?.[view] ?? [])];
-  const thick = spec.body === 'big' ? 1 : 0, sleeve = spec.sleeve ?? 'a';
+  const thick = spec.body === 'big' || spec.thick ? 1 : 0, sleeve = spec.sleeve ?? 'a';
   const dash = riding ? dashParts(view) : null;
 
   if (view === 'side') arm(buf, sh[0] as [number, number], hands[0] as [number, number], dx, dy, sleeve);
@@ -194,6 +209,7 @@ export function composeFrame(spec: CharSpec, view: View, anim: AnimId, frame: nu
     return crop(wide);
   }
   weapon(buf, spec, view, pose.arms, hands[1] as [number, number], dx, dy);
+  if (anim !== 'ko') held(buf, spec, view, pose.arms, hands[1] as [number, number], dx, dy);
   if (anim === 'ko') {
     const lying = settle(rotate(buf, view !== 'down'));
     outlineRoles(lying, CELL, CELL, code('k'));
@@ -216,8 +232,8 @@ function ratKey(anim: AnimId, frame: number): RatFrame {
   }
 }
 
-/** One frame of the rat. Front and back views borrow walk and lunge frames from the ones they have. */
-export function composeRat(view: View, anim: AnimId, frame: number): Uint8Array {
+/** One frame of the rat, before its outline. Front and back views borrow walk and lunge frames from the ones they have. */
+export function ratRoles(view: View, anim: AnimId, frame: number): Uint8Array {
   const set = RAT[view];
   const key = ratKey(anim, frame);
   let buf: Uint8Array = new Uint8Array(CELL * CELL);
@@ -228,6 +244,12 @@ export function composeRat(view: View, anim: AnimId, frame: number): Uint8Array 
     buf = mirrorRoles(buf, CELL, CELL);
   } else if (key === 'attack1') blit(buf, set.attack0 as Part, 0, 1);
   else blit(buf, set.idle0 as Part, 0, 0);
+  return buf;
+}
+
+/** One frame of the rat. */
+export function composeRat(view: View, anim: AnimId, frame: number): Uint8Array {
+  const buf = ratRoles(view, anim, frame);
   outlineRoles(buf, CELL, CELL, code('k'));
   return buf;
 }

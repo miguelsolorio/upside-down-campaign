@@ -7,6 +7,8 @@ import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
 import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
 import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
+import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
+import { HOLD_BREAK_KB, isHolding, releaseHold, untouchable } from '../enemies/hold.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
@@ -43,6 +45,8 @@ export interface HitOpts {
   power: number;
   /** Knockback speed in px per frame, before the target's weight. */
   kb?: number;
+  /** The most a shove may leave the enemy moving at, before its weight. A volley of pellets sets it so five hits do not stack. */
+  kbCap?: number;
   /** Knockback direction in radians. */
   angle?: number;
   stagger?: number;
@@ -74,9 +78,9 @@ export function alertEnemy(s: S, e: Enemy): void {
 
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
-  if (e.dead || e.dormant || e.hp <= 0) return 0;
-  // A boss has poise: the Demogorgon and the Alpha are never staggered, stunned or broken off a wind-up by a hit.
-  const boss = e.demo !== null || e.alpha !== null;
+  if (e.dead || e.dormant || e.hp <= 0 || untouchable(e)) return 0;
+  // A boss has poise: the Demogorgon, the Alpha and Grigori are never staggered, stunned or broken off a wind-up by a hit.
+  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null;
   // A pinned Demogorgon shrugs off everything but the beam. It reports the try and takes nothing.
   if (boss && demoPoke(s, by.id, e, o.beam === true)) return 0;
   const spread = spreadRoll(s.rng);
@@ -85,7 +89,9 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const shielded = isShielded(e);
   const up = shielded && guarding(e);
   const sx = ENEMY_DEFS[e.kind].x;
-  const blocked = up && !o.pierce && inFront(e, (o.angle ?? Math.atan2(e.y - by.y, e.x - by.x)) + Math.PI);
+  // Grigori's front guard works the same way, with no shield to break: it is down only while he is stunned on the power box.
+  const guardUp = up || (e.grigori !== null && grigoriGuards(e));
+  const blocked = guardUp && !o.pierce && inFront(e, (o.angle ?? Math.atan2(e.y - by.y, e.x - by.x)) + Math.PI);
   // Mike's fiat crit waits for a hit that gets through: a block neither crits nor spends it.
   const first = s.armed;
   if (!blocked) s.armed = false;
@@ -96,8 +102,9 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
   // Dazed against a wall, the Demogorgon takes half again as much.
   if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS.demogorgon.x.stunMul);
-  // The Alpha takes double while it howls and half again while it is dazed.
+  // The Alpha takes double while it howls and half again while it is dazed. Grigori takes half again while he is stunned.
   if (e.alpha) dmg = Math.round(dmg * alphaTakes(e));
+  if (e.grigori) dmg = Math.round(dmg * grigoriTakes(e));
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
@@ -110,18 +117,30 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   e.noLure = 240;
 
   const rooted = e.kind === 'vine' || e.kind === 'pod';
-  const kb = (boss && (demoImmovable(e) || alphaImmovable(e))) || rooted ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  // A Flayed shambles through light hits: one with less than HOLD_BREAK_KB neither moves it, staggers it nor breaks its reach, and one
+  // with more knocks it back and makes it let go of a held hero. Knockback is the counter the design names. Without this a bat
+  // swinging every 11 frames kept it staggered all the way in, and no Flayed ever landed a grab.
+  const holding = e.kind === 'flayed' && isHolding(s, e);
+  const planted = e.kind === 'flayed';
+  const breaksHold = planted && (o.kb ?? 0) >= HOLD_BREAK_KB;
+  if (holding && breaksHold) releaseHold(s, e);
+  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e))) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
     e.vy += Math.sin(a) * kb;
+    const cap = o.kbCap === undefined ? Infinity : o.kbCap / ENEMY_DEFS[e.kind].weight;
+    const speed = Math.hypot(e.vx, e.vy);
+    if (speed > cap) { e.vx *= cap / speed; e.vy *= cap / speed; }
   }
   if (boss) {
     // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.
     demoSettle(s, e, o.beam === true, by.id);
   } else if (!shielded) {
-    e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));
-    if (e.mode === 'windup' || e.mode === 'lunge') { e.mode = 'chase'; e.modeT = 0; }
+    if (!(planted && !breaksHold)) {
+      e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));
+      if (e.mode === 'windup' || e.mode === 'lunge') { e.mode = 'chase'; e.modeT = 0; }
+    }
   } else {
     // A shove hard enough breaks the shield. A guard has poise: only a break or the burst staggers it.
     const breaks = up && (o.kb ?? 0) >= sx.breakKb && e.grace <= 0;
@@ -169,13 +188,13 @@ export function behindShield(s: S, sx: number, sy: number, tx: number, ty: numbe
 }
 
 /** The part of a hit on a hero that does not depend on where the damage came from. */
-function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'hot' | 'sky'): number {
+function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'hot' | 'sky', invuln = HERO_HIT_INVULN): number {
   // Steve's Hair of steel can cover the hit and his Babysit cuts it. A covered hit does nothing at all.
   dmg = steveTakes(s, h, dmg);
   if (dmg === 0) return 0;
   h.unhurt = 0;
   h.hp = Math.max(0, h.hp - dmg);
-  h.invuln = HERO_HIT_INVULN;
+  h.invuln = Math.max(h.invuln, invuln);
   h.blink = true;
   h.hurtT = HERO_HURT_FRAMES;
   h.flash = 1;
@@ -194,15 +213,16 @@ function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'ho
 
 /**
  * An enemy hits the active hero from (sx, sy). power x atk is the enemy's attack, scaled by difficulty after
- * the formula. Returns the damage taken, 0 if the hit was ignored (invulnerable, KO, god mode).
+ * the formula. Returns the damage taken, 0 if the hit was ignored (invulnerable, KO, god mode). `invuln` is how many frames of
+ * invulnerability the hit leaves (a rifle round leaves a few, so the next round of its burst can land).
  */
-export function hurtHero(s: S, h: Hero, sx: number, sy: number, power: number, atk: number, kb = 2.6): number {
+export function hurtHero(s: S, h: Hero, sx: number, sy: number, power: number, atk: number, kb = 2.6, invuln = HERO_HIT_INVULN): number {
   if (h.ko || s.over || s.god || h.invuln > 0) return 0;
   const spread = spreadRoll(s.rng);
   let dmg = Math.max(1, Math.round((power * atk * spread - heroDef(s, h) * 0.5) * s.mult * s.foeMult));
   const shielded = behindShield(s, sx, sy, h.x, h.y);
   if (shielded) dmg = Math.max(1, Math.round(dmg * 0.5));
-  return wound(s, h, dmg, Math.atan2(h.y - sy, h.x - sx), kb, shielded ? 'sky' : 'hot');
+  return wound(s, h, dmg, Math.atan2(h.y - sy, h.x - sx), kb, shielded ? 'sky' : 'hot', invuln);
 }
 
 /**

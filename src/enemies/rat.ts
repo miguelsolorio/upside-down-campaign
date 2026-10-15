@@ -1,4 +1,5 @@
-// The rat: wanders until it notices the hero, chases fast, then winds up with a red "!" and lunges once.
+// The rat: wanders until it notices the hero, chases fast, then winds up with a red "!" and lunges once. The melting rat (docs/level-7.md)
+// runs the same brain on its own numbers; what it does when it dies is in combat/kills.ts.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { dirOfVec } from '../combat/state.ts';
@@ -25,7 +26,7 @@ export function wander(s: S, e: Enemy): void {
 }
 
 export function ratUpdate(s: S, e: Enemy, hero: Hero): void {
-  const def = ENEMY_DEFS.rat;
+  const def = e.kind === 'melter' ? ENEMY_DEFS.melter : ENEMY_DEFS.rat;
   const x = def.x;
   let d = dist(e.x, e.y, hero.x, hero.y);
   if (!e.aware) {

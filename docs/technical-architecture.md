@@ -1,6 +1,6 @@
 # Technical architecture
 
-Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each folder's `index.ts` is the public API of that module (stubs until the owner replaces them). The design lives in `docs/game-design.md`. Level 1 lives in `docs/level-1.md`, Level 2 (stage 1.2, Hawkins Lab) in `docs/level-2.md`, Level 3 (stage 1.3, the middle school and the Demogorgon) in `docs/level-3.md`, Level 4 (stage 2.1, the arcade and the pumpkin patch) in `docs/level-4.md`, Level 5 (stage 2.2, the tunnels, with Max and Steve) in `docs/level-5.md`, Level 6 (stage 2.3, the Gate, the Demodog Alpha and the defense) in `docs/level-6.md`, and the map screen and party picks in `docs/map-screen.md`. The stage order, who plays each stage and what carries between stages is `src/core/campaign.ts`, and how fast the party levels over the run, measured, is `docs/pace.md`. Campaign progress for the map is `src/core/progress.ts`, and the map's view type is `src/core/mapdata.ts` (its layout is in `src/gfx/map_geo.ts`).
+Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each folder's `index.ts` is the public API of that module (stubs until the owner replaces them). The design lives in `docs/game-design.md`. Level 1 lives in `docs/level-1.md`, Level 2 (stage 1.2, Hawkins Lab) in `docs/level-2.md`, Level 3 (stage 1.3, the middle school and the Demogorgon) in `docs/level-3.md`, Level 4 (stage 2.1, the arcade and the pumpkin patch) in `docs/level-4.md`, Level 5 (stage 2.2, the tunnels, with Max and Steve) in `docs/level-5.md`, Level 6 (stage 2.3, the Gate, the Demodog Alpha and the defense) in `docs/level-6.md`, Level 7 (stage 3.1, Starcourt Mall, with Robin, Nancy and Erica's stash) in `docs/level-7.md`, Level 8 (stage 3.2, the Russian base and Grigori) in `docs/level-8.md`, and the map screen, party picks and Erica's cart in `docs/map-screen.md`. The stage order, who plays each stage and what carries between stages is `src/core/campaign.ts`, and how fast the party levels over the run, measured, is `docs/pace.md`. Campaign progress for the map is `src/core/progress.ts` (cleared stages, heroes met, the last picks, the purse and the stash), what Erica sells is `src/core/shop.ts`, and the map's view type is `src/core/mapdata.ts` (its layout is in `src/gfx/map_geo.ts`).
 
 ## Rules
 
@@ -15,9 +15,9 @@ Read this first. It's short on purpose. Types live in `src/core/types.ts`. Each 
 
 - Typecheck: `node /Users/miguelsolorio/Developer/diablo/node_modules/typescript/bin/tsc --noEmit -p .`
 - Tests: `node --test tests/<file>.test.ts`, or `node --test tests/*.test.ts` for all. Node strips the types itself.
-- The dev server is already running at http://127.0.0.1:5173 (Vite, hot reload). Don't start another. `npm install` doesn't work in this sandbox.
+- The dev server is already running at http://127.0.0.1:5173 (Vite, hot reload) for the main checkout. A worktree that builds a pass has its own entry in `.claude/launch.json` (Levels 7 and 8: `levels-7-8` on 5183). Don't start another. `npm install` doesn't work in this sandbox.
 - Browser pane: open your own tab with `tabs_create` and pass its `tabId` on every call. Close it when done. Screenshots at scale 0.5, no more than three. Prefer `javascript_tool` and console reads. `window.__ud` exposes `{ g, audio, bindings, frame }`. Read 1x pixels from `frame`, not the page canvas, which is scaled up.
-- URL flags: `?sheet=1` sprite sheet, `?audio=1` audio lab, `?skip=1` skip title and prologue, `?dev=1` dev panel, `?bot=1` bot, `?stage=1.1` or `?stage=1.2`, `?time=day` or `?time=night`, `?mute=1`, `?god=1`, `?level=3`, `?touch=1` touch controls with a mouse.
+- URL flags: `?sheet=1` sprite sheet, `?audio=1` audio lab, `?skip=1` skip title and prologue, `?dev=1` dev panel, `?bot=1` bot, `?stage=1.1` to `?stage=3.2`, `?time=day` or `?time=night`, `?mute=1`, `?god=1`, `?level=3`, `?touch=1` touch controls with a mouse.
 
 ## Ownership
 

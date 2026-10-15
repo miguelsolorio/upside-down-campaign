@@ -10,6 +10,9 @@ import { makeHero } from './party.ts';
 import { hazardAt } from './hazards.ts';
 import { newDemo } from '../enemies/demo_hit.ts';
 import { newAlpha } from '../enemies/alpha_hit.ts';
+import { newFlayed } from '../enemies/flayed.ts';
+import { newSoldier } from '../enemies/soldier.ts';
+import { newGrigori } from '../enemies/grigori_hit.ts';
 
 const TRAIL = 256;
 
@@ -19,14 +22,15 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack', 'shutter', 'cipher', 'breaker']);
 /** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
-const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox']);
+const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox', 'breaker']);
 /** Props that stay solid once solved: the lit ones, and a gap, which is crossed and never filled in. */
 const SOLID_WHEN_SOLVED = new Set<PropKind>([...LIT_WHEN_SOLVED, 'gap']);
 /** What lights or clears a prop when its spawn does not say: a target, camera or fire-door box takes a shot, vines take fire. */
 const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
   target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense', gap: 'dash', crack: 'smash',
+  cipher: 'read', breaker: 'shoot',
 };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
@@ -52,6 +56,8 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     demo: sp.type === 'demogorgon' ? newDemo() : null,
     hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
     alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
+    flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' ? newSoldier() : null,
+    grigori: sp.type === 'grigori' ? newGrigori() : null,
   };
 }
 
@@ -85,10 +91,11 @@ export function createState(opts: SimOptions): S {
     grid: opts.grid, rng: createRng(seed), frng: createRng((seed ^ 0x9e3779b9) >>> 0),
     mult: DIFFICULTY_MULT[opts.difficulty ?? 'chief'], foeMult: opts.enemyMult ?? 1, xpMult: opts.xpMult ?? 1, frame: 0,
     heroes, active: 0, swapCd: 0, swapLock: 0, trailX, trailY, trailHead: TRAIL - 1, standT: 0, walkDir: 'right', bump: null,
-    enemies: [], globs: [], lungeEnd: -999, projs: [], zones: [], lure: null, shield: null, fx: [], floaters: [], items: [], props: [],
+    enemies: [], globs: [], lungeEnd: -999, projs: [], zones: [], lure: null, traps: [], hold: null, zap: null, shield: null, fx: [], floaters: [], items: [], props: [],
     hazards: (opts.hazards ?? []).map((h) => ({ ...h })), hazT: 0, hazPrev: (opts.hazards ?? []).map((h) => hazardAt(h, 0).state),
     npcs: [], bodies: [],
     timers: [], events: [], sfxSeen: new Set(), hitstop: 0, shake: 0, shakeX: 0, shakeY: 0, flash: 0,
+    purse: Math.max(0, Math.floor(opts.purse ?? 0)), stash: { eggo: opts.stash?.eggo ?? 0, coke: opts.stash?.coke ?? 0 }, eggoAt: -9999,
     burst: 0, seq: null, inspire: 0, calm: 9999, armed: true, babysit: 0, over: false, nextUid: 1, nextDrop: 1,
     stats: {
       kills: 0, killsByKind: {}, damageDealt: 0, damageTaken: 0, xpEarned: 0, quarters: 0, levelUps: [], frames: 0, kos: 0,
@@ -113,7 +120,8 @@ export function createState(opts: SimOptions): S {
       const size = PROP_SIZE[sp.prop] ?? [TILE, TILE];
       let solid = sp.solid ?? SOLID_BY_DEFAULT.has(sp.prop);
       let state: PropState = sp.state ?? DEFAULT_STATE[sp.prop] ?? 'closed';
-      if (open.has(sp.id)) {
+      // A breaker re-arms, so a retry never leaves it lit (and firing the power box on the first frame).
+      if (open.has(sp.id) && sp.prop !== 'breaker') {
         state = LIT_WHEN_SOLVED.has(sp.prop) ? 'lit' : 'open';
         if (!SOLID_WHEN_SOLVED.has(sp.prop)) solid = false;
       }
@@ -125,6 +133,7 @@ export function createState(opts: SimOptions): S {
       s.props.push({
         id: sp.id, kind: sp.prop, x: sp.tx * TILE, y: sp.ty * TILE, w: sp.w ?? size[0], h: sp.h ?? size[1],
         solid, shutSolid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
+        k: sp.prop === 'cipher' && state === 'open' ? 1 : 0,
       });
     }
   }

@@ -36,9 +36,9 @@ const midis = (bars: readonly { midi: number }[][]): number[] => bars.flat().map
 // ---------------------------------------------------------------- the registry
 
 test('the new tracks are real: registered, distinct, and no longer borrowed', () => {
-  assert.deepEqual([...TRACK_IDS].sort(), ['clock', 'hawkins', 'lab', 'mirkwood', 'static', 'upside']);
+  assert.deepEqual([...TRACK_IDS].sort(), ['clock', 'hawkins', 'lab', 'mirkwood', 'starcourt', 'static', 'upside']);
   assert.deepEqual(Object.keys(TRACKS).sort(), [...TRACK_IDS].sort());
-  assert.equal(new Set(Object.values(TRACKS)).size, 6, 'six different tracks');
+  assert.equal(new Set(Object.values(TRACKS)).size, 7, 'seven different tracks');
   for (const id of NEW) {
     const t = TRACKS[id];
     assert.equal(t.id, id);

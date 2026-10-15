@@ -262,6 +262,7 @@ test('the foes row lays out from the final counts, so a count that climbs never 
   }
   assert.deepEqual(foeLines([['agent', 6], ['rat', 6]], 26, 3, () => 0), ['AGENTS x0  RATS x0']);
   assert.equal(foeName('demodog'), 'DEMODOGS');
+  assert.deepEqual(['melter', 'flayed', 'soldier', 'grigori', 'alpha'].map(foeName), ['MELTING RATS', 'FLAYED', 'SOLDIERS', 'GRIGORI', 'ALPHA']);
   assert.equal(foeName('mystery'), 'MYSTERYS');
 });
 

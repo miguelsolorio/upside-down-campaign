@@ -18,7 +18,7 @@ test('tile legend builds a grid and marks solids', () => {
   assert.equal(isSolidTile(g, 2, 0), false);
   assert.equal(isSolidTile(g, 3, 1), true);
   assert.equal(isSolidTile(g, -1, 0), true);
-  assert.throws(() => buildGrid(['T?']));
+  assert.throws(() => buildGrid(['T\u03a9']));
   assert.throws(() => buildGrid(['TT', 'T']));
   assert.ok(Object.keys(TILES).length >= 24);
 });

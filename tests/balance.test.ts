@@ -23,6 +23,9 @@ test('time to kill at parity: rats in one to three hits, agents in three to five
     // Max's board is two quick hits, the second harder. Steve's bat chains three like Mike's, the third harder.
     max: (HERO_DEFS.max.basic.power * (1 + HERO_DEFS.max.basic.x.secondPower)) / 2,
     steve: (HERO_DEFS.steve.basic.power * (2 + HERO_DEFS.steve.basic.x.thirdPower)) / 3,
+    // Robin's scoop and Nancy's pistol are single hits.
+    robin: HERO_DEFS.robin.basic.power,
+    nancy: HERO_DEFS.nancy.basic.power,
   };
   for (const id of HERO_IDS) {
     const atk = HERO_DEFS[id].base.atk;

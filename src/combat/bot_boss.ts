@@ -35,6 +35,8 @@ export interface Finish {
   mv: [number, number];
   /** Fire Mind Blast. */
   cast: boolean;
+  /** Swing or fire the basic attack (Grigori's plan, bot_grigori.ts). */
+  attack?: boolean;
 }
 
 export interface BossSense {

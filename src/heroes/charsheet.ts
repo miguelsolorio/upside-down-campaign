@@ -95,6 +95,18 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         basic(b.power, `Third hit ${range(hit(b.power * b.x.thirdPower))}, throws`),
         special(null, `Taunts, takes ${Math.round(sp.x.guard * 100)}% less, ${secs(sp.x.life)}`),
       ];
+    case 'robin': {
+      const frames = hasTalent('robin', level) ? sp.x.linguist : sp.x.confuse;
+      return [
+        basic(b.power, `Lobbed splash, slows ${secs(b.x.slow)}`),
+        special(null, `Foes fight each other ${secs(frames)}`),
+      ];
+    }
+    case 'nancy':
+      return [
+        basic(b.power, 'Steady shots, aims eight ways'),
+        special(hit(sp.power), hasTalent('nancy', level) ? 'Five pellets, drops a bear trap' : 'Five pellets, heavy knockback', sp.x.n),
+      ];
   }
 }
 

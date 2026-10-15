@@ -2,7 +2,8 @@
 // columns beside it, each a tiny caption over its value: MP, coins, Crit. Right: the bench. On a wide screen the contents
 // sit inside the clear band with room around them.
 // There is no HP here: every hero's health is the bar over their head in the world, so a bench slot is just the key and
-// the face. The strip is quiet, with no frames. MP is one blue segment per cast.
+// the face. The strip is quiet, with no frames. MP is one blue segment per cast. Erica's stash, when the party carries any,
+// is a mini Eggo and Coke with a count each on the MP caption's row (hudstash.ts).
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
@@ -14,6 +15,7 @@ import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
+import { drawStash } from './hudstash.ts';
 import { CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, hudBand, leftShift, levelDx, slotRects } from './hudlayout.ts';
 import type { SlotRect } from './hudlayout.ts';
 
@@ -177,6 +179,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   ctx.translate(lx, 0);
   drawCoins(ctx, hud, t);
   drawMeter(ctx, hud, t);
+  drawStash(ctx, hud.stash);
   ctx.restore();
   ctx.restore();
   if (hud.boss) drawBoss(ctx, hud.boss);

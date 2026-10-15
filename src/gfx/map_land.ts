@@ -9,6 +9,7 @@ import type { Ctx } from './canvas.ts';
 import { drawTinyText } from './font.ts';
 import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
 import { arcade, gate, grey, lab, pumpkin, remap, roots, school, toUD, toUDLand, tunnels, woods } from './map_art.ts';
+import { bunker, foodCourt, mall } from './map_mall.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
 
@@ -220,11 +221,15 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   const lp = locked('2.1');
   for (const [cx, base, rx, ry] of [[191, 92, 3, 2], [197, 96, 2, 2], [226, 91, 4, 3], [234, 95, 3, 2]] as const) stand(remap(pumpkin(rx, ry), lp ? grey : (c) => c), cx, base, false);
   stand(arcade(), 245, 90, lp);
+  stand(mall(), LAND.mall.x, LAND.mall.base, locked('3.1'));
+  const fc = stand(foodCourt(), LAND.food.x, LAND.food.base, locked('3.3'));
   const plates: PlateSpec[] = [
     { cx: LAND.woods.x, y: wd.y0 - 12, name: 'MIRKWOOD', state: st['1.1'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.lab.x, y: lb.y0 - 12, name: 'LAB', state: st['1.2'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.school.x, y: sc.y0 - 12, name: 'SCHOOL', state: st['1.3'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.hole.x, y: 57, name: 'PATCH', state: st['2.1'] as NodeState, ud: false, point: 'down' },
+    { cx: LAND.mall.x + 6, y: fc.y0 - 12, name: 'STARCOURT', state: st['3.1'] as NodeState, ud: false, point: 'down' },
+    { cx: LAND.bunker.x - 26, y: LAND.bunker.y - 12, name: 'BASE', state: st['3.2'] as NodeState, ud: false, point: 'right' },
   ];
   for (const s of plates) solid.push(plateRect(s));
   for (const id of ORDER) { const p = POS[id] as { x: number; y: number }; const b = { x0: p.x - 9, y0: p.y - 24, x1: p.x + 9, y1: p.y + 9 }; solid.push(b); green.push(b); }
@@ -272,8 +277,11 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   reflect(O, 36, 26, toUD);
   const veins = paintVeins(P, rng(77));
 
-  // The hole in the patch, and what is down there.
+  // The hole in the patch, and what is down there. The bunker of the base stands on the cut of the earth: underground, but not upside down.
   drawHole(P, lp);
+  const bk = bunker();
+  if (locked('3.2')) remap(bk, grey);
+  P.blit(bk, LAND.bunker.x - (bk.w >> 1), hzAt(LAND.bunker.x) - bk.h + 1);
   const tn = tunnels();
   const tx = LAND.tunnels.x - (tn.w >> 1);
   P.blit(tn, tx, LAND.tunnels.top);

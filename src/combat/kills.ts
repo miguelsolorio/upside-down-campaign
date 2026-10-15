@@ -1,10 +1,15 @@
 // Deaths: kill events, XP, quarter drops, group-cleared, and removing bodies after their death animation.
 import { cancelAttack } from '../enemies/shield.ts';
 import { clearAlpha } from '../enemies/alpha_hit.ts';
+import { ENEMY_DEFS } from '../enemies/defs.ts';
+import { releaseHold } from '../enemies/hold.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
 import { activeHero } from './state.ts';
-import { dust, sfx } from './fx.ts';
+import { addFx, dust, sfx } from './fx.ts';
+import { hurtHero } from './damage.ts';
+import { dist } from './space.ts';
+import { slowHero } from './status.ts';
 import { awardXp } from './party.ts';
 
 const DEATH_FRAMES = 22;
@@ -18,9 +23,27 @@ function dropChance(s: S, base: number): number {
   return base + (dustin && hasTalent('dustin', dustin.level) ? COMPASS_DROP : 0) + (max && hasTalent('max', max.level) ? HIGH_SCORE_DROP : 0);
 }
 
+/** Frames the goo is drawn. */
+const GOO_FRAMES = 22;
+
+/**
+ * A melting rat bursts when it dies, by any cause (a hit, a burn, a bump, a power box): a goo splash of x.burst px around it. The
+ * active hero inside it takes power 0.5 (the rat's ATK) and is slowed for x.slow frames. It hurts nobody else. `melt` sfx and a 'goo' fx.
+ */
+function meltBurst(s: S, e: Enemy): void {
+  const x = ENEMY_DEFS.melter.x;
+  addFx(s, 'goo', e.x, e.y, 'down', 0, GOO_FRAMES, x.burst * 2, x.burst);
+  sfx(s, 'melt');
+  const h = activeHero(s);
+  if (h.ko || s.over || dist(e.x, e.y, h.x, h.y) > x.burst) return;
+  hurtHero(s, h, e.x, e.y, x.power, e.atk, 1.2);
+  if (!s.god) slowHero(s, h, x.slow);
+}
+
 function kill(s: S, e: Enemy): void {
   cancelAttack(s, e);
   clearAlpha(s, e);
+  releaseHold(s, e);
   e.dead = true;
   e.deadT = 0;
   e.aware = false;
@@ -42,6 +65,7 @@ function kill(s: S, e: Enemy): void {
     s.items.push({ id: `drop${s.nextDrop++}`, kind: 'quarter', x: e.x, y: e.y, t: 0 });
   }
   awardXp(s, e.xp);
+  if (e.kind === 'melter') meltBurst(s, e);
   if (!s.cleared.has(e.group) && !s.enemies.some((o) => o.group === e.group && !o.dead)) {
     s.cleared.add(e.group);
     s.events.push({ t: 'groupCleared', group: e.group });

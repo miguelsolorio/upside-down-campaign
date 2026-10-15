@@ -15,14 +15,18 @@ import { patchObject } from './tile_patch.ts';
 import { barnObject } from './tile_barn.ts';
 import { tunnelTile } from './tile_tunnel.ts';
 import { fleshTile } from './tile_flesh.ts';
+import { mallObject } from './tile_mall.ts';
+import { baseObject } from './tile_base.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
   'tilegreen', 'carpet', 'plate', 'cable', 'drain', 'stain', 'vines', 'schoolfloor', 'checker', 'gymfloor',
   'arcadecarpet', 'sidewalk', 'furrow', 'rot',
+  'mallfloor', 'mallband', 'servicefloor', 'basefloor', 'basegrate', 'keyfloor',
 ]);
 /** Floors that are a mark on another floor: an object beside one stands on the plain floor named here, unless a plain floor is also beside it. */
-const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet', rot: 'furrow' };
+const MARKED: Partial<Record<TileName, TileName>> = { hazard: 'labfloor', vent: 'labfloor', cable: 'labfloor', drain: 'tilegreen', stain: 'labfloor', vines: 'carpet', rot: 'furrow',
+  mallband: 'mallfloor', basegrate: 'basefloor', keyfloor: 'basefloor' };
 
 /** The ground an object stands on: whatever its neighbours are, else the given default. */
 function under(c: TileCtx, prefer: TileName): Px {
@@ -281,6 +285,11 @@ function mailbox(c: TileCtx): Px {
   return px;
 }
 
+/** The tiles whose picture moves, at a step of it: the fountain's rings and the machine's drum and flame. */
+export function pulseTile(name: TileName, c: TileCtx, phase: number): Px | null {
+  return name === 'fountain' ? mallObject(name, c, under, phase) : name === 'machine' ? baseObject(name, c, under, phase) : null;
+}
+
 export function objectTile(name: TileName, c: TileCtx): Px | null {
   switch (name) {
     case 'tunnelfloor': case 'tunnelcap': case 'tunnelwall': case 'roots': case 'veins': case 'nest': case 'ladder':
@@ -337,6 +346,11 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
     case 'barnroof':
     case 'corn':
       return barnObject(name, c, rngFor(c, name));
+    case 'mallcap': case 'mallwall': case 'mallglass': case 'shopfront': case 'shopshut': case 'planter': case 'fountain': case 'railing':
+    case 'scoops': case 'goo': case 'lift':
+      return mallObject(name, c, under);
+    case 'basecap': case 'basewall': case 'ammo': case 'bunk': case 'cell': case 'machine':
+      return baseObject(name, c, under);
     default: return null;
   }
 }

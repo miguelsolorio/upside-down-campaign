@@ -12,6 +12,8 @@ import { hazardViews } from './hazards.ts';
 import { guarding, isShielded } from '../enemies/shield.ts';
 import { demoPose } from '../enemies/demo_hit.ts';
 import { alphaPose } from '../enemies/alpha_hit.ts';
+import { grigoriPose } from '../enemies/grigori_hit.ts';
+import { flayedPose } from '../enemies/flayed.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
 
@@ -37,12 +39,13 @@ function enemyView(s: S, e: Enemy): ActorView {
     kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir,
     anim: e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
     blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1, strained: false,
-    tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : null,
+    tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : e.stat.slow > 0 ? 'purple' : null,
     alert: !e.dead && e.mode === 'windup',
     z: e.dead ? 0 : Math.max(e.z, Math.min(5, Math.hypot(e.vx, e.vy) * 1.2)),
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
   if (e.elite) v.elite = true;
+  if (e.stat.confuse > 0 && !e.dead) v.confused = true;
   if (isShielded(e)) v.guarding = guarding(e);
   // A hidden enemy is faint until Cold spot has it or it strikes. Revealed, it says so, so gfx can tell the two apart.
   if (e.cloaked && !e.dead) v.hidden = e.hidden && !coldSpot(s, e);
@@ -55,7 +58,23 @@ function enemyView(s: S, e: Enemy): ActorView {
     const pose = alphaPose(e.alpha);
     if (pose) v.pose = pose;
   }
+  if (e.grigori && !e.dead) {
+    const pose = grigoriPose(e.grigori);
+    if (pose) v.pose = pose;
+  }
+  if (e.flayed && !e.dead) {
+    const pose = flayedPose(e.flayed);
+    if (pose) v.pose = pose;
+  }
   return v;
+}
+
+/** A dormant Flayed waits as a goo puddle: an actor with `puddle` set, standing still. */
+function puddleView(s: S, e: Enemy): ActorView {
+  return {
+    kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir, anim: 'idle', t: s.frame, flash: 0, blink: false, strained: false,
+    tint: null, alert: false, z: 0, bar: null, puddle: true,
+  };
 }
 
 function propView(s: S, p: Prop): PropView {
@@ -63,12 +82,13 @@ function propView(s: S, p: Prop): PropView {
   if (p.cam) v.cam = camView(p);
   const k = riftK(s, p);
   if (k !== undefined) v.k = k;
+  else if (p.kind === 'cipher') v.k = p.k;
   return v;
 }
 
-const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA' };
+const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI' };
 
-/** The first Warden, Demogorgon or Alpha that is awake and standing fills the boss bar. */
+/** The first Warden, Demogorgon, Alpha or Grigori that is awake and standing fills the boss bar. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
@@ -82,7 +102,8 @@ function projFx(p: Proj): FxView {
   if (p.lob) {
     const t = Math.min(1, p.age / p.life);
     const arc = 4 * 20 * t * (1 - t);
-    return { kind: 'candy', x: p.x, y: p.y - arc - BODY_Y * (1 - t) - 2, dir: 'down', angle: 0, t: p.age, life: p.life, w: 6, h: Math.round(arc) };
+    // A scoop in flight is a 6 wide 'scoop' fx, h its height off the ground. The splat (heroes/robin.ts) is the same kind, w its diameter.
+    return { kind: p.kind === 'scoop' ? 'scoop' : 'candy', x: p.x, y: p.y - arc - BODY_Y * (1 - t) - 2, dir: 'down', angle: 0, t: p.age, life: p.life, w: 6, h: Math.round(arc) };
   }
   // A fireball is drawn as a small flame pointing the way it flies (w its reach, h its width).
   if (p.kind === 'fireball') return { kind: 'flame', x: p.x, y: p.y, dir: dirOfVec(p.vx, p.vy, 'right'), angle, t: p.age, life: p.life, w: 12, h: 10 };
@@ -110,6 +131,8 @@ function fxList(s: S): FxView[] {
   for (const z of s.zones) {
     out.push({ kind: 'flame', x: z.x, y: z.y, dir: dirOfVec(Math.cos(z.angle), Math.sin(z.angle), 'right'), angle: z.angle, t: z.age, life: z.life, w: z.r, h: Math.round(2 * z.r * Math.sin(z.half)) });
   }
+  // A bear trap on the floor: one 'trap' fx for as long as it lasts, w by h its size. It is gone once an enemy springs it.
+  for (const t of s.traps) out.push({ kind: 'trap', x: t.x, y: t.y, dir: 'down', angle: 0, t: t.age, life: t.life, w: 14, h: 8 });
   if (s.lure) out.push({ kind: 'candy', x: s.lure.x, y: s.lure.y - 2, dir: 'down', angle: 0, t: s.lure.age, life: s.lure.life, w: 8, h: 0 });
   if (s.shield) {
     const sh = s.shield;
@@ -137,7 +160,10 @@ export function buildView(s: S): SimView {
   for (const b of s.bodies) {
     actors.push({ kind: 'hero', id: b.id, x: b.x, y: b.y, dir: b.dir, anim: 'ko', t: b.t, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null });
   }
-  for (const e of s.enemies) if (!e.dormant) actors.push(enemyView(s, e));
+  for (const e of s.enemies) {
+    if (!e.dormant) actors.push(enemyView(s, e));
+    else if (e.flayed && !e.dead) actors.push(puddleView(s, e));
+  }
   for (const n of s.npcs) {
     const ward = wardView(s, n);
     if (ward) { actors.push(ward); continue; }
@@ -153,9 +179,10 @@ export function buildView(s: S): SimView {
     floaters: s.floaters.slice(),
     hud: {
       party: partyHud(s), burst: s.burst, burstReady: s.burst >= 1 && !s.seq,
-      quarters: s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
+      quarters: s.purse + s.stats.quarters, inspiration: Math.ceil(s.inspire / 60),
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
       ward: wardHud(s),
+      stash: { ...s.stash },
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

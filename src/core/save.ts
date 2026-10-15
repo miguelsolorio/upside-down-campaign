@@ -17,6 +17,8 @@ export interface SaveData {
   killed: string[];
   /** Prop ids already opened or lit. */
   openProps: string[];
+  /** Quarters this stage's run had picked up by the time the lights were lit, so a retry or a CONTINUE keeps them. 0 if absent. */
+  quarters?: number;
 }
 
 const KEY = 'upside-down:save:v1';
@@ -56,7 +58,9 @@ export function parseSave(raw: unknown): SaveData | null {
   const fired = strings(cp.state.fired), cleared = strings(cp.state.cleared);
   const killed = strings(raw.killed), openProps = strings(raw.openProps);
   if (!fired || !cleared || !killed || !openProps) return null;
-  return { v: 1, stage: raw.stage, party, checkpoint: { x: cp.x, y: cp.y, state: { fired, cleared } }, killed, openProps };
+  const out: SaveData = { v: 1, stage: raw.stage, party, checkpoint: { x: cp.x, y: cp.y, state: { fired, cleared } }, killed, openProps };
+  if (num(raw.quarters) && raw.quarters > 0) out.quarters = Math.floor(raw.quarters);
+  return out;
 }
 
 export function loadSave(): SaveData | null {

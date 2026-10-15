@@ -1,8 +1,26 @@
 # TODO
 
-Scope for this pass: Level 5 (stage 2.2, the tunnels, Max and Steve join), Level 6 (stage 2.3, the Gate, the Demodog Alpha and the defense of Eleven), and party picks on the map. The pass before it built Levels 3 and 4 and the Hawkins map.
+Scope for this pass: Level 7 (stage 3.1, Starcourt Mall, Robin and Nancy join) and Level 8 (stage 3.2, the Russian base, the cipher doors and Grigori), with Erica's cart on the map. Chapter 3 opens here. 3.3 (the food court and the Mind Flayer) shows locked on the map. The pass before it built Levels 5 and 6 and party picks.
 
-## This pass (levels 5 and 6)
+## This pass (levels 7 and 8)
+
+- [x] Owner's calls (2026-10-15): Robin and Nancy both join in 3.1, nobody locked there, Robin locked for 3.2. Hopper stays an npc. Erica's cart lands now on the map, Eggos and Cokes at triple price, three of each carried, spent by the sim on its own (an Eggo under 25% HP, a Coke on a dry Special). Grigori is the 3.2 mini-boss as designed (flank him or zap him on the power box). Cipher doors on the 3.2 route and on a cache
+- [x] Spine: `docs/level-7.md`, `docs/level-8.md`, "Erica's cart" and "Chapter three on the map" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, 23 mall and base tiles, the nine-hero pool, `core/shop.ts`, the purse and stash in `core/progress.ts`, stand-ins, stub stages 3.1 and 3.2. Chapter 3 enemies are sized for the party a chained bot run really brings (Mike Lv 6, the bench at 4 and 5, Robin and Nancy at 3), not the design's Lv 7
+- [x] Sim A: Robin, Nancy, confusion, the cipher door, the stash (1107 tests pass)
+- [x] Art: `heroes3-variations.html` (Robin, Nancy, Erica), `grigori-variations.html`, `mall-variations.html` (mall and base looks), sent to the owner one image per option
+- [x] Owner picks: Robin Sailor, Nancy Overalls, Erica Boss, Grigori Greatcoat (a size up), a Confetti mall over the Brass base, both stages after closing
+- [x] Sim B: the soldier, the Flayed, the melting rat, Grigori, the power box and breaker, the bot's play. Grigori is at 1200 HP, not the spec's 800: his bot fight takes 29 s with Nancy and 73 s without a shooter. The careless bot can't beat his front guard, so 3.2's careless target needs a look when it's tuned
+- [x] Audio: `starcourt` (C Lydian, 118, base peak 0.48, combat 0.75, no limiting), ten effects, Robin's and Nancy's stingers, blips for Robin, Nancy and Erica. WAVs sent to the owner
+- [x] Art build: the picks, the foes, the 23 tiles, the props, fx, sheet pages 25 to 34, Starcourt on the map
+- [x] World 3.1: the mall, beats, `l7_*` scripts, alt hints, the purse and stash in the play scene. The first chapter 3 numbers needed a factor of 3.3, so the lead retuned the rat, the Flayed (it now shambles through light hits) and the soldier: 3.1 sits at 1.7. Chief 18 of 20 (262 damage, 1.6 KOs, 36% low, 98 s), 100 seeds 86 and none stuck, careless 18, kid 20, upside 8
+- [x] World 3.2: the base, cipher doors, the Key chamber, `l8_*` scripts. Tuned by the lead: the careless bot cleared it 0 times in 20 against the spec's Grigori, so his guard drops while he recovers, his hits are softer, he calls two soldiers at rage, and rifle rounds are power 0.3
+- [x] Paused at 86% of the 5-hour window (10:00 PT); the owner said to keep going
+- [x] Merged main in (the pace pass, the QA pass, controller rebinding, the pause on focus loss). The campaign run now plays through 3.2. Robin and Nancy walk into 3.1 on their first visit (`JOINS` in `core/campaign.ts`), and the arrivals come from the run: 3.1 Mike 6, Dustin 5, Robin 3, Nancy 3; 3.2 Mike 7, Dustin 6, Robin 3, Nancy 3. The lead ends 3.2 at Lv 7, a level short of the chapter 3 target with 3.3 still to come
+- [x] Retuned to those parties. 3.1 at 1.4: chief 16 of 20 (239 damage, 1.75 KOs, 40% low, 92 s), 100 seeds 85 and none stuck, careless 18, kid 20, upside 13. 3.2 at 1.25: chief 19 of 20 (291 damage, 0.55 KOs, 47% low, 118 s, the fight 45%), 100 seeds 89 (303 damage, 42% low) and none stuck, careless 12, kid 20, upside 7
+- [x] Verified: typecheck clean, 1429 tests pass, the production build passes. In the browser (muted): the map opens on Chapter three with Starcourt open and the base and food court locked; X opens Erica's cart, an Eggo buys for 15 and is saved; the picks panel shows nine with Robin and Nancy in on the first visit; the chapter three card shows (with SKIP STORY off, as every chapter card does); with 3.1 cleared the map opens on the base and Robin is locked; the bot clears 3.1 (1:41) and 3.2 (1:47, the feedback note after it). No console errors
+- [ ] Owner asked before merging into main
+
+## Levels 5 and 6 (merged)
 
 - [x] Owner's calls: Max and Steve join in 2.2, Hopper is an npc at the Gate. Party picks lock the heroes a stage's gates need (Max for 2.2, Steve for 2.3) and remember the last party. Eleven can fall in the defense, and a retry starts the defense again. Variation sheets first for the Alpha, the picks panel, the tunnels and the new heroes
 - [x] Spine: `docs/level-5.md`, `docs/level-6.md`, "Party picks" in `docs/map-screen.md`, the contracts in `core/types.ts` and `world/types.ts`, ten tiles, `pickParty` and remembered picks, stand-ins, stub stages
@@ -106,7 +124,7 @@ The lead and Dustin don't move and nothing wipes more. With the recruits a level
 - [x] The one hook into world code: a call to `rumble(ev)` at the top of `forward()` in `world/play.ts`. Nothing in combat, enemies or the HUD changed
 - [x] The options rebuild their rows when the input changes (picking up a pad with the menu open), keeping the cursor on its row
 - [x] Verified: typecheck clean, 1149 tests pass (58 new), the production build passes. In the browser with `?mute=1` and a simulated pad: RUMBLE shows and saves, the GAMEPAD page rebinds by pad and by mouse, B binds without backing out, Start cancels, View clears, the level's hints and the pause menu follow the new buttons, and a bot run buzzes the fake pad's motor on hits and level-ups
-- [ ] The picks screen's controller legend still prints `X LEAD` whatever SPECIAL is bound to (`legend()` in `ui/picks_logic.ts`, left alone while chapter 3 works in it). Its `A PICK` and `B BACK` are right, since A and B are fixed
+- [x] The picks screen's controller legend names Special from the bindings now (`legend()` in `ui/picks_logic.ts`), fixed in the Levels 7 and 8 pass
 
 ## Status
 
@@ -172,4 +190,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Chapter 3, Starcourt (1985): 3.1 the mall concourse, 3.2 the Russian base, 3.3 the food court and the Mind Flayer, with Robin and Nancy joining, Erica's shop, and Hopper leaving the party. Then chapters 4 and 5, the other heroes, bonds, the remaining tracks, docs polish.
+Stage 3.3, the food court, with Flayed Billy and the Mind Flayer, Hopper leaving, and `starcourt` going sour near the boss. Then chapters 4 and 5, the other heroes, bonds, Lv 6 talents (Nancy's Molotov and her `burn`), the remaining tracks, docs polish.

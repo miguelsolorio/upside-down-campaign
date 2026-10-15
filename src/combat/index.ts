@@ -77,6 +77,23 @@
 //   ids made up (rt1, rt2, ...) that are never looked up in skipSpawns. Their groups are howl1 to howl3 and defense. A defense wave
 //   uses the burrows nearest the ward (the nearest and any within 128 px of it) in turn; with no burrows listed they come up on
 //   open floor round the Alpha or the ward.
+// - Robin (heroes/robin.ts): Scoop toss is a lob like Dustin's candy that lands on the nearest enemy in a 40 degree cone (never farther
+//   than 72 px), flies 22 frames and splashes 16 px for power 0.9 and a 60 frame slow (an enemy under slow is tinted purple). In flight
+//   it is a 'scoop' fx 6 wide, h its height; the splat is a 'scoop' fx, w its diameter. Word vomit (5 MP) is a 'babble' fx (w the reach,
+//   56) and confuses every enemy in the cone for 180 frames (240 with Linguist, Lv 3): ActorView.confused, and the shared brain in
+//   combat/confuse.ts walks it to the nearest other enemy and bumps it (20 frame wind-up under the "!", then 0.8 of its ATK against
+//   the other's DEF). A boss (group 'boss', the Demogorgon, the Alpha, Grigori) staggers 30 frames instead and is never a bump target.
+// - Nancy (heroes/nancy.ts): the Pistol is a 'bullet' fx in eight directions (4.4 px a frame, reach 160, power 1.1). The Shotgun (7 MP)
+//   is five 'bullet' pellets across 50 degrees (5 px a frame, reach 72, power 0.6 each, knockback 4 capped so a volley shoves one
+//   enemy once) and 'spark' fx at the muzzle. Both carry `shoot`. Trap kit (Lv 3): each Shotgun drops a 'trap' fx at her feet (600
+//   frames, at most two, the oldest goes). The first non-boss enemy within 9 px of one is held 120 frames (a stun, so it tints yellow)
+//   and takes power 0.8; the trap is spent.
+// - A 'cipher' prop (hitBy 'read', solid) decodes while the active hero with `read` stands within 40 px: PropView.k climbs 1/45 a frame
+//   and falls 1/90 when she steps away. At 1: 'decode' sfx, a 'reveal' fx, propCleared, open and walkable. openProp opens it at once.
+//   Anyone without `read` who pushes it or swings or fires at it is 'poked'; Robin never is.
+// - The stash (combat/pickups.ts): SimOptions.stash is spent by the sim. An Eggo when the active hero stands under 25 percent HP (at
+//   most once every 120 frames), a Coke when Special is pressed short of MP (the special then fires on that press). Each is
+//   { t: 'stashUsed', item }, an EGGO or COKE floater, the 'stash' sfx and one less in view().hud.stash.
 // - closeProp(id) shuts an open prop: solid again if it is solid when shut, no event, a thud sfx. A vines prop spawned `state: 'open'`
 //   has no default hitBy, so nothing burns a seal. A hero standing in the prop is moved to the nearest open tile (the tie goes to the
 //   Alpha's side).
@@ -87,6 +104,26 @@
 //   The clock runs through hit-stop and stops only for a burst and a game over. About every 600 frames the sim plays 'rumble'. At 0:
 //   { t: 'defended' }, the 'gateShut' sfx, a shake and a flash, and every run-time enemy still up dies for no XP and no kill event.
 //   If her HP hits 0 first: { t: 'wardDown', id } once, the clock stops and the waves stop.
+// - The melting rat (enemies/rat.ts, combat/kills.ts): it swarms like the rat (24 frame wind-up, power 0.75) and, when it dies by any cause,
+//   bursts: a 'goo' fx (w 44, h 22), the 'melt' sfx, and for the active hero within 22 px power 0.5 and the 'slow' status for 60 frames.
+// - The Flayed (enemies/flayed.ts, enemies/hold.ts): a 30 frame "!", a 10 frame reach, and on contact a grab of power 0.8 that holds the
+//   active hero for 40 frames (50 for an elite): pose 'grab' on it, the 'grab' sfx, ActorView anim 'hurt' on the hero, and no move or attack
+//   until it lets go. The hold ends in a shove of 3 (no damage). A swap frees the hero, so does a hit on it with knockback 3 or more, and it
+//   lets go if it is stunned, confused, staggered or killed. A dormant Flayed is an actor with `puddle` set; when its group wakes it has
+//   pose 'rise' for 40 frames and cannot be hit, confused or shot.
+// - The soldier (enemies/soldier.ts): holds 80 to 120 px from the hero, steps back inside 60, and after a 30 frame "!" fires three (an elite
+//   five) 'bullet' rounds six frames apart along the aim locked at the end of the wind-up, with 'rifle' on each. A round hits for power 0.45
+//   and leaves the hero invulnerable for five frames, so each round of a burst can land. Inside 22 px it clubs (20 frame wind-up, power
+//   0.8, knockback 3). Bullets stop at solid tiles and props, and a hit on it breaks the wind-up and the burst.
+// - Grigori (enemies/grigori.ts, grigori_hit.ts): hud.boss reads GRIGORI while he is awake. He always faces the hero (ActorView.dir) except
+//   while he recovers, and a hit from inside 70 degrees of that facing deals a quarter, with the 'block' sfx. Haymaker at 28 px (30 frame
+//   "!", reach 32, power 1.2, then 50 frames of recovery), grab (pose 'grab' from the "!" through the lunge and the 45 frame hold, then a
+//   throw of power 1.0 and knockback 6), rage at half HP, pose 'stun' on the power box. Word vomit staggers him 30 frames and drops a hero he
+//   holds. Hits never stagger him, and Nancy's traps do not hold him.
+// - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
+//   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
+//   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;
+//   the active hero takes 15 and is thrown clear. The breaker is 'closed' again 300 frames after it was lit. openProps never leaves it lit.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

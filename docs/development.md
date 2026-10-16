@@ -67,10 +67,26 @@ Save all leaves `starcourt.png` and `picks.png` alone. They are frames of the ru
 | `favicon.ico` | 16 and 32 | The browser tab |
 | `icons/apple-touch-icon.png` | 180 × 180 | The iPhone and iPad home screen |
 | `icons/icon-192.png`, `icons/icon-512.png` | 192 and 512 | Android's home screen, through `manifest.webmanifest` |
+| `icons/icon-maskable-512.png` | 512 × 512 | Android's adaptive icon, through `manifest.webmanifest`. The same die, smaller, so a circle or squircle mask doesn't cut it |
 
-Each size is drawn on its own grid instead of scaled down, so the 16 px tab icon stays sharp. The page also keeps five other takes on the die, for comparison.
+Each size is drawn on its own grid instead of scaled down, so the 16 px tab icon stays sharp. The page also keeps five other takes on the die, for comparison. Under the icons it shows the maskable one cut to a circle, a squircle and a rounded square, with the 80% safe circle drawn on top. The die and the sparkles stay inside it.
 
 `index.html` points at all of these through `%BASE_URL%` and `%VITE_SITE_URL%`.
+
+## Installing as an app
+
+The page installs as an app on iOS and Android, with no store. `public/manifest.webmanifest` names it, sets `start_url` and `scope` to `./` so one build works at a site's root and under a project folder, asks for `display: fullscreen` and lists the icons. iOS takes its home screen icon and name from the `apple-touch-icon` link and the `apple-mobile-web-app-*` tags in `index.html`. Chrome on Android installs from the menu, and offers a prompt when the page has a service worker with a fetch handler.
+
+`public/sw.js` is that worker, and it keeps the game for offline play:
+
+- The page goes to the network first, waits four seconds, then opens the kept copy. A new deploy shows up on the next launch.
+- Files under `/assets/` carry a hash of their contents, so a kept one is used as it is.
+- Everything else (the icons, the manifest) comes from the cache at once and is fetched again for next time.
+- Right after the worker starts, the page hands it the URLs it has already loaded, so the first visit works offline too.
+
+`src/core/pwa.ts` registers it in a production build only. In dev a worker would keep showing old modules. To drop everything it kept, change `CACHE` in `sw.js`. The old cache goes when the new worker activates.
+
+To check one, build with `BASE_PATH=./`, serve `dist/` from a folder and open it in Chrome. DevTools, Application, Manifest lists the icons and any installability errors, and Service workers shows the worker. Stop the server and reload to see it play offline. `tests/pwa.test.ts` pins the manifest fields, every icon file and its size, the service worker's fetch handler and the share card's size.
 
 ## Layout
 
@@ -90,6 +106,7 @@ docs            game design, architecture, specs for Levels 1 to 8 and the map, 
 music           rendered WAVs of the tracks
 public/social   the link preview and README images, drawn by social.html
 public/icons    the app icon, with public/favicon.ico, drawn by social.html
+public/         also the web app manifest and sw.js, the service worker
 .github         the deploy
 ```
 

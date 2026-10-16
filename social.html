@@ -365,10 +365,10 @@ function specks(ctx, n, count, seed, colors = ['pink', 'rose', 'hot']) {
   }
 }
 
-/** A crit's sparkles: four point stars off the corners. */
-function sparkles(ctx, n, color = 'yellow') {
+/** A crit's sparkles: four point stars off the corners. `pull` slides them toward the middle, for the maskable icon. */
+function sparkles(ctx, n, color = 'yellow', pull = 1) {
   for (const [u, v, k] of [[0.17, 0.2, 2], [0.84, 0.16, 1], [0.86, 0.8, 2], [0.14, 0.84, 1]]) {
-    const x = Math.round(u * n), y = Math.round(v * n), a = Math.max(1, Math.round(k * n / 40));
+    const x = Math.round((0.5 + (u - 0.5) * pull) * n), y = Math.round((0.5 + (v - 0.5) * pull) * n), a = Math.max(1, Math.round(k * n / 40));
     box(ctx, x - a, y, a * 2 + 1, 1, color);
     box(ctx, x, y - a, 1, a * 2 + 1, color);
     box(ctx, x, y, 1, 1, 'white');
@@ -435,7 +435,7 @@ const DICE = [
   {
     id: 'C2', name: 'Crimson', note: 'A red die on cool blue',
     glyph: dieGlyph({ center: 'pink', top: 'hot', side: 'red', low: 'blood1', line: 'blood0', edge: 'ink' }),
-    plate: (ctx, n) => { plate(ctx, n, [[0.3, 'dusk'], [0.38, 'shadow'], [0.46, 'night']], 'ink'); sparkles(ctx, n, 'sky'); },
+    plate: (ctx, n, safe) => { plate(ctx, n, [[0.3, 'dusk'], [0.38, 'shadow'], [0.46, 'night']], 'ink'); sparkles(ctx, n, 'sky', safe ? 0.74 : 1); },
   },
   {
     id: 'C3', name: 'Gold crit', note: 'The level-up gold, on purple',
@@ -454,12 +454,16 @@ const DICE = [
 /** The one in use. */
 const APP_ICON = DICE.find((d) => d.id === 'C2');
 
-/** The home screen icon: the plate, and the object at about three quarters of it. */
-function appIcon(icon, n, scale) {
+/**
+ * The home screen icon: the plate, and the object at about three quarters of it. `safe` is the maskable version for
+ * Android, which cuts the icon to a circle, a squircle or a rounded square. The plate already runs to every edge, so
+ * the object shrinks to sit well inside the middle 80% circle that no mask touches.
+ */
+function appIcon(icon, n, scale, safe = false) {
   const small = makeCanvas(n, n);
   const ctx = small.getContext('2d');
-  icon.plate(ctx, n);
-  const m = Math.round(n * 0.74);
+  icon.plate(ctx, n, safe);
+  const m = Math.round(n * (safe ? 0.62 : 0.74));
   icon.glyph(ctx, Math.floor((n - m) / 2), Math.floor((n - m) / 2), m);
   return upscale(small, scale);
 }
@@ -540,11 +544,41 @@ function iconSheet(list = DICE) {
   return c;
 }
 
-/** The home screen icons under public/icons, for iOS (180) and Android (192 and 512). favicon.ico holds the 16 and 32. */
+/** The maskable icon under the cuts Android makes: a circle, a squircle and a rounded square, with the 80% safe circle in red. */
+function maskSheet() {
+  const cell = 280, pad = 24, W = pad + 3 * (cell + pad), H = cell + 2 * pad + 28;
+  const c = makeCanvas(W, H);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#10142a';
+  ctx.fillRect(0, 0, W, H);
+  const icon = appIcon(APP_ICON, 64, 8, true);
+  [['Circle', cell / 2], ['Squircle', cell * 0.3], ['Rounded square', cell * 0.14]].forEach(([name, r], i) => {
+    const x = pad + i * (cell + pad), y = pad;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, cell, cell, r);
+    ctx.clip();
+    ctx.drawImage(icon, x, y, cell, cell);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255, 74, 74, .9)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x + cell / 2, y + cell / 2, cell * 0.4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#8190b8';
+    ctx.font = '14px ui-sans-serif, system-ui, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(name, x, y + cell + 10);
+  });
+  return c;
+}
+
+/** The home screen icons under public/icons, for iOS (180) and Android (192, 512 and the maskable 512). favicon.ico holds the 16 and 32. */
 const ICON_FILES = [
   { name: 'icons/apple-touch-icon', make: () => appIcon(APP_ICON, 60, 3) },
   { name: 'icons/icon-192', make: () => appIcon(APP_ICON, 64, 3) },
   { name: 'icons/icon-512', make: () => appIcon(APP_ICON, 64, 8) },
+  { name: 'icons/icon-maskable-512', make: () => appIcon(APP_ICON, 64, 8, true) },
 ];
 
 /** An .ico holding PNGs, which every current browser reads: a six byte header, a 16 byte entry per image, the images. */
@@ -637,7 +671,20 @@ document.getElementById('save-all').addEventListener('click', async () => {
   root.append(sec);
 }
 
-Object.assign(window, { __social: { CARDS, DICE, APP_ICON, ICON_FILES, render, appIcon, favicon, iconSheet, save, saveIcons, rendered, move, heroDoing } });
+// The maskable icon, cut the ways Android cuts it.
+{
+  const sec = document.createElement('section');
+  sec.className = 'card';
+  sec.innerHTML = '<div class="meta"><div><h2>Maskable icon</h2><p>The same die, smaller on a plate that runs to every edge, so no mask cuts into it. The red ring is the 80% safe circle</p></div><p><code>public/icons/icon-maskable-512.png</code> 512 × 512</p></div><div class="frame"></div>';
+  const sheet = maskSheet();
+  sheet.setAttribute('role', 'img');
+  sheet.setAttribute('aria-label', 'The maskable app icon cut to a circle, a squircle and a rounded square, the die and its sparkles inside the safe circle each time');
+  sheet.style.imageRendering = 'auto';
+  sec.querySelector('.frame').append(sheet);
+  root.append(sec);
+}
+
+Object.assign(window, { __social: { CARDS, DICE, APP_ICON, ICON_FILES, render, appIcon, favicon, iconSheet, maskSheet, save, saveIcons, rendered, move, heroDoing } });
 </script>
 </body>
 </html>

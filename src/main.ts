@@ -6,6 +6,7 @@ import { startLoop } from './core/loop.ts';
 import { createSceneManager } from './core/scene.ts';
 import type { Game } from './core/scene.ts';
 import { applySettings, loadSettings, settings } from './core/settings.ts';
+import { registerServiceWorker } from './core/pwa.ts';
 import { fitScreen } from './core/viewport.ts';
 import { initGfx } from './gfx/index.ts';
 import { createSheetScene } from './gfx/sheet.ts';
@@ -105,6 +106,8 @@ else startGame(g);
 
 // Handy for the dev panel, the bot and browser-driven checks.
 Object.assign(window, { __ud: { g, audio, bindings, frame } });
+
+registerServiceWorker();
 
 startLoop(
   () => {

@@ -31,6 +31,8 @@ A controller plays the whole game, menus included: plug in an Xbox controller an
 
 Phones and tablets turn into a Game Boy, with the game in its screen and a D-pad, A, B, SELECT and START that work. It's the grey one by day and the black one when the phone goes dark, and GAME BOY in the options can lock it to either.
 
+You can install it as an app. On an iPhone or iPad, open it in Safari, tap Share, then Add to Home Screen. On Android, open it in Chrome and pick Install app from the menu. It opens full screen, and once it has loaded one time it plays with no signal. On an iPhone the installed app keeps its own saves, so a run started in Safari doesn't carry over.
+
 The game pauses by itself when you look away: another window or tab, or the controller you were playing with dropping out.
 
 ## How it plays

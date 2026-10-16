@@ -3,7 +3,8 @@
 // 16 by 16, or 24 by 24 for the warden and Grigori. A guard with its shield down and an elite enemy each have an atlas of their own.
 // Which frame of the atlas a view asks for is actor_pick.ts. A dormant Flayed is a puddle and a rising one comes up out of it
 // (actor_goo.ts). The Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts,
-// actor_dog.ts, actor_alpha.ts, actor_plant.ts).
+// actor_dog.ts, actor_alpha.ts, actor_plant.ts), and so are Billy, kneeling with his veins fading and slumped once he is free
+// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
@@ -17,6 +18,8 @@ import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
 import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
 import { ALPHA_H, ALPHA_W, alphaFrame } from './actor_alpha.ts';
 import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
+import { BILLY_H, BILLY_W, billyFrame } from './actor_billy.ts';
+import { drawFlayer, drawFlayerLeg } from './actor_flayer.ts';
 import type { Frame } from './actor_kit.ts';
 import { ghostKeep } from './actor_kit.ts';
 import { chargeRing } from './fx_l6.ts';
@@ -314,6 +317,9 @@ export function drawActor(ctx: Ctx, v: ActorView): void {
     case 'demogorgon': drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big'); return;
     case 'demodog': drawFramed(ctx, v, dogFrame(v), DOG_W, DOG_H, 'big'); return;
     case 'alpha': drawFramed(ctx, v, alphaFrame(v), ALPHA_W, ALPHA_H, 'huge'); return;
+    case 'billy': drawFramed(ctx, v, billyFrame(v), BILLY_W, BILLY_H, v.kind === 'npc' ? 'small' : 'big'); return;
+    case 'flayer': drawFlayer(ctx, v); return;
+    case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); return;
     case 'vine': drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return;
     case 'pod': drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none'); return;
     default: break;

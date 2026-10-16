@@ -155,3 +155,54 @@ export function onLevel(party: readonly PartyHud[], x: number, y: number, band: 
   const r = levelRect(party, band);
   return !!r && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 }
+
+// ---------------------------------------------------------------- the boss bar and its leg pips
+/** The boss bar, and the defense's ward bar that takes its place, is this wide and 9 tall, with a 1 px frame, 2 px under the
+ * strip. */
+export const BOSS_BAR_W = 176;
+export const BOSS_BAR_H = 9;
+/** A boss hit in parts (the Mind Flayer's four legs) gets one pip per part under the bar: 22 by 5, 4 px apart, centered, in a
+ * 1 px frame. The frame's top row is 1 px under the bar's frame, like the ward bar's. More parts than fit are narrowed to stay
+ * under the bar, and parts past MAX_PIPS are not shown. */
+export const PIP_W = 22;
+export const PIP_H = 5;
+export const PIP_GAP = 4;
+export const MAX_PIPS = 8;
+/** From the bar's top to a pip's top, and to the top of whatever stacks under the pips (the ward's bar, which the level
+ * doesn't ask for beside a boss). Without pips the next bar is 12 px down, as it always was. */
+export const PIP_DY = 12;
+export const NEXT_DY = 12;
+export const NEXT_DY_PIPS = PIP_DY + PIP_H + 3;
+
+export interface Pip {
+  x: number; y: number; w: number; h: number;
+  /** The part's share of HP, 0 to 1. */
+  share: number;
+  /** Filled px of w: round(w * share), at least 1 while any is left (what drawBar fills), 0 when severed. */
+  fill: number;
+  /** 0 share: the part is severed, and its pip is empty and dim. */
+  severed: boolean;
+}
+export interface BossLayout {
+  /** The bar's top-left, and its top row: bars and pips are placed from here. */
+  x: number; y: number;
+  pips: Pip[];
+  /** The top of a bar stacked under this one and its pips. */
+  nextY: number;
+}
+
+/** Where the boss bar and its pips go on a screen `screenW` wide with the strip `viewTop` tall. `parts` is `hud.boss.parts`:
+ * each part's share of HP, 0 when severed. None (or an empty list) means no pips. A share that isn't a number counts as 0. */
+export function bossLayout(screenW: number, viewTop: number, parts?: readonly number[]): BossLayout {
+  const x = (screenW - BOSS_BAR_W) / 2, y = viewTop + 2;
+  const shares = (parts ?? []).slice(0, MAX_PIPS);
+  const n = shares.length;
+  if (n === 0) return { x, y, pips: [], nextY: y + NEXT_DY };
+  const w = Math.max(1, Math.min(PIP_W, Math.floor((BOSS_BAR_W - (n - 1) * PIP_GAP) / n)));
+  const x0 = Math.floor((screenW - (n * w + (n - 1) * PIP_GAP)) / 2);
+  const pips = shares.map((v, i): Pip => {
+    const share = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
+    return { x: x0 + i * (w + PIP_GAP), y: y + PIP_DY, w, h: PIP_H, share, fill: share > 0 ? Math.max(1, Math.round(w * share)) : 0, severed: share <= 0 };
+  });
+  return { x, y, pips, nextY: y + NEXT_DY_PIPS };
+}

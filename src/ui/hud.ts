@@ -3,7 +3,8 @@
 // sit inside the clear band with room around them.
 // There is no HP here: every hero's health is the bar over their head in the world, so a bench slot is just the key and
 // the face. The strip is quiet, with no frames. MP is one blue segment per cast. Erica's stash, when the party carries any,
-// is a mini Eggo and Coke with a count each on the MP caption's row (hudstash.ts).
+// is a mini Eggo and Coke with a count each on the MP caption's row (hudstash.ts). A boss hit in parts has a pip for each under its
+// bar (bossLayout in hudlayout.ts).
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
@@ -16,8 +17,8 @@ import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
 import { drawStash } from './hudstash.ts';
-import { CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, hudBand, leftShift, levelDx, slotRects } from './hudlayout.ts';
-import type { SlotRect } from './hudlayout.ts';
+import { BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, hudBand, leftShift, levelDx, slotRects } from './hudlayout.ts';
+import type { BossLayout, SlotRect } from './hudlayout.ts';
 
 /** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
 const KEY_COLOR = 'slate';
@@ -133,27 +134,31 @@ function drawMeter(ctx: Ctx, hud: HudView, t: number): void {
   }
 }
 
-const BAR_W = 176;
-
-function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>): void {
-  const w = BAR_W, x = (SCREEN_W - w) / 2, y = VIEW_TOP + 2;
-  outline(ctx, x - 1, y - 1, w + 2, 11, 'ink');
-  drawBar(ctx, x, y, w, 9, boss.hpMax > 0 ? boss.hp / boss.hpMax : 0, 'red', 'blood0');
+function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>, lay: BossLayout): void {
+  const { x, y } = lay;
+  outline(ctx, x - 1, y - 1, BOSS_BAR_W + 2, BOSS_BAR_H + 2, 'ink');
+  drawBar(ctx, x, y, BOSS_BAR_W, BOSS_BAR_H, boss.hpMax > 0 ? boss.hp / boss.hpMax : 0, 'red', 'blood0');
   drawText(ctx, boss.name, SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
+  // A boss hit in parts has a pip under the bar for each: the part's share of HP, or empty and dim once it is severed.
+  for (const p of lay.pips) {
+    box(ctx, p.x - 1, p.y - 1, p.w + 2, p.h + 2, 'ink');
+    if (p.severed) box(ctx, p.x, p.y, p.w, p.h, 'night');
+    else drawBar(ctx, p.x, p.y, p.w, p.h, p.share, 'red', 'blood0');
+  }
 }
 
 /** The defense (docs/level-6.md): the ward's bar where the boss bar goes, in the same style and as still. Her name on the left,
- * the seconds left on the right. Under the boss bar if both are up, which the level doesn't ask for. */
-function drawWard(ctx: Ctx, ward: NonNullable<HudView['ward']>, below: boolean): void {
-  const w = BAR_W, x = (SCREEN_W - w) / 2, y = VIEW_TOP + 2 + (below ? 12 : 0);
-  outline(ctx, x - 1, y - 1, w + 2, 11, 'ink');
-  drawBar(ctx, x, y, w, 9, ward.hpMax > 0 ? ward.hp / ward.hpMax : 0, 'red', 'blood0');
+ * the seconds left on the right. `y` is its top: under the boss bar (and its pips) if both are up, which the level doesn't ask for. */
+function drawWard(ctx: Ctx, ward: NonNullable<HudView['ward']>, y: number): void {
+  const w = BOSS_BAR_W, x = (SCREEN_W - w) / 2;
+  outline(ctx, x - 1, y - 1, w + 2, BOSS_BAR_H + 2, 'ink');
+  drawBar(ctx, x, y, w, BOSS_BAR_H, ward.hpMax > 0 ? ward.hp / ward.hpMax : 0, 'red', 'blood0');
   drawText(ctx, ward.name, x + 3, y + 1, 'white', { shadow: true });
   drawText(ctx, `${Math.max(0, Math.ceil(ward.left / 60))}S`, x + w - 3, y + 1, 'white', { align: 'right', shadow: true });
 }
 
-/** Top strip (VIEW_TOP px tall): active hero, XP, then the MP, coin (or Inspiration) and Crit columns, bench faces, boss bar, and the
- * defense's ward bar.
+/** Top strip (VIEW_TOP px tall): active hero, XP, then the MP, coin (or Inspiration) and Crit columns, bench faces, boss bar (with a
+ * pip per part under it, for the Mind Flayer's legs), and the defense's ward bar.
  * Every portrait shows the key that picks it, and the bench shows how far the swap has recharged. The same
  * rectangles (`slotRects`) answer clicks, so a portrait is a button. */
 export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, o: HudOpts = {}): void {
@@ -182,6 +187,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   drawStash(ctx, hud.stash);
   ctx.restore();
   ctx.restore();
-  if (hud.boss) drawBoss(ctx, hud.boss);
-  if (hud.ward) drawWard(ctx, hud.ward, !!hud.boss);
+  const lay = bossLayout(SCREEN_W, VIEW_TOP, hud.boss?.parts);
+  if (hud.boss) drawBoss(ctx, hud.boss, lay);
+  if (hud.ward) drawWard(ctx, hud.ward, hud.boss ? lay.nextY : lay.y);
 }

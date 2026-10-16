@@ -10,6 +10,7 @@ import { BODY_Y, dist, los } from './space.ts';
 import { floater, sfx, sparks } from './fx.ts';
 import { rollDamage, spreadRoll } from './damage.ts';
 import { grigoriDazed } from '../enemies/grigori_hit.ts';
+import { billyDazed } from '../enemies/billy_hit.ts';
 import { untouchable } from '../enemies/hold.ts';
 import { speedMul } from './status.ts';
 
@@ -24,19 +25,22 @@ const BUMP_RANGE = 18;
 const BUMP_SLACK = 6;
 const BUMP_KB = 2;
 
-/** A boss: the Demogorgon, the Alpha, Grigori, or any spawn in group `boss`. */
+/** A boss: the Demogorgon, the Alpha, Grigori, Billy, the Mind Flayer or one of its legs, or any spawn in group `boss`. */
 export function isBoss(e: Enemy): boolean {
-  return e.demo !== null || e.alpha !== null || e.kind === 'grigori' || e.group === 'boss';
+  return e.demo !== null || e.alpha !== null || e.kind === 'grigori' || e.billy !== null || e.flayer !== null || e.leg !== null || e.group === 'boss';
 }
 
 /** A boss caught in the cone staggers for a moment. Not while it is in the air or charging, where it would hang in mid-move. */
 function stagger(s: S, e: Enemy): void {
-  const move = e.demo?.move ?? e.alpha?.move ?? e.grigori?.move;
-  // Not in the air, charging or lunging, and not while stunned on the power box: there it would hang in mid-move.
-  if (move === 'air' || move === 'run' || (e.grigori && (move === 'lunge' || move === 'stun'))) return;
+  // Nothing moves the Mind Flayer's body. A leg staggers unless it is striking, and its slam waits.
+  if (e.flayer || e.leg?.move === 'slam') return;
+  const move = e.demo?.move ?? e.alpha?.move ?? e.grigori?.move ?? e.billy?.move;
+  // Not in the air, charging or lunging, and not while stunned on the power box or against a wall: there it would hang in mid-move.
+  if (move === 'air' || move === 'run' || (e.grigori && (move === 'lunge' || move === 'stun')) || (e.billy && (move === 'stun' || move === 'pinned'))) return;
   e.stagger = Math.max(e.stagger, BOSS_STAGGER);
-  // Grigori also loses the wind-up he was in and drops a hero he held.
+  // Grigori and Billy also lose the wind-up they were in and drop a hero they held.
   grigoriDazed(s, e);
+  billyDazed(s, e);
   floater(s, 'DAZED', e.x, e.y - 24, 'mist', false, 30);
 }
 

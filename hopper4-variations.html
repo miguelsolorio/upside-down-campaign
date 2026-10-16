@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hopper in Kamchatka</title>
+<meta name="description" content="Looks for Chief Hopper in the Kamchatka prison, chapter 4's opening stage, drawn with the game's own paper-doll and portrait formats. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Hopper in Kamchatka</h1>
+  <p>Chapter 4 opens in 4.1 with Hopper alone in a Soviet prison camp in deep winter. He has no one to swap to, so the stage is built around his kit: the bare-fisted haymaker and the ground slam, no weapon. He needs a prisoner's look, and every card here has the shaved head and the prison clothes. He stays on the big body.</p>
+  <p class="muted">Each card is drawn by the game's own code in five fill colors or fewer and the ink outline. The top row is 4x: facing down, up and side, a walk frame, the wind up and the hit of the haymaker, then the portrait in two expressions. Under it, the frames at their real size on the Blizzard look's snow beside today's Uniform Hopper, with the portraits and the walk cycle.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span></div></div>
+
+<main class="wrap">
+  <h2 class="sec">Hopper</h2>
+  <p class="sub">Big body, wider than the kids, with thick arms. Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { CARD_W, HOPPER4_OPTS, colorsOf, hopperCard } from '/src/gfx/var/hopper4.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: HOPPER4_OPTS, width: CARD_W, title: 'Chapter 4: Hopper in Kamchatka, 5 looks', file: 'ch4-hopper',
+  make: (o) => ({ canvas: hopperCard(o), meta: `${colorsOf(o)} fill colors and the ink outline` }),
+});
+</script>
+</body>
+</html>

@@ -3,6 +3,8 @@ import { cancelAttack } from '../enemies/shield.ts';
 import { clearAlpha } from '../enemies/alpha_hit.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { releaseHold } from '../enemies/hold.ts';
+import { leaveBilly } from '../enemies/billy_hit.ts';
+import { clearFlayer, doomLegs, legHeld } from '../enemies/flayer_hit.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
 import { activeHero } from './state.ts';
@@ -43,6 +45,7 @@ function meltBurst(s: S, e: Enemy): void {
 function kill(s: S, e: Enemy): void {
   cancelAttack(s, e);
   clearAlpha(s, e);
+  clearFlayer(s, e);
   releaseHold(s, e);
   e.dead = true;
   e.deadT = 0;
@@ -66,6 +69,8 @@ function kill(s: S, e: Enemy): void {
   }
   awardXp(s, e.xp);
   if (e.kind === 'melter') meltBurst(s, e);
+  // Freed, Billy stays on the floor as scenery (enemies/billy_hit.ts).
+  leaveBilly(s, e);
   if (!s.cleared.has(e.group) && !s.enemies.some((o) => o.group === e.group && !o.dead)) {
     s.cleared.add(e.group);
     s.events.push({ t: 'groupCleared', group: e.group });
@@ -75,8 +80,10 @@ function kill(s: S, e: Enemy): void {
 /** Notices enemies at 0 HP, in array order, then drops bodies that finished their animation. */
 export function reapEnemies(s: S): void {
   let remove = false;
+  // The Mind Flayer at 0 HP takes its legs with it, so the body and all four die in this pass. A cut leg waits on the floor until then.
+  doomLegs(s);
   for (const e of s.enemies) {
-    if (!e.dead && !e.dormant && e.hp <= 0) kill(s, e);
+    if (!e.dead && !e.dormant && e.hp <= 0 && !legHeld(e)) kill(s, e);
     if (e.dead) {
       e.deadT++;
       if (e.deadT > DEATH_FRAMES) remove = true;

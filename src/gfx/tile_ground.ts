@@ -9,6 +9,7 @@ import { lab2Ground } from './tile_lab2.ts';
 import { schoolGround } from './tile_school.ts';
 import { townGround } from './tile_town.ts';
 import { patchGround } from './tile_patch.ts';
+import { foodTile } from './tile_food.ts';
 import { mallGround } from './tile_mall.ts';
 import { baseGround } from './tile_base.ts';
 
@@ -191,6 +192,11 @@ export function groundTile(name: TileName, c: TileCtx): Px | null {
     case 'basegrate':
     case 'keyfloor':
       return baseGround(name, c);
+    case 'foodfloor':
+    case 'foodband':
+    case 'skyfloor':
+    case 'kitchenfloor':
+      return foodTile(name, c);
     default:
       return null;
   }

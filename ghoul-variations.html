@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creel Ghouls</title>
+<meta name="description" content="Four designs for the ghouls that step out of the haunted mirrors in the Creel House, chapter 4's stage 4.2. Pick one.">
+<link rel="stylesheet" href="/src/gfx/var/ch4.css">
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 4 review</p>
+  <h1>Four looks for the Creel ghoul</h1>
+  <p>Inside the Creel House at night, haunted mirrors hang on the walls, and in the dark ghouls step out of them. Eddie's guitar riff shatters a mirror, which stops its ghouls. A ghoul is a common foe: flashlights and Christmas lights hurt it. It has to be scary, and it has to read on a dark room at its real size.</p>
+  <p class="muted">Each card is drawn by hand in code, in five fill colors and the ink outline. The top row is 3x on the Abandoned look's floor: the ghoul in the glass with its face and hands on the mirror, stepping out, standing, the two frames of its drift, the lunge, hurt, and the shatter when it dies. Under it, the Creel House at its real size and at 2x with a ghoul stepping out of the mirror, one standing, and Max beside them.</p>
+</div></header>
+
+<div class="bar"><div class="wrap"><span>Your pick</span><span id="pick">none yet</span><label class="chk"><input id="anim" type="checkbox" checked> Let the standing ghoul drift</label></div></div>
+
+<main class="wrap">
+  <h2 class="sec">The Creel ghoul</h2>
+  <p class="sub">About a head taller than the kids. Pick one by name.</p>
+  <div class="list" id="cards"></div>
+</main>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { GHOUL_OPTS, GHOUL_W, colorsOf, ghoulCard } from '/src/gfx/var/ghoul.ts';
+import { mountSheet } from '/src/gfx/var/ch4_page.ts';
+
+initGfx();
+mountSheet({
+  opts: GHOUL_OPTS, width: GHOUL_W, title: 'Chapter 4: the Creel ghoul, 4 looks', file: 'ch4-ghoul', tick: 450,
+  make: (o) => ghoulCard(o),
+});
+</script>
+</body>
+</html>

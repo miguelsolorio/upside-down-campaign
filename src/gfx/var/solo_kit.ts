@@ -1,12 +1,14 @@
 // The pieces of solo-variations.html, the Hellfire solo as a retro Guitar Hero: a 256 by 224 game frame mid-song (the trailer
-// roof in Upside Down Hawkins, Eddie planted in the middle in the owner's pick, Hellfire Club, demobats round him, two of them
-// stunned, the sound ring), and the note gems, targets and arrows the highway layouts in solo.ts draw on it. Lane colors come
-// from the HUD: Attack red, Special blue like the MP bar, Crit gold like the d20. Pure pixel work: no DOM until toCanvas().
+// roof in Upside Down Hawkins, Eddie planted in the middle in the owner's pick, Hellfire Club, demobats round him in the Pale
+// look from demobat-variations.html, two of them stunned, the sound ring), and the note gems, targets and arrows the highway
+// layouts in solo.ts draw on it. Lane colors come from the HUD: Attack red, Special blue like the MP bar, Crit gold like the
+// d20. Pure pixel work: no DOM until toCanvas().
 import type { ColorName } from '../palette.ts';
 import { Px } from '../px.ts';
 import { paintRoles } from './kit.ts';
 import { FRAMES, eddieFrame, FW } from './eddie_kit.ts';
 import { EDDIE_OPTS } from './eddie_opts.ts';
+import { demobatFrame } from './demobat_kit.ts';
 
 export const SW = 256, SH = 224, HUD = 20;
 /** Where Eddie stands: the middle of his frame, in screen px. */
@@ -20,30 +22,9 @@ export const GREEN: Lane = { col: 'pine3', shade: 'pine1', hi: 'leaf' };
 
 type Pt = readonly [number, number];
 
-const BAT = [
-  '.k.........k.',
-  'kgk.......kgk',
-  'kggk.kkk.kggk',
-  '.kggkGGGkggk.',
-  '..kgkGrGkgk..',
-  '...kkGGGkk...',
-  '.....kGk.....',
-  '......k......',
-];
-const BAT_UP = [
-  'k...........k',
-  'gk.........kg',
-  'kgk..kkk..kgk',
-  '.kggkGGGkggk.',
-  '..kkkGrGkkk..',
-  '....kGGGk....',
-  '.....kGk.....',
-  '......k......',
-];
-
-/** A demobat from above, wings out or up. */
-export function bat(up: boolean): Px {
-  return new Px(13, 8).art(up ? BAT_UP : BAT, { k: 'ink', g: 'grey2', G: 'bone', r: 'red' });
+/** A demobat from above, wings up or down, or stunned: the Pale look (demobat_kit.ts), 17 by 14. */
+export function bat(up: boolean, stun = false): Px {
+  return demobatFrame('pale', stun ? 'stunned' : up ? 'flap1' : 'flap3');
 }
 
 /** Every pixel on a circle, so a ring is unbroken at any radius. */
@@ -76,8 +57,7 @@ export function backdrop(ringR = 30): Px {
   ring(p, EX, EY, ringR + 6, 'orange', 3);
   ring(p, EX, EY, ringR, 'amber');
   for (const b of BATS) {
-    p.blit(bat(b.up), b.at[0] - 6, b.at[1] - 4);
-    if (b.stun) for (const [dx, dy] of [[-4, -7], [0, -9], [4, -7]] as const) p.set(b.at[0] + dx, b.at[1] + dy, 'yellow');
+    p.blit(bat(b.up, b.stun), b.at[0] - 8, b.at[1] - 7);
   }
   const solo = FRAMES.findIndex((f) => f.label === 'SOLO');
   const o = EDDIE_OPTS[0]!;

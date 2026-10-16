@@ -60,7 +60,7 @@ test('chapter three: the mall and the food court above the horizon, the base on 
 });
 
 test('states come from progress: cleared, then the next stage open, then locked', () => {
-  // 3.3 is past the end of the build, so it stays locked whatever is cleared.
+  // 3.3 closes the build, so it opens once 3.2 is cleared.
   assert.equal(states(null), 'ollllllll');
   assert.equal(states(cleared(1)), 'colllllll');
   assert.equal(states(cleared(2)), 'ccollllll');
@@ -69,8 +69,9 @@ test('states come from progress: cleared, then the next stage open, then locked'
   assert.equal(states(cleared(5)), 'cccccolll');
   assert.equal(states(cleared(6)), 'ccccccoll');
   assert.equal(states(cleared(7)), 'cccccccol');
+  assert.equal(states(cleared(8)), 'cccccccco');
   // Everything cleared: no open node is left.
-  assert.equal(states(cleared(8)), 'ccccccccl');
+  assert.equal(states(cleared(9)), 'ccccccccc');
 });
 
 test('the token starts on the next uncleared stage, or the last stage when all are cleared', () => {
@@ -83,8 +84,9 @@ test('the token starts on the next uncleared stage, or the last stage when all a
   assert.equal(startNode(cleared(5)), '2.3');
   assert.equal(startNode(cleared(6)), '3.1');
   assert.equal(startNode(cleared(7)), '3.2');
-  assert.equal(startNode(cleared(8)), '3.2');
-  assert.equal(startNode(cleared(8)), STAGE_ORDER[STAGE_ORDER.length - 1]);
+  assert.equal(startNode(cleared(8)), '3.3');
+  assert.equal(startNode(cleared(9)), '3.3');
+  assert.equal(startNode(cleared(9)), STAGE_ORDER[STAGE_ORDER.length - 1]);
 });
 
 test('a start node is never locked', () => {

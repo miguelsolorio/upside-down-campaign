@@ -57,6 +57,20 @@
       ],
       "port": 5183,
       "autoPort": false
+    },
+    {
+      "name": "level-9",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5184",
+        "--strictPort"
+      ],
+      "port": 5184,
+      "autoPort": false
     }
   ]
 }

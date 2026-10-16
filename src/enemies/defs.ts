@@ -1,5 +1,5 @@
 // Enemy data: the rat and the Lab agent, the Lab's riot guard and Warden, the Demogorgon, chapter 2's demodog, vine, pod and Alpha, and
-// chapter 3's melting rat, Flayed, soldier and Grigori.
+// chapter 3's melting rat, Flayed, soldier, Grigori, Flayed Billy and the Mind Flayer.
 import type { Difficulty, EnemyKind } from '../core/types.ts';
 
 export interface EnemyDef {
@@ -182,6 +182,68 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       reach: 32, arc: 70, kb: 5, range: 28, recover: 50, rageRecover: 36, hold: 18, block: 0.25, rageAt: 0.5, rageSpeed: 0.9,
       grabFirst: 150, grabEvery: 220, grabLow: 160, grabMin: 30, grabMax: 80, grabWindup: 24, lungeT: 12, lungeSpeed: 3.5, holdT: 45,
       throwPower: 0.7, throwKb: 6, grabRecover: 36, stunT: 180, stunHp: 0.08, stunMul: 1.5, call: 2,
+    },
+  },
+  // Flayed Billy, phase one of the 3.3 boss (docs/level-9.md, "Billy", enemies/billy.ts, billy_hit.ts). HP, DEF, walk and XP are the
+  // spec's. The lead's pass on the stage softened his hits so a player who doesn't dodge reaches the Mind Flayer alive: 18 ATK (the spec
+  // had 30), jabs of 0.4, a charge of 0.8, a throw of 0.7 and one Flayed at rage. Windup, power and cooldown are the jab's: a 12 frame
+  // wind-up, power 0.4 a hit, and 90 frames between the starts of two jabs. Weight 4 is the quarter knockback the spec gives a boss.
+  // jabReach: px at which he commits to a jab, jabHit: how far a jab still lands once it comes out. jabGap: frames between the two
+  // hits, jabKb: their shove (light, so the hero is still in reach for the second), jabInvuln: the frames of invulnerability the first leaves, short of the gap so the second can land.
+  // jabRecover: frames after. hold: px he stops short of the hero (a hero at his melee distance can step out of a grab's reach in time).
+  // chargeFirst: frames before the first charge, chargeEvery and chargeLow (enraged): frames between charges, counted from the end of the
+  // last. chargeMin and chargeMax: the hero's distance band (the first charge comes as he closes in on a hero who walked in from afar). chargeWindup: frames of "!", chargeSpeed and rageSpeed (enraged): px a frame, chargeRange: px he runs at most,
+  // chargePower and chargeKb: a hero in the way, chargeRecover: frames after a run that found no wall. stunT: frames dazed against a wall,
+  // stunMul: damage taken meanwhile.
+  // grabFirst and grabEvery: frames before the first grab and between grabs. grabReach: px at which he commits to one, grabHit: how far
+  // it still takes hold once the wind-up is over. grabWindup: frames of "!". holdT: frames he holds. throwPower and throwKb: the throw.
+  // grabRecover: frames after a miss or a throw.
+  // rageAt: the HP share that enrages him, call: Flayed he calls in then.
+  // reachR: px within which Eleven reaches him pinned, reachRise: frames to climb from 0 to 1, reachFall: frames to fall from 1 to 0.
+  // pokeGap: frames before the pinned Billy reports another try, reviveHp: the share of her HP a knocked-out Eleven stands up with.
+  billy: {
+    kind: 'billy', name: 'Billy', hp: 700, atk: 18, def: 6, speed: 1.1, xp: 60, aggro: 200,
+    windup: 12, power: 0.4, cooldown: 90, drop: 1, weight: 4,
+    x: {
+      jabReach: 24, jabHit: 28, jabGap: 8, jabKb: 1.4, jabInvuln: 6, jabRecover: 30, hold: 20,
+      chargeFirst: 30, chargeEvery: 200, chargeLow: 140, chargeMin: 60, chargeMax: 160, chargeWindup: 24, chargeSpeed: 3.6, rageSpeed: 4.2, chargeRange: 160,
+      chargePower: 0.8, chargeKb: 5, chargeRecover: 24, stunT: 60, stunMul: 1.5,
+      grabFirst: 150, grabEvery: 240, grabReach: 26, grabHit: 28, grabWindup: 16, holdT: 50, throwPower: 0.7, throwKb: 6, grabRecover: 36,
+      rageAt: 0.5, call: 1,
+      reachR: 32, reachRise: 60, reachFall: 120, pokeGap: 45, reviveHp: 0.3,
+    },
+  },
+  // The Mind Flayer, phase two of the 3.3 boss (docs/level-9.md, "The Mind Flayer", enemies/flayer.ts, flayer_hit.ts), and its four legs
+  // (enemies/flayer_legs.ts). Both are rooted: speed 0 and the weight of a wall. The legs give 0 XP and init.ts keeps it 0. The lead's pass
+  // on the whole stage (docs/level-9.md, "Result") made it a shorter, sharper fight: 800 HP and legs of 90 (the spec had 1600 and 180), the
+  // head down for 420 frames at x3 so two downs or so finish it (it was seven), slams every 110 frames at 0.8 off 22 ATK, pools of 0.07, a
+  // sweep of 0.5, and one Flayed every 600 frames, two at most. The waves and the slams were what killed a player who doesn't dodge. The
+  // body's windup, power and cooldown are not used: its legs have them.
+  // riseT: frames coming in through the skylight, hit by nothing. downT: frames the head is on the floor, downMul: damage it takes then.
+  // slamFirst, slamEvery and slamRegrow: frames before the first slam, between two slams, and after the legs grow back. phaseAt: the HP share
+  // that starts phase two, where two legs slam at once. sweepFirst and sweepEvery: frames before the first sweep and between sweeps (phase
+  // two only). waveFirst, waveEvery, waveN and waveMax: the Flayed waves, while the head is up: frames before the first, between two, how many
+  // come and how many may be alive.
+  flayer: {
+    kind: 'flayer', name: 'Mind Flayer', hp: 800, atk: 22, def: 6, speed: 0, xp: 120, aggro: 400,
+    windup: 40, power: 1.2, cooldown: 70, drop: 1, weight: 99,
+    x: {
+      riseT: 40, downT: 420, downMul: 3, slamFirst: 90, slamEvery: 110, slamRegrow: 90, phaseAt: 0.5, sweepFirst: 240, sweepEvery: 480,
+      waveFirst: 300, waveEvery: 600, waveN: 1, waveMax: 2,
+    },
+  },
+  // A leg. Windup is the warn, power the slam's. warn and warnLow (phase two): frames the line is shown. slamT: frames of the strike. rest:
+  // frames its tip lies on the floor after it. len: the line's length in px, halfW: how far either side of it a hero is hit, kb: the shove.
+  // restLen: how far in front of its root a leg's tip lies before its first slam and after it grows back. daze: frames Word vomit holds it.
+  // The sweep: sweepWarn and sweepPower and sweepKb, bandH: the band's height in px. The pools its tip leaves (combat/pools.ts): poolR and
+  // poolLife, poolMax (a fifth replaces the oldest), poolPower and poolEvery (frames between stings), poolSlow (frames of slow it renews).
+  flayerleg: {
+    kind: 'flayerleg', name: 'Mind Flayer leg', hp: 90, atk: 22, def: 4, speed: 0, xp: 0, aggro: 400,
+    windup: 40, power: 0.8, cooldown: 70, drop: 0, weight: 99,
+    x: {
+      warn: 40, warnLow: 28, slamT: 12, rest: 30, len: 150, halfW: 12, kb: 5, restLen: 56, daze: 30,
+      sweepWarn: 40, sweepPower: 0.5, sweepKb: 4, bandH: 24,
+      poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.07, poolEvery: 30, poolSlow: 20,
     },
   },
 };

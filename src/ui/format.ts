@@ -112,6 +112,7 @@ export function countUp(target: number, t: number, from: number, dur: number): n
 const FOE_NAMES: Record<string, string> = {
   agent: 'AGENTS', rat: 'RATS', guard: 'GUARDS', warden: 'WARDEN', demogorgon: 'DEMOGORGON', demodog: 'DEMODOGS', vine: 'VINES', pod: 'PODS',
   alpha: 'ALPHA', melter: 'MELTING RATS', flayed: 'FLAYED', soldier: 'SOLDIERS', grigori: 'GRIGORI',
+  billy: 'BILLY', flayer: 'MIND FLAYER',
 };
 /** What the foes row calls a kind. A kind it doesn't know gets an S. */
 export const foeName = (kind: string): string => FOE_NAMES[kind] ?? `${kind.toUpperCase()}S`;
@@ -224,4 +225,22 @@ export function cycleShake(v: number, dir: -1 | 1): number {
 }
 export function shakeLabel(v: number): string {
   return v <= 0 ? 'OFF' : v < 1 ? 'HALF' : 'FULL';
+}
+
+// ---------------------------------------------------------------- the results title
+const CHAPTER_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
+/** The results screen's title is drawn at this whole-number scale, centered on the 256 px frame's middle, top at y 12. */
+export const TITLE_SCALE = 2;
+/** The 5 by 7 font advances 6 px a glyph, and a glyph's shadow sits 1 px right and down of it. */
+const GLYPH_ADVANCE = 6;
+/** What the results screen says: CHAPTER n CLEAR when the stage closes a chapter (docs/level-9.md, "The chapter end"), else
+ * the level's end or clear. */
+export function resultsTitle(o: { chapter?: number; final?: boolean; level: number }): string {
+  if (o.chapter) return `CHAPTER ${CHAPTER_WORDS[o.chapter] ?? o.chapter} CLEAR`;
+  return o.final ? `END OF LEVEL ${o.level}` : `LEVEL ${o.level} CLEAR`;
+}
+/** The pixels a title covers across a frame `frameW` wide, shadow included, as drawText and bigText place it: [left, right). */
+export function titleSpan(text: string, frameW: number, scale = TITLE_SCALE): [number, number] {
+  const left = Math.round(frameW / 2 / scale - (text.length * GLYPH_ADVANCE) / 2) * scale;
+  return [left, left + (text.length * GLYPH_ADVANCE - 1) * scale + scale];
 }

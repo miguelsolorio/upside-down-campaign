@@ -14,6 +14,9 @@ import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
 import { newSoldier } from '../enemies/soldier.ts';
 import { newGrigori } from '../enemies/grigori_hit.ts';
+import { newBilly } from '../enemies/billy_hit.ts';
+import { newFlayer, newLeg } from '../enemies/flayer_hit.ts';
+import { linkFlayer } from '../enemies/flayer_legs.ts';
 
 const TRAIL = 256;
 
@@ -57,14 +60,15 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     mode: patrol.length > 0 ? 'patrol' : 'idle', modeT: 0, cd: 0, stagger: 0, flash: 0, hurtSeen: false,
     anim: 'idle', animT: 0, patrol, pi: 0, wait: 0, ax: 0, ay: 0, hitDone: false, lostT: 0, backT: 0, stuckT: 0,
     lastX: f.x, lastY: f.y, wanderT: 30 + ((uid * 37) % 90), wanderA: Number.NaN, noLure: 0, by: null, stat: noStatus(),
-    xp: Math.max(1, Math.round((elite ? def.xp * ELITE.xp : def.xp) * s.xpMult)), drop: elite ? def.drop * ELITE.drop : def.drop, elite,
+    xp: def.xp <= 0 ? 0 : Math.max(1, Math.round((elite ? def.xp * ELITE.xp : def.xp) * s.xpMult)), drop: elite ? def.drop * ELITE.drop : def.drop, elite,
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
     demo: sp.type === 'demogorgon' ? newDemo() : null,
     hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
     alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
     flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' ? newSoldier() : null,
-    grigori: sp.type === 'grigori' ? newGrigori() : null,
+    grigori: sp.type === 'grigori' ? newGrigori() : null, billy: sp.type === 'billy' ? newBilly() : null,
+    flayer: sp.type === 'flayer' ? newFlayer() : null, leg: sp.type === 'flayerleg' ? newLeg(f.x, f.y) : null,
   };
 }
 
@@ -126,7 +130,7 @@ export function createState(opts: SimOptions): S {
     flow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     wardFlow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     burrows: (opts.burrows ?? []).map((b) => ({ ...b })), defense: opts.defense ? newDefense(opts.defense) : null, rtSeq: 0,
-    cleared: new Set(), god: opts.god === true, boxes: false,
+    pools: [], poolCd: 0, cleared: new Set(), god: opts.god === true, boxes: false,
   };
   for (const sp of opts.spawns) {
     if (sp.kind !== 'prop' && skip.has(sp.id)) continue;
@@ -159,5 +163,7 @@ export function createState(opts: SimOptions): S {
       });
     }
   }
+  // The Mind Flayer's legs find their body, and their tips lie at rest.
+  linkFlayer(s);
   return s;
 }

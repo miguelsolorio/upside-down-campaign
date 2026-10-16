@@ -37,7 +37,7 @@ export function later(s: S, h: Hero, frames: number, fn: () => void): void {
 /** The hero's chest, where swings and shots start. */
 export function chest(h: Hero): Pos { return { x: h.x, y: h.y - BODY_Y }; }
 
-/** Calls fn for each living, awake enemy whose body center is inside the cone, with a clear line from the hero. */
+/** Calls fn for each living, awake enemy whose body center is inside the cone, with a clear line from the hero. The Mind Flayer's body stands in the wall, so it needs none. */
 export function coneHits(s: S, h: Hero, aim: number, reach: number, half: number, fn: (e: Enemy, angleTo: number) => void): void {
   const ox = h.x, oy = h.y - BODY_Y;
   for (const e of s.enemies) {
@@ -47,7 +47,7 @@ export function coneHits(s: S, h: Hero, aim: number, reach: number, half: number
     if (d > reach + 6) continue;
     const a = Math.atan2(dy, dx);
     if (d >= 9 && angleDiff(a, aim) > half) continue;
-    if (!los(s, h.x, h.y, e.x, e.y)) continue;
+    if (e.kind !== 'flayer' && !los(s, h.x, h.y, e.x, e.y)) continue;
     fn(e, a);
   }
 }

@@ -228,7 +228,10 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
     { cx: LAND.lab.x, y: lb.y0 - 12, name: 'LAB', state: st['1.2'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.school.x, y: sc.y0 - 12, name: 'SCHOOL', state: st['1.3'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.hole.x, y: 57, name: 'PATCH', state: st['2.1'] as NodeState, ud: false, point: 'down' },
-    { cx: LAND.mall.x + 6, y: fc.y0 - 12, name: 'STARCOURT', state: st['3.1'] as NodeState, ud: false, point: 'down' },
+    // The mall's and the food court's plates are one stacked sign over the dome: STARCOURT on top, sharing its border with FOOD COURT, whose
+    // pointer is the one that reaches the dome. FOOD COURT comes after, so its plate draws over the pointer of the plate above.
+    { cx: LAND.mall.x + 6, y: fc.y0 - 19, name: 'STARCOURT', state: st['3.1'] as NodeState, ud: false, point: 'down' },
+    { cx: LAND.mall.x + 6, y: fc.y0 - 11, name: 'FOOD COURT', state: st['3.3'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.bunker.x - 26, y: LAND.bunker.y - 12, name: 'BASE', state: st['3.2'] as NodeState, ud: false, point: 'right' },
   ];
   for (const s of plates) solid.push(plateRect(s));

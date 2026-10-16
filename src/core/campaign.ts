@@ -4,10 +4,10 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
-export const STAGES_AHEAD: readonly string[] = ['3.3'];
+export const STAGES_AHEAD: readonly string[] = [];
 
 /** Heroes on the field at once: the lead and three on the bench. */
 export const PARTY_SIZE = 4;
@@ -39,6 +39,12 @@ export const CHAPTERS: Record<number, { title: string; subtitle: string }> = {
   3: { title: 'Chapter three', subtitle: 'Starcourt' },
 };
 
+/** True when `id` is the last stage of its chapter, so its clear ends the chapter: the epilogue, then CHAPTER n CLEAR. */
+export function closesChapter(id: string): boolean {
+  const i = STAGE_ORDER.indexOf(id);
+  return i >= 0 && (i + 1 === STAGE_ORDER.length || chapterOf(STAGE_ORDER[i + 1] as string) !== chapterOf(id));
+}
+
 /** True when `id` is the first stage of its chapter, so entering it shows the chapter card. */
 export function opensChapter(id: string): boolean {
   const i = STAGE_ORDER.indexOf(id);
@@ -60,13 +66,16 @@ const ROSTER: Record<string, HeroId[]> = {
   '2.3': ['mike', 'dustin', 'lucas', 'will', 'max', 'steve'],
   '3.1': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   '3.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
+  '3.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
 };
 
-/** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. */
+/** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. Eleven
+ *  holds 3.3's route crate and is the only one who can reach Billy (docs/level-9.md). */
 const REQUIRED: Record<string, HeroId[]> = {
   '2.2': ['max'],
   '2.3': ['steve'],
   '3.2': ['robin'],
+  '3.3': ['eleven'],
 };
 
 /**
@@ -82,6 +91,8 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 123 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
   '3.1': [{ id: 'mike', level: 6, xp: 198 }, { id: 'dustin', level: 5, xp: 257 }, { id: 'robin', level: 3 }, { id: 'nancy', level: 3 }],
   '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 82 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
+  // Eleven is locked in 3.3 and catches up to the party she joins (CATCH_UP): the run plays 3.1 and 3.2 without her (docs/level-9.md).
+  '3.3': [{ id: 'mike', level: 7, xp: 175 }, { id: 'dustin', level: 6, xp: 220 }, { id: 'robin', level: 4, xp: 112 }, { id: 'eleven', level: 4 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */
@@ -177,6 +188,27 @@ function joinLevel(id: string, known: PartySeed[]): number | null {
   return Math.max(1, Math.floor(avg) - 1);
 }
 
+/**
+ * Heroes who come back at a stage after sitting the stages before it out, and catch up: Eleven at the food court, locked in after
+ * the run plays the mall and the base without her (docs/level-9.md). One who is behind walks in at the level of the party she joins,
+ * averaged and less one, the recruit rule, with no XP toward the next. Her d20 bonus carries.
+ */
+const CATCH_UP: Record<string, HeroId[]> = {
+  '3.3': ['eleven'],
+};
+
+/** `party` with the stage's returning heroes brought up to the rest of it (CATCH_UP). */
+function catchUp(id: string, party: PartySeed[]): PartySeed[] {
+  const back = CATCH_UP[id] ?? [];
+  return party.map((s) => {
+    if (!back.includes(s.id)) return s;
+    const rest = party.filter((o) => o.id !== s.id);
+    if (rest.length === 0) return s;
+    const level = Math.max(1, Math.floor(rest.reduce((n, o) => n + (o.level ?? 1), 0) / rest.length) - 1);
+    return (s.level ?? 1) >= level ? s : { ...s, level, xp: 0 };
+  });
+}
+
 const seedOf = (h: HeroId, known: PartySeed[], join: number): PartySeed => {
   const k = known.find((s) => s.id === h);
   return k ? { ...k, bonus: k.bonus ? { ...k.bonus } : undefined } : { id: h, level: join };
@@ -185,13 +217,13 @@ const seedOf = (h: HeroId, known: PartySeed[], join: number): PartySeed => {
 /**
  * The party for stage `id` built from the heroes met so far and, on a stage with picks, the player's picks (see
  * pickParty). A hero nobody has met yet joins at the average level of the met heroes in the stage's pool minus one
- * (at least 1), the plan's recruit rule, so who else was picked doesn't change it. With nothing known it is the
- * arrival party.
+ * (at least 1), the plan's recruit rule, so who else was picked doesn't change it. A hero who comes back at this stage
+ * catches up to the party she joins (CATCH_UP). With nothing known it is the arrival party.
  */
 export function partyFor(id: string, known: PartySeed[], picks?: readonly HeroId[]): PartySeed[] {
   const join = joinLevel(id, known);
   if (join === null) return defaultParty(id);
-  return pickParty(id, picks, known).map((h) => seedOf(h, known, join));
+  return catchUp(id, pickParty(id, picks, known).map((h) => seedOf(h, known, join)));
 }
 
 /**
@@ -199,8 +231,13 @@ export function partyFor(id: string, known: PartySeed[], picks?: readonly HeroId
  * level for one nobody has met. For the party picks panel. With nothing known, the arrival levels (1 for a hero the
  * arrival party leaves out).
  */
-export function poolFor(id: string, known: PartySeed[]): PartySeed[] {
+export function poolFor(id: string, known: PartySeed[], picks?: readonly HeroId[]): PartySeed[] {
   const join = joinLevel(id, known);
   const arrival = defaultParty(id);
-  return rosterFor(id).map((h) => (join === null ? arrival.find((s) => s.id === h) ?? { id: h, level: 1 } : seedOf(h, known, join)));
+  const pool = rosterFor(id).map((h) => (join === null ? arrival.find((s) => s.id === h) ?? { id: h, level: 1 } : seedOf(h, known, join)));
+  // A hero who comes back here shows the level she will play at in the party the picks make (CATCH_UP).
+  const back = CATCH_UP[id] ?? [];
+  if (join === null || back.length === 0) return pool;
+  const party = partyFor(id, known, picks);
+  return pool.map((s) => (back.includes(s.id) ? party.find((p) => p.id === s.id) ?? s : s));
 }

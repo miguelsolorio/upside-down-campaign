@@ -37,6 +37,8 @@ export interface Finish {
   cast: boolean;
   /** Swing or fire the basic attack (Grigori's plan, bot_grigori.ts). */
   attack?: boolean;
+  /** Set off the crit meter if it is full (the Mind Flayer's plan, bot_flayer.ts). */
+  burst?: boolean;
 }
 
 export interface BossSense {
@@ -119,7 +121,7 @@ export function createBossSense(env: BossEnv): BossSense {
   }
 
   function finish(v: SimView, hx: number, hy: number): Finish | null {
-    const boss = v.actors.find((a) => a.kind === 'enemy' && a.pose === 'pinned');
+    const boss = v.actors.find((a) => a.kind === 'enemy' && a.pose === 'pinned' && a.id !== 'billy');
     const me = v.hud.party.find((p) => p.active);
     if (!boss || !me) return null;
     const out: Finish = { swapTo: -1, mv: [0, 0], cast: false };

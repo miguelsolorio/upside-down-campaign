@@ -7,7 +7,7 @@ import { audio } from '../audio/index.ts';
 import { inRect } from '../core/pointer.ts';
 import type { Rect } from '../core/pointer.ts';
 import { drawIcon, drawPanel, drawPortrait, drawText, textWidth } from '../gfx/index.ts';
-import { countUp, foeLines, formatTime } from './format.ts';
+import { TITLE_SCALE, countUp, foeLines, formatTime, resultsTitle } from './format.ts';
 import { bigText, blinkOn, box, inFrame, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 
@@ -23,13 +23,16 @@ const FOOT_AT = PARTY_AT + 24;
 /** Confirm waits this long after everything is showing. */
 const READY = FOOT_AT + 12;
 
-export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; level?: number; final?: boolean; onContinue(): void }): Scene {
+/** `chapter`: the stage closes that chapter, so the title says CHAPTER n CLEAR (docs/level-9.md, "The chapter end"). */
+export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; level?: number; chapter?: number; final?: boolean; onContinue(): void }): Scene {
   const { stats, party } = opts;
   const final = !!opts.final;
   const level = opts.level ?? 1;
+  const title = resultsTitle({ chapter: opts.chapter, final, level });
   let t = 0;
   let finished = false;
-  const kinds = Object.entries(stats.killsByKind).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
+  // The Mind Flayer's legs die with its body, so the foes row names the body alone.
+  const kinds = Object.entries(stats.killsByKind).filter(([k, n]) => (n ?? 0) > 0 && k !== 'flayerleg') as [string, number][];
   const gained = (id: string): number => stats.levelUps.filter((u) => u.hero === id).reduce((n, u) => n + (u.to - u.from), 0);
   const at = (row: number): number => ROW_AT + row * ROW_GAP;
   // A long mix of foes wraps onto more lines; everything under that row, and the panel, moves down to make room.
@@ -53,7 +56,7 @@ export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[
   }
 
   function drawCard(ctx: Ctx): void {
-    bigText(ctx, final ? `END OF LEVEL ${level}` : `LEVEL ${level} CLEAR`, 128, 12, 'yellow', 2, 'center', true);
+    bigText(ctx, title, 128, 12, 'yellow', TITLE_SCALE, 'center', true);
     if (final) drawText(ctx, 'This is a feedback build. More soon.', 128, 32, 'cream', { align: 'center' });
     drawPanel(ctx, 24, 46, 208, 70 + extra, 'menu');
 

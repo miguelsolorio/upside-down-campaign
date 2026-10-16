@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01, hpBarColor } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -113,7 +113,7 @@ function solidAt(stage: Stage): (tx: number, ty: number) => boolean {
 }
 
 /**
- * Stage, the ground layer (light pools at night, camera cones, floor hazards, items), then props and actors in one
+ * Stage, the ground layer (light pools at night, camera cones, floor hazards, goo pools, items), then props and actors in one
  * painter's pass by their bottom edge, then fx and floaters. On a screen wider than the clear band, the world past
  * the band fades to black.
  */
@@ -137,6 +137,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
     drawCamCone(ctx, p, solidAt(stage), camX, camY, t);
   }
   for (const h of view.hazards) drawHazard(ctx, h, camX, camY, t);
+  // The Mind Flayer's goo lies on the floor with them.
+  for (const p of view.pools) drawPool(ctx, p);
   for (const it of view.items) drawItem(ctx, it);
   const order: { y: number; actor?: ActorView; prop?: PropView }[] = [];
   for (const p of view.props) order.push({ y: p.y + p.h, prop: p });

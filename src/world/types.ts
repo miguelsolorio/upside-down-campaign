@@ -1,5 +1,5 @@
 // World types: the options for the play scene and the shape of stage data. Pure types, no DOM.
-import type { Burrow, DefenseDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, Stash, StashItem, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
+import type { Burrow, CharId, DefenseDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, Stash, StashItem, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
 import type { BotWaypoint } from '../combat/bot.ts';
 import type { SaveData } from '../core/save.ts';
 
@@ -50,6 +50,11 @@ export type BeatStep =
   | { t: 'light'; prop: string }
   /** Switches the stage music, such as to `clock` when a boss wakes. It does not wait. */
   | { t: 'music'; track: TrackId }
+  /** The Key's machine blows up under the mall (docs/level-9.md): the `boom` sfx, a long screen shake, and every lit lights
+   *  prop goes dark. Only the look changes: save points and checkpoints stay as they were. It does not wait. */
+  | { t: 'boom' }
+  /** An npc leaves: Hopper going down to the Key at the start of 3.3. It does not wait. */
+  | { t: 'leave'; npc: CharId }
   | { t: 'finish' };
 
 /** What fires a beat. Rect beats fire once, the first time the hero's tile enters the rectangle. `needs` holds a

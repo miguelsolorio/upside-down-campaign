@@ -3,7 +3,7 @@
 // keeps every hero met so far, so the party for any stage comes from it.
 import type { Game } from './core/scene.ts';
 import type { HeroId, PartySeed } from './core/types.ts';
-import { CHAPTERS, STAGE_ORDER, chapterOf, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
+import { CHAPTERS, STAGE_ORDER, chapterOf, closesChapter, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
 import { flags } from './core/flags.ts';
 import { clearProgress, loadProgress, purseOf, recordClear, spendStash, stashOf, withPicks, withPurse, writeProgress } from './core/progress.ts';
 import type { Progress } from './core/progress.ts';
@@ -11,7 +11,7 @@ import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
 import { skipsDialogue } from './core/settings.ts';
 import { createChapterCard, createMapScene, createResultsScene, createTitleScene } from './ui/index.ts';
-import { createPrologueScene } from './story/index.ts';
+import { createEpilogueScene, createPrologueScene, hasEpilogue } from './story/index.ts';
 import { createPlayScene, stageName, stageStart } from './world/index.ts';
 
 const FIRST = STAGE_ORDER[0] as string;
@@ -106,13 +106,19 @@ export function startGame(g: Game): void {
       onClear: ({ stats, party: after, quarters }) => {
         // Progress marks the stage, keeps every hero at their best and banks the run's quarters. The map is the way on, so the
         // stage save goes.
+        const firstClear = !(progress?.cleared ?? []).includes(id);
         progress = recordClear(progress, id, after, quarters ?? stats.quarters);
         writeProgress(progress);
         clearSave();
-        g.scenes.go(createResultsScene({
-          stats, party: after, level: levelNumber(id), final: nextStage(id) === null,
+        // The last stage of a chapter says so on its results, and the first time it is cleared, its epilogue comes first
+        // (docs/level-9.md, "The chapter end"). The epilogue skips itself when the story is off, like the prologue.
+        const chapter = closesChapter(id) ? chapterOf(id) : undefined;
+        const results = (): void => g.scenes.go(createResultsScene({
+          stats, party: after, level: levelNumber(id), chapter, final: nextStage(id) === null,
           onContinue: toMap,
         }));
+        if (chapter !== undefined && firstClear && hasEpilogue(chapter)) g.scenes.go(createEpilogueScene({ chapter, onDone: results }));
+        else results();
       },
       onQuit: toTitle,
       onStartOver: () => {

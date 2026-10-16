@@ -1,6 +1,6 @@
-// The campaign's pace (docs/pace.md): a whole run, 1.1 to 2.3, played by the bot on chief with the party
-// carried between stages the way the game carries it (scripts/campaign-run.ts). The lead ends chapter 1 at Lv 4 and chapter 2
-// at Lv 6, nobody who played the chapter is left far behind, and a ?stage= jump walks in with what a real run brings.
+// The campaign's pace (docs/pace.md): a whole run, 1.1 to 3.3, played by the bot on chief with the party
+// carried between stages the way the game carries it (scripts/campaign-run.ts). The lead ends chapter 1 at Lv 4, chapter 2
+// at Lv 6 and chapter 3 at Lv 8, nobody who played the chapter is left far behind, and a ?stage= jump walks in with what a real run brings.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { STAGE_ORDER, chapterOf, defaultParty } from '../src/core/campaign.ts';
@@ -57,6 +57,20 @@ test('pace: chapter 2 ends with the lead at Lv 6, whoever played all of it at Lv
       assert.ok((party.find((p) => p.id === id)?.level ?? 0) > at, `seed ${i + 1}: ${id} joined at Lv ${at} and stayed there`);
     }
   }
+});
+
+test('pace: chapter 3 ends with the lead at Lv 8 in nine runs of ten, never more than a kill or two short, and Eleven caught up', () => {
+  let eight = 0;
+  for (const [i, r] of kept.entries()) {
+    const party = after(r, lastOf(3));
+    // Who the boss fight leaves standing moves the XP around, so the lead lands a little either side of the line.
+    assert.ok(best(party) >= xpForLevel(8) - 30 && best(party) < xpForLevel(9), `seed ${i + 1}: the lead has ${best(party)} XP`);
+    if (levelOf(best(party)) === 8) eight++;
+    // Eleven sits 3.1 and 3.2 out, comes back to 3.3 at the party's level less one, and leaves it at least a level up from chapter 1.
+    const back = r.stages.find((s) => s.stage === '3.3')?.entered.find((p) => p.id === 'eleven')?.level ?? 0;
+    assert.ok(back >= 4, `seed ${i + 1}: Eleven came back at Lv ${back}`);
+  }
+  assert.ok(eight >= 9, `Lv 8 after chapter 3 in ${eight} of ${kept.length} runs`);
 });
 
 test('pace: sharing the lead lands the same, with chapter 2 at Lv 6 in most runs and never more than a kill or two short', () => {

@@ -86,7 +86,7 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   else if (e.flayed) flayedUpdate(s, e, hero);
   else if (e.soldier) soldierUpdate(s, e, hero);
   else if (isShielded(e)) guardUpdate(s, e, hero);
-  else if (e.kind === 'demodog') { demodogUpdate(s, e, hero); unhide(e); }
+  else if (e.kind === 'demodog' || e.kind === 'demofoe' || e.kind === 'twin') { demodogUpdate(s, e, hero); unhide(e); }
   else agentUpdate(s, e, hero);
 }
 

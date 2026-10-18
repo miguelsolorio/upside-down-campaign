@@ -281,6 +281,35 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 24, power: 0.8, cooldown: 90, drop: 0.25, weight: 1.1,
     x: { see: 80, rise: 40, gap: 90, range: 40, lungeT: 10, lungeSpeed: 3.2, recover: 30, kb: 3, bob: 2, light: 48, lightMul: 1.5 },
   },
+  // Chapter 5 (docs/level-14.md, docs/level-15.md). Stand-ins until Sim builds the real brains: each borrows an existing kind's brain and
+  // its `x`, with numbers sized for a Lv 10 party that Sim tunes inside the stages' targets. The trooper (a rifle and a riot shield) runs the
+  // riot guard's brain and the Commander the same, with the shield and no slam (enemies/shield.ts, isShieldedKind); the chapter 5 Lab agent
+  // is the 1.2 agent's; the Demogorgon foe and the twins lunge like a demodog (enemies/demodog.ts, which reads the demodog's own numbers).
+  trooper: {
+    kind: 'trooper', name: 'Trooper', hp: 120, atk: 40, def: 9, speed: 0.75, xp: 18, aggro: 110,
+    windup: 30, power: 1, cooldown: 110, drop: 0.35, weight: 1.4,
+    x: { range: 26, reach: 30, arc: 60, block: 0, breakKb: 3.2, breakT: 45, grace: 30, turn: 12, kb: 3.6, recover: 36, patrol: 0.5, lose: 240, hold: 18 },
+  },
+  agent5: {
+    kind: 'agent5', name: 'Lab agent', hp: 90, atk: 38, def: 8, speed: 0.9, xp: 14, aggro: 100,
+    windup: 24, power: 0.65, cooldown: 100, drop: 0.3, weight: 1,
+    x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
+  },
+  commander: {
+    kind: 'commander', name: 'The Commander', hp: 700, atk: 44, def: 12, speed: 0.7, xp: 80, aggro: 140,
+    windup: 34, power: 1, cooldown: 100, drop: 1, weight: 4,
+    x: { range: 30, reach: 34, arc: 75, block: 0, breakKb: 99, breakT: 45, grace: 120, turn: 12, kb: 4.2, recover: 36, patrol: 0.5, lose: 300, hold: 20 },
+  },
+  demofoe: {
+    kind: 'demofoe', name: 'Demogorgon', hp: 420, atk: 46, def: 9, speed: 0.9, xp: 40, aggro: 150,
+    windup: 28, power: 0.9, cooldown: 90, drop: 0.5, weight: 3,
+    x: { orbit: 48, near: 38, far: 58, range: 64, lungeT: 14, lungeSpeed: 4, recover: 30, gap: 20, kb: 4 },
+  },
+  twin: {
+    kind: 'twin', name: 'Demogorgon', hp: 600, atk: 48, def: 10, speed: 0.9, xp: 70, aggro: 200,
+    windup: 28, power: 0.9, cooldown: 90, drop: 1, weight: 4,
+    x: { orbit: 48, near: 38, far: 58, range: 64, lungeT: 14, lungeSpeed: 4, recover: 30, gap: 20, kb: 4 },
+  },
 };
 
 /** Enemy HP and damage multiplier. */

@@ -131,7 +131,7 @@ function propView(s: S, p: Prop): PropView {
 }
 
 const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI',
-  billy: 'BILLY', flayer: 'MIND FLAYER', pitdemo: 'DEMOGORGON' };
+  billy: 'BILLY', flayer: 'MIND FLAYER', pitdemo: 'DEMOGORGON', commander: 'THE COMMANDER', twin: 'THE TWINS' };
 
 /** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number; parts?: number[] } | null {

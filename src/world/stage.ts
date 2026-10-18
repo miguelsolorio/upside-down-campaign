@@ -16,6 +16,8 @@ import { STAGE_32 } from './stages/stage32.ts';
 import { STAGE_33 } from './stages/stage33.ts';
 import { STAGE_41 } from './stages/stage41.ts';
 import { STAGE_42 } from './stages/stage42.ts';
+import { STAGE_51 } from './stages/stage51.ts';
+import { STAGE_52 } from './stages/stage52.ts';
 import type { StageData } from './types.ts';
 
 export interface Stage extends StageData {
@@ -30,7 +32,7 @@ export interface Stage extends StageData {
   sim(b: SimBuild): SimOptions;
 }
 
-const DATA: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42 };
+const DATA: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42, '5.1': STAGE_51, '5.2': STAGE_52 };
 const cache = new Map<string, Stage>();
 
 /** Where the lead stands at the start of a stage, and what the stage is called. They read the data without baking tiles. */

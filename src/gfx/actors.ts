@@ -307,7 +307,12 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
 }
 
 /** Chapter 4 stand-ins until Art draws them (docs/level-11.md): each borrows a sprite that already exists. */
-const STAND_IN: Partial<Record<string, ActorView['id']>> = { ghoul: 'flayed', eddie: 'steve' };
+const STAND_IN: Partial<Record<string, ActorView['id']>> = {
+  ghoul: 'flayed', eddie: 'steve',
+  // Chapter 5 (docs/level-14.md, docs/level-15.md): the trooper and the Commander wear the riot guard's and the Warden's, the Lab agent in hazmat
+  // the agent's, the foe Demogorgon and the twins the 1.3 one's.
+  trooper: 'guard', commander: 'warden', agent5: 'agent', demofoe: 'demogorgon', twin: 'demogorgon',
+};
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
 

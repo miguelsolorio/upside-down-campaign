@@ -13,6 +13,7 @@ The last stage (`docs/chapter-5.md`). A short climb through the flesh to the hea
 - Light: `drawHeartGlow` pulsing, with the lights prop and the boss as the light sources.
 - Music: `abyss` from the arena's door. `phase(n)` steps it with each boss phase (160, 164, 168). The epilogue plays `ending`.
 - Party: picked on the map, with Eleven and Will locked in (`REQUIRED`).
+- Tile characters, taken at spine time with 5.1's and 5.2's (`src/core/tiles.ts`): `õ` `heartfloor`, walkable, `ô` `heartwall` and `ó` `heartrim`, solid. All three pulse with the heartbeat. The painters are registered (`src/gfx/tile_ch5.ts`) and nothing uses them yet.
 
 ## The fight
 

@@ -14,6 +14,8 @@ import { L8_SCRIPTS } from './scripts_l8.ts';
 import { L9_SCRIPTS } from './scripts_l9.ts';
 import { L10_SCRIPTS } from './scripts_l10.ts';
 import { L11_SCRIPTS } from './scripts_l11.ts';
+import { L14_SCRIPTS } from './scripts_l14.ts';
+import { L15_SCRIPTS } from './scripts_l15.ts';
 import { L16_SCRIPTS } from './scripts_l16.ts';
 
 function line(who: Speaker, text: string, expr?: Expr): DialogueLine {
@@ -166,6 +168,8 @@ const ALL: DialogueScript[] = [
   ...L9_SCRIPTS,
   ...L10_SCRIPTS,
   ...L11_SCRIPTS,
+  ...L14_SCRIPTS,
+  ...L15_SCRIPTS,
   ...L16_SCRIPTS,
 ];
 

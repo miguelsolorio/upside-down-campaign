@@ -10,8 +10,9 @@ const RAD = Math.PI / 180;
 /** The way a guard faces, in radians (0 = right, y down). */
 export const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 
-/** The kinds that carry a shield: the riot guard, the Warden and the camp guard with his baton. */
-export const isShieldedKind = (kind: string): boolean => kind === 'guard' || kind === 'warden' || kind === 'kbaton';
+/** The kinds that carry a shield: the riot guard, the Warden, the camp guard with his baton and, in chapter 5, the trooper and the Commander
+ *  (stand-ins on this brain until Sim writes theirs, docs/level-14.md). */
+export const isShieldedKind = (kind: string): boolean => kind === 'guard' || kind === 'warden' || kind === 'kbaton' || kind === 'trooper' || kind === 'commander';
 
 export function isShielded(e: Enemy): boolean { return isShieldedKind(e.kind); }
 

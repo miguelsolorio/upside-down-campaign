@@ -17,7 +17,7 @@ for (let x = 0; x < SCREEN_W; x++) WAVE.push(HZ + Math.round(2.4 * Math.sin(x * 
 export const hzAt = (x: number): number => WAVE[Math.max(0, Math.min(SCREEN_W - 1, Math.round(x)))] as number;
 
 /** Every stage on the map, in play order. */
-export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2'] as const;
+export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2'] as const;
 
 export interface Pt { x: number; y: number }
 
@@ -43,12 +43,17 @@ export const POS: Record<string, Pt> = {
   // (map_inset.ts), on its lower right corner where the token stands over the picture. 4.2 is a stand-in spot until Art draws the Creel House.
   '4.1': { x: 57, y: 30 },
   '4.2': { x: 186, y: 40 },
+  // Chapter 5 (docs/map-screen.md, "Chapter five on the map"), both in the Upside Down half, below the horizon: 5.1 is Hawkins under the
+  // army's lockdown, seen from the dark side, in the bottom left; 5.2 is the Abyss, in the bottom right under the dark sun. Stand-in
+  // spots until Art draws their landmarks.
+  '5.1': { x: 44, y: 150 },
+  '5.2': { x: 228, y: 158 },
 };
 
 /** The place each stage sits in. */
 export const PLACE_OF: Record<string, Place> = {
   '1.1': 'woods', '1.2': 'lab', '1.3': 'school', '2.1': 'patch', '2.2': 'tunnels', '2.3': 'gate', '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt',
-  '4.1': 'kamchatka', '4.2': 'creel',
+  '4.1': 'kamchatka', '4.2': 'creel', '5.1': 'lockdown', '5.2': 'abyss',
 };
 
 /** The landmarks: Hawkins ones stand on `base` (their bottom row), the ones below hang from `top`. */
@@ -64,8 +69,8 @@ export const LAND = {
   bunker: { x: 96, y: HZ },
 };
 
-/** How far each leg of the route bows, in px: the sign picks the side. The last two are the flights to Kamchatka and back to the Creel House. */
-const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12];
+/** How far each leg of the route bows, in px: the sign picks the side. The last four are the flights to Kamchatka and back to the Creel House, and down into the Upside Down to the lockdown and the Abyss. */
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 14, -10];
 
 export interface Leg {
   pts: [number, number][];

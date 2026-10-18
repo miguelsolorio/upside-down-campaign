@@ -35,9 +35,16 @@ export type TileName =
   | 'pitcap' | 'pitwall' | 'pitfloor' | 'pitbar'
   // The Hellfire Club's classroom and the Creel House (stage 4.2).
   | 'clubcap' | 'clubwall' | 'clubboard' | 'clubposter' | 'clubwindow' | 'clubdoor' | 'clubshelf' | 'clubfloor' | 'clubdesk' | 'dndtable'
-  | 'creelcap' | 'creelwall' | 'creelwin' | 'creelfloor' | 'creelrug' | 'creelhole' | 'creelstairs' | 'creelfurn';
+  | 'creelcap' | 'creelwall' | 'creelwin' | 'creelfloor' | 'creelrug' | 'creelhole' | 'creelstairs' | 'creelfurn'
+  // Hawkins under lockdown (stage 5.1): the town at dusk with the army laid over it, and the Lab's halls dressed by the army.
+  | 'lockroad' | 'lockline' | 'lockstop' | 'lockwalk' | 'locklawn' | 'lockroof' | 'lockhouse' | 'lockvine' | 'lockdoor' | 'rift0' | 'rift1' | 'rift2'
+  | 'armyfloor' | 'armycable' | 'armycable2' | 'armycrate' | 'armycrate2' | 'armywall'
+  // The Abyss (stage 5.2) and the heart of it (stage 5.3).
+  | 'abysslawn' | 'abyssroad' | 'abyssline' | 'abyssporch' | 'abyssclass' | 'abysscliff' | 'abyssunder' | 'abyssgap' | 'abyssbridgeh' | 'abyssbridgev'
+  | 'heartfloor' | 'heartwall' | 'heartrim';
 
-export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
+/** drop: a solid tile that is a drop into the void (the Abyss's gaps, cliffs and rock). buildGrid lists them in Grid.drop. */
+export interface TileDef { name: TileName; solid: boolean; animated?: boolean; drop?: boolean }
 
 export const TILES: Record<string, TileDef> = {
   '.': { name: 'grass', solid: false },
@@ -223,6 +230,46 @@ export const TILES: Record<string, TileDef> = {
   'è': { name: 'creelhole', solid: true },
   'é': { name: 'creelstairs', solid: true },
   'ê': { name: 'creelfurn', solid: true },
+  // Chapter 5 (docs/level-14.md, docs/level-15.md). These took the Latin-1 signs that were left, and the top of the lowercase run, so
+  // that ë to ò are still free for chapter 4's last two stages.
+  // Stage 5.1: the town at dusk. Road, the double yellow line, the white stop line, sidewalk and trampled lawn are walked; the house
+  // front (roof, a wall, a wall under vines, a taped door) is not. A rift is three tiles that join, a red tear in the asphalt, walked
+  // over. Inside, the Lab's floor, two cable runs, two stacks of crates and an army-dressed wall.
+  '¡': { name: 'lockroad', solid: false },
+  '¥': { name: 'lockline', solid: false },
+  '©': { name: 'lockstop', solid: false },
+  '¬': { name: 'lockwalk', solid: false },
+  '®': { name: 'locklawn', solid: false },
+  '²': { name: 'lockroof', solid: true },
+  '³': { name: 'lockhouse', solid: true },
+  'µ': { name: 'lockvine', solid: true },
+  '¶': { name: 'lockdoor', solid: true },
+  '¹': { name: 'rift0', solid: false, animated: true },
+  '»': { name: 'rift1', solid: false, animated: true },
+  '¼': { name: 'rift2', solid: false, animated: true },
+  '½': { name: 'armyfloor', solid: false },
+  '¾': { name: 'armycable', solid: false },
+  '¿': { name: 'armycable2', solid: false },
+  'ª': { name: 'armycrate', solid: true },
+  '«': { name: 'armycrate2', solid: true },
+  '´': { name: 'armywall', solid: true },
+  // Stage 5.2: the Abyss. Island tops (lawn, road, its line, a porch, a classroom floor) and vine bridges are walked. An island's south
+  // edge is a cliff face over the rock that tapers under it; the gap is the void itself, clear so the backdrop shows through. Cliff,
+  // under and gap are solid and are drops (Grid.drop): a twin Demogorgon that charges into one falls.
+  '¸': { name: 'abysslawn', solid: false, animated: true },
+  'ÿ': { name: 'abyssroad', solid: false, animated: true },
+  'þ': { name: 'abyssline', solid: false, animated: true },
+  'ý': { name: 'abyssporch', solid: false, animated: true },
+  'ü': { name: 'abyssclass', solid: false, animated: true },
+  'û': { name: 'abysscliff', solid: true, animated: true, drop: true },
+  'ú': { name: 'abyssunder', solid: true, animated: true, drop: true },
+  'ù': { name: 'abyssgap', solid: true, drop: true },
+  'ø': { name: 'abyssbridgeh', solid: false },
+  'ö': { name: 'abyssbridgev', solid: false },
+  // Stage 5.3: the heart of the Abyss. Red-black flesh underfoot, the wall of ribs and veins, and the arena's rim, which is a wall.
+  'õ': { name: 'heartfloor', solid: false, animated: true },
+  'ô': { name: 'heartwall', solid: true, animated: true },
+  'ó': { name: 'heartrim', solid: true, animated: true },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);
@@ -232,6 +279,7 @@ export function buildGrid(rows: string[]): Grid {
   const h = rows.length;
   const w = rows[0]?.length ?? 0;
   const solid = new Uint8Array(w * h);
+  let drop: Uint8Array | undefined;
   for (let y = 0; y < h; y++) {
     const row = rows[y] ?? '';
     if (row.length !== w) throw new Error(`ragged map row ${y}: ${row.length} vs ${w}`);
@@ -239,9 +287,10 @@ export function buildGrid(rows: string[]): Grid {
       const def = TILES[row[x] ?? ''];
       if (!def) throw new Error(`unknown tile '${row[x]}' at ${x},${y}`);
       solid[y * w + x] = def.solid ? 1 : 0;
+      if (def.drop) (drop ??= new Uint8Array(w * h))[y * w + x] = 1;
     }
   }
-  return { w, h, solid };
+  return drop ? { w, h, solid, drop } : { w, h, solid };
 }
 
 export function isSolidTile(g: Grid, tx: number, ty: number): boolean {

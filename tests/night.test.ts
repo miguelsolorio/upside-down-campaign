@@ -9,6 +9,7 @@ import { Px } from '../src/gfx/px.ts';
 import { groundTile, waterTile } from '../src/gfx/tile_ground.ts';
 import type { Near, TileCtx } from '../src/gfx/tile_ground.ts';
 import { objectTile } from '../src/gfx/tile_objects.ts';
+import { ch5Tile, nightName } from '../src/gfx/tile_ch5.ts';
 import { litWindow, nightSprite, nightTile, nightWater } from '../src/gfx/night.ts';
 import { STAGE_11 } from '../src/world/stages/stage11.ts';
 
@@ -24,14 +25,15 @@ const count = (px: Px, v: number): number => px.d.reduce((n, d) => n + (d === v 
 
 const around = (n: TileName): Near => ({ n, e: n, s: n, w: n });
 const ctxAt = (tx: number, ty: number, near: Near): TileCtx => ({ tx, ty, near });
-const day = (name: TileName, c: TileCtx): Px => (groundTile(name, c) ?? objectTile(name, c)) as Px;
-const NAMES = [...new Set(Object.values(TILES).map((t) => t.name))].filter((n) => n !== 'creek' && n !== 'shallows');
+const day = (name: TileName, c: TileCtx): Px => (groundTile(name, c) ?? objectTile(name, c) ?? ch5Tile(name, c)) as Px;
+// The Abyss is a day stage and its tiles are clear where the void shows through, so they never go through the night pass (docs/level-15.md).
+const NAMES = [...new Set(Object.values(TILES).map((t) => t.name))].filter((n) => n !== 'creek' && n !== 'shallows' && !n.startsWith('abyss'));
 
 test('every land tile has a night version of the same size, fully painted', () => {
   for (const name of NAMES) {
     const c = ctxAt(5, 4, around(name === 'pine' || name === 'deadtree' || name === 'bush' ? 'grass2' : name));
     const d = day(name, c);
-    const n = nightTile(d, name, c);
+    const n = nightTile(d, nightName(name), c);
     assert.equal(n.w, 16, name);
     assert.equal(n.h, 16, name);
     assert.ok(n.d.every((v) => v >>> 24 === 255), `${name} has no see-through pixels`);

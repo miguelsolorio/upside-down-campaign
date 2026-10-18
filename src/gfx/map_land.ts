@@ -324,6 +324,11 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
 
   plates.push({ cx: LAND.tunnels.x, y: LAND.tunnels.top + tn.h + 3, name: 'TUNNELS', state: st['2.2'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
+  // Chapter 5 (stand-in plates until Art draws the lockdown and the Abyss): each hangs under its node, pointing up at it.
+  for (const [id, name] of [['5.1', 'LOCKDOWN'], ['5.2', 'ABYSS']] as const) {
+    const at = POS[id] as { x: number; y: number };
+    plates.push({ cx: at.x, y: at.y + 18, name, state: st[id] as NodeState, ud: true, point: 'up' });
+  }
   return { px: P, plates, veins, inset };
 }
 

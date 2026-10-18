@@ -31,6 +31,9 @@ export type SfxId =
    *  cuts a solo short. chime: a grandfather clock's chime, the curse counting. curse: a hero lifted by the curse. walkman: Max
    *  playing her Walkman. ghoul: a Creel ghoul stepping out of a mirror (docs/level-11.md). */
   | 'haymaker' | 'vswing' | 'riff' | 'feedback' | 'chime' | 'curse' | 'walkman' | 'ghoul'
+  /** whistle: the Commander calling his squad. clang: a hit bouncing off a trooper's shield. shieldBreak: a smash breaking it for good.
+   *  fall: a twin Demogorgon dropping into the void (docs/level-14.md, docs/level-15.md). */
+  | 'whistle' | 'clang' | 'shieldBreak' | 'fall'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 /** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen, 2.1 and 4.2. starcourt: 3.1 to 3.3. sour:

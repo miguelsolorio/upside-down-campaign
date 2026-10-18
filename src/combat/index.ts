@@ -179,6 +179,12 @@
 // - Max's Walkman (SimOptions.walkman, Sim.giveWalkman): a swap to Max that is not forced, while it is ready, plays it: the `walkman` sfx, a
 //   'walkman' fx, { t: 'walkman' }, every curse ends ('walkman'), 480 frames in which Sim.curse does nothing, and 1800 frames until it is ready
 //   again. HudView.walkman is { ready, on } while the party has it and Max is in it.
+// - Chapter 5's five foes are stand-ins until Sim builds them (docs/level-14.md, docs/level-15.md), each on an existing brain and its own def: the
+//   trooper (`trooper`) and the Commander (`commander`) run the riot guard's, shield and all (isShieldedKind, no slam), the Lab agent in hazmat
+//   (`agent5`) the agent's, and the Demogorgon foe (`demofoe`) and the twins (`twin`) the demodog's. hud.boss reads THE COMMANDER and THE TWINS.
+//   The view has the fields they will need and the sim does not set them yet: ActorView.broken (a trooper's shield broken for good), cracked
+//   (the Commander below half HP), second (the second twin), poses plant, flank, fall and climb (a twin dropping into the void, k its depth),
+//   the `fall` fx, and Grid.drop (the void's tiles, solid, from the legend) for the fall.
 // - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;

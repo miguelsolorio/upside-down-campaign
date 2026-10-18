@@ -17,6 +17,7 @@ One stage, five to eight minutes, under Hawkins (`docs/chapter-5.md`). Through t
 - Light: a day-style stage (the tops are painted at final values; bake it with no night pass), with `drawAbyssBg` behind everything and a slow red pulse.
 - Music: `upside`, then `clock` at the `twins` beat.
 - Party: picked on the map, with Will locked in (`sense1` is on the route).
+- Tile characters, taken at spine time from the Latin-1 signs chapter 4 left free (`src/core/tiles.ts`). The island tops, walkable: `¸` `abysslawn`, `ÿ` `abyssroad`, `þ` `abyssline`, `ý` `abyssporch`, `ü` `abyssclass`. The vine bridges, walkable: `ø` `abyssbridgeh` (runs east to west), `ö` `abyssbridgev` (north to south). The drop, solid and marked `drop` (`Grid.drop`, so a twin that charges into one falls): `û` `abysscliff`, the rock face under an island's south edge, `ú` `abyssunder`, the rock that tapers below it, and `ù` `abyssgap`, the void itself, clear to the eye. An island's south edge is a cliff row over an under row, and every other side opens on gap. The backdrop is `backdrop: 'abyss'` on the stage data, which `drawWorld` draws behind the tiles (`drawAbyssBg`). The tops and the rock carry veins that pulse with the phase, so they are pulse tiles like the tunnels' veins. The stub in `stage52.ts` uses every one but `ö`.
 
 ## Puzzles
 

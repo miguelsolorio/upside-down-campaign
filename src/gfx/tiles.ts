@@ -12,6 +12,7 @@ import { bankMask, groundTile, waterTile } from './tile_ground.ts';
 import type { Block, Near, TileCtx } from './tile_ground.ts';
 import { objectTile, pulseTile } from './tile_objects.ts';
 import { ch4Tile } from './tile_ch4.ts';
+import { ch5Tile, isCh5Pulse, nightName } from './tile_ch5.ts';
 import { campBarrel, campNear } from './tile_camp.ts';
 import { pitNear } from './tile_pit.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
@@ -40,7 +41,7 @@ const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
 const pulseCache = new Map<string, HTMLCanvasElement>();
 
-const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel';
+const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel' || isCh5Pulse(n);
 /** The tiles that paint one picture across a run of them, and so need to know where in it they are. */
 const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' || n === 'lift' || n === 'drift';
 
@@ -48,6 +49,7 @@ const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' ||
 function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
   if (name === 'veins') return tunnelTile(name, c, phase) as Px;
   if (name === 'barrel') return campBarrel(c, phase);
+  if (isCh5Pulse(name)) return ch5Tile(name, c, phase) as Px;
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
@@ -57,7 +59,7 @@ function pulseCanvas(s: PulseSpot, phase: number, night: boolean): HTMLCanvasEle
   if (!c) {
     const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
     const day = pulsePx(s.name, tc, phase);
-    c = (night ? nightTile(day, s.name, tc) : day).toCanvas();
+    c = (night ? nightTile(day, nightName(s.name), tc) : day).toCanvas();
     pulseCache.set(key, c);
   }
   return c;
@@ -75,7 +77,7 @@ function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasEle
 }
 
 function staticTile(name: TileName, c: TileCtx, memory = false): Px {
-  return (memory ? ch4Tile(name, c, true) : null) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
+  return (memory ? ch4Tile(name, c, true) : null) ?? ch5Tile(name, c) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
 }
 
 /**
@@ -112,8 +114,9 @@ export function bakeStage(rows: string[], night = false, skin?: 'memory'): Baked
       const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
       if (isPulse(name)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
       const day = staticTile(name, tc, skin === 'memory');
-      const tile = night ? nightTile(day, name, tc) : day;
-      if (night && litWindow(day, name)) windows.push({ x: tx * T + 8, y: ty * T + 16 });
+      // A lockdown tile goes through the night pass as the town tile it is built on (tile_ch5.ts).
+      const tile = night ? nightTile(day, nightName(name), tc) : day;
+      if (night && litWindow(day, nightName(name))) windows.push({ x: tx * T + 8, y: ty * T + 16 });
       for (let j = 0; j < T; j++) {
         const dst = (ty * T + j) * W + tx * T;
         px.set(tile.d.subarray(j * T, j * T + T), dst);

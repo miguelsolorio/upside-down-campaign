@@ -85,7 +85,9 @@ test('pace: sharing the lead lands the same, with chapter 2 at Lv 6 in most runs
 });
 
 test('pace: a ?stage= jump walks in with the party a real run brings, within a few kills of XP', () => {
-  for (const id of STAGE_ORDER) {
+  // Chapter 5's ARRIVAL rows are placeholders, the lead at Lv 10, and its two stages are stubs that pay no XP: they join this check once
+  // 4.3 and 4.4 are in and the stages are measured (docs/chapter-5.md, "The pace").
+  for (const id of STAGE_ORDER.filter((s) => chapterOf(s) < 5)) {
     const runs = kept.map((r) => r.stages.find((s) => s.stage === id)?.entered ?? []);
     const jump = defaultParty(id);
     assert.deepEqual(jump.map((s) => s.id), runs[0]?.map((s) => s.id), `${id}: the same heroes, lead first`);

@@ -9,7 +9,7 @@ import { nightSprite, nightTile } from '../night.ts';
 import { Px } from '../px.ts';
 import { rim } from '../props_lab2.ts';
 import type { TileCtx } from '../tile_ground.ts';
-import { duskTile, lockdownGround, lockdownObject } from './lockdown_tiles.ts';
+import { CORE, duskTile, lockdownGround, lockdownObject } from './lockdown_tiles.ts';
 import type { LockdownTile } from './lockdown_tiles.ts';
 import { barricadeArt, barrierArt, boothArt, coneLift, curfewSignArt, floodlightArt, floodlightConeArt, sandbagArt, tentArt, truckArt } from './lockdown_props.ts';
 import { trooperPx } from './trooper.ts';
@@ -37,12 +37,7 @@ const MAP = [
 const NAME: Record<string, LockdownTile> = {
   r: 'lockroof', h: 'lockhouse', v: 'lockvine', d: 'lockdoor', L: 'locklawn', w: 'lockwalk', R: 'lockroad', D: 'lockline', s: 'lockstop', A: 'rift0', B: 'rift1', C: 'rift2',
 };
-/** What each tile is in the town's own names, for the night pass and for the neighbors a tile reads. */
-export const CORE: Record<LockdownTile, TileName> = {
-  lockroad: 'road', lockline: 'roadline', lockstop: 'road', lockwalk: 'sidewalk', locklawn: 'grass', lockroof: 'houseroof', lockhouse: 'housewall',
-  lockvine: 'housewall', lockdoor: 'housedoor', rift0: 'road', rift1: 'road', rift2: 'road', armyfloor: 'labfloor', armycable: 'labfloor',
-  armycable2: 'labfloor', armycrate: 'cabinet', armycrate2: 'cabinet', armywall: 'labwall',
-};
+export { CORE };
 
 /** One painted tile of the map, in the town's day colors. */
 export function paintLockdownTile(name: LockdownTile, tx: number, ty: number, near: TileCtx['near'], pulse = false): Px {

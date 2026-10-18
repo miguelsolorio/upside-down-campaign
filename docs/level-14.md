@@ -14,6 +14,7 @@ One stage, five to eight minutes, the start of chapter 5 (`docs/chapter-5.md`). 
 - Light: `time: 'night'` (dusk going to night): pools under the floodlight cones (`floodlightConeArt`) and the lights props, and the rifts' red glow.
 - Music: `lab` from the start, then `clock` at the `commander` beat.
 - Party: picked on the map from everyone met (no Eddie), with Hopper locked in (`REQUIRED`). Hopper rejoins with his end-of-4.1 seed, raised to the join level if that's higher.
+- Tile characters, taken at spine time from the Latin-1 signs chapter 4 left free (`src/core/tiles.ts`). The walkable ones: `¡` `lockroad`, `¥` `lockline`, `©` `lockstop`, `¬` `lockwalk`, `®` `locklawn`, `¹` `»` `¼` `rift0` `rift1` `rift2` (three tiles that join, laid side by side), `½` `armyfloor`, `¾` `armycable`, `¿` `armycable2`. The solid ones, `LOCKDOWN_SOLID`: `²` `lockroof`, `³` `lockhouse`, `µ` `lockvine`, `¶` `lockdoor`, `ª` `armycrate`, `«` `armycrate2`, `´` `armywall`. A Lab wall is the plain `labcap` row `V` over `armywall`; the rifts, the road and the house fronts read their neighbors as the town's own names (`CORE` in `src/gfx/ch5/lockdown_tiles.ts`), so a rift sits in a lane of `¡`. The stub in `stage51.ts` uses every one of them.
 - `enemyMult` and `xpMult`: set in "Result" by measurement, on HARD (`chief`).
 
 ## Rooms

@@ -381,6 +381,6 @@ test('the nodes sit between the bars, and the route starts and ends on them with
 
 test('every sign plate names its place and sits clear of the bars', () => {
   const plates = paintLand(SCHOOLED).plates;
-  assert.deepEqual(plates.map((p) => p.name).sort(), ['BASE', 'FOOD COURT', 'GATE', 'KAMCHATKA', 'LAB', 'MIRKWOOD', 'PATCH', 'SCHOOL', 'STARCOURT', 'TUNNELS']);
+  assert.deepEqual(plates.map((p) => p.name).sort(), ['ABYSS', 'BASE', 'FOOD COURT', 'GATE', 'KAMCHATKA', 'LAB', 'LOCKDOWN', 'MIRKWOOD', 'PATCH', 'SCHOOL', 'STARCOURT', 'TUNNELS']);
   for (const p of plates) assert.ok(p.y > TOP_H + 4 && p.y + 9 < BAND_Y - 4, `${p.name}`);
 });

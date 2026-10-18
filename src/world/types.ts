@@ -129,6 +129,8 @@ export interface StageData {
   lights: LightSource[];
   /** Day draws the normal art. Night draws the night art, with a pool of light around each light. */
   time: TimeOfDay;
+  /** Drawn behind the tiles, which are clear where it shows through: 5.2's Abyss, the void and the black sun (docs/level-15.md). */
+  backdrop?: 'abyss';
   music: TrackId;
   checkpoints: Checkpoint[];
   scare: ScareDef;

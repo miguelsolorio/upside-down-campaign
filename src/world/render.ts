@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01, hpBarColor } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawAbyssBg, drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -137,6 +137,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   ctx.beginPath();
   ctx.rect(0, VIEW_TOP, SCREEN_W, SCREEN_H - VIEW_TOP);
   ctx.clip();
+  // The Abyss's void, in screen px behind the tiles, which are clear over it (docs/level-15.md).
+  if (stage.backdrop === 'abyss') drawAbyssBg(ctx, t, cam.x, cam.y);
   ctx.translate(-cam.x + view.shake.x, VIEW_TOP - cam.y + view.shake.y);
   const camX = cam.x - view.shake.x, camY = cam.y - view.shake.y;
   drawStage(ctx, stage.baked, camX, camY, t);

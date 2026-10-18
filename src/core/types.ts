@@ -2,6 +2,7 @@
 // This file is the contract. Do not edit it from a sub-agent; report the change you need instead.
 import type { ColorName } from '../gfx/palette.ts';
 import type { SfxId } from './types_audio.ts';
+import type { ActorView, FxView } from './types_view.ts';
 
 export type { ColorName };
 
@@ -31,11 +32,15 @@ export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
  * kguard: a Kamchatka guard, the soldier in winter. kbaton: a camp guard with a baton who blocks from the front, like a riot guard.
  * pitdemo: the Demogorgon in the pit, the 4.1 mini-boss, finished by Hopper's slam (docs/level-10.md). ghoul: a Creel ghoul, who
  * waits in a haunted mirror and steps out of it (docs/level-11.md).
+ * trooper: an army rifleman with a riot shield that bounces frontal hits and a smash breaks for good. agent5: the Lab agent in hazmat
+ * at chapter 5 numbers. commander: the 5.1 mini-boss, a trooper captain behind a full shield (docs/level-14.md). demofoe: the 1.3
+ * Demogorgon's charge and swipe at a foe's size. twin: one of the two Demogorgons of the 5.2 mini-boss (docs/level-15.md).
  */
 export type EnemyKind =
   | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
   | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg'
-  | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul';
+  | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul'
+  | 'trooper' | 'agent5' | 'commander' | 'demofoe' | 'twin';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -45,100 +50,7 @@ export type StatusId = 'burn' | 'stun' | 'slow' | 'confuse' | 'curse';
 export type Difficulty = 'kid' | 'normal' | 'chief' | 'upside';
 
 // ---------------------------------------------------------------- what gets drawn
-// The sim produces these each frame (Sim.view()). gfx draws them. Nobody else invents draw state.
-export type AnimId = 'idle' | 'walk' | 'attack' | 'cast' | 'dash' | 'hurt' | 'ko';
-
-export interface ActorView {
-  kind: 'hero' | 'enemy' | 'npc';
-  id: CharId | EnemyKind;
-  /** Feet position: bottom-center of the sprite, in world pixels. */
-  x: number; y: number;
-  dir: Dir;
-  anim: AnimId;
-  /** Frames spent in the current anim, for frame selection. */
-  t: number;
-  /** 0..1 white hit flash. */
-  flash: number;
-  /** True = skip drawing this frame (invulnerability flicker). */
-  blink: boolean;
-  /** Eleven's nosebleed: drawn when her MP is low. */
-  strained: boolean;
-  tint: ColorName | null;
-  /** Red "!" over the head: an attack is about to land. */
-  alert: boolean;
-  /** Pixels above the ground (knockback arcs, leaps). */
-  z: number;
-  /** Small HP bar over an enemy once it has been hit, and over a hero who is standing. */
-  bar: { hp: number; hpMax: number } | null;
-  /** An elite enemy: gfx draws it with its own marks (red trim, a bigger bar). Absent means a normal one. */
-  elite?: boolean;
-  /** A guard or warden whose shield is up. It stops hits from the front, so gfx can show the shield raised or dropped. */
-  guarding?: boolean;
-  /** A boss's pose, when it is doing something other than walking. The Demogorgon uses charge to pinned
-   *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md).
-   *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. Billy uses
-   *  charge, grab, stun and pinned (kneeling). The Mind Flayer's body uses rise (coming in through the skylight) and down
-   *  (its head on the floor), and a leg uses warn (its line shown), slam (striking down it) and severed (docs/level-9.md). The pit
-   *  Demogorgon uses the Demogorgon's. A ghoul uses rise (stepping out of its mirror) (docs/level-11.md). */
-  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab' | 'warn' | 'slam' | 'severed' | 'down';
-  /** A Mind Flayer leg's tip in world px: the end of the line it strikes down. x, y is its root. Absent on everything else. */
-  aim?: Vec2;
-  /** 0..1 how far Eleven has reached a pinned Billy. Absent means 0. */
-  k?: number;
-  /** The Demogorgon's head petals are open (below 60% HP). */
-  petals?: boolean;
-  /** A hidden enemy that only Will's Cold spot shows, or Lucas under his Camo. gfx draws it faint or not at all. */
-  hidden?: boolean;
-  /** A held Special filling toward its Lv 6 variant, 0..1 (heroes/hold.ts). gfx draws a ring round the hero. */
-  charge?: number;
-  /** An enemy confused by Robin's Word vomit: it fights the other enemies. gfx draws a swirl over its head. */
-  confused?: boolean;
-  /** A dormant Flayed, waiting as a goo puddle until its group wakes. */
-  puddle?: boolean;
-  /** A hero under the clock curse: the chimes sounded so far, 1 to 3. gfx draws the clock mark and its four pips over them, and
-   *  z lifts them. Drawn where the curse found them, benched or not (docs/level-11.md, "The curse"). Absent when not cursed. */
-  curse?: number;
-  /** A boss or elite marked by Eddie's Hellfire DM: the party's hits on it deal more. gfx draws a small d20 over it. */
-  marked?: boolean;
-}
-
-export type FxKind =
-  | 'slash' | 'push' | 'beam' | 'flame' | 'shield' | 'nova' | 'spark' | 'dust'
-  | 'rock' | 'candy' | 'dart' | 'blast' | 'heal' | 'ring' | 'spore'
-  /** acid: a Demogorgon spit glob in flight and its splash. mark: a shadow mark on the floor where it will land.
-   *  bolt: Will's sketch bolt. reveal: a hidden path showing itself. */
-  | 'acid' | 'mark' | 'bolt' | 'reveal'
-  /** trail: the streak behind Max's Skate dash, w its length, angle its heading. howl: the Alpha's howl, a ring that
-   *  grows to w. taunt: Steve's Babysit pulse, a ring that grows to w. */
-  | 'trail' | 'howl' | 'taunt'
-  /** scoop: Robin's ice cream in flight and its splat. babble: her Word vomit cone, w its reach. bullet: a pistol or rifle round
-   *  in flight. goo: a melting rat's burst, w its diameter. trap: one of Nancy's bear traps on the floor. arcs: the power box
-   *  firing, w and h its size. */
-  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs'
-  /** pet: Dustin's Dart, w 1 while he bites. bottle: Nancy's Molotov in flight, h its height off the ground. fire: its pool on the
-   *  floor, w the diameter. */
-  | 'pet' | 'bottle' | 'fire'
-  /** slam: a Mind Flayer leg striking the floor, w its reach. glass: the skylight shattering as the Mind Flayer comes in,
-   *  w the spread. sweep: a Mind Flayer leg sweeping a band across the arena: x, y its top-left, w and h its size, t < 40 the
-   *  warning, then the strike. */
-  | 'slam' | 'glass' | 'sweep'
-  /** riff: Eddie's sound ring, x, y its center and w its diameter: the small one where his swing lands and each pulse of his solo.
-   *  chime: a ring off a grandfather clock's face as it chimes, w its diameter. walkman: notes round Max as she plays her Walkman,
-   *  w the spread (docs/level-11.md). */
-  | 'riff' | 'chime' | 'walkman';
-
-export interface FxView {
-  kind: FxKind;
-  x: number; y: number;
-  dir: Dir;
-  /** Radians, 0 = right. */
-  angle: number;
-  /** Frames elapsed and total frames. */
-  t: number; life: number;
-  /** Extent in px: beam length, nova diameter, slash reach. */
-  w: number; h: number;
-}
-
+// ActorView, FxKind and FxView are in types_view.ts (re-exported at the bottom). The rest of the view is here.
 export type ItemKind = 'eggo' | 'coke' | 'quarter';
 export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
 
@@ -282,7 +194,12 @@ export interface SimView {
 }
 
 // ---------------------------------------------------------------- sim
-export interface Grid { w: number; h: number; solid: Uint8Array }
+export interface Grid {
+  w: number; h: number; solid: Uint8Array;
+  /** 1 on a solid tile that is a drop into the void: the Abyss's gaps, cliffs and the rock under its islands (core/tiles.ts, `drop`). A
+   *  twin Demogorgon that charges into one falls instead of stunning itself (docs/level-15.md). Absent on a stage without any. */
+  drop?: Uint8Array;
+}
 
 export interface SimInput {
   mx: number; my: number;
@@ -490,6 +407,9 @@ export interface DevHooks extends SimDev {
 
 // ---------------------------------------------------------------- dialogue, story and the gfx vocabulary
 export type { Expr, Speaker, DialogueLine, DialogueScript, BarkEvent, IconId, PanelStyle, TextOpts } from './types_ui.ts';
+
+// ---------------------------------------------------------------- the actor and effect views
+export type { AnimId, ActorView, FxKind, FxView } from './types_view.ts';
 
 // ---------------------------------------------------------------- audio vocabulary
 export type { SfxId, TrackId, JingleId, StingerId, AudioMetrics, AudioApi } from './types_audio.ts';

@@ -17,7 +17,7 @@ import { townGround } from '../tile_town.ts';
 type Rnd = () => number;
 const pick = (r: Rnd, lo: number, hi: number): number => lo + Math.floor(r() * (hi - lo + 1));
 
-/** The names of 5.1's new tiles. They are not in core/tiles.ts yet: the build adds them and one case each in the ground and object painters. */
+/** The names of 5.1's new tiles (core/tiles.ts has them all; tile_ch5.ts registers the painters). */
 export type LockdownTile =
   | 'lockroad' | 'lockline' | 'lockstop' | 'lockwalk' | 'locklawn' | 'lockroof' | 'lockhouse' | 'lockvine' | 'lockdoor'
   | 'rift0' | 'rift1' | 'rift2'
@@ -25,6 +25,12 @@ export type LockdownTile =
 export const LOCKDOWN_TOWN: readonly LockdownTile[] = ['lockroad', 'lockline', 'lockstop', 'lockwalk', 'locklawn', 'lockroof', 'lockhouse', 'lockvine', 'lockdoor', 'rift0', 'rift1', 'rift2'];
 export const LOCKDOWN_LAB: readonly LockdownTile[] = ['armyfloor', 'armycable', 'armycable2', 'armycrate', 'armycrate2', 'armywall'];
 export const LOCKDOWN_TILES: readonly LockdownTile[] = [...LOCKDOWN_TOWN, ...LOCKDOWN_LAB];
+/** What each tile is in the town's own names, for the night pass and for the neighbors a tile reads (the game's tile_ch5.ts maps both through it). */
+export const CORE: Record<LockdownTile, TileName> = {
+  lockroad: 'road', lockline: 'roadline', lockstop: 'road', lockwalk: 'sidewalk', locklawn: 'grass', lockroof: 'houseroof', lockhouse: 'housewall',
+  lockvine: 'housewall', lockdoor: 'housedoor', rift0: 'road', rift1: 'road', rift2: 'road', armyfloor: 'labfloor', armycable: 'labfloor',
+  armycable2: 'labfloor', armycrate: 'cabinet', armycrate2: 'cabinet', armywall: 'labwall',
+};
 /** The ones you cannot walk through: the house front and the army's crates and wall. */
 export const LOCKDOWN_SOLID: ReadonlySet<LockdownTile> = new Set<LockdownTile>(['lockroof', 'lockhouse', 'lockvine', 'lockdoor', 'armycrate', 'armycrate2', 'armywall']);
 

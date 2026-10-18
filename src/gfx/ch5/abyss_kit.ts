@@ -1,7 +1,7 @@
 // Shared by the Abyss tiles (abyss_tiles.ts, stage 5.2): which neighbors are island, bridge or drop, the island's rim cut from what lies
 // past its edge (so a corner is rounded and a side is lit or shaded the same way on every tile), world-pixel noise that runs on from
-// tile to tile, and a transpose for the vertical bridge. The tile names are listed here and not in core/tiles.ts, which the build
-// extends when it registers them. Pure pixel work: no DOM.
+// tile to tile, and a transpose for the vertical bridge. The tile names are listed here and in core/tiles.ts, which gives each a character
+// and tile_ch5.ts registers the painters. Pure pixel work: no DOM.
 import { noise } from '../tile_net.ts';
 import type { Paint } from '../px.ts';
 import type { TileCtx } from '../tile_ground.ts';
@@ -24,7 +24,7 @@ export const isDrop = (n: string): boolean => n === 'abyssgap' || n === 'abyssun
 /** Solid ground that is not a drop: an island floor, a bridge, or any other tile of the game (a house wall on an island, a vine). */
 export const isLand = (n: string): boolean => !isDrop(n);
 
-/** The name of a neighbor as a plain string, since the game's TileName does not list these tiles until the build adds them. */
+/** The name of a neighbor as a plain string, so a test can ask about any tile. */
 export const near = (c: TileCtx, s: Side): string => c.near[s] as string;
 
 /** World noise 0 to 1, in cells of `cell` px, that runs on from tile to tile. */

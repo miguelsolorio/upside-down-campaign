@@ -1,5 +1,6 @@
 // The Russian soldier (docs/level-8.md, "The soldier"). Ushanka, greatcoat, rifle. Built from the Lab agent (agent.ts): it patrols
-// until it sees the hero, then keeps its distance.
+// until it sees the hero, then keeps its distance. The Kamchatka guard (docs/level-10.md) runs the same brain on his own def: every number
+// is read from the enemy's kind.
 //
 //   band: holds 80 to 120 px from the hero with a clear line, and once the hero is closer than 60 it steps back at 0.7 px a frame
 //     until it is 80 away again (or runs out of room: the same stamina as the agent's).
@@ -20,9 +21,6 @@ import { ENEMY_DEFS } from './defs.ts';
 import { backOff, patrol } from './agent.ts';
 import { chaseHero, faceHero, setEnemyAnim, stepToward } from './steer.ts';
 
-const DEF = ENEMY_DEFS.soldier;
-const X = DEF.x;
-
 export function newSoldier(): SoldierState { return { move: 'walk', t: 0, shots: 0, aim: 0, backing: false, buttCd: 0 }; }
 
 function begin(e: Enemy, sd: SoldierState, move: SoldierState['move'], frames: number, mode: Enemy['mode']): void {
@@ -40,6 +38,7 @@ function toRecover(e: Enemy, sd: SoldierState, frames: number): void {
 
 /** One round, from the chest along the locked aim. */
 function fireRound(s: S, e: Enemy, aim: number): void {
+  const DEF = ENEMY_DEFS[e.kind], X = DEF.x;
   s.projs.push(newProj({
     kind: 'bullet', mine: false, x: e.x + Math.cos(aim) * 4, y: e.y - BODY_Y + Math.sin(aim) * 4,
     vx: Math.cos(aim) * X.speed, vy: Math.sin(aim) * X.speed, life: Math.ceil(X.range / X.speed) + 2, r: X.r,
@@ -51,6 +50,7 @@ function fireRound(s: S, e: Enemy, aim: number): void {
 
 /** The wind-up is over: lock the aim on the hero's spot and fire the first round. */
 function startBurst(s: S, e: Enemy, sd: SoldierState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   sd.aim = Math.atan2(hero.y - e.y, hero.x - e.x);
   e.dir = dirOfAngle(sd.aim);
   sd.shots = e.elite ? X.eliteBurst : X.burst;
@@ -62,6 +62,7 @@ function startBurst(s: S, e: Enemy, sd: SoldierState, hero: Hero): void {
 }
 
 function butt(s: S, e: Enemy, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   sparks(s, e.x + (hero.x - e.x) * 0.5, e.y - BODY_Y, 2);
   if (!hero.ko && dist(e.x, e.y, hero.x, hero.y) <= X.buttReach && los(s, e.x, e.y, hero.x, hero.y)) {
     hurtHero(s, hero, e.x, e.y, X.buttPower, e.atk, X.buttKb);
@@ -69,6 +70,7 @@ function butt(s: S, e: Enemy, hero: Hero): void {
 }
 
 export function soldierUpdate(s: S, e: Enemy, hero: Hero): void {
+  const DEF = ENEMY_DEFS[e.kind], X = DEF.x;
   const sd = e.soldier as SoldierState;
   if (sd.buttCd > 0) sd.buttCd--;
   const d = dist(e.x, e.y, hero.x, hero.y);

@@ -4,6 +4,8 @@
 //   Wind-up (Lv 6): his Attack fires when the key comes up. Held 24 frames (ActorView.charge fills) it is the wind-up haymaker, power
 //   x1.8 and knockback 5, which breaks a block. A tap is the plain haymaker on release. `readWind` is the tick's reading of the key.
 //
+// The slam is also the one thing that finishes the pinned pit Demogorgon (enemies/demo_hit.ts).
+//
 // What gfx sees: a 'slash' fx for the haymaker, a 'nova' at his feet for the slam, w its diameter.
 import type { SimInput } from '../core/types.ts';
 import { HERO_DEFS } from './defs.ts';
@@ -94,7 +96,7 @@ export function hopperSpecial(s: S, h: Hero): void {
     shake(s, 3);
     smashCracks(s, h, h.aim, d.reach, Math.PI + CRACK_SLACK);
     coneHits(s, h, h.aim, d.reach, Math.PI, (e, a) => {
-      hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: a, stun: d.x.stun, stagger: 24, hitstop: 3, shake: 1.8 });
+      hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: a, stun: d.x.stun, stagger: 24, hitstop: 3, shake: 1.8, slam: true });
     });
   });
 }

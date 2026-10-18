@@ -157,6 +157,28 @@
 //   startStand, pulse(crit) and endStand. Metalhead (Lv 3): +10 percent ATK. Hellfire DM (Lv 6): his hits mark a boss or an elite for 300
 //   frames (ActorView.marked) and every party hit on it deals 20 percent more.
 // - A party of one (Hopper in 4.1) is a swap that does nothing and makes no sound; his KO is allDown.
+// - The Kamchatka guard (`kguard`) runs the soldier's brain, the camp guard (`kbaton`) the riot guard's, shield and all (enemies/shield.ts,
+//   isShieldedKind), and the pit Demogorgon (`pitdemo`) the Demogorgon's, each on its own def. hud.boss reads DEMOGORGON for the pit one too. It
+//   pins after three wall stuns as the 1.3 one does ({ t: 'pinned', spawnId } once), and only Hopper's ground slam reaching it kills it (HitOpts
+//   `slam`); Eleven's beam and every other hit is a 'poked'. If Hopper is down when it pins he stands back up with the MP for one slam.
+// - The Creel ghoul (enemies/ghoul.ts, ghoul_hit.ts): a spawn with `mirror` names the prop it waits in. In the glass it is not in the view, can't
+//   be hit and doesn't count as aware. Once its group is awake and the active hero is within 80 px of the mirror with a clear line, and no ghoul of
+//   that mirror stepped out in the last 90 frames, it steps out at its spawn spot (pose 'rise' for 40 frames, the `ghoul` sfx, hittable), then
+//   drifts at the hero bobbing 1 to 3 px (z). Inside 40 px: a 24 frame "!" with the line locked on the hero's spot, a 10 frame lunge at 3.2 px a
+//   frame (power 0.8, knockback 3), 30 frames of recovery. It takes x1.5 within 48 px of a lit lights prop and dies as glass (a 'glass' fx and
+//   `shatter`). A mirror that shatters kills the ghouls still in it, dormant ones too: `kill` events with 0 XP and no quarter, so groupCleared
+//   fires and a retry's kill list holds them. PropView.k of a mirror is the share of its ghouls still in the glass.
+// - A clock spawned with `hits` breaks under that many basic attacks that start within 18 px of it, aimed its way, from a hero without the riff.
+// - The curse (combat/curse.ts, house.ts): Sim.curse(prop) has a standing clock chime for the first time and curses the active hero, or if that
+//   is Eddie or Max the next standing hero in party order who is neither; nothing if nobody else would be left standing, while the Walkman is on, or
+//   for a broken or spent clock. { t: 'cursed', hero }. The chimes: at once, then every 300 frames (a curse keeps its own gap), each the `chime` sfx
+//   and fx over the clock and 4 px more z for the hero (ActorView.curse and PartyHud.curse count them, 1 to 3). The fourth is a KO like any other
+//   (heroKO) and { t: 'curseEnd', hero, how: 'ko' }. The cursed hero hangs in place, benched or not: no moving, attacking, regen, burst sweep or swap
+//   to them, and the party swaps away from them at once if they were up. If everyone who can fight falls, allDown. Breaking the clock that chimed
+//   (Eddie's riff, `hits` basic attacks, openProp) lifts its curse: the hero floats back down, { t: 'curseEnd', how: 'clock' }.
+// - Max's Walkman (SimOptions.walkman, Sim.giveWalkman): a swap to Max that is not forced, while it is ready, plays it: the `walkman` sfx, a
+//   'walkman' fx, { t: 'walkman' }, every curse ends ('walkman'), 480 frames in which Sim.curse does nothing, and 1800 frames until it is ready
+//   again. HudView.walkman is { ready, on } while the party has it and Max is in it.
 // - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;

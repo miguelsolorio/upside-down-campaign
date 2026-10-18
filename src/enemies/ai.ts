@@ -1,5 +1,6 @@
 // Enemy AI driver: shared per-tick upkeep (cooldowns, knockback, stagger, stun, the candy lure), then the
 // kind-specific brain (the bosses skip the stun and the lure: the Demogorgon and the Alpha the stagger too), then a soft push so enemies do not stack on one pixel.
+// A soldier's brain runs the Kamchatka guard too, the riot guard's the camp guard, the Demogorgon's the pit one, each on its own def.
 // A pinned Billy is the exception to the order: his reach runs before everything that could skip his turn (a stagger, a hero down).
 // Holds (hold.ts) are checked first every tick, because a confused, stunned or staggered holder never reaches its own brain.
 import { ENEMY_DEFS } from './defs.ts';
@@ -25,6 +26,8 @@ import { flayerRooted } from './flayer_hit.ts';
 import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
+import { ghoulUpdate, glassUpdate } from './ghoul.ts';
+import { isShielded } from './shield.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
 import { lostHim } from '../heroes/camo.ts';
 
@@ -59,6 +62,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.billy) { billyUpdate(s, e, hero); return; }
   if (e.flayer) { flayerUpdate(s, e, hero); return; }
   if (e.leg) { legUpdate(s, e, hero); return; }
+  // A Creel ghoul floats at the hero and ignores the candy bar too.
+  if (e.ghoul) { ghoulUpdate(s, e, hero); return; }
   // The vine and the pod are rooted: no lure moves them.
   if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
   if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }
@@ -80,7 +85,7 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.kind === 'rat' || e.kind === 'melter') ratUpdate(s, e, hero);
   else if (e.flayed) flayedUpdate(s, e, hero);
   else if (e.soldier) soldierUpdate(s, e, hero);
-  else if (e.kind === 'guard' || e.kind === 'warden') guardUpdate(s, e, hero);
+  else if (isShielded(e)) guardUpdate(s, e, hero);
   else if (e.kind === 'demodog') { demodogUpdate(s, e, hero); unhide(e); }
   else agentUpdate(s, e, hero);
 }
@@ -118,7 +123,9 @@ export function updateEnemies(s: S): void {
   updateGlobs(s);
   updateHolds(s);
   for (const e of s.enemies) {
-    if (e.dead || e.dormant) continue;
+    if (e.dead) continue;
+    // A ghoul in its mirror is dormant, and still keeps an eye out for a hero who comes near.
+    if (e.dormant) { if (e.ghoul) glassUpdate(s, e, hero); continue; }
     updateOne(s, e, hero);
   }
   separate(s);

@@ -16,6 +16,7 @@ import { isHeld } from '../enemies/hold.ts';
 import { holdsSpecial, readHold, useVariant, variantMp, variantReady } from '../heroes/hold.ts';
 import { readWind, windsUp } from '../heroes/hopper.ts';
 import { standOn } from '../heroes/eddie_solo.ts';
+import { CHIME_LIFT, cursedBy, isCursed } from './house.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -158,11 +159,11 @@ export function updateActive(s: S, input: SimInput): void {
   setAnim(h, anim);
 }
 
-/** MP and HP regeneration: 4 percent MP a second for the active hero, 6 and 2 percent for the bench. */
+/** MP and HP regeneration: 4 percent MP a second for the active hero, 6 and 2 percent for the bench. None for a hero at 0 HP, who is about to be knocked out, or one hanging under a curse. */
 export function regen(s: S): void {
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
-    if (h.ko) continue;
+    if (h.ko || h.hp <= 0 || isCursed(s, h)) continue;
     if (i === s.active) {
       h.mp = Math.min(h.st.mp, h.mp + (h.st.mp * 0.04) / 60);
     } else {
@@ -213,7 +214,7 @@ function restSpot(s: S, lead: Hero, n: number): [number, number] | null {
 }
 
 /**
- * Records the active hero's path and moves the bench heroes along it as cosmetic followers. Each follower walks toward
+ * Records the active hero's path and moves the bench heroes along it as cosmetic followers (all but a cursed one, who hangs in place). Each follower walks toward
  * the point on his path a short while back, but never gets closer to him than its gap, so when he stops they stop with
  * him (or finish closing up) instead of piling onto his feet or backing away. A follower that really is on top of him
  * (after a swap, or at the start of a level) steps out to a spot behind him, at walking pace.
@@ -230,6 +231,13 @@ export function updateFollowers(s: S): void {
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
     if (i === s.active || h.ko) continue;
+    // A cursed hero hangs where the curse found them, a little higher with each chime, and leaves the followers' places to the rest.
+    const curse = cursedBy(s, h);
+    if (curse) {
+      h.z = curse.chimes * CHIME_LIFT; h.moving = false; h.animT++;
+      setAnim(h, 'idle');
+      continue;
+    }
     const n = k++;
     const gap = REST_GAPS[Math.min(n, REST_GAPS.length - 1)] as number;
     const near = Math.hypot(h.x - a.x, h.y - a.y);
@@ -259,7 +267,7 @@ export function updateFollowers(s: S): void {
     // Standing together after stepping out, they face the way the leader walked.
     else if (spot) h.dir = s.walkDir;
     h.moving = moved;
-    h.z = 0; h.flash = Math.max(0, h.flash - 0.12);
+    h.z = s.house.down.get(h) ?? 0; h.flash = Math.max(0, h.flash - 0.12);
     h.animT++;
     setAnim(h, moved ? 'walk' : 'idle');
   }

@@ -7,7 +7,7 @@ import { createState, setDifficulty } from './init.ts';
 import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
 import { updateTalents } from '../heroes/talents6.ts';
-import { ageBodies, awardXp, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
+import { ageBodies, awardXp, awayFrom, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
 import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
@@ -17,6 +17,7 @@ import { updatePowerboxes } from './powerbox.ts';
 import { wakeFlayed } from '../enemies/flayed.ts';
 import { wakeFlayer } from '../enemies/flayer.ts';
 import { startDefense, updateDefense } from './defense.ts';
+import { startCurse, swapped, updateCurse } from './curse.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
 import { updatePools } from './pools.ts';
@@ -88,7 +89,12 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   }
   if (s.swapCd > 0) s.swapCd--;
   if (s.swapLock > 0) s.swapLock--;
+  // The curse's clocks and the Walkman's tick before a swap, so the frame Max plays it on is its first.
+  updateCurse(s);
+  const from = s.active;
   handleSwap(s);
+  // A swap to Max, a quick one and not the forced one after a KO or a curse, plays her Walkman if it is ready.
+  if (s.active !== from) swapped(s);
   if (tryBurst(s)) {
     tickVisuals(s);
     return drain(s);
@@ -152,6 +158,8 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     spawnGroup(group) {
       for (const e of s.enemies) {
         if (!e.dormant || e.dead || e.group !== group) continue;
+        // A ghoul stays in its mirror: waking it only lets it step out when a hero comes near (enemies/ghoul.ts).
+        if (e.ghoul) { e.ghoul.awake = true; continue; }
         e.dormant = false;
         dust(s, e.x, e.y, 4);
         alertEnemy(s, e);
@@ -163,6 +171,8 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     openProp: (id) => openPropById(s, id),
     closeProp: (id) => closePropById(s, id),
     defend: () => startDefense(s),
+    curse(prop) { if (startCurse(s, prop) === activeHero(s)) awayFrom(s); },
+    giveWalkman() { s.house.walkman = true; },
     healParty: (frac) => healParty(s, frac),
     setDifficulty: (d) => setDifficulty(s, d),
     bonus(xp, quarters) {

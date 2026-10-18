@@ -13,6 +13,8 @@ import { newDemo } from '../enemies/demo_hit.ts';
 import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
 import { newSoldier } from '../enemies/soldier.ts';
+import { newGhoul } from '../enemies/ghoul_hit.ts';
+import { newHouse } from './house.ts';
 import { newGrigori } from '../enemies/grigori_hit.ts';
 import { newBilly } from '../enemies/billy_hit.ts';
 import { newFlayer, newLeg } from '../enemies/flayer_hit.ts';
@@ -56,19 +58,20 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     uid, id: sp.id, kind: sp.type, group: sp.group,
     x: f.x, y: f.y, hx: f.x, hy: f.y, dir: sp.dir ?? 'down', vx: 0, vy: 0, z: 0,
     hp, hpMax: hp, atk: elite ? def.atk * ELITE.atk : def.atk, def: def.def,
-    dormant: sp.dormant === true, dead: false, deadT: 0, aware: false,
+    dormant: sp.dormant === true || sp.type === 'ghoul', dead: false, deadT: 0, aware: false,
     mode: patrol.length > 0 ? 'patrol' : 'idle', modeT: 0, cd: 0, stagger: 0, flash: 0, hurtSeen: false,
     anim: 'idle', animT: 0, patrol, pi: 0, wait: 0, ax: 0, ay: 0, hitDone: false, lostT: 0, backT: 0, stuckT: 0,
     lastX: f.x, lastY: f.y, wanderT: 30 + ((uid * 37) % 90), wanderA: Number.NaN, noLure: 0, by: null, stat: noStatus(),
     xp: def.xp <= 0 ? 0 : Math.max(1, Math.round((elite ? def.xp * ELITE.xp : def.xp) * s.xpMult)), drop: elite ? def.drop * ELITE.drop : def.drop, elite,
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
-    demo: sp.type === 'demogorgon' ? newDemo() : null,
+    demo: sp.type === 'demogorgon' || sp.type === 'pitdemo' ? newDemo() : null,
     hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
     alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
-    flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' ? newSoldier() : null,
+    flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' || sp.type === 'kguard' ? newSoldier() : null,
     grigori: sp.type === 'grigori' ? newGrigori() : null, billy: sp.type === 'billy' ? newBilly() : null,
     flayer: sp.type === 'flayer' ? newFlayer() : null, leg: sp.type === 'flayerleg' ? newLeg(f.x, f.y) : null,
+    ghoul: sp.type === 'ghoul' ? newGhoul(s, sp.mirror ?? '', sp.dormant !== true) : null,
   };
 }
 
@@ -130,7 +133,7 @@ export function createState(opts: SimOptions): S {
     flow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     wardFlow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     burrows: (opts.burrows ?? []).map((b) => ({ ...b })), defense: opts.defense ? newDefense(opts.defense) : null, rtSeq: 0,
-    pools: [], poolCd: 0, cleared: new Set(), god: opts.god === true, boxes: false,
+    pools: [], poolCd: 0, house: newHouse(opts.walkman === true), cleared: new Set(), god: opts.god === true, boxes: false,
   };
   for (const sp of opts.spawns) {
     if (sp.kind !== 'prop' && skip.has(sp.id)) continue;
@@ -158,7 +161,7 @@ export function createState(opts: SimOptions): S {
       const pushBy: Utility | undefined = sp.pushBy ?? (sp.prop === 'log' ? 'push' : undefined);
       s.props.push({
         id: sp.id, kind: sp.prop, x: sp.tx * TILE, y: sp.ty * TILE, w: sp.w ?? size[0], h: sp.h ?? size[1],
-        solid, shutSolid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0,
+        solid, shutSolid, state, t: 0, hitBy, pushBy, smash: sp.smash, cam: sp.cam ? { ...sp.cam } : undefined, camT: 0, pokeCd: 0, burnT: 0, hits: sp.hits ?? 0, struck: 0,
         k: sp.prop === 'cipher' && state === 'open' ? 1 : 0,
       });
     }

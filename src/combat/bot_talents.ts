@@ -15,6 +15,7 @@ import { HERO_DEFS } from '../heroes/defs.ts';
 import { HOLD_FRAMES } from '../heroes/hold.ts';
 import { WIND_FRAMES } from '../heroes/hopper.ts';
 import { LV6 } from '../progression/talents.ts';
+import { isShieldedKind } from '../enemies/shield.ts';
 
 /** What bot.ts knows about a foe that the casting rules read. */
 export interface CastFoe { x: number; y: number; kind: string; d: number; burning: boolean; up?: boolean }
@@ -36,7 +37,7 @@ export interface CastScene {
 /** Steve casts Babysit when two foes are this close. */
 export const BABYSIT_CROWD = 48;
 const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hypot(bx - ax, by - ay);
-const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
+const isGuard = isShieldedKind;
 /** Frames between the bot's Sensory tanks. */
 const SENSE_GAP = 1200;
 

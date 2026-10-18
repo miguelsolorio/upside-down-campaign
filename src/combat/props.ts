@@ -1,7 +1,8 @@
 // Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
 // A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat or Hopper's fists.
-// A haunted mirror and the grandfather clock shatter under Eddie's riff (his swing, its ring and the solo's pulses).
+// A haunted mirror and the grandfather clock shatter under Eddie's riff (his swing, its ring and the solo's pulses), and the clock
+// under `hits` basic attacks from up close by anyone else.
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
 // for any hero who swings at it from up close. A cipher door (docs/level-8.md) decodes while a hero with `read` stands near. A breaker
 // lit by a shot fires the power boxes (powerbox.ts).
@@ -14,6 +15,8 @@ import { FOOT_H, FOOT_W, angleDiff, dist, footBlocked, nearestOnRect, rectsOverl
 import { utilitiesAt } from '../heroes/defs.ts';
 import { senseRange } from '../heroes/sensory.ts';
 import { fireBoxes } from './powerbox.ts';
+import { shatterGhouls } from '../enemies/ghoul_hit.ts';
+import { liftCurse } from './curse.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
@@ -116,17 +119,25 @@ function updateCipher(s: S, p: Prop): void {
   if (p.k >= 1 - 1e-9) decodeCipher(s, p);
 }
 
-/** A hero starts a basic attack. Every unlit `smash` prop within arm's reach in front of him lights, whoever he is. */
+/**
+ * A hero starts a basic attack. Every unlit `smash` prop within arm's reach in front of him lights, whoever he is. A clock that takes
+ * `hits` counts the attack too, from a hero without the riff, and breaks on the last one.
+ */
 export function smashAimed(s: S, h: Hero): void {
   const hy = h.y - 2;
+  const riff = utilitiesAt(h.id, h.level).includes('riff');
   for (const p of s.props) {
-    if (!p.smash || p.state === 'lit') continue;
+    const clock = p.kind === 'clock' && p.hits > 0 && p.state !== 'open' && !riff;
+    if (!clock && (!p.smash || p.state === 'lit')) continue;
     // The nearest point of the prop to his feet, as in pokes.ts: a prop in a wall face is a few px above them.
     const nx = Math.max(p.x, Math.min(h.x, p.x + p.w)), ny = Math.max(p.y, Math.min(hy, p.y + p.h));
     const d = dist(h.x, hy, nx, ny);
     if (d > SMASH_REACH) continue;
     if (d > 2 && angleDiff(Math.atan2(ny - hy, nx - h.x), h.aim) > SMASH_HALF) continue;
-    lightTarget(s, p);
+    if (!clock) { lightTarget(s, p); continue; }
+    if (++p.struck >= p.hits) { shatterProp(s, p); continue; }
+    sfx(s, 'thud');
+    dust(s, nx, ny, 2);
   }
 }
 
@@ -173,7 +184,10 @@ function riffable(p: Prop): boolean {
   return (p.kind === 'mirror' || p.kind === 'clock') && p.state !== 'open' && (p.hitBy ?? 'riff') === 'riff';
 }
 
-/** A riff shatters a mirror or the clock: propCleared, glass and a crash. The mirror is open and walkable after, the clock open and still solid. */
+/**
+ * A riff shatters a mirror or the clock: propCleared, glass and a crash. The mirror is open and walkable after, the clock open and still
+ * solid. The ghouls still in a mirror's glass die with it (enemies/ghoul_hit.ts), and a clock that chimed lets its curse go (curse.ts).
+ */
 export function shatterProp(s: S, p: Prop): void {
   if (p.state === 'open') return;
   p.state = 'open';
@@ -182,6 +196,7 @@ export function shatterProp(s: S, p: Prop): void {
   s.events.push({ t: 'propCleared', propId: p.id });
   sfx(s, 'shatter');
   addFx(s, 'glass', p.x + p.w / 2, p.y + p.h / 2, 'down', 0, 24, p.w, 0);
+  if (p.kind === 'mirror') shatterGhouls(s, p.id); else liftCurse(s, p.id);
 }
 
 /** Eddie's swing lands: every whole mirror and clock inside the cone shatters, found the way smashCracks finds a crack. */
@@ -239,7 +254,7 @@ export function openPropById(s: S, id: string): void {
 const EJECT_RADIUS = 8;
 
 /** The open floor nearest (x, y): a tile whose foot box is clear of solid tiles and props. Ties go to the side of the Alpha. */
-function nearestOpenFeet(s: S, x: number, y: number): { x: number; y: number } | null {
+export function nearestOpenFeet(s: S, x: number, y: number): { x: number; y: number } | null {
   const alpha = s.enemies.find((e) => e.alpha !== null && !e.dead);
   const tx0 = Math.floor(x / TILE), ty0 = Math.floor(y / TILE);
   let best: { x: number; y: number } | null = null;

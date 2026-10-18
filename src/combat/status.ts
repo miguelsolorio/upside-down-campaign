@@ -36,7 +36,7 @@ export function tickEnemyStatus(s: S): void {
         const dmg = isPinned(e) || isBillyPinned(e) || flayerShielded(e) ? 0 : Math.min(tick, Math.max(0, e.hp));
         if (dmg > 0) {
           e.hp -= tick;
-          if (e.demo) demoSettle(s, e, false, null);
+          if (e.demo) demoSettle(s, e, false);
           billySettle(s, e);
           sever(s, e);
           e.flash = Math.max(e.flash, 0.5);

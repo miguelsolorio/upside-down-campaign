@@ -18,7 +18,7 @@ export function holdSwap(v: SimView, hx: number, hy: number): number {
   if (!isHeldView(v, hx, hy)) return -1;
   let best = -1, bestFrac = -1;
   v.hud.party.forEach((p, i) => {
-    if (p.ko || p.active || p.hp / p.hpMax <= bestFrac) return;
+    if (p.ko || p.active || (p.curse ?? 0) > 0 || p.hp / p.hpMax <= bestFrac) return;
     best = i; bestFrac = p.hp / p.hpMax;
   });
   return best;

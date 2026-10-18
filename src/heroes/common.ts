@@ -7,9 +7,9 @@ import { schedule } from '../combat/fx.ts';
 
 export const rad = (deg: number): number => (deg * Math.PI) / 180;
 
-/** SPD above the Lv 1 value shortens cooldowns and speeds the hero up, 1.5 percent a point. */
+/** SPD above the Lv 1 value shortens cooldowns and speeds the hero up, 1.5 percent a point. A speed bond adds its share on top. */
 export function speedFactor(h: Hero): number {
-  return 1 + 0.015 * (h.st.spd - HERO_DEFS[h.id].base.spd);
+  return (1 + 0.015 * (h.st.spd - HERO_DEFS[h.id].base.spd)) * (1 + h.bond.spd);
 }
 
 export interface ActOverride { dur?: number; cd?: number }

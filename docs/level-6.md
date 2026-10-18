@@ -228,7 +228,7 @@ Chief cleared 98 of 100, at the top of its band, and lowering the factor wrecked
 - **The KO band is at its edge**: 0.57 over 100 seeds and 0.51 over 300, against the band's 0.5. A bot that dodged demodogs would take fewer.
 - The careless bot clears 87 of 100, two clears under the careful one, which is noise at this sample (268 and 262 of 300).
 - The other bands are as before: damage taken about 400 and the boss share about 68 percent are over, for the same reasons.
-- `tests/alpha.test.ts` pins 560, `tests/alpha-bot.test.ts` asks for an average Alpha fight of at least 12 s (it was 15), and the retry scene test uses seed 15, a run on which Eleven falls.
+- `tests/alpha.test.ts` pins 560, `tests/alpha-bot.test.ts` asks for an average Alpha fight of at least 12 s (it was 15), and the retry scene test used seed 15, a run on which Eleven falls (seed 21 since the bonds, `docs/bonds.md`).
 
 ## After the Lv 6 talents
 
@@ -250,3 +250,7 @@ Mike is Lv 6 here, so his DM screen is also Rally (+20% party ATK for 10 s), and
 - **Upside sits on its floor**: 4 of 20 and 27 of 100. No Eleven HP raises the first 20 above 4, and the factor that would costs the KOs.
 - **Kid** clears 20 of 20. **NORMAL** clears 96 of 100 (18 of the first 20, and 93 of 100 at 95 HP), so the 19 of 20 that `docs/difficulty.md` asks of it holds over 100 seeds and misses by one on the first 20.
 - The other bands are as before: damage taken about 360 and the boss share about 69 percent are over, for the reasons under "Result".
+
+## After the bonds
+
+Babysitter's club (Steve and Dustin, `docs/bonds.md`) heals Dustin a fifth of his max HP with every Babysit, and that moved the KOs from 0.55 to 0.40 over 200 seeds and the lowest party HP to 46%, both a little outside their bands. The factor went from 1 to 1.04: chief clears 88 of 100 for 369 damage, 0.61 KOs, 43% lowest HP and 109 s, careless 94, kid 100, upside 29, NORMAL 99. At 200 seeds 1.04 clears 181 and upside 65 (the floor is 4 of 20); 1.08 sends upside to 16 of 100, so it stops there. The retry scene test (`tests/stage23-scene.test.ts`) uses seed 21 now, a run on which Eleven falls.

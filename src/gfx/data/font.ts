@@ -63,7 +63,7 @@ export const GLYPH_ALIAS: Record<string, string> = {
   '\u00d7': 'x', '\u2022': '-', '_': '-', '[': '(', ']': ')', '{': '(', '}': ')',
 };
 
-// A 3x5 caps and digits set for the tight spots: the bench shortcut keys in the HUD, which are digits unless rebound to a
+// A 3x5 caps, digits and a few marks set for the tight spots: the bench shortcut keys in the HUD, which are digits unless rebound to a
 // letter. Five rows of three columns joined by '/'. Drawn for this size rather than shrunk from the 5x7.
 export const TINY_GLYPHS: Record<string, string> = {
   A: '.#./#.#/###/#.#/#.#',
@@ -103,4 +103,12 @@ export const TINY_GLYPHS: Record<string, string> = {
   8: '###/#.#/###/#.#/###',
   9: '###/#.#/###/..#/##.',
   '?': '##./..#/.#./.../.#.',
+  // The marks a bond's line needs (picks panel, character sheet): "Friends don't lie  +10% ATK, SHARED SCREEN".
+  "'": '.#./.#./.../.../...',
+  '+': '.../.#./###/.#./...',
+  '%': '#.#/..#/.#./#../#.#',
+  ',': '.../.../.../.#./#..',
+  ':': '.../.#./.../.#./...',
+  '.': '.../.../.../.../.#.',
+  '-': '.../.../###/.../...',
 };

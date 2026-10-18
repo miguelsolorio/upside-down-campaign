@@ -2,7 +2,7 @@
 // and the finisher are in demogorgon-pin.test.ts, the petals and the leap in demogorgon-phases.test.ts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { damageRange, hitEnemy } from '../src/combat/damage.ts';
+import { damageRange, heroAtk, hitEnemy } from '../src/combat/damage.ts';
 import { arena, ofType, run, sfxIds, tc, tf } from './sim-helpers.ts';
 import { DEMO, X, bossRig, bossView, demoAt, only, placeHero, runUntil, sfxOf, takes, track } from './demo-helpers.ts';
 
@@ -155,13 +155,16 @@ test('charge: the stun is 50 percent more damage taken', () => {
   only(r, null);
   r.boss.hp = r.boss.hpMax = 99999;
   const hit = (): number => hitEnemy(r.s, r.hero, r.boss, { power: 1, noCrit: true });
-  const range = damageRange(1, r.hero.st.atk, DEMO.def);
+  // The party's bonds are on from the first tick, and the rig has not ticked yet: read the range again once it has.
+  const rangeNow = (): { min: number; max: number } => damageRange(1, heroAtk(r.s, r.hero), DEMO.def);
+  let range = rangeNow();
   for (let i = 0; i < 12; i++) {
     const dmg = hit();
     assert.ok(dmg >= range.min && dmg <= range.max, `normal hit ${dmg}`);
   }
   r.d.chargeCd = 0;
   runUntil(r, () => r.d.move === 'stun', 600);
+  range = rangeNow();
   for (let i = 0; i < 12; i++) {
     const dmg = hit();
     assert.ok(dmg >= Math.round(range.min * 1.5) && dmg <= Math.round(range.max * 1.5), `stunned hit ${dmg}`);

@@ -8,6 +8,7 @@ import { Px } from '../px.ts';
 import type { Made } from './ch4_page.ts';
 import { cardCanvas, label, zoom } from './kit.ts';
 import { BLUE, EX, EY, GOLD, GREEN, HUD, RED, SH, SW, arrow, backdrop, gem, ring, target } from './solo_kit.ts';
+import { NECK_B, NECK_T, STRUM, neckBed, neckFrets, neckX, strumLine } from '../../solo/neck.ts';
 import type { Lane } from './solo_kit.ts';
 
 interface Text { s: string; x: number; y: number; c: ColorName }
@@ -47,31 +48,17 @@ const FRET: SoloOpt = {
 };
 
 // ---------------------------------------------------------------- 2. The neck
-const NECK_T = 126, NECK_B = 216, STRUM = 204;
-const nx = (y: number, f: number): number => {
-  const k = (y - NECK_T) / (NECK_B - NECK_T), half = 20 + k * 46;
-  return 128 - half + f * half * 2;
-};
+// The picked layout. Its geometry and its parts are the game's own (src/solo/neck.ts); the sheet scrolls the frets by a phase.
+const nx = neckX;
 const NECK: SoloOpt = {
   slug: 'neck', name: 'The neck',
   note: 'The highway is the neck of his Flying V, coming out from under him toward you in perspective: wood, fret wires, inlay dots. Notes grow as they come. Three lanes on Attack, Special and Crit.',
   how: ['THREE LANES ON THE NECK OF', 'HIS FLYING V, COMING AT YOU', '', 'KEYS   Z  X  SPACE', 'PAD    A  X  Y', 'TOUCH  A  B  D20'],
   pieces: () => [gem(RED, 'small'), gem(RED, 'mid'), gem(RED), target(GOLD, true)],
   highway(p, s) {
-    for (let y = NECK_T; y < NECK_B; y++) {
-      const a = Math.round(nx(y, 0)), b = Math.round(nx(y, 1));
-      p.rect(a, y, b - a, 1, 'soil0');
-      p.set(a - 1, y, 'grey2').set(b, y, 'grey2').set(a - 2, y, 'ink').set(b + 1, y, 'ink');
-      for (const f of [1 / 3, 2 / 3]) p.set(Math.round(nx(y, f)), y, 'soil1');
-    }
-    for (let k = 0; k < 9; k++) {
-      const z = ((k + (s % 16) / 16) / 9) ** 1.7, y = Math.round(NECK_T + z * (NECK_B - NECK_T));
-      if (y >= NECK_B) continue;
-      const a = Math.round(nx(y, 0)), b = Math.round(nx(y, 1));
-      p.rect(a, y, b - a, 1, 'grey3');
-      if (k % 2) p.set(Math.round((a + b) / 2), y + 2, 'bone');
-    }
-    p.rect(Math.round(nx(STRUM, 0)), STRUM, Math.round(nx(STRUM, 1) - nx(STRUM, 0)), 1, 'bone');
+    neckBed(p);
+    neckFrets(p, Array.from({ length: 9 }, (_, k) => ({ y: NECK_T + (((k + (s % 16) / 16) / 9) ** 1.7) * (NECK_B - NECK_T), dot: k % 2 === 1 })));
+    strumLine(p);
     const lanes = [RED, BLUE, GOLD];
     lanes.forEach((l, i) => { const x = nx(STRUM, (i + 0.5) / 3); p.blit(target(l, i === 2), Math.round(x) - 7, STRUM - 5); });
     const chart: [number, number][] = [[0, 0.12], [2, 0.3], [1, 0.48], [0, 0.66], [1, 0.84]];

@@ -19,6 +19,8 @@ export interface Rig {
   readonly out: GainNode;
   /** 0 is the base layer alone. 1 is the full combat mix. Smoothed unless snap is true. */
   setIntensity(v: number, snap?: boolean): void;
+  /** Moves the echo's delay to follow a new tempo, so it stays on the beat: a short glide, or at once with snap. Does nothing for a track with no echo. */
+  setBpm(bpm: number, snap?: boolean): void;
   dispose(): void;
 }
 
@@ -52,6 +54,7 @@ export function createRig(ctx: BaseAudioContext, dest: AudioNode, track: Track):
   if (combat) routes.combat = combat;
 
   // One echo, fed by whichever voices send to it.
+  let delayNode: DelayNode | null = null;
   let sendBase: GainNode | null = null;
   let sendCombat: GainNode | null = null;
   if (track.echo) {
@@ -59,6 +62,7 @@ export function createRig(ctx: BaseAudioContext, dest: AudioNode, track: Track):
     const input = ctx.createGain();
     const delay = ctx.createDelay(2);
     delay.delayTime.value = (e.beats * 60) / track.bpm;
+    delayNode = delay;
     const tone = ctx.createBiquadFilter();
     tone.type = 'lowpass';
     tone.frequency.value = e.cutoff;
@@ -120,6 +124,13 @@ export function createRig(ctx: BaseAudioContext, dest: AudioNode, track: Track):
       };
       go(glide.base, mix.base, [base.gain, sendBase?.gain]);
       go(glide.combat, mix.combat, [combat?.gain, sendCombat?.gain]);
+    },
+    setBpm(bpm, snap = false) {
+      if (!delayNode || !track.echo) return;
+      const time = (track.echo.beats * 60) / bpm;
+      if (snap) delayNode.delayTime.value = time;
+      // A short glide, so the echo's pitch swoops once instead of jumping.
+      else delayNode.delayTime.setTargetAtTime(time, ctx.currentTime, 0.04);
     },
     dispose() {
       for (const n of nodes) n.disconnect();

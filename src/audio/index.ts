@@ -7,11 +7,12 @@ import type { AudioApi } from '../core/types.ts';
 import { duckMusic, isAway, isMuted, isRunning, liveGraph, setAway, setMuted, setVolumes, unlock } from './engine.ts';
 import type { Graph } from './engine.ts';
 import { playBlip, playCue } from './cues.ts';
-import { setLevel, setWanted, sync } from './live.ts';
+import { musicEnded, setLevel, setPhase, setWanted, sync } from './live.ts';
 import { renderOffline } from './render.ts';
 import { playSfx, SFX } from './sfx.ts';
 import { JINGLES, STINGERS } from './tracks/jingles.ts';
-import { TRACK_IDS } from './tracks/index.ts';
+import { TRACKS, TRACK_IDS } from './tracks/index.ts';
+import { loopSeconds } from './tracks/compile.ts';
 
 /** The same effect or blip within this many seconds is dropped, so a stuck button cannot flood the mixer. */
 const MIN_GAP = 0.03;
@@ -89,5 +90,8 @@ export const audio: AudioApi = {
   isMuted,
   focus: (on) => setAway(!on),
   tracks: () => TRACK_IDS.slice(),
+  phase: setPhase,
+  musicEnded,
+  trackSeconds: (id) => loopSeconds(TRACKS[id]),
   renderOffline,
 };

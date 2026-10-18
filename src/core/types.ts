@@ -286,6 +286,8 @@ export type SfxId =
   /** legslam: a Mind Flayer leg striking. sever: a leg cut. shatter: the skylight breaking. boom: the Key's machine blowing
    *  up under the mall. reach: Eleven reaching Billy. */
   | 'legslam' | 'sever' | 'shatter' | 'boom' | 'reach'
+  /** squeal: the feedback that cuts the Hellfire solo short after three misses in a row (src/solo). */
+  | 'squeal'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {

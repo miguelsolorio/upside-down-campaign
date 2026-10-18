@@ -4,6 +4,7 @@ import { clearAlpha } from '../enemies/alpha_hit.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { releaseHold } from '../enemies/hold.ts';
 import { leaveBilly } from '../enemies/billy_hit.ts';
+import { glassDeath, inGlass } from '../enemies/ghoul_hit.ts';
 import { clearFlayer, doomLegs, legHeld } from '../enemies/flayer_hit.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
@@ -63,12 +64,14 @@ function kill(s: S, e: Enemy): void {
   dust(s, e.x, e.y, 4);
   if (!s.seq) s.burst = Math.min(1, s.burst + 0.06);
   // The roll is always drawn so the random stream does not depend on the Compass talent. A run-time spawn (a howl's pup or a
-  // defense wave's enemy) drops nothing: a failed defense, retried, can't be farmed.
-  if (s.rng() < dropChance(s, e.drop) && e.rt === null) {
+  // defense wave's enemy) drops nothing: a failed defense, retried, can't be farmed. Nor does a ghoul that died in its mirror.
+  if (s.rng() < dropChance(s, e.drop) && e.rt === null && !inGlass(e)) {
     s.items.push({ id: `drop${s.nextDrop++}`, kind: 'quarter', x: e.x, y: e.y, t: 0 });
   }
   awardXp(s, e.xp);
   if (e.kind === 'melter') meltBurst(s, e);
+  // A ghoul dies as glass.
+  glassDeath(s, e);
   // Freed, Billy stays on the floor as scenery (enemies/billy_hit.ts).
   leaveBilly(s, e);
   if (!s.cleared.has(e.group) && !s.enemies.some((o) => o.group === e.group && !o.dead)) {

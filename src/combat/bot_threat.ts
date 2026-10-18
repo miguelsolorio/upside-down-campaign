@@ -32,3 +32,26 @@ export function slamThreat<F extends Threat>(v: SimView, foes: F[]): F | null {
   }
   return null;
 }
+
+/**
+ * The nearest inbound dart or rifle round that will pass within a body width of the hero: its time to impact and a side to step. The step
+ * goes to the side `walkable` says is open, 22 px out.
+ */
+export function dartThreat(v: SimView, hx: number, hy: number, walkable: (x: number, y: number) => boolean): { tti: number; sx: number; sy: number } | null {
+  let best: { tti: number; sx: number; sy: number } | null = null;
+  for (const f of v.fx) {
+    if (f.kind !== 'dart' && f.kind !== 'bullet') continue;
+    const speed = f.kind === 'dart' ? ENEMY_DEFS.agent.x.dart : ENEMY_DEFS.soldier.x.speed;
+    const vx = Math.cos(f.angle), vy = Math.sin(f.angle);
+    const rx = hx - f.x, ry = hy - 7 - f.y;
+    const along = rx * vx + ry * vy;
+    const lat = rx * vy - ry * vx;
+    if (along < 0 || along > 100 || Math.abs(lat) > 11) continue;
+    const tti = along / speed;
+    if (best && best.tti <= tti) continue;
+    let side = lat >= 0 ? -1 : 1;
+    if (!walkable(hx - vy * side * 22, hy + vx * side * 22)) side = -side;
+    best = { tti, sx: -vy * side, sy: vx * side };
+  }
+  return best;
+}

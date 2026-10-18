@@ -28,7 +28,7 @@ const byAlert = (v: Asked): Slot => ['attack', v.alert ? 0 : 1];
 
 export function slotOf(v: Asked): Slot {
   switch (v.id) {
-    case 'soldier': case 'melter':
+    case 'soldier': case 'kguard': case 'melter':
       return v.anim === 'attack' ? byAlert(v) : plainSlot(v.anim, v.t);
     case 'flayed':
       if (v.pose === 'grab') return ['cast', 1];

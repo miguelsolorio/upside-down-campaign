@@ -3,18 +3,21 @@
 //
 //   dodge: steps off a live mark (an acid splash or the leap's landing), backs away from the planted boss during the
 //     charge wind-up, and sidesteps the line once it runs, reading the boss's heading from where it was a frame ago.
-//   finish: when the boss is pinned, swaps to Eleven, walks up to it and fires Mind Blast.
-import type { SimView, Vec2 } from '../core/types.ts';
+//   finish: when the boss is pinned, swaps to Eleven, walks up to it and fires Mind Blast. The pit Demogorgon of stage 4.1 is dodged the same
+//     way, and finished by Hopper's ground slam from close by.
+import type { EnemyKind, HeroId, SimView, Vec2 } from '../core/types.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 
-const X = ENEMY_DEFS.demogorgon.x;
+const isDemo = (id: string): boolean => id === 'demogorgon' || id === 'pitdemo';
 const TAU = Math.PI * 2;
 const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hypot(bx - ax, by - ay);
 /** Sideways distance from the charge line that clears the boss's body. */
 const LANE = 16;
 /** How close Eleven stands to a pinned boss: the beam's aim is snapped to eight ways, so close keeps it on target. */
 const BEAM_RANGE = 26;
+/** How close Hopper stands to a pinned pit Demogorgon: the slam reaches 44 px all round, so this keeps it well inside. */
+const SLAM_RANGE = 26;
 /**
  * A player needs a moment to see a thing coming. The bot waits this many frames after the boss starts to run before it
  * leaves the lane, and after a mark appears before it leaves the mark. Zero would make it a perfect dodger.
@@ -102,7 +105,7 @@ export function createBossSense(env: BossEnv): BossSense {
   }
 
   function dodge(v: SimView, hx: number, hy: number): [number, number] | null {
-    const boss = v.actors.find((a) => a.kind === 'enemy' && a.id === 'demogorgon' && a.anim !== 'ko');
+    const boss = v.actors.find((a) => a.kind === 'enemy' && isDemo(a.id) && a.anim !== 'ko');
     const was = prev;
     prev = boss ? { x: boss.x, y: boss.y } : null;
     const off = leaveMarks(v, hx, hy);
@@ -116,7 +119,7 @@ export function createBossSense(env: BossEnv): BossSense {
       return was && runAge > REACT_CHARGE ? leaveLane(hx, hy, boss.x, boss.y, was) : null;
     }
     // The swipe's wind-up: step out of its reach.
-    if (boss.alert && boss.pose === undefined && d <= X.reach + 10) return away(hx, hy, boss.x, boss.y);
+    if (boss.alert && boss.pose === undefined && d <= ENEMY_DEFS[boss.id as EnemyKind].x.reach + 10) return away(hx, hy, boss.x, boss.y);
     return null;
   }
 
@@ -125,14 +128,17 @@ export function createBossSense(env: BossEnv): BossSense {
     const me = v.hud.party.find((p) => p.active);
     if (!boss || !me) return null;
     const out: Finish = { swapTo: -1, mv: [0, 0], cast: false };
-    if (me.id !== 'eleven') out.swapTo = v.hud.party.findIndex((p) => p.id === 'eleven' && !p.ko);
+    // Eleven's beam finishes the 1.3 Demogorgon, Hopper's slam the pit one.
+    const who: HeroId = boss.id === 'pitdemo' ? 'hopper' : 'eleven';
+    const range = who === 'hopper' ? SLAM_RANGE : BEAM_RANGE;
+    if (me.id !== who) out.swapTo = v.hud.party.findIndex((p) => p.id === who && !p.ko && (p.curse ?? 0) === 0);
     const d = dist(hx, hy, boss.x, boss.y);
-    if (d > BEAM_RANGE + 4 || !env.clearLine(hx, hy, boss.x, boss.y)) {
+    if (d > range + 4 || !env.clearLine(hx, hy, boss.x, boss.y)) {
       out.mv = env.walkTo(hx, hy, boss.x, boss.y);
     } else {
       const a = Math.atan2(boss.y - hy, boss.x - hx);
       out.mv = [Math.cos(a) * 0.2, Math.sin(a) * 0.2];
-      out.cast = me.id === 'eleven' && me.mp >= HERO_DEFS.eleven.special.mp;
+      out.cast = me.id === who && me.mp >= HERO_DEFS[who].special.mp;
     }
     return out;
   }

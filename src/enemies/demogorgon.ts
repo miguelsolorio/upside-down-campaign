@@ -1,4 +1,5 @@
-// The Demogorgon, chapter 1's boss (docs/level-3.md). One brain for all its moves:
+// The Demogorgon, chapter 1's boss (docs/level-3.md). One brain for all its moves. The pit Demogorgon of stage 4.1 (docs/level-10.md) runs
+// it on its own def: every number is read from the enemy's kind.
 //
 //   stalk and swipe: walks at the hero, 30 frames under the red "!", then an arc in front of it (anim 'attack' without the
 //     "!" for the first 12 frames after, the swing pose).
@@ -7,7 +8,7 @@
 //     for 150 frames (pose 'stun'), and it takes half again as much damage meanwhile. The third stun is the last it needs.
 //   petals, at 60 percent HP: it roars once, ActorView.petals turns true, and from then on it spits three globs in a fan.
 //   leap, at 30 percent HP: a crouch, then a jump onto the hero's spot with a 'mark' growing there, then a shockwave.
-//   pinned: see demo_hit.ts. No more attacks; only Eleven's Mind Blast beam hurts it.
+//   pinned: see demo_hit.ts. No more attacks; only its finisher hurts it (Eleven's Mind Blast beam, Hopper's ground slam for the pit one).
 //
 // Effects it adds to the view, for gfx: 'mark' (a dark ring on the floor that grows over its life: w is its final
 // diameter, h its radius), 'ring' for the leap's shockwave, and one 'acid' per glob. That one lives flight + 14 frames:
@@ -24,8 +25,6 @@ import { speedMul } from '../combat/status.ts';
 import { DIR_ANGLE } from './shield.ts';
 import { chaseHero, faceHero, setEnemyAnim } from './steer.ts';
 
-const DEF = ENEMY_DEFS.demogorgon;
-const X = DEF.x;
 const RAD = Math.PI / 180;
 /** Frames of the swing pose at the start of the swipe's recovery (anim 'attack' without the "!"). */
 const SWING_POSE = 12;
@@ -47,6 +46,7 @@ function toRecover(e: Enemy, d: DemoState, frames: number): void { begin(e, d, '
 
 // ---------------------------------------------------------------- swipe
 function startSwipe(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const DEF = ENEMY_DEFS[e.kind];
   e.dir = dirOfVec(hero.x - e.x, hero.y - e.y, e.dir);
   begin(e, d, 'swipe', DEF.windup, 'windup', 'attack');
   e.cd = jitter(s, DEF.cooldown);
@@ -54,6 +54,7 @@ function startSwipe(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 }
 
 function swipe(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const DEF = ENEMY_DEFS[e.kind], X = DEF.x;
   const a = DIR_ANGLE[e.dir];
   sfx(s, 'chomp');
   sparks(s, e.x + Math.cos(a) * 14, e.y - 10 + Math.sin(a) * 14, 3);
@@ -67,6 +68,7 @@ function swipe(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 
 // ---------------------------------------------------------------- charge
 function startCharge(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   faceHero(e, hero);
   begin(e, d, 'wind', X.chargeWindup, 'windup', 'attack');
   sfx(s, 'alert');
@@ -74,6 +76,7 @@ function startCharge(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 
 /** The wind-up is over: lock the line through where the hero stands now and go. */
 function launch(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   const a = dist(e.x, e.y, hero.x, hero.y) < 2 ? DIR_ANGLE[e.dir] : Math.atan2(hero.y - e.y, hero.x - e.x);
   e.ax = Math.cos(a) * X.chargeSpeed;
   e.ay = Math.sin(a) * X.chargeSpeed;
@@ -84,6 +87,7 @@ function launch(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 }
 
 function hitWall(s: S, e: Enemy, d: DemoState): void {
+  const X = ENEMY_DEFS[e.kind].x;
   sfx(s, 'thud');
   shake(s, 5);
   dust(s, e.x, e.y, 6);
@@ -94,6 +98,7 @@ function hitWall(s: S, e: Enemy, d: DemoState): void {
 }
 
 function run(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   const mx = moveBody(s, e, e.ax, 0), my = moveBody(s, e, 0, e.ay);
   if ((s.frame & 3) === 0) dust(s, e.x, e.y, 1);
   // A hero in the way is hurt once. The charge doesn't stop for him.
@@ -110,6 +115,7 @@ function run(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 
 // ---------------------------------------------------------------- roar and spit
 function roar(s: S, e: Enemy, d: DemoState): void {
+  const X = ENEMY_DEFS[e.kind].x;
   begin(e, d, 'roar', X.roarT, 'recover', 'cast');
   d.petals = true;
   d.spitCd = 30;
@@ -121,6 +127,7 @@ function roar(s: S, e: Enemy, d: DemoState): void {
 }
 
 function startSpit(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   faceHero(e, hero);
   begin(e, d, 'spit', X.spitWindup, 'windup', 'cast');
   sfx(s, 'alert');
@@ -134,12 +141,13 @@ function openSpot(s: S, e: Enemy, a: number, r: number): [number, number] {
 }
 
 function spit(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   const a0 = Math.atan2(hero.y - e.y, hero.x - e.x);
   const r = Math.max(dist(e.x, e.y, hero.x, hero.y), 24);
   for (const k of [-1, 0, 1]) {
     const [tx, ty] = openSpot(s, e, a0 + k * X.fan, r);
     const mark = addFx(s, 'mark', tx, ty, 'down', 0, X.flight + 1, X.splash * 2, X.splash);
-    s.globs.push({ sx: e.x, sy: e.y, x: tx, y: ty, ang: Math.atan2(ty - e.y, tx - e.x), age: 0, life: X.flight, atk: e.atk, mark });
+    s.globs.push({ sx: e.x, sy: e.y, x: tx, y: ty, ang: Math.atan2(ty - e.y, tx - e.x), age: 0, life: X.flight, atk: e.atk, mark, kind: e.kind });
   }
   sfx(s, 'acid');
   d.spitCd = jitter(s, X.spitEvery);
@@ -152,14 +160,16 @@ export function updateGlobs(s: S): void {
   const hero = activeHero(s);
   for (const g of s.globs) {
     if (++g.age !== g.life) continue;
+    const X = ENEMY_DEFS[g.kind].x;
     sfx(s, 'acid');
     if (!hero.ko && dist(hero.x, hero.y, g.x, g.y) <= X.splash) hurtHero(s, hero, g.x, g.y, X.globPower, g.atk, 2);
   }
-  s.globs = s.globs.filter((g) => g.age < g.life + X.splashT);
+  s.globs = s.globs.filter((g) => g.age < g.life + ENEMY_DEFS[g.kind].x.splashT);
 }
 
 // ---------------------------------------------------------------- leap
 function startLeap(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   faceHero(e, hero);
   begin(e, d, 'crouch', X.crouch, 'windup', 'attack');
   sfx(s, 'alert');
@@ -167,6 +177,7 @@ function startLeap(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 
 /** The crouch is over: jump onto the spot where the hero stands now, with a mark growing there. */
 function jump(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   d.sx = e.x; d.sy = e.y; d.tx = hero.x; d.ty = hero.y;
   d.mark = addFx(s, 'mark', d.tx, d.ty, 'down', 0, X.air + 1, X.shock * 2, X.shock);
   begin(e, d, 'air', X.air, 'lunge', 'dash');
@@ -174,6 +185,7 @@ function jump(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 }
 
 function air(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+  const X = ENEMY_DEFS[e.kind].x;
   d.t--;
   const p = Math.min(1, (X.air - d.t) / X.air);
   e.x = d.sx + (d.tx - d.sx) * p;
@@ -199,6 +211,7 @@ function air(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 
 // ---------------------------------------------------------------- the brain
 function stalk(s: S, e: Enemy, d: DemoState, hero: Hero, dd: number, clear: boolean): void {
+  const DEF = ENEMY_DEFS[e.kind], X = DEF.x;
   e.mode = 'chase';
   if (!d.petals && e.hp <= e.hpMax * X.petalsAt) { roar(s, e, d); return; }
   if (clear) {
@@ -218,6 +231,7 @@ function stalk(s: S, e: Enemy, d: DemoState, hero: Hero, dd: number, clear: bool
 }
 
 export function demogorgonUpdate(s: S, e: Enemy, hero: Hero): void {
+  const DEF = ENEMY_DEFS[e.kind], X = DEF.x;
   const d = e.demo as DemoState;
   if (d.pokeCd > 0) d.pokeCd--;
   if (d.move === 'pinned') { setEnemyAnim(e, 'idle'); return; }

@@ -9,6 +9,8 @@ const HELD: Env = { a: 0.004, d: 0.05, s: 0.85, r: 0.06 };
 const VIB: Vib = { rate: 5.5, cents: 24, delay: 0.12 };
 /** Billy's growl: a wobble fast enough to roughen the tone, not to be heard as a pitch. Its depth fades in over the blip. */
 const GROWL: Vib = { rate: 38, cents: 160, delay: 0 };
+/** Eddie's nervous warble: a vibrato slow enough to hear as a wobble in pitch. Its depth fades in over a quarter of a second, so an 80 ms blip reaches a third of it, about a semitone, and the setting has to be wide to be heard. */
+const WARBLE: Vib = { rate: 13, cents: 300, delay: 0 };
 
 /** Plays a cue starting at context time t. */
 export function playCue(ctx: BaseAudioContext, dest: AudioNode, cue: Cue, t: number): void {
@@ -54,6 +56,8 @@ interface BlipDef {
   bend?: number;
   /** A fast, wide vibrato that roughens the tone into a growl. The depth fades in, so a short blip gets a part of it. */
   rough?: Vib;
+  /** A musical vibrato that rides the pitch: Eddie's nerves. Billy's `rough` is the same oscillator, faster and wider, so it growls. */
+  vibrato?: Vib;
 }
 
 /** One voice per speaker, from the table in the design doc. The narrator is quiet on purpose. */
@@ -83,6 +87,11 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   // He never speaks while he fights, so it is heard in one short line, and it has to read as him. His level is set by
   // ear-weighted energy like the others: a low square needs more peak than a bright one to be heard as loud.
   billy: { wave: 'p50', midi: 50, spread: 2, dur: 0.07, vol: 0.23, attack: 0.002, bend: -3, rough: GROWL },
+  // Eddie is a clean 25 percent pulse that trembles: a vibrato rides every blip, theatrical and nervous underneath. It centres on
+  // F4, a major third over Steve's square and a whole tone under Mike's, and runs a little longer than theirs so the warble has
+  // time to turn over. Max's pulse is a fifth higher, so the wobble in pitch is what makes it his. His level is set by ear-weighted
+  // energy like the others.
+  eddie: { wave: 'p25', midi: 65, spread: 3, dur: 0.08, vol: 0.19, attack: 0.003, vibrato: WARBLE },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };
@@ -102,6 +111,6 @@ export function playBlip(
     gate: b.dur,
     vol: b.vol,
     env: { a: b.attack, d: b.dur * 0.6, s: 0.55, r: 0.015 },
-    vib: b.rough,
+    vib: b.rough ?? b.vibrato,
   });
 }

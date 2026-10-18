@@ -12,6 +12,7 @@ import { drawPortrait } from './ui.ts';
 import { drawActorFrame } from './actors.ts';
 import { BAND_H, BAND_Y, HZ, POS, TOP_H, tokenAt } from './map_geo.ts';
 import { GATE_AT, HOLE, LAMP, buildWorld } from './map_land.ts';
+import { INSET } from './map_inset.ts';
 import type { World } from './map_land.ts';
 
 export { hopLength } from './map_geo.ts';
@@ -229,6 +230,7 @@ export function drawMapScreen(ctx: Ctx, v: MapView): void {
   ctx.drawImage(w.base, 0, 0);
   ctx.drawImage(chromeLayer(), 0, 0);
   drawClouds(ctx, calm ? 0 : v.t);
+  ctx.drawImage(w.inset, INSET.x, INSET.y);
   drawLamp(ctx, v.t, calm);
   if (!calm) drawVeinLights(ctx, w, v.t);
   drawHoleSwirl(ctx, v.t, v.nodes.find((n) => n.id === '2.1')?.state === 'locked', calm);

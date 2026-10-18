@@ -17,7 +17,7 @@ import { enemy, fell, floaters, hero } from './talents9-helpers.ts';
 
 const NAMES: Record<HeroId, string> = {
   eleven: 'Overload', mike: 'Oath', dustin: 'Cerebro', lucas: 'Volley', will: 'Hive link', steve: 'King Steve', nancy: 'Final girl',
-  robin: 'Dry wit', max: 'Extra life',
+  robin: 'Dry wit', max: 'Extra life', hopper: 'Berserk', eddie: 'Encore',
 };
 
 // ------------------------------------------------------------------ the data

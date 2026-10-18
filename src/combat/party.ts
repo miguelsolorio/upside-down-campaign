@@ -12,6 +12,8 @@ import { hitEnemy } from './damage.ts';
 import { dist } from './space.ts';
 import { resetTalentState } from './talent_state.ts';
 import { startAhoy } from '../heroes/ahoy.ts';
+import { isCursed } from './house.ts';
+import { clearCurses } from './curse.ts';
 import { hiveLink } from '../heroes/hive.ts';
 import { extraLife } from '../heroes/extralife.ts';
 import { swearOath } from '../heroes/oath.ts';
@@ -40,12 +42,13 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
   };
 }
 
-/** Index of the next living hero after `from` in slot order, wrapping. -1 when there is none. */
+/** Index of the next hero after `from` in slot order who can fight, wrapping: not knocked out and not hanging under a curse. -1 when there is none. */
 export function nextLiving(s: S, from: number, step: 1 | -1): number {
   const n = s.heroes.length;
   for (let k = 1; k < n; k++) {
     const i = (from + step * k + n * 4) % n;
-    if (!(s.heroes[i] as Hero).ko) return i;
+    const h = s.heroes[i] as Hero;
+    if (!h.ko && !isCursed(s, h)) return i;
   }
   return -1;
 }
@@ -67,7 +70,7 @@ function shockwave(s: S, h: Hero): void {
  */
 export function trySwap(s: S, idx: number, forced = false): boolean {
   const to = s.heroes[idx];
-  if (!to || idx === s.active || to.ko) return false;
+  if (!to || idx === s.active || to.ko || isCursed(s, to)) return false;
   if (!forced && s.swapLock > 0) return false;
   // A rolling Max lands first: tagging out mid-roll could leave the next hero standing over a gap.
   if (!forced && activeHero(s).dash) return false;
@@ -101,11 +104,17 @@ export function handleSwap(s: S): void {
   if (s.buf.swapTo >= 0) idx = s.buf.swapTo;
   else if (s.buf.swapDelta !== 0) idx = nextLiving(s, s.active, s.buf.swapDelta > 0 ? 1 : -1);
   const target = s.heroes[idx];
-  if (!target || target.ko || idx === s.active) { s.buf.swapT = 0; return; }
+  if (!target || target.ko || isCursed(s, target) || idx === s.active) { s.buf.swapT = 0; return; }
   if (trySwap(s, idx)) s.buf.swapT = 0;
 }
 
-/** Notices heroes at 0 HP: KO, auto-swap to the next living hero, or the end of the run. */
+/** The active hero is cursed: the party swaps away at once, as after a KO. Nobody to swap to is not a case (a curse spares the last hero standing). */
+export function awayFrom(s: S): void {
+  const next = nextLiving(s, s.active, 1);
+  if (next >= 0) trySwap(s, next, true);
+}
+
+/** Notices heroes at 0 HP: KO, auto-swap to the next hero who can fight, or the end of the run when only the cursed hang on. */
 export function reapHeroes(s: S): void {
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
@@ -218,9 +227,10 @@ export function recruitHero(s: S, id: HeroId): void {
 /** Heals HP and MP by a fraction of max. KO'd heroes get back up with at least 1 HP. */
 export function healParty(s: S, frac: number): void {
   if (s.over) {
-    // Getting up after a wipe: drop whatever was in flight.
+    // Getting up after a wipe: drop whatever was in flight, and the curse with it.
     s.hitstop = 0; s.projs = []; s.globs = []; s.zones = []; s.timers = []; s.seq = null; s.hold = null;
     resetTalentState(s.t6);
+    clearCurses(s);
   }
   for (const h of s.heroes) {
     if (h.ko) { h.ko = false; h.hp = 0; h.anim = 'idle'; h.animT = 0; }

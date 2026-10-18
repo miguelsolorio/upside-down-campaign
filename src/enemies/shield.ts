@@ -1,4 +1,4 @@
-// The riot guard's shield, shared by the damage code and the brains. A guard faces one of four ways (its `dir`), and
+// The riot guard's shield (the Warden's and the camp guard's too), shared by the damage code and the brains. A guard faces one of four ways (its `dir`), and
 // its shield covers an arc around that facing. It is up unless the guard is recovering, broken or stunned.
 import type { Dir } from '../core/types.ts';
 import { ENEMY_DEFS } from './defs.ts';
@@ -10,7 +10,10 @@ const RAD = Math.PI / 180;
 /** The way a guard faces, in radians (0 = right, y down). */
 export const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 
-export function isShielded(e: Enemy): boolean { return e.kind === 'guard' || e.kind === 'warden'; }
+/** The kinds that carry a shield: the riot guard, the Warden and the camp guard with his baton. */
+export const isShieldedKind = (kind: string): boolean => kind === 'guard' || kind === 'warden' || kind === 'kbaton';
+
+export function isShielded(e: Enemy): boolean { return isShieldedKind(e.kind); }
 
 /** True while the shield is up. A recovering, broken, stunned, dormant or dead guard has it down. */
 export function guarding(e: Enemy): boolean {

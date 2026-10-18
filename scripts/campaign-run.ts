@@ -25,8 +25,10 @@ import { STAGE_23 } from '../src/world/stages/stage23.ts';
 import { STAGE_31 } from '../src/world/stages/stage31.ts';
 import { STAGE_32 } from '../src/world/stages/stage32.ts';
 import { STAGE_33 } from '../src/world/stages/stage33.ts';
+import { STAGE_41 } from '../src/world/stages/stage41.ts';
+import { STAGE_42 } from '../src/world/stages/stage42.ts';
 
-export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33 };
+export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42 };
 
 /** Props a retry leaves open, as the play scene's KEPT_PROPS. */
 const KEPT = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap']);
@@ -74,6 +76,8 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
   let checkpoint: { x: number; y: number; state: DirectorState } = { x: S.start.x, y: S.start.y, state: { fired: [], cleared: [] } };
   const killed = new Set<string>();
   let sim: Sim = createSim(simOptions(S, grid, { party, seed, difficulty: o.difficulty ?? 'chief' }));
+  /** Max's Walkman, once a beat gives it (4.2): a retry keeps it, as the save does. */
+  let walkman = false;
   const lightUp = (prop: string): void => {
     sim.openProp(prop);
     sim.healParty(0.5);
@@ -84,6 +88,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
     sim: () => sim, say: (_i, done) => done(), scare: (done) => done(), open: (p) => sim.openProp(p),
     alarm: () => undefined, jingle: () => undefined, finish: () => undefined,
     light: (p) => { if (sim.view().props.some((q) => q.id === p && q.kind === 'lights' && q.state !== 'lit')) lightUp(p); },
+    walkman: () => { walkman = true; sim.giveWalkman?.(); },
   });
   let bot = createBot({ grid, waypoints: S.waypoints, careless: o.careless });
   const every = Math.round((o.rotate ?? 0) * 60);
@@ -120,7 +125,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
     const live = sim.party().map((h) => ({ id: h.id, level: h.level, xp: h.xp, bonus: h.bonus }));
     const open = sim.view().props.filter((q) => KEPT.has(q.kind) && (q.state === 'open' || q.state === 'lit')).map((q) => q.id);
     const skip = live.some((h) => h.id === 'eleven') ? [...killed, 'eleven'] : [...killed];
-    sim = createSim(simOptions(S, grid, { party: live, start: { x: checkpoint.x, y: checkpoint.y }, seed: seed + 1000 * wipes, difficulty: o.difficulty ?? 'chief', skipSpawns: skip, openProps: open }));
+    sim = createSim(simOptions(S, grid, { party: live, start: { x: checkpoint.x, y: checkpoint.y }, seed: seed + 1000 * wipes, difficulty: o.difficulty ?? 'chief', skipSpawns: skip, openProps: open, walkman }));
     dir.restore(checkpoint.state);
     bot = createBot({ grid, waypoints: routeFrom(S.waypoints, checkpoint), careless: o.careless });
   }

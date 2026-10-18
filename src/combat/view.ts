@@ -22,6 +22,10 @@ import { coldSpot } from '../heroes/cold.ts';
 import { chargeOf } from '../heroes/hold.ts';
 import { camoHides } from '../heroes/camo.ts';
 import { petBiting } from '../heroes/dart.ts';
+import { isMarked } from '../heroes/hellfire.ts';
+import { soloHud } from '../heroes/eddie_solo.ts';
+import { ghoulPose, inGlass, mirrorK } from '../enemies/ghoul_hit.ts';
+import { chimesOn, walkmanHud } from './curse.ts';
 import { onceOf } from '../heroes/talents9.ts';
 
 let shakeScale = 1;
@@ -43,6 +47,9 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
   if (active && camoHides(s, h)) v.hidden = true;
   const charge = active ? chargeOf(s, h) : 0;
   if (charge > 0) v.charge = charge;
+  // A cursed hero hangs where the curse found them, with the chimes sounded so far over their head.
+  const chimes = chimesOn(s, h);
+  if (chimes > 0) v.curse = chimes;
   return v;
 }
 
@@ -57,6 +64,7 @@ function enemyView(s: S, e: Enemy): ActorView {
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
   if (e.elite) v.elite = true;
+  if (!e.dead && isMarked(s, e)) v.marked = true;
   if (e.stat.confuse > 0 && !e.dead) v.confused = true;
   if (isShielded(e)) v.guarding = guarding(e);
   // A hidden enemy is faint until Cold spot has it or it strikes. Revealed, it says so, so gfx can tell the two apart.
@@ -64,6 +72,10 @@ function enemyView(s: S, e: Enemy): ActorView {
   if (e.demo) {
     v.petals = e.demo.petals;
     const pose = e.dead ? undefined : demoPose(e.demo);
+    if (pose) v.pose = pose;
+  }
+  if (e.ghoul && !e.dead) {
+    const pose = ghoulPose(e.ghoul);
     if (pose) v.pose = pose;
   }
   if (e.alpha && !e.dead) {
@@ -114,13 +126,14 @@ function propView(s: S, p: Prop): PropView {
   const k = riftK(s, p);
   if (k !== undefined) v.k = k;
   else if (p.kind === 'cipher') v.k = p.k;
+  else if (p.kind === 'mirror') { const share = mirrorK(s, p); if (share > 0) v.k = share; }
   return v;
 }
 
 const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI',
-  billy: 'BILLY', flayer: 'MIND FLAYER' };
+  billy: 'BILLY', flayer: 'MIND FLAYER', pitdemo: 'DEMOGORGON' };
 
-/** The first Warden, Demogorgon, Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
+/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number; parts?: number[] } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
@@ -153,10 +166,10 @@ function projFx(p: Proj): FxView {
  */
 function globFx(g: Glob): FxView {
   const t = Math.min(1, g.age / g.life);
-  const w = ENEMY_DEFS.demogorgon.x.splash * 2;
+  const w = ENEMY_DEFS[g.kind].x.splash * 2;
   return {
     kind: 'acid', x: g.sx + (g.x - g.sx) * t, y: g.sy + (g.y - g.sy) * t, dir: 'down', angle: g.ang, t: g.age,
-    life: g.life + ENEMY_DEFS.demogorgon.x.splashT, w, h: w / 2,
+    life: g.life + ENEMY_DEFS[g.kind].x.splashT, w, h: w / 2,
   };
 }
 
@@ -192,6 +205,8 @@ function partyHud(s: S): PartyHud[] {
     };
     const once = onceOf(s, h);
     if (once) row.once = once;
+    const chimes = chimesOn(s, h);
+    if (chimes > 0) row.curse = chimes;
     return row;
   });
 }
@@ -206,8 +221,8 @@ export function buildView(s: S): SimView {
     actors.push({ kind: 'hero', id: b.id, x: b.x, y: b.y, dir: b.dir, anim: 'ko', t: b.t, flash: 0, blink: false, strained: false, tint: null, alert: false, z: 0, bar: null });
   }
   for (const e of s.enemies) {
-    // A freed Billy is the npc that replaces him (enemies/billy_hit.ts): his body is not drawn dying.
-    if (!e.dormant && !(e.billy && e.dead)) actors.push(enemyView(s, e));
+    // A freed Billy is the npc that replaces him (enemies/billy_hit.ts): his body is not drawn dying. A ghoul in its mirror is nowhere.
+    if (!e.dormant && !(e.billy && e.dead) && !inGlass(e)) actors.push(enemyView(s, e));
     else if (e.flayed && !e.dead) actors.push(puddleView(s, e));
   }
   for (const n of s.npcs) {
@@ -230,6 +245,8 @@ export function buildView(s: S): SimView {
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
       ward: wardHud(s),
       stash: { ...s.stash },
+      solo: soloHud(s),
+      walkman: walkmanHud(s),
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

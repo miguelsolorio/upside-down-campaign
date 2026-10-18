@@ -29,7 +29,13 @@ export type TileName =
   // The Russian base under the mall (stage 3.2).
   | 'basefloor' | 'basegrate' | 'basecap' | 'basewall' | 'ammo' | 'bunk' | 'cell' | 'machine' | 'keyfloor'
   // Starcourt's food court and its back of house (stage 3.3).
-  | 'foodfloor' | 'foodband' | 'skyfloor' | 'stallcap' | 'stall' | 'kitchenfloor' | 'fryer' | 'escalator';
+  | 'foodfloor' | 'foodband' | 'skyfloor' | 'stallcap' | 'stall' | 'kitchenfloor' | 'fryer' | 'escalator'
+  // The Kamchatka camp and the Demogorgon pit under it (stage 4.1).
+  | 'snow' | 'drift' | 'snowpath' | 'wire' | 'campcap' | 'campwall' | 'celldoor' | 'campfloor' | 'grate' | 'campcrate' | 'barrel'
+  | 'pitcap' | 'pitwall' | 'pitfloor' | 'pitbar'
+  // The Hellfire Club's classroom and the Creel House (stage 4.2).
+  | 'clubcap' | 'clubwall' | 'clubboard' | 'clubposter' | 'clubwindow' | 'clubdoor' | 'clubshelf' | 'clubfloor' | 'clubdesk' | 'dndtable'
+  | 'creelcap' | 'creelwall' | 'creelwin' | 'creelfloor' | 'creelrug' | 'creelhole' | 'creelstairs' | 'creelfurn';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -175,6 +181,48 @@ export const TILES: Record<string, TileDef> = {
   'Ä': { name: 'kitchenfloor', solid: false },
   'Ç': { name: 'fryer', solid: true },
   'Å': { name: 'escalator', solid: false },
+  // Stage 4.1: the Kamchatka camp at night (docs/level-10.md). Snow, a drift (a snowbank, walked round), the trampled path, the wire
+  // fence. The block's walls are a campcap row over a campwall row facing the floor below, with barred cell doors set in the face;
+  // its floor is bare concrete with a grate here and there. Crates and burning barrels stand in the yard as cover. The pit under the
+  // camp is rock and timber: a pitcap row over a pitwall row, a dirt floor, and the plank barricade over the beast's tunnel.
+  'È': { name: 'snow', solid: false },
+  'É': { name: 'drift', solid: true },
+  'Ê': { name: 'snowpath', solid: false },
+  'Ë': { name: 'wire', solid: true },
+  'Ì': { name: 'campcap', solid: true },
+  'Í': { name: 'campwall', solid: true },
+  'Î': { name: 'celldoor', solid: true },
+  'Ï': { name: 'campfloor', solid: false },
+  'Ð': { name: 'grate', solid: false },
+  'Ñ': { name: 'campcrate', solid: true },
+  'Ò': { name: 'barrel', solid: true, animated: true },
+  'Ó': { name: 'pitcap', solid: true },
+  'Ô': { name: 'pitwall', solid: true },
+  'Õ': { name: 'pitfloor', solid: false },
+  'Ö': { name: 'pitbar', solid: true },
+  // Stage 4.2: the Hellfire Club and the Creel House (docs/level-11.md). The club is a Hawkins High classroom: a clubcap row over a
+  // clubwall row, with the chalkboard, posters, windows (rain and lightning on the glass), the door and the bookcase set in the face,
+  // linoleum, desks in rows and the D&D table in the middle. The Creel House is a creelcap row over a creelwall row with boarded
+  // windows in the face, floorboards, a moth-eaten rug, holes in the floor, the stairs and furniture under sheets. The house also has a
+  // memory skin, Blood red, that the bake paints the same letters in (bakeStage(rows, night, 'memory')).
+  'Ø': { name: 'clubcap', solid: true },
+  'Ù': { name: 'clubwall', solid: true },
+  'Ú': { name: 'clubboard', solid: true },
+  'Û': { name: 'clubposter', solid: true },
+  'Ü': { name: 'clubwindow', solid: true, animated: true },
+  'Ý': { name: 'clubdoor', solid: true },
+  'ß': { name: 'clubshelf', solid: true },
+  'à': { name: 'clubfloor', solid: false },
+  'á': { name: 'clubdesk', solid: true },
+  'â': { name: 'dndtable', solid: true },
+  'ã': { name: 'creelcap', solid: true },
+  'ä': { name: 'creelwall', solid: true },
+  'å': { name: 'creelwin', solid: true },
+  'æ': { name: 'creelfloor', solid: false },
+  'ç': { name: 'creelrug', solid: false },
+  'è': { name: 'creelhole', solid: true },
+  'é': { name: 'creelstairs', solid: true },
+  'ê': { name: 'creelfurn', solid: true },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

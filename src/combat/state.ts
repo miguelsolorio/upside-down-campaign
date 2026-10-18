@@ -5,6 +5,7 @@ import type {
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
 import type { TalentState } from './talent_state.ts';
+import type { GhoulState, HouseState } from './house.ts';
 import type { BondMods } from '../heroes/bonds.ts';
 
 export type { Rng, Stats };
@@ -64,7 +65,7 @@ export interface Hero {
   dash: Dash | null;
   /** Frames since this hero last took a hit, capped at 600. Steve's Hair of steel reads it. */
   unhurt: number;
-  /** Frames Special has been held toward a Lv 6 variant (heroes/hold.ts), 0 when it isn't. -1 after the variant fired, until the key comes up. */
+  /** Frames Special has been held toward a Lv 6 variant (heroes/hold.ts), or Hopper's Attack toward his wind-up, 0 when it isn't. -1 after the variant fired, until the key comes up. */
   holdT: number;
   /** What the party's bonds change for this hero (combat/bonds.ts writes it every tick). */
   bond: BondMods;
@@ -79,7 +80,7 @@ export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'reco
  */
 export type DemoMove = 'walk' | 'swipe' | 'wind' | 'run' | 'stun' | 'roar' | 'spit' | 'crouch' | 'air' | 'recover' | 'pinned';
 
-/** The Demogorgon's own state. Every other enemy has `demo: null`. */
+/** The Demogorgon's own state, the pit one's too. Every other enemy has `demo: null`. */
 export interface DemoState {
   move: DemoMove;
   /** Frames left in the current move. */
@@ -98,8 +99,8 @@ export interface DemoState {
   mark: FxView | null;
 }
 
-/** An acid glob: flies from (sx, sy) to (x, y), splashes when its age reaches life, and its splash is drawn for a few frames more. */
-export interface Glob { sx: number; sy: number; x: number; y: number; ang: number; age: number; life: number; atk: number; mark: FxView }
+/** An acid glob: flies from (sx, sy) to (x, y), splashes when its age reaches life, and its splash is drawn for a few frames more. `kind` is the Demogorgon that spat it. */
+export interface Glob { sx: number; sy: number; x: number; y: number; ang: number; age: number; life: number; atk: number; mark: FxView; kind: EnemyKind }
 
 /**
  * What the Demodog Alpha is doing (enemies/alpha.ts). walk: stalking. bite: the close-range wind-up. wind: planted before the
@@ -275,6 +276,8 @@ export interface Enemy {
   /** The Mind Flayer's body, or one of its legs, only (docs/level-9.md). */
   flayer: FlayerState | null;
   leg: LegState | null;
+  /** A Creel ghoul only (docs/level-11.md). */
+  ghoul: GhoulState | null;
 }
 
 /** A Flayed, Grigori or Billy holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */
@@ -363,6 +366,8 @@ export interface Prop {
   k: number;
   /** Vines only: frames of burning left before they are gone. */
   burnT: number;
+  /** A clock only: the basic attacks from up close that break it for a hero without the riff, and the ones it has taken. */
+  hits: number; struck: number;
 }
 export interface Npc { id: CharId; x: number; y: number; dir: Dir; t: number }
 export interface Body { id: HeroId; x: number; y: number; dir: Dir; t: number }
@@ -468,6 +473,8 @@ export interface S {
   /** The Mind Flayer's goo pools, oldest first, and the frames until the next sting from one the active hero stands in. */
   pools: Pool[];
   poolCd: number;
+  /** The haunted mirrors, the clock curse and Max's Walkman (combat/house.ts). */
+  house: HouseState;
   cleared: Set<string>;
   god: boolean;
   boxes: boolean;

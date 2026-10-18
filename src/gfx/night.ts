@@ -12,6 +12,7 @@ import { pineMask } from './tile_objects.ts';
 import { isTree } from './tile_ground.ts';
 import type { TileCtx } from './tile_ground.ts';
 import { hasLitWindow } from './tile_school2.ts';
+import { lanternAt } from './tile_pit.ts';
 
 type Rgb = readonly [number, number, number];
 type Recolor = Partial<Record<ColorName, Rgb>>;
@@ -201,7 +202,7 @@ export function nightSprite(day: Px): Px {
   return out;
 }
 
-/** The Byers house and the school's brick have lit windows on their odd columns. A lit one is amber at its middle. */
+/** The Byers house and the school's brick have lit windows on their odd columns. A lit one is amber at its middle. The camp's burning drums and the pit's lanterns light their foot the same way. */
 export function litWindow(day: Px, name: TileName): boolean {
-  return (name === 'housewall' && day.get(5, 9) === px32('amber')) || (name === 'brick' && hasLitWindow(day));
+  return (name === 'housewall' && day.get(5, 9) === px32('amber')) || (name === 'brick' && hasLitWindow(day)) || name === 'barrel' || (name === 'pitwall' && lanternAt(day));
 }

@@ -1,11 +1,12 @@
 // Crit (called burst in the code). The d20 meter fills from hits dealt, hits taken and kills. At full, it starts a 90-frame freeze,
-// then each living hero's signature effect sweeps every enemy within 200 px for about 3x that hero's ATK.
+// then each living hero's (a cursed one hangs out of it) signature effect sweeps every enemy within 200 px for about 3x that hero's ATK.
 import type { FxKind } from '../core/types.ts';
 import type { Hero, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { dist } from './space.ts';
 import { addFx, flashScreen, sfx, shake } from './fx.ts';
 import { hitEnemy } from './damage.ts';
+import { standing } from './house.ts';
 
 export const BURST_FREEZE = 90;
 export const BURST_RADIUS = 200;
@@ -24,6 +25,8 @@ const SIGNATURE: Record<Hero['id'], { kind: FxKind; w: number; h: number }> = {
   steve: { kind: 'slash', w: 52, h: 76 },
   robin: { kind: 'babble', w: 90, h: 60 },
   nancy: { kind: 'bullet', w: 140, h: 8 },
+  hopper: { kind: 'nova', w: 88, h: 88 },
+  eddie: { kind: 'riff', w: 96, h: 96 },
 };
 
 /** Starts the burst if the meter is full and the button was pressed. Returns true on the tick it starts. */
@@ -57,7 +60,7 @@ export function stepBurst(s: S): void {
   const q = s.seq;
   if (!q) return;
   q.t++;
-  const living = s.heroes.filter((h) => !h.ko);
+  const living = standing(s);
   if (q.t >= BURST_FREEZE && (q.t - BURST_FREEZE) % SWEEP_GAP === 0) {
     const i = (q.t - BURST_FREEZE) / SWEEP_GAP;
     if (i < living.length) { sweep(s, living[i] as Hero); q.fired++; }

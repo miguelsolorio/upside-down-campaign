@@ -6,7 +6,7 @@ A Hawkins map between stages, the design "Two Hawkins" (chosen from `map-variati
 
 - The whole 256 by 224 screen. A slim strip on top (10 px: the chapter name on the left, the selected stage's name on the right) and a party band at the bottom (28 px: a face and a level for each hero, and the hints as a short legend on the right). The map fills the 186 px between.
 - A wavy horizon splits the map. Above it is Hawkins in daylight: the woods, the Lab, the school, the pumpkin patch and arcade, and a town around them (roads, houses, Main Street shops, the water tower, fields, trees). Below it the same land hangs upside down in the Upside Down palette: dark red veins, drifting grey spores, a black sun. The tunnels and the gate are down there.
-- One node per stage (1.1 to 3.3), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked. It is empty now: 3.3, the food court, is the last stage, and chapter 4 adds its own nodes. The route drops through the hole in the patch, which sits on the horizon. Node states:
+- One node per stage (1.1 to 4.2), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked. It is empty now: 4.2, the Creel House, is the last stage built. The route drops through the hole in the patch, which sits on the horizon. Node states:
   - `cleared`: gold, with a check
   - `open`: the next uncleared stage, white and pulsing
   - `locked`: grey, with a padlock; its landmark is greyed too (in Hawkins)
@@ -39,11 +39,11 @@ A Hawkins map between stages, the design "Two Hawkins" (chosen from `map-variati
 
 ## Party picks
 
-From 2.2 on, more heroes can play a stage than fit in the party: Mike, Dustin, Lucas, Will, Max and Steve in chapter 2, and those six plus Eleven, Robin and Nancy in chapter 3. The map asks who goes.
+From 2.2 on, more heroes can play a stage than fit in the party: Mike, Dustin, Lucas, Will, Max and Steve in chapter 2, those six plus Eleven, Robin and Nancy in chapter 3, and the nine plus Eddie in 4.2. The map asks who goes. 4.1 is Hopper alone, so it has no picks.
 
 - **When.** Confirming a stage where `needsPicks(stage)` is true (`core/campaign.ts`: the stage's pool, `rosterFor`, is bigger than `PARTY_SIZE`) opens the picks panel over the map instead of entering. Chapter 1 stages and 2.1 have a fixed four and enter as before.
-- **What it shows.** Every hero in the pool: face, name, level, and the gate they open as a short word (DASH, SMASH, BURN, SHOOT, SENSE, PUSH for Eleven, READ for Robin; Mike has none). Six heroes are three cards by two; nine are three by three. Four are picked, in order; the first is the lead and is marked as such.
-- **Locked.** Heroes in `requiredFor(stage)` (Max for 2.2, Steve for 2.3, Robin for 3.2) are picked and locked, with a padlock. They can't be taken out. They can be the lead.
+- **What it shows.** Every hero in the pool: face, name, level, and the gate they open as a short word (DASH, SMASH, BURN, SHOOT, SENSE, PUSH for Eleven, READ for Robin, RIFF for Eddie, SMASH for Hopper; Mike has none). Six heroes are three cards by two; nine are three by three; ten (4.2) and eleven (chapter 5, with Hopper back) need their own layout. Four are picked, in order; the first is the lead and is marked as such.
+- **Locked.** Heroes in `requiredFor(stage)` (Max for 2.2, Steve for 2.3, Robin for 3.2, Eleven for 3.3, Eddie for 4.2) are picked and locked, with a padlock. They can't be taken out. They can be the lead.
 - **Opens with** `pickParty(stage, progress.picks)`: the last party picked, fixed up for this stage (required heroes put in, heroes outside the pool dropped, empty slots filled).
 - **Controls.** Direction keys move the cursor over the heroes. Attack (A) puts the hero in or takes them out. Special (X) makes a picked hero the lead. A START row confirms; it is live only with four picked. A pick the rules refuse (a fifth hero, or taking out a locked one) buzzes and flashes the cards in the way: the four party cards and the counter for a fifth, the locked hero's own card for a locked one. The flash is steady, not blinking, with REDUCE FLASH on. Esc or Backspace (B) goes back to the map with nothing changed. The mouse can click a face and START. Hints follow the device, as on the map.
 - **Bonds.** A picked hero in an active bond (`docs/bonds.md`) has a green tag in the corner of the card: the bond's short name, or N BONDS for two or more. In START's row, under the legend, a tiny line names the bond the cursor is on (the hero's bonds and what they give), previews one with ADDS in yellow when the cursor is on an unpicked hero who would complete it with a slot free, and otherwise lists the party's bonds. It is silent when there are none.
@@ -76,6 +76,15 @@ Erica runs an ice cream cart and sells the party what it carries into a stage. I
 - The route climbs back up from the Gate (2.3) to the mall. Art picks where it crosses the horizon. The token turns over as it does, as at the hole in the patch.
 - `MAP_PLACE` in `core/mapdata.ts` gains `mall` (3.1), `base` (3.2) and `foodcourt` (3.3). The positions and the art are Art's, in `gfx/map_geo.ts`, `gfx/map_art.ts` and `gfx/map_land.ts`.
 - The chapter strip says Chapter three on those nodes. Entering 3.1 for the first time shows the chapter three card: CHAPTER THREE, STARCOURT.
+
+## Chapter four on the map
+
+- **Kamchatka (4.1)** is half a world away, so it is not in Hawkins. It sits in an inset in a corner of the map, a small framed scene of the camp at night (snow, the wire, the floodlight's amber, the block), with a KAMCHATKA plate. The route from the food court runs to the inset's edge and the token crosses to it along a dashed line, a long way in one hop. Art picks the corner and the frame, and keeps the Hawkins half readable round it.
+- **The Creel House (4.2)** stands on its hill at the edge of Hawkins, above the horizon: the dark Victorian house behind its fence, a dead tree, one window lit. Its plate says CREEL HOUSE. The route comes back from the inset to it.
+- The token on 4.1 is Hopper (the lead of a party of one) in the Telogreika. On 4.2 it is the 4.2 party's lead.
+- `MAP_PLACE` in `core/mapdata.ts` gains `kamchatka` (4.1) and `creel` (4.2). The positions and the art are Art's, in `gfx/map_geo.ts`, `gfx/map_art.ts` and `gfx/map_land.ts`.
+- The chapter strip says Chapter four on those nodes. Entering 4.1 for the first time shows the chapter four card: CHAPTER FOUR, HELLFIRE.
+- 4.2 is the last stage built: it shows the feedback note under its results, and not CHAPTER FOUR CLEAR, which waits for 4.4 (`closesChapter` reads the chapter's length, `CHAPTER_LENGTH` in `core/campaign.ts`, not the end of `STAGE_ORDER`).
 
 ## gfx
 

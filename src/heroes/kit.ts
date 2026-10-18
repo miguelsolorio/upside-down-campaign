@@ -9,8 +9,12 @@ import { maxBasic, maxSpecial } from './max.ts';
 import { steveBasic, steveSpecial } from './steve.ts';
 import { robinBasic, robinSpecial } from './robin.ts';
 import { nancyBasic, nancySpecial } from './nancy.ts';
+import { hopperBasic, hopperSpecial } from './hopper.ts';
+import { eddieBasic } from './eddie.ts';
+import { startStand } from './eddie_solo.ts';
 
-export function useBasic(s: S, h: Hero): void {
+/** `wind` is Hopper's Lv 6 wind-up haymaker (his Attack was held and let go). */
+export function useBasic(s: S, h: Hero, wind = false): void {
   switch (h.id) {
     case 'mike': mikeBasic(s, h); break;
     case 'dustin': dustinBasic(s, h); break;
@@ -21,6 +25,8 @@ export function useBasic(s: S, h: Hero): void {
     case 'steve': steveBasic(s, h); break;
     case 'robin': robinBasic(s, h); break;
     case 'nancy': nancyBasic(s, h); break;
+    case 'hopper': hopperBasic(s, h, wind); break;
+    case 'eddie': eddieBasic(s, h); break;
   }
 }
 
@@ -35,5 +41,7 @@ export function useSpecial(s: S, h: Hero): void {
     case 'steve': steveSpecial(s, h); break;
     case 'robin': robinSpecial(s, h); break;
     case 'nancy': nancySpecial(s, h); break;
+    case 'hopper': hopperSpecial(s, h); break;
+    case 'eddie': startStand(s, h); break;
   }
 }

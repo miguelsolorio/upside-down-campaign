@@ -150,6 +150,17 @@ const LEVEL_UP: Record<HeroId, LevelUpSet> = {
     three: 'Level three. Steady hands.',
     other: 'Stronger. Cover me.',
   },
+  // Hopper and Eddie walk in past Lv 3, so they only ever say the last one (docs/level-10.md, docs/level-11.md).
+  hopper: {
+    two: 'Level two. Still cold.',
+    three: 'Level three. Coffee would help.',
+    other: 'Stronger. Not dead yet, kid.',
+  },
+  eddie: {
+    two: 'Level two! The dice love me.',
+    three: 'Level three. Roll for initiative, freaks.',
+    other: 'Level up. Metal never dies.',
+  },
 };
 const ELEVEN_FULL = "I'm stronger now, and I won't let anything happen to them.";
 

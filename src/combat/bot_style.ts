@@ -12,4 +12,6 @@ export const STYLE: Record<HeroId, { hold: number; reach: number }> = {
   steve: { hold: 20, reach: 34 },
   robin: { hold: 64, reach: 90 },
   nancy: { hold: 90, reach: 150 },
+  hopper: { hold: 22, reach: 34 },
+  eddie: { hold: 22, reach: 32 },
 };

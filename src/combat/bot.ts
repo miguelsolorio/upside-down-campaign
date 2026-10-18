@@ -7,20 +7,24 @@
 // charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a
 // pod's swell unless a demodog is closing in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it
 // while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
-// are on her (bot_ward.ts). When to cast each hero's Special, and the Lv 6 holds, are in bot_talents.ts. Rifle
+// are on her (bot_ward.ts). When to cast each hero's Special, the Lv 6 holds and Hopper's wind-up are in bot_talents.ts. Rifle
 // bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
 // recovers, with the power box when there is a shooter (bot_grigori.ts). Billy's charge and grab are stepped out of, his wall stun is hit
 // and Eleven is walked up to him once he kneels (bot_billy.ts). Against the Mind Flayer it steps off a warned line, band or pool and hits the
-// nearest leg, then the head when it is down (bot_flayer.ts). It ignores hazards and cameras.
+// nearest leg, then the head when it is down (bot_flayer.ts). It steps out of a ghoul's lunge line during the wind-up (bot_ghoul.ts), slams
+// the pinned pit Demogorgon with Hopper (bot_boss.ts), and under a curse swaps to Max if her Walkman is ready, else to Eddie, and attacks the
+// clock (bot_curse.ts), careless or not. It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import type { EnemyDef } from '../enemies/defs.ts';
-import { DIR_ANGLE } from '../enemies/shield.ts';
+import { DIR_ANGLE, isShieldedKind } from '../enemies/shield.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
 import { createBossSense } from './bot_boss.ts';
+import { createGhoulSense } from './bot_ghoul.ts';
+import { createCurseSense } from './bot_curse.ts';
 import { createDashCross } from './bot_dash.ts';
 import { createAlphaSense, howlFirst } from './bot_alpha.ts';
 import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
@@ -30,8 +34,8 @@ import { createFlayerSense } from './bot_flayer.ts';
 import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
-import { backOffFrom, slamThreat } from './bot_threat.ts';
-import { createCaster } from './bot_talents.ts';
+import { backOffFrom, dartThreat, slamThreat } from './bot_threat.ts';
+import { breaksGuard, createCaster } from './bot_talents.ts';
 
 export interface BotWaypoint extends Vec2 {
   /** Prop id to open when reached. */ open?: string;
@@ -63,7 +67,7 @@ interface Foe {
 
 /** Furniture that never moves. The bot's map treats it as wall, so it does not walk into it and learn the hard way. */
 const FURNITURE = new Set<PropKind>(['tank', 'rack', 'generator', 'arcade', 'gap', 'crack']);
-const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
+const isGuard = isShieldedKind;
 const defOf = (kind: string): EnemyDef => ENEMY_DEFS[kind as EnemyKind];
 /** How far past the shield's edge the bot circles to, so the guard's slow turn has not caught up. */
 const FLANK_MARGIN = (40 * Math.PI) / 180;
@@ -208,27 +212,6 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return pick;
   }
 
-  /** The nearest inbound dart that will pass within a body width of the hero: its time to impact and a side to step. */
-  function dartThreat(v: SimView, hx: number, hy: number): { tti: number; sx: number; sy: number } | null {
-    let best: { tti: number; sx: number; sy: number } | null = null;
-    for (const f of v.fx) {
-      if (f.kind !== 'dart' && f.kind !== 'bullet') continue;
-      const speed = f.kind === 'dart' ? ENEMY_DEFS.agent.x.dart : ENEMY_DEFS.soldier.x.speed;
-      const vx = Math.cos(f.angle), vy = Math.sin(f.angle);
-      const rx = hx - f.x, ry = hy - 7 - f.y;
-      const along = rx * vx + ry * vy;
-      const lat = rx * vy - ry * vx;
-      if (along < 0 || along > 100 || Math.abs(lat) > 11) continue;
-      const tti = along / speed;
-      if (best && best.tti <= tti) continue;
-      let side = lat >= 0 ? -1 : 1;
-      const probe = tileOf(hx - vy * side * 22, hy + vx * side * 22);
-      if (nav.blocked[probe.y * nav.w + probe.x] === 1) side = -side;
-      best = { tti, sx: -vy * side, sy: vx * side };
-    }
-    return best;
-  }
-
   const walkable = (x: number, y: number, n: Nav = nav): boolean => {
     const t = tileOf(x, y);
     return t.x >= 0 && t.y >= 0 && t.x < n.w && t.y < n.h && n.blocked[t.y * n.w + t.x] === 0;
@@ -267,6 +250,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   }
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
+  const ghoul = createGhoulSense();
+  const curse = createCurseSense();
   const cross = createDashCross();
   const alpha = createAlphaSense();
   const guardWard = createWardSense();
@@ -311,6 +296,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     const me = v.hud.party.find((p) => p.active);
     if (!me || me.ko) return out;
     const { x: hx, y: hy } = sim.heroPos();
+    // Eddie's solo plants him: the bot presses nothing until it is over, unless he is hurt enough to swap out (below).
+    if (v.hud.solo && me.hp / me.hpMax >= 0.35) { lastMag = 0; return out; }
     const style = STYLE[me.id];
     let wp: Vec2 | undefined = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
 
@@ -327,8 +314,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     }
 
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
-    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy);
-    const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style);
+    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
+    // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
+    const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
     const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
     const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
     // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
@@ -357,7 +345,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     if (hpFrac < 0.35 && frame - lastSwap > 100 && !pin) {
       let best = -1, bestFrac = hpFrac + 0.3;
       v.hud.party.forEach((p, i) => {
-        if (!p.ko && !p.active && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
+        if (!p.ko && !p.active && (p.curse ?? 0) === 0 && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
       });
       if (best >= 0) { out.swapTo = best; lastSwap = frame; }
     }
@@ -381,7 +369,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (fin.burst) { out.burstPressed = true; frozenUntil = frame + 170; }
     } else if (fighting && near) {
       // Inbound dart: step aside.
-      const threat = desperate || careless ? null : dartThreat(v, hx, hy);
+      const threat = desperate || careless ? null : dartThreat(v, hx, hy, walkable);
       let dodged = false;
       if (threat && threat.tti < 34) { mx = threat.sx; my = threat.sy; dodged = true; }
       // A Warden's slam reaches all around: get out of the ring. A bash only reaches the shield side: step back from it.
@@ -402,7 +390,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
         const shielded = isGuard(near.kind) && near.up && inArc(near, hx, hy);
         const spray = me.id === 'dustin' && shielded && !near.burning && me.mp >= HERO_DEFS.dustin.special.mp;
-        const orbit = shielded && !desperate && !careless && me.id !== 'eleven' && !spray
+        const orbit = shielded && !desperate && !careless && !breaksGuard(me) && !spray
           ? orbitPoint(near, hx, hy, Math.max(style.hold, near.kind === 'warden' ? 46 : 34)) : null;
         if (orbit) {
           [mx, my] = walkTo(hx, hy, orbit[0], orbit[1]);
@@ -421,7 +409,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
         if (near.d <= style.reach && aligned && !orbit) {
           out.attackHeld = true;
           // Each hero's Special, and the Lv 6 holds, are in bot_talents.ts.
-          if (frame - lastSpecial > 60 && caster.cast(me, { near, foes, miss, shielded, dart: threat !== null, ward: ward !== null }, out)) lastSpecial = frame;
+          const scene = { near, foes, miss, shielded, dart: threat !== null, ward: ward !== null };
+          if (frame - lastSpecial > 60 && caster.cast(me, scene, out)) lastSpecial = frame;
+          caster.swing(me, scene, out);
         }
       }
       if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => (f.pose === 'stun' || f.pose === 'howl') && f.d < 190))) {

@@ -223,10 +223,12 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy'>, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy' | 'eddie'>, PortraitSpec>;
 
 // Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica are in portraits_l78.ts. Billy is in portraits_l9.ts.
 export const PORTRAITS: Record<CharId, PortraitSpec> = {
   ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT,
   robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: BILLY_PORTRAIT,
+  // Eddie borrows Steve's until Art draws his Hellfire Club portrait (docs/level-11.md).
+  eddie: STEVE_PORTRAIT,
 };

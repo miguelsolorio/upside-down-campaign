@@ -13,6 +13,7 @@ import { callSuzie } from './cerebro.ts';
 import { castHeal, healReady } from './cleric.ts';
 import { throwMolotov } from './molotov.ts';
 import { sensoryTank } from './sensory.ts';
+import { WIND_FRAMES, windsUp } from './hopper.ts';
 
 /** Frames Special is held for the variant: 0.4 s. */
 export const HOLD_FRAMES = 24;
@@ -74,7 +75,7 @@ export function readHold(s: S, h: Hero, input: SimInput): boolean {
   return h.holdT >= HOLD_FRAMES;
 }
 
-/** How full the charge ring is, 0..1, or 0 when the hero isn't holding. */
+/** How full the charge ring is, 0..1, or 0 when the hero isn't holding. Hopper's Lv 6 Attack fills it over its own 24 frames. */
 export function chargeOf(s: S, h: Hero): number {
-  return h.holdT > 0 && holdsSpecial(s, h) ? Math.min(1, h.holdT / HOLD_FRAMES) : 0;
+  return h.holdT > 0 && (holdsSpecial(s, h) || windsUp(h)) ? Math.min(1, h.holdT / (windsUp(h) ? WIND_FRAMES : HOLD_FRAMES)) : 0;
 }

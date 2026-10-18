@@ -20,6 +20,8 @@ export interface Progress {
   purse?: number;
   /** What the party bought from Erica and hasn't used. Absent means nothing. */
   stash?: Stash;
+  /** Max has her Walkman back, the 4.2 story item (docs/level-11.md). Absent means not yet. */
+  walkman?: boolean;
 }
 
 /** Most of one item the party can carry. */
@@ -44,6 +46,7 @@ function copyOf(p: Progress | null): Progress {
   const out: Progress = { v: 1, cleared: [...(p?.cleared ?? [])], heroes: (p?.heroes ?? []).map((h) => ({ ...h })) };
   if (p?.picks) out.picks = [...p.picks];
   if (p) { out.purse = purseOf(p); out.stash = stashOf(p); }
+  if (p?.walkman) out.walkman = true;
   return out;
 }
 
@@ -83,6 +86,7 @@ export function parseProgress(raw: unknown): Progress | null {
     const n = (v: unknown): number => (num(v) && v >= 0 ? Math.min(STASH_MAX, Math.floor(v)) : 0);
     out.stash = { eggo: n(raw.stash.eggo), coke: n(raw.stash.coke) };
   }
+  if (raw.walkman === true) out.walkman = true;
   return out;
 }
 
@@ -120,6 +124,13 @@ export function withPurse(p: Progress | null, purse: number, stash: Stash): Prog
   const out = copyOf(p);
   out.purse = Math.max(0, Math.floor(purse));
   out.stash = { eggo: Math.min(STASH_MAX, Math.max(0, stash.eggo)), coke: Math.min(STASH_MAX, Math.max(0, stash.coke)) };
+  return out;
+}
+
+/** `p` with Max's Walkman, the story item a `walkman` beat gives (docs/level-11.md). */
+export function withWalkman(p: Progress | null): Progress {
+  const out = copyOf(p);
+  out.walkman = true;
   return out;
 }
 

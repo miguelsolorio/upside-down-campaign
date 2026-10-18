@@ -240,9 +240,50 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     talents: TALENTS.nancy,
   },
+  // Hopper plays 4.1 alone, in Kamchatka (docs/level-10.md, "Hopper"). The Barbarian: a slow haymaker with a huge hitbox and the
+  // ground slam. Wind-up (Lv 6) holds Attack for a haymaker that breaks a block.
+  hopper: {
+    id: 'hopper', name: CHAR_NAMES.hopper, role: 'Barbarian',
+    base: st(60, 14, 11, 6, 7), growth: st(8, 1.6, 1.7, 1.3, 0.3), weights: st(3, 1, 3, 2, 0),
+    speed: 0.85, crit: 0, utilities: ['smash'],
+    basic: {
+      name: 'Haymaker', mp: 0, cd: 30, power: 1.6, dur: 22, at: 10, lock: 0.3, reach: 34, kb: 2.8, sfx: 'haymaker',
+      // half: arc half-angle in degrees. Wind-up (Lv 6): held windT frames, the haymaker deals windPower times and knocks back windKb.
+      x: { half: 80, windT: 24, windPower: 1.8, windKb: 5 },
+    },
+    special: {
+      name: 'Ground slam', mp: 8, cd: 50, power: 1, dur: 24, at: 12, lock: 0, reach: 44, kb: 3.5, sfx: 'slam',
+      // reach is the shockwave's radius in px. stun: frames every foe it reaches is stunned. Coffee (Lv 3): food heals coffee more.
+      // Berserk (Lv 9): under berserkHp of his max HP he deals berserkAtk more and no hit makes him flinch.
+      x: { stun: 60, coffee: 0.25, berserkHp: 0.35, berserkAtk: 0.5 },
+    },
+    talents: TALENTS.hopper,
+  },
+  // Eddie joins in 4.2 (docs/level-11.md, "Eddie"). The Warlock: the Flying V swung like an axe, and the Hellfire solo, a six second
+  // stand that pulses a ring on the beat.
+  eddie: {
+    id: 'eddie', name: CHAR_NAMES.eddie, role: 'Warlock',
+    base: st(42, 18, 9, 3, 9), growth: st(6, 2.2, 1.5, 0.9, 0.5), weights: st(2, 2, 3, 1, 2),
+    speed: 1, crit: 0.02, utilities: ['riff'],
+    basic: {
+      name: 'Flying V', mp: 0, cd: 22, power: 1.2, dur: 18, at: 8, lock: 0.35, reach: 30, kb: 2.6, sfx: 'vswing',
+      // half: arc half-angle in degrees. ring: the sound ring's radius in px where the arc ends, ringPower its hit on foes the arc missed.
+      // metal (Lv 3): his ATK bonus.
+      x: { half: 75, ring: 14, ringPower: 0.5, metal: 0.1 },
+    },
+    special: {
+      name: 'Hellfire solo', mp: 9, cd: 60, power: 0.4, dur: 360, at: 30, lock: 0, reach: 40, kb: 1.5, sfx: 'riff',
+      // dur: frames of the stand, bond with Dustin in the party. at: frames between pulses. reach: the ring's starting radius, between
+      // ringMin and ringMax in steps of ringStep. window and perfect: frames from a pulse that a press is a hit or a perfect. misses: in
+      // a row, end it. flyerStun: frames a pulse stuns a flyer. Hellfire DM (Lv 6): a mark lasts mark frames and the party's hits on
+      // a marked foe deal markBonus more.
+      x: { bond: 480, ringMin: 24, ringMax: 72, ringStep: 8, window: 6, perfect: 2, misses: 3, flyerStun: 40, mark: 300, markBonus: 0.2 },
+    },
+    talents: TALENTS.eddie,
+  },
 };
 
-export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'max', 'steve', 'robin', 'nancy'];
+export const HERO_IDS: HeroId[] = ['mike', 'dustin', 'lucas', 'eleven', 'will', 'max', 'steve', 'robin', 'nancy', 'hopper', 'eddie'];
 
 /** The stat at `level`: base, plus floored fixed growth, plus the d20 bonus received so far (in stat units). */
 export function statsAt(def: HeroDef, level: number, bonus: Stats = emptyStats()): Stats {

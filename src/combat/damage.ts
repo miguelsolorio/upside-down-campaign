@@ -5,7 +5,8 @@ import type { SfxId, Utility } from '../core/types.ts';
 import { HERO_DEFS, critChance } from '../heroes/defs.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
-import { demoImmovable, demoPoke, demoSettle, demoStunned } from '../enemies/demo_hit.ts';
+import { demoImmovable, demoPoke, demoSettle, demoStunned, isFinisher } from '../enemies/demo_hit.ts';
+import { ghoulTakes } from '../enemies/ghoul_hit.ts';
 import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
 import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
@@ -16,7 +17,8 @@ import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { rallyMul } from '../heroes/rally.ts';
-import { atk9, witBonus } from '../heroes/talents9.ts';
+import { markMul, metalMul } from '../heroes/hellfire.ts';
+import { atk9, berserkUp, witBonus } from '../heroes/talents9.ts';
 import { screenCovers } from './bonds.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
@@ -42,9 +44,9 @@ export function spreadRoll(rng: Rng): number {
   return SPREAD_LO + (SPREAD_HI - SPREAD_LO) * rng();
 }
 
-/** A hero's ATK right now, with bonds, Inspiration, Rally and the Lv 9 talents of Steve and Nancy. */
+/** A hero's ATK right now, with bonds, Inspiration, Rally, the Lv 9 talents of Steve and Nancy, and Eddie's Metalhead. */
 export function heroAtk(s: S, h: Hero): number {
-  return h.st.atk * (1 + h.bond.atk) * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s) * atk9(s, h);
+  return h.st.atk * (1 + h.bond.atk) * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s) * atk9(s, h) * metalMul(h);
 }
 
 export interface HitOpts {
@@ -60,6 +62,8 @@ export interface HitOpts {
   burn?: { frames: number; tick: number; dmg: number };
   util?: Utility;
   noCrit?: boolean;
+  /** The hit crits, if it gets through a guard: a solo pulse struck on the beat. */
+  crit?: boolean;
   sfx?: SfxId;
   hitstop?: number;
   shake?: number;
@@ -67,6 +71,8 @@ export interface HitOpts {
   pierce?: boolean;
   /** Eleven's Mind Blast beam: the only thing that hurts a pinned Demogorgon. */
   beam?: boolean;
+  /** Hopper's ground slam: the only thing that hurts the pinned pit Demogorgon. */
+  slam?: boolean;
 }
 
 /** Makes an enemy notice the hero, and its group-mates within earshot. */
@@ -90,7 +96,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e);
   // A pinned Demogorgon shrugs off everything but the beam, and a pinned Billy everything at all. They report the try and take nothing. So
   // does the Mind Flayer's body while a leg stands.
-  if (boss && (demoPoke(s, by.id, e, o.beam === true) || billyPoke(s, by.id, e) || flayerBlock(s, e))) return 0;
+  const finisher = isFinisher(e, by.id, o.beam === true, o.slam === true);
+  if (boss && (demoPoke(s, by.id, e, finisher) || billyPoke(s, by.id, e) || flayerBlock(s, e))) return 0;
   const spread = spreadRoll(s.rng);
   const critRoll = s.rng();
   // A guard with its shield up stops a hit that comes from inside its front arc. The rolls above are drawn either way.
@@ -104,21 +111,24 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const first = s.armed;
   if (!blocked) s.armed = false;
   const fiat = first && by.id === 'mike' && hasTalent('mike', by.level);
-  const crit = !blocked && !o.noCrit && (fiat || critRoll < critChance(HERO_DEFS[by.id], by.level) + by.bond.crit);
+  const crit = !blocked && !o.noCrit && (o.crit === true || fiat || critRoll < critChance(HERO_DEFS[by.id], by.level) + by.bond.crit);
   let dmg = rollDamage(o.power, heroAtk(s, by), e.def, spread);
   if (crit) dmg *= 2;
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
   // Dazed against a wall, the Demogorgon takes half again as much.
-  if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS.demogorgon.x.stunMul);
+  if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS[e.kind].x.stunMul);
   // The Alpha takes double while it howls and half again while it is dazed. Grigori and Billy take half again while they are stunned.
   if (e.alpha) dmg = Math.round(dmg * alphaTakes(e));
   if (e.grigori) dmg = Math.round(dmg * grigoriTakes(e));
   if (e.billy) dmg = Math.round(dmg * billyTakes(e));
   // The Mind Flayer's head takes half again while it is down.
   if (e.flayer) dmg = Math.round(dmg * flayerTakes(e));
-  // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
+  // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more, and a lit string of lights a ghoul half again.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
+  if (e.ghoul) dmg = Math.round(dmg * ghoulTakes(s, e));
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
+  // Eddie's Hellfire DM: a marked boss or elite takes 20 percent more from the whole party.
+  dmg = Math.round(dmg * markMul(s, e));
   // Robin's Dry wit makes a confused foe take a quarter more.
   if (e.stat.confuse > 0) dmg = Math.round(dmg * witBonus(s, e));
   const dealt = Math.min(dmg, e.hp);
@@ -148,7 +158,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   }
   if (boss) {
     // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.
-    demoSettle(s, e, o.beam === true, by.id);
+    demoSettle(s, e, finisher);
     billySettle(s, e);
     sever(s, e);
   } else if (!shielded) {
@@ -211,11 +221,14 @@ function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'ho
   h.hp = Math.max(0, h.hp - dmg);
   h.invuln = Math.max(h.invuln, invuln);
   h.blink = true;
-  h.hurtT = HERO_HURT_FRAMES;
   h.flash = 1;
-  h.actId++; h.actT = 0; h.act = null;
-  h.vx += Math.cos(angle) * kb;
-  h.vy += Math.sin(angle) * kb;
+  // Hopper's Berserk (Lv 9): low on HP, nothing makes him flinch or knocks him back.
+  if (!berserkUp(h)) {
+    h.hurtT = HERO_HURT_FRAMES;
+    h.actId++; h.actT = 0; h.act = null;
+    h.vx += Math.cos(angle) * kb;
+    h.vy += Math.sin(angle) * kb;
+  }
   floater(s, String(dmg), h.x, h.y - 18, color);
   s.events.push({ t: 'hit', dmg, crit: false, x: h.x, y: h.y - BODY_Y, onEnemy: false });
   sfx(s, 'hurt');

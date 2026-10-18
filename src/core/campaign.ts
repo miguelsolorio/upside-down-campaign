@@ -4,7 +4,7 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
 export const STAGES_AHEAD: readonly string[] = [];
@@ -37,12 +37,20 @@ export const CHAPTERS: Record<number, { title: string; subtitle: string }> = {
   1: { title: 'Chapter one', subtitle: 'The vanishing' },
   2: { title: 'Chapter two', subtitle: 'The tunnels' },
   3: { title: 'Chapter three', subtitle: 'Starcourt' },
+  4: { title: 'Chapter four', subtitle: 'Hellfire' },
 };
 
-/** True when `id` is the last stage of its chapter, so its clear ends the chapter: the epilogue, then CHAPTER n CLEAR. */
+/** How many stages each chapter has in the design (docs/game-design.md, "Chapters"), built or not. */
+const CHAPTER_LENGTH: Record<number, number> = { 1: 3, 2: 3, 3: 3, 4: 4, 5: 3 };
+
+/**
+ * True when `id` is the last stage of its chapter, so its clear ends the chapter: the epilogue, then CHAPTER n CLEAR. It reads the
+ * chapter's length, not the end of STAGE_ORDER, so the last stage built in the middle of a chapter (4.2) doesn't claim to end it.
+ */
 export function closesChapter(id: string): boolean {
-  const i = STAGE_ORDER.indexOf(id);
-  return i >= 0 && (i + 1 === STAGE_ORDER.length || chapterOf(STAGE_ORDER[i + 1] as string) !== chapterOf(id));
+  if (!STAGE_ORDER.includes(id)) return false;
+  const n = Number.parseInt(id.split('.')[1] ?? '', 10);
+  return n === CHAPTER_LENGTH[chapterOf(id)];
 }
 
 /** True when `id` is the first stage of its chapter, so entering it shows the chapter card. */
@@ -55,7 +63,9 @@ export function opensChapter(id: string): boolean {
  * Who can play each stage. Up to four is the party itself, in order (the first is the lead). More than four is a pool
  * the player picks four from on the map (docs/map-screen.md, "Party picks"). Eleven joins inside 1.1 with a recruit beat,
  * so 1.1 starts with three. She is gone after the Demogorgon and comes back at the end of 2.3. Will is back for
- * chapter 2, and Max and Steve join in 2.2. Chapter 3 has all nine: Eleven again, and Robin and Nancy join in 3.1.
+ * chapter 2, and Max and Steve join in 2.2. Chapter 3 has all nine: Eleven again, and Robin and Nancy join in 3.1. Chapter 4 splits
+ * the party: Hopper plays 4.1 alone in Kamchatka and stays there, and Eddie joins the nine in Hawkins in 4.2 (docs/level-10.md,
+ * docs/level-11.md).
  */
 const ROSTER: Record<string, HeroId[]> = {
   '1.1': ['mike', 'dustin', 'lucas'],
@@ -67,15 +77,19 @@ const ROSTER: Record<string, HeroId[]> = {
   '3.1': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   '3.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   '3.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
+  '4.1': ['hopper'],
+  '4.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'eddie'],
 };
 
 /** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. Eleven
- *  holds 3.3's route crate and is the only one who can reach Billy (docs/level-9.md). */
+ *  holds 3.3's route crate and is the only one who can reach Billy (docs/level-9.md). Eddie's riff opens 4.2's first mirror, and he
+ *  joins there (docs/level-11.md). */
 const REQUIRED: Record<string, HeroId[]> = {
   '2.2': ['max'],
   '2.3': ['steve'],
   '3.2': ['robin'],
   '3.3': ['eleven'],
+  '4.2': ['eddie'],
 };
 
 /**
@@ -93,6 +107,10 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 112 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
   // Eleven is locked in 3.3 and catches up to the party she joins (CATCH_UP): the run plays 3.1 and 3.2 without her (docs/level-9.md).
   '3.3': [{ id: 'mike', level: 7, xp: 175 }, { id: 'dustin', level: 6, xp: 258 }, { id: 'robin', level: 4, xp: 112 }, { id: 'eleven', level: 4 }],
+  // Hopper plays 4.1 alone and joins at the average of the best four less one (joinLevel); Eddie is locked in 4.2 and catches up to
+  // the party he joins (CATCH_UP) (docs/level-10.md, docs/level-11.md).
+  '4.1': [{ id: 'hopper', level: 5 }],
+  '4.2': [{ id: 'mike', level: 8, xp: 115 }, { id: 'dustin', level: 7, xp: 178 }, { id: 'robin', level: 5, xp: 212 }, { id: 'eddie', level: 5 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */
@@ -180,9 +198,14 @@ export function mergeHeroes(known: PartySeed[], later: PartySeed[]): PartySeed[]
   return out;
 }
 
-/** The level a hero nobody has met yet joins stage `id` at: the met heroes in its pool, averaged, minus one. Null if none are met. */
+/**
+ * The level a hero nobody has met yet joins stage `id` at: the met heroes in its pool, averaged, minus one. A stage whose pool has
+ * nobody met yet (4.1, Hopper alone) averages the PARTY_SIZE best heroes met instead, the party the player would field
+ * (docs/level-10.md). Null if nobody at all is met.
+ */
 function joinLevel(id: string, known: PartySeed[]): number | null {
-  const have = rosterFor(id).map((h) => known.find((k) => k.id === h)).filter((s): s is PartySeed => !!s);
+  let have = rosterFor(id).map((h) => known.find((k) => k.id === h)).filter((s): s is PartySeed => !!s);
+  if (have.length === 0) have = [...known].sort((a, b) => (ahead(a, b) ? -1 : ahead(b, a) ? 1 : 0)).slice(0, PARTY_SIZE);
   if (have.length === 0) return null;
   const avg = have.reduce((n, s) => n + (s.level ?? 1), 0) / have.length;
   return Math.max(1, Math.floor(avg) - 1);
@@ -195,6 +218,9 @@ function joinLevel(id: string, known: PartySeed[]): number | null {
  */
 const CATCH_UP: Record<string, HeroId[]> = {
   '3.3': ['eleven'],
+  // Eddie joins at the level of the party he joins, averaged and less one, as docs/chapter-4.md words the recruit rule: the pool's
+  // average would bring him in at Lv 3 beside a Lv 8 lead, dragged down by the heroes chapter 2 left behind (docs/level-11.md).
+  '4.2': ['eddie'],
 };
 
 /** `party` with the stage's returning heroes brought up to the rest of it (CATCH_UP). */

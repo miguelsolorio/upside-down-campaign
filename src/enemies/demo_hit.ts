@@ -2,8 +2,9 @@
 // combat/damage.ts and the burn tick in combat/status.ts call these; the brain is demogorgon.ts.
 //
 // Its HP can't drop below 1 until it has been stunned three times against a wall. After that, the hit that would
-// take it to 0 pins it instead: pose 'pinned', no more attacks, and from then on only Eleven's Mind Blast beam hurts
-// it. Anything else that touches it is reported as a try ('poked' with its spawn id) and does nothing.
+// take it to 0 pins it instead: pose 'pinned', no more attacks, and from then on only its finisher hurts it: Eleven's Mind Blast beam
+// for the 1.3 one, Hopper's ground slam for the pit one of stage 4.1 (docs/level-10.md). Anything else that touches it is reported as a
+// try ('poked' with its spawn id) and does nothing.
 import type { DemoState, Enemy, S } from '../combat/state.ts';
 import { floater, flashScreen, sfx, shake, sparks } from '../combat/fx.ts';
 import { BODY_Y } from '../combat/space.ts';
@@ -13,7 +14,7 @@ import { ENEMY_DEFS } from './defs.ts';
 
 /** Frames before the same pinned boss reports another try. */
 const POKE_GAP = 45;
-/** Share of her HP Eleven stands back up with if she was down when the boss was pinned. */
+/** Share of their HP the finisher stands back up with if they were down when the boss was pinned. */
 const REVIVE_HP = 0.3;
 
 export function newDemo(): DemoState {
@@ -47,12 +48,20 @@ export const demoImmovable = (e: Enemy): boolean => {
 };
 
 /**
- * A hit on a pinned boss that is not the Mind Blast beam: no damage, a small clink, and a try for the stage to hear.
+ * Is this hit the one that finishes the boss? Eleven's Mind Blast beam for the 1.3 Demogorgon, Hopper's ground slam for the pit one.
+ * `beam` and `slam` say which kind of hit it was.
+ */
+export function isFinisher(e: Enemy, by: HeroId, beam: boolean, slam: boolean): boolean {
+  return e.kind === 'pitdemo' ? slam && by === 'hopper' : beam && by === 'eleven';
+}
+
+/**
+ * A hit on a pinned boss that is not its finisher: no damage, a small clink, and a try for the stage to hear.
  * Returns true when the hit was swallowed.
  */
-export function demoPoke(s: S, by: HeroId, e: Enemy, beam: boolean): boolean {
+export function demoPoke(s: S, by: HeroId, e: Enemy, finisher: boolean): boolean {
   const d = e.demo;
-  if (!d || d.move !== 'pinned' || (beam && by === 'eleven')) return false;
+  if (!d || d.move !== 'pinned' || finisher) return false;
   sparks(s, e.x, e.y - BODY_Y, 2);
   sfx(s, 'block');
   if (d.pokeCd <= 0) {
@@ -62,17 +71,18 @@ export function demoPoke(s: S, by: HeroId, e: Enemy, beam: boolean): boolean {
   return true;
 }
 
-/** Eleven can't finish a fight she is out of: if she was knocked down, she stands up, with the MP for one blast. */
-function standEleven(s: S): void {
-  const el = s.heroes.find((h) => h.id === 'eleven');
+/** The hero who finishes a pinned boss can't finish a fight they are out of: if they were knocked down they stand up, with the MP for one cast. */
+function standFinisher(s: S, e: Enemy): void {
+  const id: HeroId = e.kind === 'pitdemo' ? 'hopper' : 'eleven';
+  const el = s.heroes.find((h) => h.id === id);
   if (!el) return;
   if (el.ko) {
     el.ko = false;
     el.hp = Math.max(1, Math.ceil(el.st.hp * REVIVE_HP));
     el.anim = 'idle'; el.animT = 0;
-    s.bodies = s.bodies.filter((b) => b.id !== 'eleven');
+    s.bodies = s.bodies.filter((b) => b.id !== id);
   }
-  el.mp = Math.max(el.mp, HERO_DEFS.eleven.special.mp);
+  el.mp = Math.max(el.mp, HERO_DEFS[id].special.mp);
 }
 
 /** Pins the boss where it stands. Emits `pinned` once. */
@@ -96,21 +106,21 @@ export function pinBoss(s: S, e: Enemy): void {
   shake(s, 4);
   flashScreen(s, 0.3);
   floater(s, 'PINNED', e.x, e.y - 34, 'yellow', true, 60);
-  standEleven(s);
+  standFinisher(s, e);
 }
 
 /**
  * Called after a hit or a burn tick has lowered `e.hp`. Holds the floor of 1, and pins the boss when the damage would
- * have finished it after its third stun. `beam` is true for Eleven's beam, which is the only thing that kills a pinned one.
+ * have finished it after its third stun. `finisher` is true for the hit that kills a pinned one (isFinisher).
  */
-export function demoSettle(s: S, e: Enemy, beam: boolean, by: HeroId | null): void {
+export function demoSettle(s: S, e: Enemy, finisher: boolean): void {
   const d = e.demo;
   if (!d || e.hp > 0) return;
   if (d.move === 'pinned') {
-    if (beam && by === 'eleven') return;
+    if (finisher) return;
     e.hp = 1;
     return;
   }
-  if (d.stuns >= ENEMY_DEFS.demogorgon.x.stunsToPin) pinBoss(s, e);
+  if (d.stuns >= ENEMY_DEFS[e.kind].x.stunsToPin) pinBoss(s, e);
   e.hp = 1;
 }

@@ -11,6 +11,9 @@ import type { Px } from './px.ts';
 import { bankMask, groundTile, waterTile } from './tile_ground.ts';
 import type { Block, Near, TileCtx } from './tile_ground.ts';
 import { objectTile, pulseTile } from './tile_objects.ts';
+import { ch4Tile } from './tile_ch4.ts';
+import { campBarrel, campNear } from './tile_camp.ts';
+import { pitNear } from './tile_pit.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
 import { tunnelTile } from './tile_tunnel.ts';
 import { findCourts } from './tile_school.ts';
@@ -26,7 +29,7 @@ export interface Spot { readonly x: number; readonly y: number }
 export interface BakedStage { readonly w: number; readonly h: number; readonly night: boolean; readonly windows: readonly Spot[] }
 
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
-/** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain and the base's machine. They are baked at their first step and drawn over at the others. */
+/** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain, the base's machine and the camp's burning drum. They are baked at their first step and drawn over at the others. */
 interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block }
 interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[]; pulses: PulseSpot[] }
 
@@ -37,13 +40,14 @@ const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
 const pulseCache = new Map<string, HTMLCanvasElement>();
 
-const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine';
+const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel';
 /** The tiles that paint one picture across a run of them, and so need to know where in it they are. */
-const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' || n === 'lift';
+const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' || n === 'lift' || n === 'drift';
 
 /** The pixels of a pulsing tile at a step of its pulse. */
 function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
   if (name === 'veins') return tunnelTile(name, c, phase) as Px;
+  if (name === 'barrel') return campBarrel(c, phase);
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
@@ -70,12 +74,15 @@ function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasEle
   return c;
 }
 
-function staticTile(name: TileName, c: TileCtx): Px {
-  return groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
+function staticTile(name: TileName, c: TileCtx, memory = false): Px {
+  return (memory ? ch4Tile(name, c, true) : null) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
 }
 
-/** rows use the legend in core/tiles.ts. night bakes the night art instead of the day art. */
-export function bakeStage(rows: string[], night = false): BakedStage {
+/**
+ * rows use the legend in core/tiles.ts. night bakes the night art instead of the day art. skin 'memory' bakes the Creel House's
+ * letters in its Blood red skin, for the room the 4.2 curse turns red (docs/level-11.md); every other tile bakes as always.
+ */
+export function bakeStage(rows: string[], night = false, skin?: 'memory'): BakedStage {
   const cols = rows[0]?.length ?? 0, nrows = rows.length;
   const names: TileName[] = [];
   for (let y = 0; y < nrows; y++) {
@@ -104,7 +111,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
       const court = courts[ty * cols + tx];
       const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
       if (isPulse(name)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
-      const day = staticTile(name, tc);
+      const day = staticTile(name, tc, skin === 'memory');
       const tile = night ? nightTile(day, name, tc) : day;
       if (night && litWindow(day, name)) windows.push({ x: tx * T + 8, y: ty * T + 16 });
       for (let j = 0; j < T; j++) {
@@ -262,7 +269,7 @@ export function samplePx(name: TileName, v: number): Px {
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))))));
+  near = pitNear(name, v, campNear(name, v, foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))))))));
   // The fountain, the lift and the machine are one picture over a block: v 0 is its top left piece, v 1 the one beside it, v 2 one inside.
   if (name === 'fountain' || name === 'lift' || name === 'machine') {
     const floor: TileName = name === 'machine' ? 'basefloor' : 'mallfloor';

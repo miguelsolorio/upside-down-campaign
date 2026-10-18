@@ -25,6 +25,7 @@ export type { Glow } from './glow.ts';
 export { drawPortrait, drawIcon, drawPanel, drawBar, drawBarV } from './ui.ts';
 export { drawLogo, drawAlphabetWall, LOGO_SIZE, WALL_SIZE } from './logo.ts';
 export { drawMapScreen, hopLength } from './map.ts';
+export { setLookStage } from './looks.ts';
 
 /** Build atlases and fonts once at boot. Synchronous, under 200 ms. */
 export function initGfx(): void {

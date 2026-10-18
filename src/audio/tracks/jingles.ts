@@ -201,4 +201,29 @@ export const STINGERS: Record<StingerId, Cue> = {
   // Nancy: flat and decisive, on the triangle. F, F, then C a fourth down, all level: no vibrato, no slide, the same
   // length twice and a longer last note that sits. It lands like a hammer coming down. Triangle only, no noise.
   nancy: cue(line(150, 'tri', 0.3, [[0, 0.4, 'F4'], [0.5, 0.4, 'F4'], [1, 0.9, 'C4']]), [], 3, 1.5),
+  // Hopper: slow and low, a big man walking in out of the cold. Two heavy steps up the A minor triad on the low square, a thud
+  // of a boot in snow under the first, then the third note goes soft: a held triangle on the fifth with a late wobble and a
+  // thin pulse ringing an octave over it, gruff on the outside and soft underneath. Three notes, under a second.
+  hopper: cue(
+    [
+      ...line(150, 'p50', 0.32, [[0, 0.5, 'A2'], [0.6, 0.5, 'C3']]),
+      ...line(150, 'tri', 0.3, [[1.2, 1, 'E3']], { vib: true }),
+      ...line(150, 'p12', 0.1, [[1.2, 1, 'E4']], { ring: true }),
+    ],
+    [{ at: 0, dur: 0.12, vol: 0.25, mode: 15, clock: 6000, filter: 'lowpass', freq: 380, freqEnd: 110 }],
+    3,
+    1.35,
+  ),
+  // Eddie: a lick up the A minor pentatonic on the 25 percent pulse, three quick steps and then the last note bends up a tone
+  // and wails, with a pick scrape on the first and a low A underneath. Theatrical: it climbs and then holds the stage.
+  eddie: cue(
+    [
+      ...line(190, 'p25', 0.26, [[0, 0.4, 'A4'], [0.5, 0.4, 'C5'], [1, 0.4, 'D5']]),
+      ...line(190, 'p25', 0.26, [[1.5, 1.6, 'E5']], { to: note('G5'), vib: true }),
+      ...line(190, 'tri', 0.28, [[0, 3.1, 'A2']]),
+    ],
+    [{ at: 0, dur: 0.03, vol: 0.12, mode: 7, clock: 14000, filter: 'highpass', freq: 3500 }],
+    3,
+    0.85,
+  ),
 };

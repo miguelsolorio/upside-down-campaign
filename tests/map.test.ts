@@ -60,33 +60,22 @@ test('chapter three: the mall and the food court above the horizon, the base on 
 });
 
 test('states come from progress: cleared, then the next stage open, then locked', () => {
-  // 3.3 closes the build, so it opens once 3.2 is cleared.
-  assert.equal(states(null), 'ollllllll');
-  assert.equal(states(cleared(1)), 'colllllll');
-  assert.equal(states(cleared(2)), 'ccollllll');
-  assert.equal(states(cleared(3)), 'cccolllll');
-  assert.equal(states(cleared(4)), 'ccccollll');
-  assert.equal(states(cleared(5)), 'cccccolll');
-  assert.equal(states(cleared(6)), 'ccccccoll');
-  assert.equal(states(cleared(7)), 'cccccccol');
-  assert.equal(states(cleared(8)), 'cccccccco');
+  // 4.2 closes the build, so it opens once 4.1 is cleared.
+  const n = STAGE_ORDER.length;
+  for (let k = 0; k <= n; k++) assert.equal(states(k === 0 ? null : cleared(k)), 'c'.repeat(k) + (k < n ? 'o' + 'l'.repeat(n - k - 1) : ''));
+  assert.equal(states(cleared(9)), 'cccccccccol');
   // Everything cleared: no open node is left.
-  assert.equal(states(cleared(9)), 'ccccccccc');
+  assert.equal(states(cleared(11)), 'ccccccccccc');
 });
 
 test('the token starts on the next uncleared stage, or the last stage when all are cleared', () => {
   assert.equal(startNode(null), '1.1');
   assert.equal(startNode(cleared(0)), '1.1');
-  assert.equal(startNode(cleared(1)), '1.2');
-  assert.equal(startNode(cleared(2)), '1.3');
-  assert.equal(startNode(cleared(3)), '2.1');
-  assert.equal(startNode(cleared(4)), '2.2');
-  assert.equal(startNode(cleared(5)), '2.3');
-  assert.equal(startNode(cleared(6)), '3.1');
-  assert.equal(startNode(cleared(7)), '3.2');
+  for (let k = 1; k < STAGE_ORDER.length; k++) assert.equal(startNode(cleared(k)), STAGE_ORDER[k]);
   assert.equal(startNode(cleared(8)), '3.3');
-  assert.equal(startNode(cleared(9)), '3.3');
-  assert.equal(startNode(cleared(9)), STAGE_ORDER[STAGE_ORDER.length - 1]);
+  assert.equal(startNode(cleared(9)), '4.1');
+  assert.equal(startNode(cleared(10)), '4.2');
+  assert.equal(startNode(cleared(11)), STAGE_ORDER[STAGE_ORDER.length - 1]);
 });
 
 test('a start node is never locked', () => {

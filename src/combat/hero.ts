@@ -14,6 +14,9 @@ import { drinkCoke } from './pickups.ts';
 import { endDash, stepDash } from '../heroes/skate.ts';
 import { isHeld } from '../enemies/hold.ts';
 import { holdsSpecial, readHold, useVariant, variantMp, variantReady } from '../heroes/hold.ts';
+import { readWind, windsUp } from '../heroes/hopper.ts';
+import { standOn } from '../heroes/eddie_solo.ts';
+import { CHIME_LIFT, cursedBy, isCursed } from './house.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -62,10 +65,12 @@ function castVariant(s: S, h: Hero): void {
 
 function tryActions(s: S, h: Hero, input: SimInput): void {
   const def = HERO_DEFS[h.id];
-  const casting = h.act === 'special' && h.actT > 0;
+  // Eddie's solo keeps him planted, even in the tick a hit has cancelled his cast.
+  const casting = (h.act === 'special' && h.actT > 0) || standOn(s, h);
   const holds = holdsSpecial(s, h);
   // Cerebro spent mid-hold leaves the key down with nothing to read: forget the hold, the press is already used.
-  if (!holds) h.holdT = 0;
+  // Hopper's Wind-up keeps its own hold on Attack (heroes/hopper.ts).
+  if (!holds && !windsUp(h)) h.holdT = 0;
   if (holds && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
     castVariant(s, h);
     return;
@@ -85,13 +90,15 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
     sfx(s, 'noMp');
     floater(s, 'NO MP', h.x, h.y - 18, 'mist', false, 28);
   }
-  const wantsBasic = s.buf.attack > 0 || input.attackHeld;
-  if (!casting && wantsBasic && h.cdBasic <= 0) {
+  // Hopper from Lv 6 swings when Attack comes up (heroes/hopper.ts); everyone else swings on the press, and again while it is held.
+  const swing = windsUp(h) ? readWind(s, h, input) : s.buf.attack > 0 || input.attackHeld ? 'tap' : 'none';
+  if (!casting && swing !== 'none' && h.cdBasic <= 0) {
     s.buf.attack = 0;
+    s.t6.windQ = 0;
     // Smash first: a prop it lights is solved, so the same swing doesn't also count as the wrong hero trying it.
     smashAimed(s, h);
     pokeAimed(s, h, def.basic.reach);
-    useBasic(s, h);
+    useBasic(s, h, swing === 'wind');
   }
 }
 
@@ -136,6 +143,9 @@ export function updateActive(s: S, input: SimInput): void {
       const sp = def.speed * speedFactor(h) * speedMul(h.stat) * lock * Math.min(1, mag);
       if (live) { moveBody(s, h, ux * sp, uy * sp, true); meant = sp; }
     }
+  } else if (windsUp(h)) {
+    // A flinch lets go of a wind-up: the key has to come up and go down again.
+    h.holdT = 0;
   }
   if (h.vx !== 0 || h.vy !== 0) {
     moveBody(s, h, h.vx, h.vy);
@@ -153,11 +163,11 @@ export function updateActive(s: S, input: SimInput): void {
   setAnim(h, anim);
 }
 
-/** MP and HP regeneration: 4 percent MP a second for the active hero, 6 and 2 percent for the bench. */
+/** MP and HP regeneration: 4 percent MP a second for the active hero, 6 and 2 percent for the bench. None for a hero at 0 HP, who is about to be knocked out, or one hanging under a curse. */
 export function regen(s: S): void {
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
-    if (h.ko) continue;
+    if (h.ko || h.hp <= 0 || isCursed(s, h)) continue;
     if (i === s.active) {
       h.mp = Math.min(h.st.mp, h.mp + (h.st.mp * 0.04) / 60);
     } else {
@@ -208,7 +218,7 @@ function restSpot(s: S, lead: Hero, n: number): [number, number] | null {
 }
 
 /**
- * Records the active hero's path and moves the bench heroes along it as cosmetic followers. Each follower walks toward
+ * Records the active hero's path and moves the bench heroes along it as cosmetic followers (all but a cursed one, who hangs in place). Each follower walks toward
  * the point on his path a short while back, but never gets closer to him than its gap, so when he stops they stop with
  * him (or finish closing up) instead of piling onto his feet or backing away. A follower that really is on top of him
  * (after a swap, or at the start of a level) steps out to a spot behind him, at walking pace.
@@ -225,6 +235,13 @@ export function updateFollowers(s: S): void {
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
     if (i === s.active || h.ko) continue;
+    // A cursed hero hangs where the curse found them, a little higher with each chime, and leaves the followers' places to the rest.
+    const curse = cursedBy(s, h);
+    if (curse) {
+      h.z = curse.chimes * CHIME_LIFT; h.moving = false; h.animT++;
+      setAnim(h, 'idle');
+      continue;
+    }
     const n = k++;
     const gap = REST_GAPS[Math.min(n, REST_GAPS.length - 1)] as number;
     const near = Math.hypot(h.x - a.x, h.y - a.y);
@@ -254,7 +271,7 @@ export function updateFollowers(s: S): void {
     // Standing together after stepping out, they face the way the leader walked.
     else if (spot) h.dir = s.walkDir;
     h.moving = moved;
-    h.z = 0; h.flash = Math.max(0, h.flash - 0.12);
+    h.z = s.house.down.get(h) ?? 0; h.flash = Math.max(0, h.flash - 0.12);
     h.animT++;
     setAnim(h, moved ? 'walk' : 'idle');
   }

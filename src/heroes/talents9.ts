@@ -1,4 +1,4 @@
-// The Lv 9 talents that are only a number or a flag: Steve's King Steve, Nancy's Final girl and Robin's Dry wit, and the HUD's
+// The Lv 9 talents that are only a number or a flag: Steve's King Steve, Nancy's Final girl, Hopper's Berserk and Robin's Dry wit, and the HUD's
 // word on the once-a-stage ones. heroAtk (combat/damage.ts) reads atk9, hitEnemy reads witBonus, and updateTalents floats a callout
 // from tickTalents9 when King Steve or Final girl switches on. Oath, Cerebro, Hive link and Extra life are in oath.ts, cerebro.ts,
 // hive.ts and extralife.ts.
@@ -19,9 +19,15 @@ export function girlUp(s: S, h: Hero): boolean {
     && s.heroes.filter((o) => o !== h && o.ko).length >= HERO_DEFS.nancy.special.x.girlDown;
 }
 
-/** What King Steve and Final girl multiply the hero's ATK by right now. */
+/** Berserk: Hopper stands with the talent and under 35 percent of his max HP (docs/level-10.md). */
+export function berserkUp(h: Hero): boolean {
+  return h.id === 'hopper' && !h.ko && hasTalent('hopper', h.level, LV9) && h.hp < h.st.hp * HERO_DEFS.hopper.special.x.berserkHp;
+}
+
+/** What King Steve, Final girl and Berserk multiply the hero's ATK by right now. */
 export function atk9(s: S, h: Hero): number {
   if (kingUp(h)) return 1 + HERO_DEFS.steve.special.x.kingAtk;
+  if (berserkUp(h)) return 1 + HERO_DEFS.hopper.special.x.berserkAtk;
   return girlUp(s, h) ? 1 + HERO_DEFS.nancy.special.x.girlAtk : 1;
 }
 
@@ -39,15 +45,18 @@ function announce(s: S, h: Hero | undefined, on: boolean, was: boolean, text: st
   addFx(s, 'ring', h.x, h.y - 6, h.dir, 0, 22, 36, 36);
 }
 
-/** Once a tick: King Steve's and Final girl's callouts. */
+/** Once a tick: King Steve's, Final girl's and Berserk's callouts. */
 export function tickTalents9(s: S): void {
   const steve = s.heroes.find((h) => h.id === 'steve');
   const nancy = s.heroes.find((h) => h.id === 'nancy');
-  const king = !!steve && kingUp(steve), girl = !!nancy && girlUp(s, nancy);
+  const hopper = s.heroes.find((h) => h.id === 'hopper');
+  const king = !!steve && kingUp(steve), girl = !!nancy && girlUp(s, nancy), mad = !!hopper && berserkUp(hopper);
   announce(s, steve, king, s.t6.king, 'KING STEVE');
   announce(s, nancy, girl, s.t6.girl, 'FINAL GIRL');
+  announce(s, hopper, mad, s.t6.berserk, 'BERSERK');
   s.t6.king = king;
   s.t6.girl = girl;
+  s.t6.berserk = mad;
 }
 
 /** The HUD's word on a hero's once-a-stage talent (Oath, Cerebro, Extra life): 'ready' or 'spent', undefined for anyone without one. */

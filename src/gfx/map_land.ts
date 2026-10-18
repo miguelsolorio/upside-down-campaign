@@ -10,6 +10,7 @@ import { drawTinyText } from './font.ts';
 import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
 import { arcade, gate, grey, lab, pumpkin, remap, roots, school, toUD, toUDLand, tunnels, woods } from './map_art.ts';
 import { bunker, foodCourt, mall } from './map_mall.ts';
+import { INSET, kamchatka } from './map_inset.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
 
@@ -23,6 +24,8 @@ export const LAMP = { x: LAND.lab.x - 15 + 4, y: LAND.lab.base - 28 + 1 + 1 };
 export interface World {
   base: HTMLCanvasElement;
   over: HTMLCanvasElement;
+  /** The Kamchatka inset on its own, for map.ts to draw over the clouds, which drift across the sky it hangs in. */
+  inset: HTMLCanvasElement;
   /** The red veins of the Upside Down, for the lights that run along them. */
   veins: [number, number][][];
 }
@@ -148,7 +151,8 @@ function drawHole(P: Px, locked: boolean): void {
   }
 }
 
-export interface PlateSpec { cx: number; y: number; name: string; state: NodeState; ud: boolean; point: 'down' | 'up' | 'left' | 'right' }
+/** `night` is a plate in the colors of a night picture (Kamchatka's inset): a dark blue ground and a pale edge, grey while its stage is locked. */
+export interface PlateSpec { cx: number; y: number; name: string; state: NodeState; ud: boolean; point: 'down' | 'up' | 'left' | 'right'; night?: boolean }
 
 /** Where a sign plate sits, with a margin, so the town can keep clear of it. */
 export function plateRect(s: Pick<PlateSpec, 'cx' | 'y' | 'name'>): Box {
@@ -159,9 +163,9 @@ export function plateRect(s: Pick<PlateSpec, 'cx' | 'y' | 'name'>): Box {
 /** A small sign plate with a pointer: the place in the 3 by 5 font. */
 function drawPlate(ctx: Ctx, s: PlateSpec): void {
   const { cx, y, name, ud, point } = s, locked = s.state === 'locked';
-  const bg: ColorName = ud ? (locked ? 'night' : 'blood0') : locked ? 'grey3' : 'bone';
-  const fg: ColorName = ud ? (locked ? 'grey2' : 'pink') : locked ? 'grey1' : 'ink';
-  const edge: ColorName = ud ? (locked ? 'grey1' : 'red') : 'ink';
+  const bg: ColorName = ud ? (locked ? 'night' : 'blood0') : s.night ? (locked ? 'grey1' : 'night') : locked ? 'grey3' : 'bone';
+  const fg: ColorName = ud ? (locked ? 'grey2' : 'pink') : s.night ? (locked ? 'grey3' : 'cream') : locked ? 'grey1' : 'ink';
+  const edge: ColorName = ud ? (locked ? 'grey1' : 'red') : s.night ? (locked ? 'grey2' : 'mist') : 'ink';
   const w = name.length * 4 - 1 + 6, h = 9;
   const x = Math.round(cx - w / 2);
   rect(ctx, x, y, w, h, edge);
@@ -174,11 +178,15 @@ function drawPlate(ctx: Ctx, s: PlateSpec): void {
   else { rect(ctx, x + w, y + 2, 1, 5, edge); rect(ctx, x + w + 1, y + 3, 1, 3, edge); rect(ctx, x + w + 2, y + 4, 1, 1, edge); rect(ctx, x + w - 1, y + 3, 1, 3, bg); }
 }
 
-/** The route, drawn as stitches: solid and gold where it is walked, dashed white to the next stage, short grey dashes beyond. */
+/** The legs that are a flight and not a walk, by the node they go to: the hops to Kamchatka, half a world away, and back to the Creel House. */
+const FLIGHT = new Set(['4.1', '4.2']);
+
+/** The route, drawn as stitches: solid and gold where it is walked, dashed white to the next stage, short grey dashes beyond. A flight is long dashes in every state, so a hop that crosses the world is never mistaken for a walk. */
 function paintRoute(P: Px, st: Record<string, NodeState>): void {
   LEGS.forEach((leg, i) => {
     const to = st[ORDER[i + 1] as string];
-    const on = (along: number): boolean => to === 'cleared' || (to === 'open' ? Math.floor(along / 4) % 2 === 0 : Math.floor(along / 5) % 3 === 0);
+    const flight = FLIGHT.has(ORDER[i + 1] as string);
+    const on = (along: number): boolean => flight ? along % 10 < (to === 'locked' ? 3 : 6) : to === 'cleared' || (to === 'open' ? Math.floor(along / 4) % 2 === 0 : Math.floor(along / 5) % 3 === 0);
     for (const pass of [0, 1]) {
       const seen = new Set<number>();
       leg.pts.forEach(([fx, fy], k) => {
@@ -194,7 +202,7 @@ function paintRoute(P: Px, st: Record<string, NodeState>): void {
 }
 
 /** The whole still picture as one pixel buffer, the labels' places, and the veins. Pure pixel work, so Node can test it. */
-export function paintLand(st: Record<string, NodeState>): { px: Px; plates: PlateSpec[]; veins: [number, number][][] } {
+export function paintLand(st: Record<string, NodeState>): { px: Px; plates: PlateSpec[]; veins: [number, number][][]; inset: Px } {
   const locked = (id: string): boolean => st[id] === 'locked';
   const P = new Px(W, H).fill('ink');
   const G = new Px(W, H), O = new Px(W, H);
@@ -233,8 +241,12 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
     { cx: LAND.mall.x + 6, y: fc.y0 - 19, name: 'STARCOURT', state: st['3.1'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.mall.x + 6, y: fc.y0 - 11, name: 'FOOD COURT', state: st['3.3'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.bunker.x - 26, y: LAND.bunker.y - 12, name: 'BASE', state: st['3.2'] as NodeState, ud: false, point: 'right' },
+    // Kamchatka's plate hangs under its inset, pointing up into it.
+    { cx: INSET.x + 22, y: INSET.y + INSET.h, name: 'KAMCHATKA', state: st['4.1'] as NodeState, ud: false, point: 'up', night: true },
   ];
   for (const s of plates) solid.push(plateRect(s));
+  const framedInset = { x0: INSET.x - 2, y0: INSET.y - 2, x1: INSET.x + INSET.w + 2, y1: INSET.y + INSET.h + 2 };
+  solid.push(framedInset); green.push(framedInset);
   for (const id of ORDER) { const p = POS[id] as { x: number; y: number }; const b = { x0: p.x - 9, y0: p.y - 24, x1: p.x + 9, y1: p.y + 9 }; solid.push(b); green.push(b); }
   for (const leg of LEGS) leg.pts.forEach(([x, y], i) => { if (i % 3 === 0) { const b = { x0: x - 5, y0: y - 5, x1: x + 5, y1: y + 5 }; solid.push(b); green.push(b); } });
   for (const b of groundBoxes()) { solid.push(b); green.push(b); }
@@ -305,16 +317,21 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
 
   paintRoute(P, st);
 
+  // Kamchatka's inset goes over the route, which runs in to its edge; map.ts draws it again over the clouds.
+  const inset = kamchatka();
+  if (locked('4.1')) remap(inset, grey);
+  P.blit(inset, INSET.x, INSET.y);
+
   plates.push({ cx: LAND.tunnels.x, y: LAND.tunnels.top + tn.h + 3, name: 'TUNNELS', state: st['2.2'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
-  return { px: P, plates, veins };
+  return { px: P, plates, veins, inset };
 }
 
 /** The still layers as canvases: the picture, and the labels that go over the spores and drifting things. */
 export function buildWorld(st: Record<string, NodeState>): World {
-  const { px, plates, veins } = paintLand(st);
+  const { px, plates, veins, inset } = paintLand(st);
   const over = makeCanvas(W, H);
   const o = ctx2d(over);
   for (const s of plates) drawPlate(o, s);
-  return { base: px.toCanvas(), over, veins };
+  return { base: px.toCanvas(), over, inset: inset.toCanvas(), veins };
 }

@@ -39,8 +39,9 @@ export const POS: Record<string, Pt> = {
   '3.1': { x: 124, y: 78 },
   '3.2': { x: 96, y: 93 },
   '3.3': { x: 118, y: 48 },
-  // Chapter 4: stand-in spots until Art draws the Kamchatka inset and the Creel House (docs/map-screen.md, "Chapter four on the map").
-  '4.1': { x: 30, y: 30 },
+  // Chapter 4 (docs/map-screen.md, "Chapter four on the map"): Kamchatka is half a world away, so 4.1 sits on the inset in the top left corner
+  // (map_inset.ts), on its lower right corner where the token stands over the picture. 4.2 is a stand-in spot until Art draws the Creel House.
+  '4.1': { x: 57, y: 30 },
   '4.2': { x: 186, y: 40 },
 };
 
@@ -63,8 +64,8 @@ export const LAND = {
   bunker: { x: 96, y: HZ },
 };
 
-/** How far each leg of the route bows, in px: the sign picks the side. */
-const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 0, 0];
+/** How far each leg of the route bows, in px: the sign picks the side. The last two are the flights to Kamchatka and back to the Creel House. */
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12];
 
 export interface Leg {
   pts: [number, number][];

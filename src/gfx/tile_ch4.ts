@@ -1,15 +1,14 @@
-// Chapter 4's tiles: the Kamchatka camp and the pit (stage 4.1), the Hellfire Club and the Creel House (stage 4.2). Flat stand-ins
-// until Art paints them from the owner's picks (docs/level-10.md, docs/level-11.md): a fill and a frame. `memory` paints the Creel
-// House's letters in its Blood red skin (bakeStage(rows, night, 'memory')).
+// Chapter 4's tiles: the Kamchatka camp and the pit (stage 4.1) are painted from the owner's picks in tile_camp.ts and tile_pit.ts; the
+// Hellfire Club and the Creel House (stage 4.2) are flat stand-ins until Art paints them (docs/level-11.md): a fill and a frame. `memory`
+// paints the Creel House's letters in its Blood red skin (bakeStage(rows, night, 'memory')).
 import type { TileName } from '../core/tiles.ts';
 import { Px } from './px.ts';
 import type { ColorName } from './palette.ts';
+import { campTile } from './tile_camp.ts';
+import { pitTile } from './tile_pit.ts';
 import type { TileCtx } from './tile_ground.ts';
 
 const FLAT: Partial<Record<TileName, [ColorName, ColorName]>> = {
-  snow: ['white', 'mist'], drift: ['mist', 'white'], snowpath: ['mist', 'grey3'], wire: ['grey2', 'ink'], campcap: ['ink', 'grey1'],
-  campwall: ['grey2', 'grey1'], celldoor: ['grey1', 'ink'], campfloor: ['grey3', 'grey2'], grate: ['grey2', 'ink'], campcrate: ['soil1', 'soil0'],
-  barrel: ['soil2', 'orange'], pitcap: ['ink', 'soil0'], pitwall: ['soil0', 'soil1'], pitfloor: ['soil1', 'soil2'], pitbar: ['soil2', 'soil0'],
   clubcap: ['ink', 'dusk'], clubwall: ['dusk', 'night'], clubboard: ['teal0', 'soil1'], clubposter: ['red', 'bone'], clubwindow: ['blue', 'night'],
   clubdoor: ['soil1', 'soil0'], clubshelf: ['soil0', 'red'], clubfloor: ['grey2', 'grey3'], clubdesk: ['soil2', 'soil1'], dndtable: ['red', 'ink'],
   creelcap: ['ink', 'night'], creelwall: ['slate', 'dusk'], creelwin: ['night', 'blue'], creelfloor: ['soil1', 'soil0'], creelrug: ['blood0', 'soil0'],
@@ -23,7 +22,9 @@ const MEMORY: Partial<Record<TileName, [ColorName, ColorName]>> = {
 };
 
 /** A chapter 4 tile, or null when `name` isn't one. */
-export function ch4Tile(name: TileName, _c: TileCtx, memory = false): Px | null {
+export function ch4Tile(name: TileName, c: TileCtx, memory = false): Px | null {
+  const painted = campTile(name, c) ?? pitTile(name, c);
+  if (painted) return painted;
   const flat = (memory ? MEMORY[name] : undefined) ?? FLAT[name];
   return flat ? new Px(16).rect(0, 0, 16, 16, flat[0]).frame(0, 0, 16, 16, flat[1]) : null;
 }

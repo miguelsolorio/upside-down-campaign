@@ -9,6 +9,8 @@ import type { Ctx } from './canvas.ts';
 import { EXPR, HEAD, NOSE, PORTRAITS, SHOULDERS } from './data/portraits.ts';
 import type { PortraitSpec, Shirt } from './data/portraits.ts';
 import { BULB_COLORS, BULB_ICON, ICON_ART } from './data/icons.ts';
+import { HOPPER4_PORTRAIT } from './data/hopper4.ts';
+import { hopperInPrison } from './looks.ts';
 
 // ---------------------------------------------------------------- portraits
 const SHARED: Record<string, ColorName> = { e: 'ink', w: 'white', m: 'blood1', r: 'rose', z: 'cyan' };
@@ -45,8 +47,12 @@ function toGray(px: Px): void {
   }
 }
 
-function buildPortrait(who: CharId, expr: Expr, gray = false): HTMLCanvasElement {
-  const spec: PortraitSpec = PORTRAITS[who];
+/** Hopper wears the Telogreika from chapter 4 (looks.ts): his portrait is the prison one, and cached apart from the Uniform's. */
+const inPrison = (who: CharId): boolean => who === 'hopper' && hopperInPrison();
+const portraitKey = (who: CharId, expr: Expr, gray: boolean, prison = inPrison(who)): string => `${who}${prison ? ':prison' : ''}:${expr}${gray ? ':gray' : ''}`;
+
+function buildPortrait(who: CharId, expr: Expr, gray = false, prison = inPrison(who)): HTMLCanvasElement {
+  const spec: PortraitSpec = prison && who === 'hopper' ? HOPPER4_PORTRAIT : PORTRAITS[who];
   const px = new Px(24, 24).fill(spec.bg);
   const color = (ch: string): ColorName | null => {
     if (ch === 'S') return spec.pal.s ?? null;
@@ -86,11 +92,11 @@ function buildPortrait(who: CharId, expr: Expr, gray = false): HTMLCanvasElement
 }
 
 const portraits = new Map<string, HTMLCanvasElement>();
-/** 24x24 portrait with its top-left at x,y. `gray` draws it in greys, for a hero who is down. */
-export function drawPortrait(ctx: Ctx, who: CharId, expr: Expr, x: number, y: number, gray = false): void {
-  const key = gray ? `${who}:${expr}:gray` : `${who}:${expr}`;
+/** 24x24 portrait with its top-left at x,y. `gray` draws it in greys, for a hero who is down. `prison` picks Hopper's look in place of the chapter's (the sheet shows both). */
+export function drawPortrait(ctx: Ctx, who: CharId, expr: Expr, x: number, y: number, gray = false, prison = inPrison(who)): void {
+  const key = portraitKey(who, expr, gray, prison);
   let c = portraits.get(key);
-  if (!c) { c = buildPortrait(who, expr, gray); portraits.set(key, c); }
+  if (!c) { c = buildPortrait(who, expr, gray, prison); portraits.set(key, c); }
   ctx.drawImage(c, Math.round(x), Math.round(y));
 }
 
@@ -215,8 +221,10 @@ export function drawBarV(ctx: Ctx, x: number, y: number, w: number, h: number, f
 export function warmUi(): void {
   for (const who of Object.keys(PORTRAITS) as CharId[]) {
     for (const e of Object.keys(EXPR) as Expr[]) {
-      const key = `${who}:${e}`;
-      if (!portraits.has(key)) portraits.set(key, buildPortrait(who, e));
+      for (const prison of who === 'hopper' ? [false, true] : [false]) {
+        const key = portraitKey(who, e, false, prison);
+        if (!portraits.has(key)) portraits.set(key, buildPortrait(who, e, false, prison));
+      }
     }
   }
 }

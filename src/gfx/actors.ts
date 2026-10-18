@@ -13,6 +13,7 @@ import { composeGuard, composeWarden, FOE_CELL } from './actor_foes.ts';
 import { composeGrigori } from './actor_grigori.ts';
 import { composeMelter, MELTER_PAL } from './actor_melter.ts';
 import { slotOf } from './actor_pick.ts';
+import { CH4_SPECS, keyOf, lookSpec } from './actor_look.ts';
 import { PUDDLE_H, PUDDLE_W, RISE_FRAMES, puddlePx, puddleStep, swirl } from './actor_goo.ts';
 import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
 import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
@@ -61,7 +62,7 @@ interface Sheet {
 }
 
 const specs = new Map<string, CharSpec>();
-for (const s of [...KIDS, ...ADULTS, MAX, STEVE, HOPPER, ROBIN, NANCY, ERICA, SOLDIER, FLAYED, AGENT]) specs.set(s.id, s);
+for (const s of [...KIDS, ...ADULTS, MAX, STEVE, HOPPER, ROBIN, NANCY, ERICA, SOLDIER, FLAYED, AGENT, ...CH4_SPECS]) specs.set(s.id, s);
 const sheets = new Map<string, Sheet>();
 
 /** The red band of an elite: the second row of the sprite, across the head. */
@@ -75,13 +76,13 @@ function eliteBand(buf: Uint8Array, C: number): void {
 /** The ids drawn by hand rather than from a paper doll: the rats, the guards, the warden and Grigori. */
 const NO_SPEC = new Set(['rat', 'melter', 'guard', 'warden', 'grigori']);
 
-/** key is the actor id, then ":low" for a guard with its shield down, then ":elite". */
+/** key is the actor id, then ":low" for a guard with its shield down, then ":elite", then ":prison" for Hopper in the Telogreika (actor_look.ts). */
 function buildSheet(key: string): Sheet {
   const [id, ...flags] = key.split(':') as [string, ...string[]];
   const elite = flags.includes('elite'), low = flags.includes('low');
   const foe = id === 'guard' || id === 'warden';
   const C = foe ? (FOE_CELL[id] as number) : id === 'grigori' ? GRIGORI_CELL : CELL;
-  const spec = specs.get(id) ?? (NO_SPEC.has(id) ? undefined : specs.get('mike'));
+  const spec = lookSpec(id, flags) ?? specs.get(id) ?? (NO_SPEC.has(id) ? undefined : specs.get('mike'));
   const roles: Uint8Array[] = [];
   for (const dir of DIRS) {
     const view = dir === 'down' ? 'down' : dir === 'up' ? 'up' : 'side';
@@ -113,12 +114,6 @@ function sheetOf(key: string): Sheet {
   let s = sheets.get(key);
   if (!s) { s = buildSheet(key); sheets.set(key, s); }
   return s;
-}
-
-/** The atlas an actor is drawn from: its id, plus whether a guard has its shield down and whether it is an elite. */
-function keyOf(id: string, guarding: boolean | undefined, elite: boolean | undefined, kind: string): string {
-  const foe = id === 'guard' || id === 'warden';
-  return id + (foe && guarding === false ? ':low' : '') + (elite && kind === 'enemy' ? ':elite' : '');
 }
 
 type Mode = 'main' | 'white' | 'faint' | ColorName;
@@ -311,12 +306,14 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
   ctx.drawImage(pud, 0, PUDDLE_H - 4, PUDDLE_W, 4, px, py + PUDDLE_H - 4, PUDDLE_W, 4);
 }
 
-/** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
-/** Chapter 4 stand-ins until Art draws them (docs/level-10.md, docs/level-11.md): each borrows a sprite that already exists. */
-const STAND_IN: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon', kguard: 'soldier', kbaton: 'guard', ghoul: 'flayed', eddie: 'steve' };
+/** Chapter 4 stand-ins until Art draws them (docs/level-11.md): each borrows a sprite that already exists. */
+const STAND_IN: Partial<Record<string, ActorView['id']>> = { ghoul: 'flayed', eddie: 'steve' };
+/** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
+const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
 
+/** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
 export function drawActor(ctx: Ctx, w: ActorView): void {
-  const sub = STAND_IN[w.id];
+  const sub = ALIAS[w.id] ?? STAND_IN[w.id];
   const v: ActorView = sub ? { ...w, id: sub } : w;
   switch (v.id) {
     case 'demogorgon': drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big'); return;
@@ -354,18 +351,18 @@ export function drawActor(ctx: Ctx, w: ActorView): void {
 
 /** Builds every sheet and the main atlases up front. */
 export function warmActors(): void {
-  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'steve', 'hopper', 'robin', 'nancy', 'erica', 'agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori']) {
+  for (const id of ['mike', 'dustin', 'lucas', 'eleven', 'will', 'joyce', 'max', 'steve', 'hopper', 'robin', 'nancy', 'erica', 'agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori', 'kguard', 'kbaton', 'hopper:prison']) {
     const sh = sheetOf(id);
     sh.main = render(sh, 'main');
   }
   shadowSprite(0, 0); shadowSprite(0, 1); shadowSprite(0, 0, true); shadowSprite(0, 1, true); shadowSprite(0, 0, 2); shadowSprite(0, 1, 2); alertSprite();
 }
 
-const ENEMY_IDS = new Set(['agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori']);
+const ENEMY_IDS = new Set(['agent', 'rat', 'guard', 'warden', 'soldier', 'flayed', 'melter', 'grigori', 'kguard', 'kbaton']);
 
-/** For the sheet scene: draws one raw frame at x, y (top-left). A guard or warden can have its shield down, and any enemy can be an elite. */
-export function drawActorFrame(ctx: Ctx, id: string, dir: Dir, anim: AnimId, frame: number, x: number, y: number, opts: { guarding?: boolean; elite?: boolean } = {}): void {
-  const sh = sheetOf(keyOf(id, opts.guarding, opts.elite, ENEMY_IDS.has(id) ? 'enemy' : 'hero'));
+/** For the sheet scene: draws one raw frame at x, y (top-left). A guard, the warden or a camp guard can have the shield or baton down, any enemy can be an elite, and `prison` picks Hopper's look in place of the chapter's. */
+export function drawActorFrame(ctx: Ctx, id: string, dir: Dir, anim: AnimId, frame: number, x: number, y: number, opts: { guarding?: boolean; elite?: boolean; prison?: boolean } = {}): void {
+  const sh = sheetOf(keyOf(id, opts.guarding, opts.elite, ENEMY_IDS.has(id) ? 'enemy' : 'hero', opts.prison));
   const C = sh.cell;
   ctx.drawImage(sh.main ?? (sh.main = render(sh, 'main')), (FRAME_BASE[anim] + frame) * C, DIR_ROW[dir] * C, C, C, x, y, C, C);
 }

@@ -71,6 +71,15 @@ function drawFigure(ctx: Ctx, x: number, y: number, t: number, eyes: boolean): v
 }
 
 // ---------------------------------------------------------------- world pass
+/** The ink round text: every side but the top left, the way drawTopLine outlines its line. */
+const OUTLINE: readonly (readonly [number, number])[] = [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]];
+
+/** Text with an ink outline round it, so it reads on a white Lab floor or over a white slash as well as on the night. Returns the width. */
+function outlined(ctx: Ctx, text: string, x: number, y: number, color: ColorName, align: 'left' | 'center' = 'left'): number {
+  for (const [dx, dy] of OUTLINE) drawText(ctx, text, x + dx, y + dy, 'ink', { align });
+  return drawText(ctx, text, x, y, color, { align });
+}
+
 function drawFloater(ctx: Ctx, f: Floater): void {
   if (f.life - f.t < 10 && (f.t & 1) === 1) return;
   const rise = Math.min(f.t, 30) * 0.45 + Math.max(0, f.t - 30) * 0.15;
@@ -79,10 +88,10 @@ function drawFloater(ctx: Ctx, f: Floater): void {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(2, 2);
-    drawText(ctx, f.text, 0, 0, f.color, { align: 'center', shadow: true });
+    outlined(ctx, f.text, 0, 0, f.color, 'center');
     ctx.restore();
   } else {
-    drawText(ctx, f.text, x, y, f.color, { align: 'center', shadow: true });
+    outlined(ctx, f.text, x, y, f.color, 'center');
   }
 }
 
@@ -160,8 +169,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   if (VIEW_W < SCREEN_W) drawSideFade(ctx, VIEW_X, VIEW_X + VIEW_W, VIEW_TOP, SCREEN_H - VIEW_TOP);
 }
 
-/** Key and word colors from bright to faded. The last step is one neutral grey, dim enough to ignore and still readable. */
-const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mist'], ['slate', 'slate']];
+/** Key and word colors from bright to faded. The last step is mist, dim enough to ignore and still over 4.5:1 on a night floor (slate was 2 to 3:1 and hard to read). */
+const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mist'], ['mist', 'mist']];
 
 /**
  * The controls stacked tight in the bottom left corner of the clear band. `fade` runs 0 to 1: keys in amber and words
@@ -172,8 +181,8 @@ export function drawControlsCorner(ctx: Ctx, fade = 0): void {
   const rows = controlRows();
   rows.forEach((r, i) => {
     const x = VIEW_X + 4, y = SCREEN_H - 9 - (rows.length - 1 - i) * 8;
-    const w = drawText(ctx, r.keys, x, y, keyColor, { shadow: true });
-    drawText(ctx, r.what, x + w + 4, y, wordColor, { shadow: true });
+    const w = outlined(ctx, r.keys, x, y, keyColor);
+    outlined(ctx, r.what, x + w + 4, y, wordColor);
   });
 }
 

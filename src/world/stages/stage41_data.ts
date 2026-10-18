@@ -51,6 +51,8 @@ const ENEMIES: SimSpawn[] = [
 // that is hurt or dry finds them; it skips the cache.
 const ITEMS: SimSpawn[] = [
   item('eggo1', 'eggo', 11, 22), item('eggo2', 'eggo', 5, 7), item('eggo3', 'eggo', 22, 13),
+  // Two Eggos in the pit's corners, dropped from the rim: alone, Hopper has nobody to swap to, so the fight carries its own heals.
+  item('eggo4', 'eggo', 26, 3), item('eggo5', 'eggo', 41, 12),
   item('coke1', 'coke', 30, 25), item('coke2', 'coke', 11, 13),
   item('q01', 'quarter', 9, 30), item('q02', 'quarter', 20, 36), item('q03', 'quarter', 28, 33), item('q04', 'quarter', 36, 36),
   item('q05', 'quarter', 41, 24), item('q06', 'quarter', 4, 25), item('q07', 'quarter', 6, 5), item('q08', 'quarter', 3, 7),

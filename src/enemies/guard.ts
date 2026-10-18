@@ -120,7 +120,8 @@ export function guardUpdate(s: S, e: Enemy, hero: Hero): void {
     default: {
       e.mode = 'chase';
       turn(e, toHero, x.turn);
-      if (d > x.hold) {
+      // Close enough but round a corner from the hero: it keeps coming, or the two stand either side of the wall for good.
+      if (d > x.hold || !clear) {
         const moved = walk(s, e, hero, def.speed * e.spd * speedMul(e.stat), clear);
         setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
       } else {

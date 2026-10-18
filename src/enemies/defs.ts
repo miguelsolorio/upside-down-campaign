@@ -250,7 +250,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // is the soldier in winter (enemies/soldier.ts reads these x), the camp guard the riot guard with a baton (enemies/guard.ts), and the
   // pit Demogorgon the 1.3 one sized for Hopper alone (enemies/demogorgon.ts). Its x mirrors the 1.3 one's.
   kguard: {
-    kind: 'kguard', name: 'Guard', hp: 80, atk: 36, def: 5, speed: 0.7, xp: 12, aggro: 130,
+    kind: 'kguard', name: 'Guard', hp: 40, atk: 20, def: 5, speed: 0.7, xp: 12, aggro: 130,
     windup: 30, power: 0.3, cooldown: 120, drop: 0.3, weight: 1.2,
     x: {
       near: 80, far: 120, panic: 60, back: 0.7, stamina: 50, speed: 3.2, range: 180, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6,
@@ -258,12 +258,12 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     },
   },
   kbaton: {
-    kind: 'kbaton', name: 'Camp guard', hp: 110, atk: 34, def: 7, speed: 0.7, xp: 16, aggro: 100,
+    kind: 'kbaton', name: 'Camp guard', hp: 55, atk: 18, def: 7, speed: 0.7, xp: 16, aggro: 100,
     windup: 30, power: 0.9, cooldown: 110, drop: 0.35, weight: 1.4,
     x: { range: 26, reach: 30, arc: 75, block: 0.2, breakKb: 3.2, breakT: 45, grace: 30, turn: 12, kb: 3.6, recover: 36, patrol: 0.5, lose: 240, hold: 18 },
   },
   pitdemo: {
-    kind: 'pitdemo', name: 'Demogorgon', hp: 600, atk: 34, def: 6, speed: 0.8, xp: 60, aggro: 200,
+    kind: 'pitdemo', name: 'Demogorgon', hp: 1100, atk: 16, def: 6, speed: 0.8, xp: 60, aggro: 200,
     windup: 30, power: 0.5, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,

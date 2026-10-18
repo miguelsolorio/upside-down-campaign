@@ -118,11 +118,11 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     swapDelta: 0, swapTo: -1, burstPressed: false,
   });
 
-  function clearLine(ax: number, ay: number, bx: number, by: number): boolean {
+  function clearLine(ax: number, ay: number, bx: number, by: number, lift = 4): boolean {
     const n = Math.ceil(dist(ax, ay, bx, by) / 4);
     for (let i = 1; i < n; i++) {
       const t = i / n;
-      const tx = Math.floor((ax + (bx - ax) * t) / TILE), ty = Math.floor((ay + (by - ay) * t - 4) / TILE);
+      const tx = Math.floor((ax + (bx - ax) * t) / TILE), ty = Math.floor((ay + (by - ay) * t - lift) / TILE);
       if (tx < 0 || ty < 0 || tx >= nav.w || ty >= nav.h || nav.blocked[ty * nav.w + tx] === 1) return false;
     }
     return true;
@@ -294,6 +294,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (rects.length > 0) { base = buildNav(opts.grid, rects); nav = base; }
     }
     const me = v.hud.party.find((p) => p.active);
+    const alone = v.hud.party.length === 1;
     if (!me || me.ko) return out;
     const { x: hx, y: hy } = sim.heroPos();
     // Eddie's solo plants him: the bot presses nothing until it is over, unless he is hurt enough to swap out (below).
@@ -394,7 +395,10 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
           ? orbitPoint(near, hx, hy, Math.max(style.hold, near.kind === 'warden' ? 46 : 34)) : null;
         if (orbit) {
           [mx, my] = walkTo(hx, hy, orbit[0], orbit[1]);
-        } else if (near.d > (spray ? 40 : hold) + 6) {
+        } else if (near.d > (spray ? 40 : hold) + 6 || (alone && !clearLine(hx, hy, near.x, near.y, 0))) {
+          // A hero alone (Hopper in 4.1) close to a foe but round a corner, by the line a hit needs (feet to feet, combat/space.ts los),
+          // walks to it rather than swing at the wall between. With a party a swap or a ranged hero breaks that stand-off, and the stages
+          // built before were measured without it.
           [mx, my] = walkTo(hx, hy, near.x, near.y);
         } else if (!aligned) {
           // Strafe along the perpendicular to line up one of the eight shot directions.

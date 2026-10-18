@@ -87,12 +87,12 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   '1.2': [{ id: 'mike', level: 3, xp: 68 }, { id: 'dustin', level: 2, xp: 54 }, { id: 'lucas', level: 2, xp: 54 }, { id: 'eleven', level: 2, xp: 30 }],
   '1.3': [{ id: 'mike', level: 4, xp: 76 }, { id: 'dustin', level: 3, xp: 77 }, { id: 'lucas', level: 3, xp: 65 }, { id: 'eleven', level: 3, xp: 41 }],
   '2.1': [{ id: 'mike', level: 4, xp: 150 }, { id: 'dustin', level: 4, xp: 10 }, { id: 'lucas', level: 3, xp: 115 }, { id: 'will', level: 2 }],
-  '2.2': [{ id: 'mike', level: 5, xp: 116 }, { id: 'dustin', level: 4, xp: 172 }, { id: 'max', level: 3 }, { id: 'steve', level: 3 }],
-  '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 123 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
+  '2.2': [{ id: 'mike', level: 5, xp: 116 }, { id: 'dustin', level: 5, xp: 22 }, { id: 'max', level: 3 }, { id: 'steve', level: 3 }],
+  '2.3': [{ id: 'mike', level: 6, xp: 12 }, { id: 'dustin', level: 5, xp: 159 }, { id: 'max', level: 4, xp: 19 }, { id: 'steve', level: 4, xp: 22 }],
   '3.1': [{ id: 'mike', level: 6, xp: 198 }, { id: 'dustin', level: 5, xp: 257 }, { id: 'robin', level: 3 }, { id: 'nancy', level: 3 }],
-  '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 82 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
+  '3.2': [{ id: 'mike', level: 7, xp: 9 }, { id: 'dustin', level: 6, xp: 112 }, { id: 'robin', level: 3, xp: 101 }, { id: 'nancy', level: 3, xp: 103 }],
   // Eleven is locked in 3.3 and catches up to the party she joins (CATCH_UP): the run plays 3.1 and 3.2 without her (docs/level-9.md).
-  '3.3': [{ id: 'mike', level: 7, xp: 175 }, { id: 'dustin', level: 6, xp: 220 }, { id: 'robin', level: 4, xp: 112 }, { id: 'eleven', level: 4 }],
+  '3.3': [{ id: 'mike', level: 7, xp: 175 }, { id: 'dustin', level: 6, xp: 258 }, { id: 'robin', level: 4, xp: 112 }, { id: 'eleven', level: 4 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

@@ -10,6 +10,7 @@ import { BODY_Y, dist } from '../combat/space.ts';
 import { addFx, sfx } from '../combat/fx.ts';
 import { alertEnemy, hitEnemy } from '../combat/damage.ts';
 import { smashCracks } from '../combat/props.ts';
+import { babysitHeal } from '../combat/bonds.ts';
 import { beginAct, chord, coneHits, later, rad } from './common.ts';
 
 /** How much wider than the swing's arc a crack still counts as reached, in radians. */
@@ -49,5 +50,6 @@ export function steveSpecial(s: S, h: Hero): void {
       alertEnemy(s, e);
     }
     s.babysit = d.x.life;
+    babysitHeal(s, h);
   });
 }

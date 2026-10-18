@@ -299,3 +299,7 @@ Measured again, nothing moved (`TODO.md`, "Balance pass"). Cleared out of 20 and
 | Before and after | 19 and 97 | 16 and 78 | 20 and 100 | 6 and 46 |
 
 The careless bot's 78 of 100 (it was 20 of 20) is the difficulty, not a stall. Over 300 seeds it clears 241, none stuck. Of the 59 losses, 58 are in the records wing at the Warden (tiles 42 to 46), at 86 to 117 s, so none ran long, and in 51 of the 59 the Warden alone did 100 or more of the damage (156 on average). The bot that never dodges walks into every slam and bash. What changed since 20 of 20 is the pace pass: the party arrives at Mike 3 and the rest 2 (it was all 3) and the stage pays 146 XP (it was 360), so the party reaches the Warden a level lower. The factor stays at 1.3.
+
+## After the bonds
+
+Mike and Eleven's Friends don't lie (+10% ATK, `docs/bonds.md`) made the Lab easier: over 100 seeds chief took 223 damage and 0.34 KOs, under the KO band's 0.5, with the lowest party HP at 47%. The factor went from 1.3 to 1.36, which puts it back where it was: 98 of 100 cleared, 230 damage, 0.64 KOs, 45% lowest HP, 125 s. Careless clears 79 (it was 78), kid 100, upside 36, NORMAL 100.

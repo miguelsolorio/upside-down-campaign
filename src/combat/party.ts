@@ -5,6 +5,7 @@ import {
   INSPIRATION_SECONDS, LEVEL_UP_HEAL, MAX_LEVEL, POINT_VALUE, STAT_KEYS, addXp, emptyStats, rollLevelUp, xpShare,
 } from '../progression/xp.ts';
 import { talentGainedAt } from '../progression/talents.ts';
+import { NO_MODS } from '../heroes/bonds.ts';
 import type { Hero, S, Stats } from './state.ts';
 import { UNHURT_CAP, activeHero, noStatus } from './state.ts';
 import { hitEnemy } from './damage.ts';
@@ -32,7 +33,7 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
     x, y, dir: 'down', aim: Math.PI / 2, vx: 0, vy: 0, z: 0, moving: false, anim: 'idle', animT: 0,
     flash: 0, invuln: 0, blink: false, hurtT: 0,
     actT: 0, act: null, lock: 1, actId: 0, cdBasic: 0, cdSpecial: 0, combo: 0, comboT: 0,
-    stat: noStatus(), nosebled: false, dash: null, unhurt: UNHURT_CAP, holdT: 0,
+    stat: noStatus(), nosebled: false, dash: null, unhurt: UNHURT_CAP, holdT: 0, bond: NO_MODS,
   };
 }
 

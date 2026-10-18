@@ -1,0 +1,66 @@
+# Bonds
+
+Small bonuses for heroes who are in the party together (`docs/game-design.md`, "Bonds"). The names are nods to the show, and the wording round them is the game's own.
+
+## The seven
+
+| Bond | Who | What it gives | Status |
+|---|---|---|---|
+| Friends don't lie | Mike and Eleven | Both +10% ATK. Mike's DM screen covers Eleven too: while it stands, a hit on her anywhere within 32 px of the dome is halved, from any side, not only along the line of fire | On |
+| Party of four | Mike, Dustin, Lucas and Will, all four | All four +8% DEF | On |
+| Mad Max | Lucas and Max | Both +10% SPD: walk pace and the basic's cooldown | On |
+| Babysitter's club | Steve and Dustin | Every Babysit also heals Dustin a fifth of his max HP, benched or leading. A KO'd Dustin stays down | On |
+| Scoops troop | Steve and Robin | Both +10 points of crit chance | On |
+| Chief and kid | Hopper and Eleven | Both +10% DEF | In the data, off |
+| Hellfire | Eddie and Dustin | Eddie's solo lasts 2 s longer (120 frames) | In the data, off |
+
+A bond counts while every member is **in the party**: led or on the bench, up or down. It follows the roster and never the active slot. Swapping, a KO and a long fight change nothing, and a hero who joins mid-stage (Eleven in 1.1) completes a bond on the next tick. Bonuses from two bonds add. "+10% ATK" multiplies like Mike's Rally does (ATK x 1.1, then Inspiration and Rally on top), "+8% DEF" multiplies like Babysit's party DEF, "+10% SPD" multiplies the speed factor (the 1.5% a point of SPD, times 1.1), and crit is points added to the 5% base, as Sharp eye's 15% is.
+
+## Where it lives
+
+- `src/heroes/bonds.ts`: the rules and the data, pure. `BONDS` (each with its `name`, corner `tag`, short `perk`, a sentence `text`, `heroes`, `on` and what each member `gives`), `activeBonds(party)`, `bondsOf(id)`, `missingFrom`, `gainedBonds(before, after)`, `modsFor(party, id)` (the sum for one hero, a `BondMods`) and `bondRows` (the sheet's lines).
+- `src/combat/bonds.ts`: the one hook into combat. `applyBonds(s)` runs first in every tick (`combat/sim.ts`) and writes `modsFor` onto each hero as `hero.bond` whenever the roster changed (a string compare otherwise). Nothing else in combat knows who is paired with whom. It reads `hero.bond` through the places that already read a stat: `heroAtk` and the crit roll (`combat/damage.ts`), `heroDef` (`heroes/steve_guard.ts`), `speedFactor` (`heroes/common.ts`), plus the two that are not a stat: `babysitHeal` (called from `heroes/steve.ts` when Babysit lands) and `screenCovers` (`hurtHero`, so the DM screen halves a hit on a covered Eleven).
+- `Hero.bond` (`combat/state.ts`) starts as the shared frozen `NO_MODS`, so a hero built on its own has none until the sim ticks.
+
+## Showing them
+
+- **Picks panel** (`ui/picks_logic.ts`, `ui/picks.ts`). A picked hero in an active bond has a green tag in the corner of the card (the bond's `tag`, or N BONDS for several). Under the legend, in START's row, a tiny line says what the cursor is on: on a bonded hero, that hero's bonds with their perks; on an unpicked hero who would complete one, `ADDS` and the bond in yellow (only while a slot is free); anywhere else the party's bonds, names only when there are two. The line never runs wider than the space beside START (`BOND_LINE_W`, 169 px), and falls back from name and perk to the name, then a count. The tiny 3 by 5 font gained `'`, `+`, `%`, `,`, `:`, `.` and `-` for it.
+- **Character sheet** (`ui/charsheet.ts`, `ui/charsheetlayout.ts`). A BONDS label under the portrait and a line for each of the hero's bonds beside it: green with the perk when the party has it, slate with who it still needs when not. Up to three lines (`BOND_MAX`). The stats and moves moved down to make room, and `MOVE_PITCH` went from 20 to 18.
+- **Stage callout** (`world/bondbanner.ts`, drawn by `world/play.ts`). A strip under the HUD for 4 s of free play (the talk before the first step doesn't count): BOND and the name in yellow, the perk under it. A bond is announced once a visit, so a retry doesn't repeat it, and a hero who joins mid-stage and completes one brings it up then. At most three at once.
+
+## Chapter 4: switching on Chief and kid and Hellfire
+
+Both are in `BONDS` with `on: false`, their numbers set. Nothing shows them or counts them until a session flips `on: true`. When Hopper and Eddie are playable:
+
+1. Add `'hopper'` and `'eddie'` to `HeroId` (`core/types.ts`). `BondHero` already names them and stays valid.
+2. Set `on: true` on `chief-and-kid` and `hellfire` in `src/heroes/bonds.ts`. Hopper's and Eleven's DEF is then live through `heroDef`, and the picks panel, the sheet and the callout list them.
+3. Hellfire's effect is Eddie's `hero.bond.solo`, frames to add to the Hellfire solo's length. Nothing in combat reads it yet, because there is no solo; read it where the solo's duration is set.
+4. `tests/bonds.test.ts` pins the two as off ("the design's seven bonds are in the data, and Hopper and Eddie's two are off"), and `liveBonds()` is asserted there. Update those lines when they go on. The same file shows how to flip `on` for a moment (`chief.on = true`, restore in `finally`).
+5. The character sheet fits three bond lines for a hero. Dustin has Party of four, Babysitter's club and Hellfire, which is exactly three.
+6. Re-measure the stages with the new party mixes: `node scripts/measure-stage.ts <stage> chief 100`.
+
+## Balance
+
+The bonuses are small on paper, and the measured stages agree: a party's ATK, speed or crit up by a tenth moves a clear rate by a few points and the KOs by a tenth. Measured on HARD (`chief`) with `scripts/measure-stage.ts` over 100 seeds (200 where noted), the bot keeping the lead. "Before" is the same code with `applyBonds` off. Each cell is cleared, damage, KOs, lowest party HP and time.
+
+| Stage | Before | With bonds | Shipped |
+|---|---|---|---|
+| 1.1, 3.1, 3.2 | | 1.1 takes 43 damage, not 41. 3.1 and 3.2 have no bond in their parties: the same to the digit | unchanged |
+| 1.2 | 97, 234, 0.57, 45%, 125 s. Careless 78 | 97, 223, 0.34, 47%, 120 s. Careless 80. KOs under their band, lowest HP over it | `enemyMult` 1.3 to 1.36: 98, 230, 0.64, 45%, 125 s. Careless 79, upside 36 |
+| 1.3 | 98, 234, 0.96, 38%, 97 s. Careless 67 | 96, 229, 1.13, 40%, 94 s. Careless 83 (the careful bot is where it was, the careless one wins more) | unchanged: every band holds |
+| 2.1 | 92, 216, 1.33, 40%, 98 s. Careless 92 | 92, 211, 1.24, 41%, 98 s. Careless 93. Party of four is live | unchanged |
+| 2.2 | 93, 264, 1.50, 35%, 105 s. Careless 92 | 91, 273, 1.75, 33%, 107 s. Careless 90. Babysitter's club is live | unchanged |
+| 2.3 | 87, 361, 0.55, 40%, 109 s. Careless 93 | 179 of 200, 354, 0.40, 46%, 109 s. Careless 189 of 200. KOs under their band, lowest HP over it | `enemyMult` 1 to 1.04: 88, 369, 0.61, 43%, 109 s. Careless 94, upside 29 |
+| 3.3 | 99, 314, 0.44, 50%, 124 s. Careless 64 | 200 of 200, 280, 0.34, 51%, 110 s. Careless 129 of 200 | `enemyMult` 1.6 to 1.65: 98, 283, 0.38, 50%, 115 s. Careless 72, upside 33 |
+
+Every pull-back was found by running the stage at several `--mult=` values and taking the one that put the careful bot's numbers where they were without sending the careless bot or upside under their floors (at least 12 of 20 and 4 of 20). 3.3 at 1.7 has KOs 0.49 but upside clears 38 of 200, under its floor, so 1.65 it is. 3.3's KOs and lowest HP were outside their bands before (`docs/level-9.md`) and still are, a little less so on HP. Over 100 seeds on every stage, kid clears 100, upside clears 29 to 75, careless clears 72 to 100, and NORMAL clears at least 99.
+
+**The pace holds, with two numbers moved to keep the test's sample honest.** Over 40 seeds the carried run's lead ends chapter 3 with 1642 XP on average without bonds and 1641 with them, and 5 of 40 under Lv 8's line in both. The bonds don't move the pace. What they move is which seeds land short, and `tests/pace.test.ts` reads ten of them and allows one under the line and none more than 30 XP short. With bonds the bottom seed read 1482, 50 short. 3.3 pays more (`xpMult` 2 to 2.25: 556 to 626 XP for the stage), which lifts the whole spread (40 seeds: minimum 1521, a tenth of them under 1578, mean 1708, still short of Lv 9's 2149) and the test goes green on its own seeds. `ARRIVAL` took four Dustin entries: Lv 5 with 22 XP into 2.2 (it was Lv 4 with 172, 365 XP, 18 under the Lv 5 line, and a run's median is now 387 over 40 seeds and 440 over the test's ten), and 2.3, 3.2 and 3.3 with 30 to 40 XP more, from the same runs. Nobody else's entry moved.
+
+Some tests pinned a fight bonds changed, and were moved, never loosened: the burst's first sweep (3 x 9.9 ATK for Mike and Eleven), the Demogorgon's stun, the Flayer's open head and the Grigori bot's window all read `heroAtk` or the bonded range now. The Grigori bot fight stops at 1500 frames, not 1800, because Grigori's second phase (and the damage the bot takes in it) now starts around frame 1690. The 3.3 scene test's seed went from 15 to 21, the seed on which Eleven falls in the new numbers.
+
+Two things the numbers say about the design. DEF is subtracted at half weight from a hit, so +8% DEF is about 3% less damage taken: Party of four is the quietest bond, as the spec wrote it. And Friends don't lie is the strongest in practice because Mike leads: it is the one that needed pulling back twice.
+
+## Tests
+
+`tests/bonds.test.ts` (rules, data, words, the picks panel's tags and line for every four of nine heroes and every cursor place, the sheet's lines and layout, the callout) and `tests/bonds-combat.test.ts` (the sim: bonds land on a tick, follow the roster, a joiner completes one; ATK with Inspiration, DEF with Babysit, speed and cooldown, crit over 2000 hits, Babysit's heal for a benched, KO'd and full Dustin, the DM screen's cover near, far and gone).

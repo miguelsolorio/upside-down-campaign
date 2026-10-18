@@ -9,6 +9,9 @@ import type { PromptDevice } from '../core/bindings.ts';
 import type { Rect } from '../core/pointer.ts';
 import { BAND_Y, TOP_H } from '../gfx/map_geo.ts';
 import { utilitiesAt } from '../heroes/defs.ts';
+import { activeBonds, gainedBonds } from '../heroes/bonds.ts';
+import type { BondDef } from '../heroes/bonds.ts';
+import { tinyWidth } from '../gfx/font.ts';
 
 /** Cards per row in the Grid layout. */
 export const COLS = 3;
@@ -47,6 +50,8 @@ export interface PickRow {
   /** 1 to 4 in party order, 0 on the bench. Slot 1 is the lead. */
   slot: number;
   locked: boolean;
+  /** The corner tag of a picked hero who has a bond with the party: the bond's tag, N BONDS for several, or empty. */
+  bond: string;
 }
 
 /**
@@ -84,10 +89,55 @@ export function rowOf(s: PicksState, i: number): PickRow {
   const p = s.pool[i] as PartySeed;
   return {
     id: p.id, name: CHAR_NAMES[p.id], level: p.level ?? 1, gate: gateWord(p.id, p.level ?? 1),
-    slot: s.picked.indexOf(p.id) + 1, locked: s.locked.includes(p.id),
+    slot: s.picked.indexOf(p.id) + 1, locked: s.locked.includes(p.id), bond: bondTag(s, p.id),
   };
 }
 export const rowsOf = (s: PicksState): PickRow[] => s.pool.map((_, i) => rowOf(s, i));
+
+// ---------------------------------------------------------------- the bonds
+/** The bonds the picked party has right now. */
+export const bondsOfParty = (s: PicksState): BondDef[] => activeBonds(s.picked);
+
+/** What a card says about its hero's bonds: nothing for a hero on the bench, the tag for one bond, N BONDS for more. */
+function bondTag(s: PicksState, id: HeroId): string {
+  if (!s.picked.includes(id)) return '';
+  const mine = bondsOfParty(s).filter((b) => b.heroes.includes(id));
+  return mine.length === 0 ? '' : mine.length === 1 ? (mine[0] as BondDef).tag : `${mine.length} BONDS`;
+}
+
+/** The widest the bond line may be, in px: from just past START to the panel's right edge, as the legend does. */
+export const BOND_LINE_W = 169;
+
+/** The first of `options` that fits the width, or the last. */
+function fits(options: string[], w: number = BOND_LINE_W): string {
+  return options.find((t) => tinyWidth(t) <= w) ?? (options[options.length - 1] as string);
+}
+
+/** One line for a set of bonds: the name and its perk for a lone bond, else the names, else the count. */
+function sayBonds(bonds: readonly BondDef[], lead = ''): string {
+  const b = bonds[0] as BondDef;
+  if (bonds.length === 1) return fits([`${lead}${b.name}: ${b.perk}`, `${lead}${b.name}`, `${lead}1 BOND`]);
+  return fits([`${lead}${bonds.map((x) => x.name).join(', ')}`, `${lead}${bonds.length} BONDS`]);
+}
+
+/** The line under the legend, or null when there is nothing to say. `preview` is a bond the hero under the cursor would bring if picked. */
+export interface BondLine { text: string; preview: boolean }
+
+/**
+ * What the bond line says. On an unpicked hero who would complete a bond with the party, it previews it (ADDS ...). On a picked hero
+ * with bonds, it names theirs. Anywhere else it lists the party's bonds, and with none it is silent.
+ */
+export function bondLine(s: PicksState): BondLine | null {
+  const id = heroAt(s);
+  if (id && !s.picked.includes(id) && s.picked.length < PARTY_SIZE) {
+    const gained = gainedBonds(s.picked, [...s.picked, id]);
+    if (gained.length > 0) return { text: sayBonds(gained, 'ADDS '), preview: true };
+  }
+  const all = bondsOfParty(s);
+  const mine = id ? all.filter((b) => b.heroes.includes(id)) : [];
+  const show = mine.length > 0 ? mine : all;
+  return show.length > 0 ? { text: sayBonds(show), preview: false } : null;
+}
 
 // ---------------------------------------------------------------- the cursor
 const rowsCount = (n: number): number => Math.ceil(n / COLS);
@@ -173,8 +223,9 @@ export interface PicksLayout {
   /** The first card's top left. */
   x0: number; y0: number;
   start: Rect;
-  /** Top of the one-line legend, level with START's label. */
+  /** Top of the one-line legend, level with the top of START, and of the bond line under it. */
   legendY: number;
+  bondY: number;
   /** Offsets inside a card: the face's top, the gate word's, and the mark under the face (LEAD, the party number, the lock). */
   top: number; gateY: number; markY: number;
 }
@@ -188,7 +239,7 @@ export function picksLayout(n: number): PicksLayout {
   const py = Math.round(TOP_H + (BAND_Y - TOP_H - ph) / 2);
   return {
     rows, compact, panel: { x: 4, y: py, w: 248, h: ph }, cw: 74, ch, gx: 80, gy, x0: 11, y0: py + 17,
-    start: { x: 11, y: py + startDy, w: 56, h: 11 }, legendY: py + startDy + 3,
+    start: { x: 11, y: py + startDy, w: 56, h: 11 }, legendY: py + startDy, bondY: py + startDy + 6,
     top: compact ? 4 : 5, gateY: compact ? 25 : 26, markY: compact ? 32 : 34,
   };
 }

@@ -9,9 +9,9 @@ import { floater, sfx, sparks } from '../combat/fx.ts';
 /** Frames a hero must go without taking damage before Hair of steel covers the next hit. */
 export const HAIR_FRAMES = 300;
 
-/** The DEF a hero fights with now: Babysit lifts the whole party's. */
+/** The DEF a hero fights with now: bonds, and Babysit lifts the whole party's. */
 export function heroDef(s: S, h: Hero): number {
-  return h.st.def * (s.babysit > 0 ? 1 + HERO_DEFS.steve.special.x.partyDef : 1);
+  return h.st.def * (1 + h.bond.def) * (s.babysit > 0 ? 1 + HERO_DEFS.steve.special.x.partyDef : 1);
 }
 
 /**

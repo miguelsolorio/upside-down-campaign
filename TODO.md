@@ -2,6 +2,18 @@
 
 Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy and the Mind Flayer), the end of chapter 3 and of this build. Hopper leaves, `starcourt` goes sour near the boss, and the chapter ends on an epilogue. The pass before it built Levels 7 and 8 and Erica's cart.
 
+## This pass (bonds)
+
+- [x] Rules: `heroes/bonds.ts`, pure. Five bonds live (Friends don't lie, Party of four, Mad Max, Babysitter's club, Scoops troop), Chief and kid and Hellfire in the data with `on: false` so chapter 4 only flips them. A bond counts while every member is in the party, led or benched, up or down. See `docs/bonds.md`
+- [x] Combat: one hook, `applyBonds` (`combat/bonds.ts`), writes `hero.bond` each tick when the roster changed. ATK (`heroAtk`), the crit roll, DEF (`heroDef`) and the speed factor read it, Babysit heals Dustin (`babysitHeal`), and a hit on Eleven under Mike's DM screen is halved from any side within 32 px (`screenCovers`)
+- [x] Showing them: green corner tags and a bond line (with an ADDS preview) on the picks panel, a BONDS block of up to three lines on the character sheet (the stats and moves moved down, `MOVE_PITCH` 18), and a callout under the HUD for 4 s when a stage starts with one or a recruit completes one (`world/bondbanner.ts`). The tiny font gained `' + % , : . -`
+- [x] Balance on HARD, 100 seeds: only 1.2, 2.3 and 3.3 went outside a band, and were pulled back with `enemyMult` (1.3 to 1.36, 1 to 1.04, 1.6 to 1.65). 1.3, 2.1 and 2.2 hold their bands as they are; 1.1, 3.1 and 3.2 did not move
+- [x] Pace: the carried run's mean did not move (1642 XP for the lead after chapter 3, 1641 with bonds), but the ten seeds `tests/pace.test.ts` reads dipped under its floor, so 3.3's `xpMult` went from 2 to 2.25 and four Dustin lines in `ARRIVAL` moved. `pace.test.ts` is green
+- [x] Tests: `tests/bonds.test.ts` and `tests/bonds-combat.test.ts` (rules, data, picks, sheet, callout, the sim). Five old tests read numbers bonds change and moved with them: the burst's first sweep, the Demogorgon's stun, the Flayer's open head, the Grigori bot's window (1800 to 1500 frames) and the 3.3 scene test's seed (15 to 21)
+- [ ] Owner plays it: the picks panel's tags and line, the sheet, the callout, and whether Friends don't lie covering Eleven reads right
+- [ ] Chapter 4 switches on Chief and kid and Hellfire (`docs/bonds.md`, "Chapter 4"): flip `on`, add `hopper` and `eddie` to `HeroId`, read `hero.bond.solo` in the Hellfire solo, update the "off" assertions in `tests/bonds.test.ts`, re-measure the stages
+- [ ] Party of four is the quietest bond (+8% DEF is about 3% less damage taken, since DEF counts half). A call for the owner: raise it, or leave it as the spec wrote it
+
 ## This pass (level 9)
 
 - [x] Owner's calls (2026-10-15): Eleven is locked in. Hopper is an npc who leaves to go down to the Key, and the machine's boom takes him; he isn't playable yet. The Mind Flayer is the legs fight (four legs slam telegraphed lines, cut all four and the head comes down). Billy is phase one of the boss in the same arena, pinned at 0 HP until Eleven reaches him. The chapter ends on Hopper's letter, then CHAPTER THREE CLEAR with the feedback note, then the map with nothing ahead
@@ -236,4 +248,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Next: chapters 4 and 5, the other heroes, bonds, the Lv 9 talents (Max's is open), the remaining tracks, docs polish.
+Next: chapters 4 and 5, the other heroes, the Lv 9 talents (Max's is open), the remaining tracks, docs polish.

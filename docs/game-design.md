@@ -81,6 +81,14 @@ Between stages there's a Hawkins map screen (Mario 3 style) for party picks, the
 - **Dart** stays: Dustin found him in 2.1 and he grew in 2.2, so Lv 6 pays that off.
 - Nancy opens `burn` from Lv 6, and her picks card says SHOOT BURN.
 
+**The Lv 9 talents as built** (the Sim pass after the Lv 6 ones; Hopper's and Eddie's come with their kits). Where the table left the how open:
+- **Overload** widens Mind Blast's beam from 8 to 14 px half width and stuns every foe it crosses for 1 s (a boss shrugs the stun off, as it does every stun). **Volley** is five rocks 14 degrees apart, each as strong as a Triple shot rock, and Camo still rides on the cast.
+- **Passives.** King Steve (under 30% of his max HP, +30% ATK, burns included) and Final girl (Nancy up, two other heroes down, +40% ATK) read in `heroAtk`, and float a callout when they switch on. **Dry wit** is party-wide, like Cold spot: while Robin is in the party and up, bench included, any hero's hit on a confused foe is 25% bigger.
+- **Oath and Extra life catch a fall**, in `reapHeroes`, before the KO is made, so a curse that takes a hero to 0 HP is caught too. Extra life leaves Max at 1 HP with 2 s of invulnerability, and it is not a KO: no `heroKO`, no body, no count in the results, and a lone Max does not end the run. A Flayed holding her lets go. Oath is automatic: while Mike stands, the first ally to fall in a stage gets up 1.5 s later at half HP beside the leader. If Mike falls in that beat, nobody is raised and the oath is not spent. Mike himself is not raised by it.
+- **Cerebro** is a held Special for Dustin, like the Lv 6 variants, until Suzie has been called: then his Special casts on the press again. It costs no MP, fills every living hero's MP by 30% of their max, and plays the `decode` keypad run, three rings and a SUZIE floater (no new sprite or sound).
+- **Hive link** rides on a charged swap to Will, as Ahoy does for Steve: for 8 s, while he is the active hero, a hidden path within 320 px of him shows as if he stood beside it (Sensory tank reaches 160). A quick swap does not start it, and tagging out ends it.
+- **Once a stage** means the flag lives in `S.t6`: a new stage and a retry both build the sim afresh, and getting up from a wipe in the sim (`healParty`) resets it. The HUD view says `once: 'ready' | 'spent'` for Mike, Dustin and Max, which the bot reads for Cerebro. The sheet's rows are three talents and three moves, so `MOVE_PITCH` is 16.
+
 **Voice and look.** Every line is original. The only borrowed phrases are nods, like a bond named after Mike's promise to Eleven and Steve's "Ahoy."
 
 | Hero | How they talk | Sprite signature | Speech blip |
@@ -111,7 +119,7 @@ Checked against Netflix's season 5 cast guide (Mike paladin, Will cleric, Lucas 
 |---|---|---|
 | Move | WASD / arrows | Eight-way |
 | Attack | Z / J | Hero's basic. Melee chains three hits |
-| Special | X / K | Costs MP. Hold for the Lv 6 variant where a hero has one |
+| Special | X / K | Costs MP. Hold for the Lv 6 variant (and Dustin's Lv 9 Cerebro) where a hero has one |
 | Swap | C (back), V (next), 1–4 or a click on a portrait (pick) | Swap as fast as you can tap, with a 0.1 s lock between swaps. A swap after 1.5 s without one also gives the incoming hero 20 frames of invulnerability and a small shockwave |
 | Crit | Space (when nothing is in reach to light), U / B | When the d20 meter is full |
 | Talk, light | Space / Enter | Interact |

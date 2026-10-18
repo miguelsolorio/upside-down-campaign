@@ -63,7 +63,10 @@ function castVariant(s: S, h: Hero): void {
 function tryActions(s: S, h: Hero, input: SimInput): void {
   const def = HERO_DEFS[h.id];
   const casting = h.act === 'special' && h.actT > 0;
-  if (holdsSpecial(h) && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
+  const holds = holdsSpecial(s, h);
+  // Cerebro spent mid-hold leaves the key down with nothing to read: forget the hold, the press is already used.
+  if (!holds) h.holdT = 0;
+  if (holds && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
     castVariant(s, h);
     return;
   }

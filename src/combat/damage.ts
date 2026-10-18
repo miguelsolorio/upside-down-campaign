@@ -16,6 +16,7 @@ import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { rallyMul } from '../heroes/rally.ts';
+import { atk9, witBonus } from '../heroes/talents9.ts';
 import { screenCovers } from './bonds.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
@@ -41,9 +42,9 @@ export function spreadRoll(rng: Rng): number {
   return SPREAD_LO + (SPREAD_HI - SPREAD_LO) * rng();
 }
 
-/** A hero's ATK right now, with bonds and Inspiration. */
+/** A hero's ATK right now, with bonds, Inspiration, Rally and the Lv 9 talents of Steve and Nancy. */
 export function heroAtk(s: S, h: Hero): number {
-  return h.st.atk * (1 + h.bond.atk) * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s);
+  return h.st.atk * (1 + h.bond.atk) * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s) * atk9(s, h);
 }
 
 export interface HitOpts {
@@ -118,6 +119,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
+  // Robin's Dry wit makes a confused foe take a quarter more.
+  if (e.stat.confuse > 0) dmg = Math.round(dmg * witBonus(s, e));
   const dealt = Math.min(dmg, e.hp);
   e.hp -= dmg;
   e.flash = 1;

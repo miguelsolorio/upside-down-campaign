@@ -9,7 +9,7 @@ const GLYPH = 6;
 
 /** The panel under the tabs, and the content inside it: the portrait at LEFT, names and notes from TEXT_X, numbers
  * right-aligned to RIGHT. */
-export const PANEL: Rect = { x: 8, y: 42, w: 240, h: 164 };
+export const PANEL: Rect = { x: 8, y: 42, w: 240, h: 170 };
 
 /** A tab per hero across the top, as wide as the panel: a small face and the name in the tiny font. */
 export const TAB_COUNT = HERO_IDS.length;
@@ -40,18 +40,18 @@ export const BOND_LABEL_Y = 77;
 
 /** Two rows of three stats. A label, then the value STAT_VALUE_DX to its right, then any d20 bonus. */
 export const STAT_COLS = [LEFT, 92, 168] as const;
-export const STAT_ROWS = [90, 99] as const;
+export const STAT_ROWS = [89, 98] as const;
 export const STAT_VALUE_DX = 30;
-export const RULE_Y = 109;
+export const RULE_Y = 107;
 
-/** One move per MOVE_PITCH: the kind and name, its cost and damage, and a note line NOTE_DY under it. Five rows (basic, special,
- *  Crit and two talents) end above FOOT_Y. */
-export const MOVES_Y = 113;
-export const MOVE_PITCH = 18;
-export const NOTE_DY = 9;
+/** One move per MOVE_PITCH: the kind and name, its cost and damage, and a note line NOTE_DY under it. Six rows (basic, special,
+ *  Crit and three talents) end above FOOT_Y. */
+export const MOVES_Y = 111;
+export const MOVE_PITCH = 16;
+export const NOTE_DY = 8;
 
 /** The footer: how to switch heroes on the left, the back button on the right. */
-export const FOOT_Y = 212;
+export const FOOT_Y = 214;
 
 export function tabRect(i: number): Rect {
   return { x: TAB_X0 + i * (TAB_W + TAB_GAP), y: TAB_Y, w: TAB_W, h: TAB_H };

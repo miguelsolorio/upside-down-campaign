@@ -156,3 +156,7 @@ Bonds (`docs/bonds.md`) change what a party does inside a stage, so every stage 
 | 3.1 | 207 | 0.0 | 6.4 | 6 | 4.69 |
 | 3.2 | 238 | 0.0 | 7 | 6 | 5.26 |
 | 3.3 | 630 | 0.0 | 8 | 7 | 6.29 |
+
+## Lv 9 talents
+
+The Lv 9 talents (`docs/game-design.md`, "The Lv 9 talents as built") only matter to a hero at Lv 9 or more, and none gets there in the nine stages built: the carried run's lead ends 3.3 at Lv 8 (8.0, 7 to 8 over 20 seeds). So `node scripts/measure-campaign.ts chief 20` and `measure-stage.ts` 3.1, 3.2 and 3.3 on chief came back to the digit, every band as it was and no `enemyMult` touched. Chapters 4 and 5 are where Lv 9 to 12 heroes play, and their stages are measured with the talents on. Forcing a party to Lv 9 (`--party=mike:9,...`) makes 3.1 to 3.3 a little easier and clears all 20 runs (`TODO.md`, "Lv 9 talents").

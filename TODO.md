@@ -66,6 +66,19 @@ Scope for this pass: Level 9 (stage 3.3, the Starcourt food court, Flayed Billy 
 - [ ] Owner plays the talents by hand, the hold above all
 - [ ] The bot's screen rule: Mike stops for the DM screen with two foes in reach, and the cast slows him, so on NORMAL 3.1 the bot takes 182 damage, not 77. A rule that raises it before contact may play better, and would need the stages measured again
 
+## Lv 9 talents
+
+- [x] Built for the nine heroes, each with a NEW TALENT callout and a character sheet line (`TALENTS`, `LV9`): Overload, Oath, Cerebro, Volley, Hive link, King Steve, Final girl, Max's Extra life and Robin's Dry wit. Hopper's and Eddie's come with their kits and add their own entries. The record, and where the table left the how open, is "The Lv 9 talents as built" in `docs/game-design.md`
+- [x] In `heroes/`: `oath.ts`, `cerebro.ts`, `hive.ts`, `extralife.ts` and `talents9.ts` (King Steve, Final girl, Dry wit, the HUD's `once`), Overload in `eleven.ts`, Volley in `lucas.ts`. Their flags and the Hive clock are in `combat/talent_state.ts`. Extra life and Oath are asked in `reapHeroes`; Hive link starts in `trySwap`; Cerebro is a held Special for Dustin until Suzie is called (`holdsSpecial` takes the sim now). Once a stage resets on a stage start and a retry (the sim is built afresh) and on getting up from a wipe (`resetTalentState`)
+- [x] The sheet holds six rows now (three moves, three talents): `MOVE_PITCH` 16, `NOTE_DY` 8, the panel two rows taller and the stats and rule a row higher. `PartyHud.once` is the one new field on the view
+- [x] Bot: Dustin holds Special for Cerebro once a stage when the living party is under 55% of its MP. The rest need no input (Oath and Extra life catch a fall, Hive link comes with any swap to Will)
+- [x] Tests: `tests/talents9.test.ts`, `talents9-lives.test.ts` (24: each unlocks at 9 and not 8, does what it says, once a stage resets on a stage and a retry, the defense is left alone, the bot's Cerebro). `progression`, `heroes`, `will`, `charsheet` and `bonds` tests moved from two talents to three
+- [x] Measured on HARD (`chief`, 20 seeds, `scripts/measure-campaign.ts` and `measure-stage.ts` 3.1 to 3.3): bit for bit what it was. No hero reaches Lv 9 in the nine stages (the lead ends 3.3 at Lv 8), so nothing moved and no `enemyMult` changed. With every hero forced to Lv 9 (`--party=...:9`) the stages still clear 20 of 20, a little easier: 3.3 damage 126 to 109 for Mike, Dustin, Robin and Eleven, and 3.1 147 to 110 and 3.2 294 to 196 for Lucas, Max, Steve and Will (3.3 with Lucas, Eleven, Steve and Will 140 to 146)
+- [x] Verified in the browser (muted, 3.1 at Lv 9, `?level=9`): the sheet's six rows for Mike, Lucas, Eleven and Will, and Dustin's hold calling Suzie (rings, SUZIE and MP +30%). No console errors
+- [ ] Owner plays the Lv 9 talents by hand: the Cerebro hold, Oath's beat before the ally stands, Hive link on a swap
+- [ ] Chapter 4's curse must take a hero to 0 HP and let `reapHeroes` notice, or Extra life will not catch it
+- [ ] Re-measure the chapter 4 and 5 stages with the Lv 9 talents on (heroes reach Lv 9 to 12 there)
+
 ## Difficulty pass (NORMAL and HARD, Starcourt eased)
 
 - [x] Owner's calls (2026-10-15): NORMAL is easier and the default, HARD is today's balance (`chief`), unchanged. Starcourt is eased only where it spikes against the chapter 1 and 2 curve
@@ -250,4 +263,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Next: chapters 4 and 5, the other heroes, the Lv 9 talents (Max's is open), the remaining tracks, docs polish.
+Next: chapters 4 and 5, the other heroes (and their Lv 9 talents), the remaining tracks, docs polish.

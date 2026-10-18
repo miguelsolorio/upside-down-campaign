@@ -238,7 +238,7 @@ test('sheet: the bond lines sit between the role and the stats, and the moves st
   assert.ok(BOND_Y >= 69, 'under the 7 px role line');
   assert.ok(lastBond < (STAT_ROWS[0] as number), `${lastBond} against the stats at ${STAT_ROWS[0]}`);
   assert.ok((STAT_ROWS[1] as number) + 7 < RULE_Y && RULE_Y < MOVES_Y, 'stats, then the rule, then the moves');
-  const lastNote = MOVES_Y + 4 * MOVE_PITCH + NOTE_DY + 7;
+  const lastNote = MOVES_Y + 5 * MOVE_PITCH + NOTE_DY + 7;
   assert.ok(lastNote <= PANEL.y + PANEL.h - 2, `the last note ends at ${lastNote}, the panel at ${PANEL.y + PANEL.h}`);
   assert.ok(PANEL.y + PANEL.h < FOOT_Y);
   assert.ok(MOVE_PITCH >= NOTE_DY + 7 + 1, 'a note never touches the next move');

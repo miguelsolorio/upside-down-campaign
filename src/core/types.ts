@@ -211,6 +211,8 @@ export interface PartyHud {
   /** What the hero's special costs, so the MP bar can show casts. */
   mpCost: number;
   xp: number; xpNext: number; ko: boolean; active: boolean;
+  /** A Lv 9 talent that works once a stage (Mike's Oath, Dustin's Cerebro, Max's Extra life): ready, or spent. Absent for anyone without one. */
+  once?: 'ready' | 'spent';
 }
 export interface HudView {
   party: PartyHud[];

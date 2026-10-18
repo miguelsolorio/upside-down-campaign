@@ -20,7 +20,7 @@ The lead walks into 5.1 at Lv 10 (chapter 4's target). Lv 11 after 5.2, and the 
 
 ## Lv 9 talents
 
-The heroes reach Lv 9 to 12 in this chapter, so the Lv 9 talents are built with it, from the Heroes table in `docs/game-design.md` (Overload, Oath, Cerebro, Volley, Hive link, Extra life for Max, King Steve, Final girl, Robin's and Hopper's third). They follow the Lv 3 and Lv 6 pattern in `src/progression/talents.ts`.
+The heroes reach Lv 9 to 12 in this chapter, so the Lv 9 talents are built with it, from the Heroes table in `docs/game-design.md` (Overload, Oath, Cerebro, Volley, Hive link, Extra life for Max, King Steve, Final girl, Robin's and Hopper's third). They follow the Lv 3 and Lv 6 pattern in `src/progression/talents.ts`. The nine heroes' are built (`docs/game-design.md`, "The Lv 9 talents as built"); Hopper's and Eddie's come with their kits.
 
 ## Foes
 

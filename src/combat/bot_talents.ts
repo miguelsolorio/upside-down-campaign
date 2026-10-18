@@ -6,11 +6,14 @@
 //   - Will, from Lv 6, holds Special for the Cleric heal when the party is under half its HP, and not again for the heal's 10 s.
 //   - Nancy, from Lv 6, holds Special for the Molotov when two foes stand together 30 to 64 px out.
 //   - Eleven, from Lv 6, holds Special for Sensory tank between fights, at most every 20 s, keeping MP for a Mind Blast.
+//   - Dustin, from Lv 9, holds Special for Cerebro once a stage, when the living party is under 55 percent of its MP (the HUD's
+//     `once` says whether Suzie is still to call). The other Lv 9 talents need no input: Overload, Volley, King Steve, Final girl and
+//     Dry wit are in the moves and the damage, Oath and Extra life catch a fall, and Hive link comes with a swap to Will.
 // A hold keeps Special down for HOLD_FRAMES and two more, whatever else the bot does meanwhile, then lets go.
 import type { HeroId, PartyHud, SimInput, SimView } from '../core/types.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import { HOLD_FRAMES } from '../heroes/hold.ts';
-import { LV6 } from '../progression/talents.ts';
+import { LV6, LV9 } from '../progression/talents.ts';
 
 /** What bot.ts knows about a foe that the casting rules read. */
 export interface CastFoe { x: number; y: number; kind: string; d: number; burning: boolean }
@@ -35,6 +38,15 @@ const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hy
 const isGuard = (kind: string): boolean => kind === 'guard' || kind === 'warden';
 /** Frames between the bot's Sensory tanks. */
 const SENSE_GAP = 1200;
+/** Cerebro is worth a call when the living party holds under this share of its MP. */
+const SUZIE_BELOW = 0.55;
+
+/** The share of its MP the living party holds. 1 for an empty party. */
+function partyMp(v: SimView): number {
+  const up = v.hud.party.filter((p) => !p.ko);
+  const max = up.reduce((n, p) => n + p.mpMax, 0);
+  return max > 0 ? up.reduce((n, p) => n + p.mp, 0) / max : 1;
+}
 
 /** The plain Special: is it worth casting now? */
 function wantsSpecial(me: PartyHud, s: CastScene): boolean {
@@ -95,6 +107,7 @@ export function createCaster(): Caster {
         out.specialHeld = holdLeft > 0;
         return;
       }
+      if (me.id === 'dustin' && me.level >= LV9 && me.once === 'ready' && partyMp(v) < SUZIE_BELOW) { startHold(out); return; }
       const x = HERO_DEFS.eleven.special;
       if (me.id === 'eleven' && me.level >= LV6 && calm && me.mp >= x.x.senseMp + x.mp && frame - senseAt >= SENSE_GAP) {
         senseAt = frame;

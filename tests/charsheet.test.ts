@@ -80,7 +80,7 @@ test('crit chance: 5 percent, Lucas and Eleven a little more, and Sharp eye adds
   assert.equal(Math.round(heroSheet('eleven', 1).crit * 100), 7);
 });
 
-test('each talent line is locked until its level, Lv 3 then Lv 6', () => {
+test('each talent line is locked until its level, Lv 3, Lv 6 then Lv 9', () => {
   const talentRows = (id: HeroId, level: number): SheetMove[] => heroSheet(id, level).moves.filter((m) => m.kind === 'talent');
   for (const id of HERO_IDS) {
     TALENTS[id].forEach((t, i) => {
@@ -91,7 +91,7 @@ test('each talent line is locked until its level, Lv 3 then Lv 6', () => {
       assert.equal(at.note, t.text);
       assert.equal(at.level, t.level);
     });
-    assert.equal(talentRows(id, 1).length, 2, `${id} shows both talents from Lv 1`);
+    assert.equal(talentRows(id, 1).length, 3, `${id} shows all three talents from Lv 1`);
   }
 });
 

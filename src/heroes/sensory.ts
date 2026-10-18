@@ -9,6 +9,7 @@ import { activeHero } from '../combat/state.ts';
 import { dist } from '../combat/space.ts';
 import { addFx, floater, sfx } from '../combat/fx.ts';
 import { beginAct } from './common.ts';
+import { linked } from './hive.ts';
 
 /** Casts it. The caller has taken the MP. */
 export function sensoryTank(s: S, h: Hero): void {
@@ -26,8 +27,10 @@ export function sensing(s: S, x: number, y: number): boolean {
   return h.id === 'eleven' && !h.ko && s.t6.sense > 0 && dist(h.x, h.y, x, y) <= HERO_DEFS.eleven.special.x.senseR;
 }
 
-/** How far the active hero senses a `hidden` path: `base`, or Sensory tank's reach while it runs. */
+/** How far the active hero senses a `hidden` path: `base`, Sensory tank's reach while it runs, or Will's Hive link's (hive.ts). */
 export function senseRange(s: S, base: number): number {
   const h = activeHero(s);
-  return h.id === 'eleven' && !h.ko && s.t6.sense > 0 ? HERO_DEFS.eleven.special.x.senseR : base;
+  if (h.ko) return base;
+  if (h.id === 'eleven' && s.t6.sense > 0) return HERO_DEFS.eleven.special.x.senseR;
+  return linked(s) ? Math.max(base, HERO_DEFS.will.special.x.hiveR) : base;
 }

@@ -2,7 +2,8 @@
 // is still shut, or pushes against one. The sim only reports the attempt, as `{ t: 'poked', propId, hero }`, whichever
 // hero it was. The stage decides whether that hero was the wrong one for the puzzle and shows the hint (see
 // world/puzzles.ts). A pinned Demogorgon reports the same event for a hit that is not Eleven's beam (enemies/demo_hit.ts).
-// A gap, a crack and a cipher door are the exception: the hero who solves them (Max's dash, Steve's nail bat, Robin) never pokes them.
+// A gap, a crack, a cipher door, a mirror and a clock are the exception: the hero who solves them (Max's dash, Steve's nail bat or Hopper's
+// fists, Robin, Eddie's riff) never pokes them.
 // A try at a prop that only knocked-out heroes can open stands the first of them back up (standFor), so a gate never
 // waits on a hero who is out.
 import type { HeroId, PropKind, Utility } from '../core/types.ts';
@@ -11,9 +12,9 @@ import { FOOT_H, FOOT_W, angleDiff, dist, propBlocks, rectsOverlap } from './spa
 import { HERO_DEFS, utilitiesAt } from '../heroes/defs.ts';
 
 /** Props that can be a puzzle. A crate, van or lantern only counts if it asks for something: a decor crate does not. */
-const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack', 'shutter', 'cipher', 'breaker']);
+const PUZZLE_KINDS = new Set<PropKind>(['gate', 'door', 'log', 'crate', 'van', 'target', 'console', 'vines', 'firebox', 'hidden', 'gap', 'crack', 'shutter', 'cipher', 'breaker', 'mirror', 'clock']);
 /** Props whose own hero is not "trying" them when he goes at them: it is how they are solved. Robin walks up to a cipher door. */
-const SOLVED_BY_TRY = new Set<PropKind>(['gap', 'crack', 'cipher']);
+const SOLVED_BY_TRY = new Set<PropKind>(['gap', 'crack', 'cipher', 'mirror', 'clock']);
 /** Frames before the same prop reports another attempt. */
 const POKE_GAP = 45;
 /** Frames of pushing against a shut prop before it counts as trying it. A third of a second. */

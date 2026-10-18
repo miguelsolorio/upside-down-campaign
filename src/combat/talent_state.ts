@@ -1,12 +1,17 @@
 // What the Lv 6 talents keep between frames, kept apart from state.ts so the sim state stays readable. S.t6 holds one of these.
-// The talents themselves are in src/heroes (rally.ts, dart.ts, camo.ts, sensory.ts, cleric.ts, ahoy.ts, molotov.ts).
+// The talents themselves are in src/heroes (rally.ts, dart.ts, camo.ts, sensory.ts, cleric.ts, ahoy.ts, molotov.ts). Eddie's solo and marks
+// (eddie_solo.ts, hellfire.ts) and Hopper's queued wind-up (hopper.ts) keep their clocks here too.
 import type { Dir } from '../core/types.ts';
+import type { Hero } from './state.ts';
 
 /** Dustin's Dart while he is out (heroes/dart.ts). `target` is the uid he is after, -1 for none. */
 export interface Pet { x: number; y: number; dir: Dir; age: number; life: number; bite: number; target: number; t: number }
 
 /** Steve's Ahoy leap while it flies (heroes/ahoy.ts): from (sx, sy) to (tx, ty), `t` of `n` frames. */
 export interface Leap { sx: number; sy: number; tx: number; ty: number; t: number; n: number }
+
+/** Eddie's Hellfire solo while he plays (heroes/eddie_solo.ts): `t` frames into the stand of `life`, the ring's radius, the frame it began on. */
+export interface Stand { hero: Hero; t: number; life: number; ring: number; born: number }
 
 export interface TalentState {
   /** Frames of Mike's Rally left: the party's ATK is up. */
@@ -21,10 +26,16 @@ export interface TalentState {
   healCd: number;
   /** Steve's Ahoy leap while it flies. */
   leap: Leap | null;
+  /** Eddie's solo while he plays. */
+  stand: Stand | null;
+  /** Eddie's Hellfire DM marks: the uid of a marked boss or elite and the frames its mark has left. */
+  marks: Map<number, number>;
+  /** Frames a Wind-up haymaker released into a cooldown still waits to fire (heroes/hopper.ts). */
+  windQ: number;
 }
 
 export function newTalentState(): TalentState {
-  return { rally: 0, dart: null, dartRest: 0, camo: 0, camoCd: 0, sense: 0, healCd: 0, leap: null };
+  return { rally: 0, dart: null, dartRest: 0, camo: 0, camoCd: 0, sense: 0, healCd: 0, leap: null, stand: null, marks: new Map(), windQ: 0 };
 }
 
 /** Getting up after a wipe: what was in flight goes, and the timers start over. */

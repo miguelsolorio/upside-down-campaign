@@ -22,6 +22,8 @@ import { coldSpot } from '../heroes/cold.ts';
 import { chargeOf } from '../heroes/hold.ts';
 import { camoHides } from '../heroes/camo.ts';
 import { petBiting } from '../heroes/dart.ts';
+import { isMarked } from '../heroes/hellfire.ts';
+import { soloHud } from '../heroes/eddie_solo.ts';
 
 let shakeScale = 1;
 let reduceFlash = false;
@@ -56,6 +58,7 @@ function enemyView(s: S, e: Enemy): ActorView {
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
   if (e.elite) v.elite = true;
+  if (!e.dead && isMarked(s, e)) v.marked = true;
   if (e.stat.confuse > 0 && !e.dead) v.confused = true;
   if (isShielded(e)) v.guarding = guarding(e);
   // A hidden enemy is faint until Cold spot has it or it strikes. Revealed, it says so, so gfx can tell the two apart.
@@ -224,8 +227,8 @@ export function buildView(s: S): SimView {
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
       ward: wardHud(s),
       stash: { ...s.stash },
-      // Stand-ins until Sim builds the solo and the Walkman (docs/level-11.md).
-      solo: null,
+      solo: soloHud(s),
+      // A stand-in until Sim builds the Walkman (docs/level-11.md).
       walkman: null,
     },
     focus: { x: a.x, y: a.y },

@@ -1,6 +1,6 @@
 # Level 11 spec: stage 4.2, the Hellfire Club and the Creel House
 
-One stage, five to eight minutes. Spring 1986, back in Hawkins. Eddie Munson joins the party in the Hellfire Club, Max gets her Walkman back, and the party crosses town at night to the Creel House, where Creel ghouls step out of haunted mirrors and a grandfather clock teaches the curse that runs through the rest of the chapter. The stage ends when the party gets out of the house. Sim builds Eddie, the ghoul, the mirrors, the clock, the curse and the Walkman. Art draws Eddie, the ghoul, the Hellfire Club in Storm, the Creel House in Abandoned with its Blood red memory skin, the mirrors and the clock. World builds the map, the beats and the words. Audio writes the new effects and Eddie's voice. UI builds the solo's streak and the curse on the HUD, and picks with ten heroes. Ids below are fixed. Every agent reads this file, `docs/chapter-4.md`, `docs/level-10.md` (Hopper, and what chapter 4 changed in the campaign), `docs/level-7.md` (the picks and the stash) and `docs/technical-architecture.md`. Types are in `src/core/types.ts` and `src/world/types.ts`, tile chars in `src/core/tiles.ts`.
+One stage, five to eight minutes. Spring 1986, back in Hawkins. Eddie Munson joins the party in the Hellfire Club, Max gets her Walkman back, and the party crosses town at night to the Creel House, where Creel ghouls step out of haunted mirrors and a grandfather clock teaches the curse that runs through the rest of the chapter. The stage ends when the party gets out of the house. Sim builds Eddie, the ghoul, the mirrors, the clock, the curse and the Walkman. Art draws Eddie, the ghoul, the Hellfire Club in Storm, the Creel House in Abandoned with its Blood red memory skin, the mirrors and the clock. World builds the map, the beats and the words. Audio writes the new effects and Eddie's voice. UI builds the curse and the Walkman on the HUD, and picks with ten heroes. Ids below are fixed. Every agent reads this file, `docs/chapter-4.md`, `docs/level-10.md` (Hopper, and what chapter 4 changed in the campaign), `docs/level-7.md` (the picks and the stash) and `docs/technical-architecture.md`. Types are in `src/core/types.ts` and `src/world/types.ts`, tile chars in `src/core/tiles.ts`.
 
 ## Owner's calls (docs/chapter-4.md)
 
@@ -16,7 +16,7 @@ One stage, five to eight minutes. Spring 1986, back in Hawkins. Eddie Munson joi
 
 - **Eddie is locked in** (`REQUIRED`): the route's first mirror needs his riff, and he joins here. He walks in at the level of the party he joins, averaged, less one, the recruit rule as the chapter doc words it (`CATCH_UP`), not the average of the whole pool, which the heroes left behind in chapter 2 drag down.
 - **Hopper is not in the pool.** He is in Kamchatka. The pool is the nine of chapter 3 and Eddie.
-- **The solo without the highway.** The note highway waits for 4.3. Here the solo is the design table's: a six second stand that pulses a ring on the beat, and Attack pressed on a pulse crits and widens the ring. The rules for hits, misses and the streak are the highway's, on one lane, so 4.3 adds the lanes and the picture on top.
+- **The solo is a stand-in.** The note highway is a module of its own, built by the session that runs the build (`src/solo/`), and plugged in later. 4.2's solo is a six second stand that pulses a ring of damage, with the seam ready for the module (see "The Hellfire solo").
 - **The Hellfire bond** (Eddie with Dustin: the solo lasts 2 s longer) is built. It is the first bond in the game; the others are still unbuilt.
 - **Hellfire DM** (Lv 6) marks a boss or an elite Eddie hits, and the party's hits on it deal more. Eddie can reach Lv 6 in 4.2; there is an elite ghoul in the finale.
 - **The two ways out** taught in 4.2 are Max's Walkman and breaking the clock that chimed (the riff at once, or three hits from anyone), as 4.3 will use it. The memory orb waits for 4.4.
@@ -114,14 +114,13 @@ Listed in `puzzles` in `stage42.ts`, in this order.
 
 ### The Hellfire solo
 
+The real solo, the note highway with its charts, its timing and the bot's play, is being built by the session that runs the build as a module of its own (`src/solo/`, `createSolo`), and plugs in later. 4.2 ships a plain stand-in with the seam ready for it (`src/heroes/eddie_solo.ts`: start the stand, one pulse with an optional crit, end the stand).
+
 - **The stand.** For 360 frames (480 with Dustin) he plants his feet and plays: anim `cast` the whole time, movement does nothing, and Special does nothing. A swap away ends it. The MP is spent at the start.
-- **The pulses.** Every 30 frames the ring round him pulses (fx `riff`, sfx `riff`): power 0.4 and knockback 1.5 to every foe in it, and a 40 frame stun to flyers (4.2 has none; the demobats of 4.3 are flyers). The first pulse is on frame 30 of the stand.
-- **The ring** is a radius: it starts at 40 px and moves in steps of 8 between 24 and 72.
-- **On the beat.** Attack pressed within 6 frames of a pulse is a hit: that pulse crits every foe it reaches (the NAT 20 floater) and the ring widens a step after it. Within 2 frames it is perfect (a PERFECT floater; the same effect). The streak counts hits in a row.
-- **Off the beat.** Attack pressed farther than 6 frames from any pulse is a miss: the ring shrinks a step and the streak goes to 0. Three misses in a row end the solo with a squeal of feedback (sfx `feedback`). One press counts once.
-- **No press** is no hit and no miss: the ring pulses at its size.
-- **The view.** `HudView.solo` while he plays: `t` frames into the stand, `life` its length, `streak`, `ring` (the radius in px) and `beat`, frames to the next pulse. UI draws a beat pip that fills toward each pulse and the streak by Eddie's portrait (the highway's place, for 4.3).
-- **The bot** casts it with two or more foes within 56 px, and presses Attack when `beat` is 1 or 0. The careless bot never presses on the beat, so its solo never crits.
+- **The pulses.** Every 30 frames the ring round him pulses (fx `riff`, sfx `riff`): power 0.4 and knockback 1.5 to every foe within 40 px, and a 40 frame stun to flyers (4.2 has none; the demobats of 4.3 are flyers). Each pulse is a riff: it opens a mirror or the clock it reaches.
+- **No timing yet.** Hits on the beat, perfects, misses, the streak, the ring widening and shrinking, and the feedback that cuts a solo short all come with the module.
+- **The view.** `HudView.solo` while he plays: `t`, `life`, `ring` (the radius in px), `beat` (frames to the next pulse), and `streak` 0. The HUD draws nothing for it yet: the module draws its own highway.
+- **The bot** casts it with two or more foes within 56 px.
 
 ## The ghoul
 
@@ -215,7 +214,6 @@ The same bands as `docs/level-3.md`, "Targets", measured on HARD with `node scri
 ## What UI builds for this level
 
 - **Picks with ten heroes.** The pool is ten: the Grid panel needs a layout for ten (and eleven, for chapter 5). Eddie's gate word is RIFF, Hopper's SMASH.
-- **The solo** on the HUD: the beat pip and the streak (see "The Hellfire solo").
 - **The curse** on the HUD: the pips on a cursed hero's slot.
 - **The Walkman** on Max's slot.
 

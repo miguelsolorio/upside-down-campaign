@@ -35,9 +35,11 @@ test('every damage line is the formula at the hero\'s ATK, for every hero and le
   for (const id of HERO_IDS) {
     const def = HERO_DEFS[id];
     for (const level of LEVELS) {
-      const atk = statsAt(def, level).atk;
+      const base = statsAt(def, level).atk;
+      // Eddie's Metalhead (Lv 3) is +10% ATK on every hit, and the sheet counts it.
+      const atk = base * (id === 'eddie' && level >= 3 ? 1.1 : 1);
       const s = heroSheet(id, level);
-      assert.equal(s.stats.atk, atk);
+      assert.equal(s.stats.atk, base);
       const flip = id === 'eleven' && level >= (TALENTS.eleven[0]?.level ?? 3) ? (def.basic.x.flipPower as number) : 1;
       assert.deepEqual(move(id, level, 'basic').dmg, damageRange(def.basic.power * flip, atk, 0), `${id} L${level} basic`);
       if (def.special.power > 0) assert.deepEqual(move(id, level, 'special').dmg, damageRange(def.special.power, atk, 0), `${id} L${level} special`);

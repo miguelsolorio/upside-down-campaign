@@ -6,8 +6,9 @@ import { BURST_POWER } from '../combat/burst.ts';
 import { damageRange } from '../combat/damage.ts';
 import { emptyStats } from '../progression/xp.ts';
 import type { Stats } from '../progression/xp.ts';
-import { TALENTS, hasTalent } from '../progression/talents.ts';
+import { LV6, TALENTS, hasTalent } from '../progression/talents.ts';
 import { HERO_DEFS, critChance, roleAt, statsAt } from './defs.ts';
+import { metalMul } from './hellfire.ts';
 
 export type SheetMoveKind = 'basic' | 'special' | 'crit' | 'talent';
 
@@ -52,7 +53,8 @@ const range = (r: { min: number; max: number }): string => (r.min === r.max ? `$
 function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
   const def = HERO_DEFS[id];
   const b = def.basic, sp = def.special;
-  const hit = (power: number) => damageRange(power, atk, 0);
+  // Eddie's Metalhead is +10% ATK on every hit of his.
+  const hit = (power: number) => damageRange(power, atk * metalMul({ id, level }), 0);
   const basic = (power: number, note: string, hits = 1): SheetMove => ({ kind: 'basic', name: b.name, mp: b.mp, dmg: hit(power), hits, note });
   const special = (dmg: SheetMove['dmg'], note: string, hits = 1): SheetMove => ({ kind: 'special', name: sp.name, mp: sp.mp, dmg, hits, note });
   switch (id) {
@@ -107,11 +109,16 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         basic(b.power, 'Steady shots, aims eight ways'),
         special(hit(sp.power), hasTalent('nancy', level) ? 'Five pellets, drops a bear trap' : 'Five pellets, heavy knockback', sp.x.n),
       ];
-    // Stand-ins until Sim writes Hopper's and Eddie's lines (docs/level-10.md, docs/level-11.md).
     case 'hopper':
-      return [basic(b.power, 'Slow, huge reach'), special(hit(sp.power), 'Shockwave all round, stuns')];
+      return [
+        basic(b.power, hasTalent('hopper', level, LV6) ? `Hold: ${range(hit(b.power * b.x.windPower))}, breaks blocks` : 'Slow, huge arc, breaks cracks'),
+        special(hit(sp.power), `Shockwave all round, stuns ${secs(sp.x.stun)}`),
+      ];
     case 'eddie':
-      return [basic(b.power, 'Wide arc, a sound ring'), special(hit(sp.power), 'Six seconds on the beat')];
+      return [
+        basic(b.power, `Wide arc, sound ring ${range(hit(b.x.ringPower))}`),
+        special(hit(sp.power), `Pulses every ${secs(sp.at)} for ${secs(sp.dur)}`),
+      ];
   }
 }
 
@@ -121,7 +128,7 @@ export function heroSheet(id: HeroId, level: number, bonus: Stats = emptyStats()
   const stats = statsAt(def, level, bonus);
   const moves: SheetMove[] = [
     ...heroMoves(id, level, stats.atk),
-    { kind: 'crit', name: 'Crit', mp: 0, dmg: damageRange(BURST_POWER, stats.atk, 0), hits: 1, note: 'Hits all nearby, through shields' },
+    { kind: 'crit', name: 'Crit', mp: 0, dmg: damageRange(BURST_POWER, stats.atk * metalMul({ id, level }), 0), hits: 1, note: 'Hits all nearby, through shields' },
     ...TALENTS[id].map((t): SheetMove => ({
       kind: 'talent', name: t.name, mp: 0, dmg: null, hits: 1, note: t.text, locked: !hasTalent(id, level, t.level), level: t.level,
     })),

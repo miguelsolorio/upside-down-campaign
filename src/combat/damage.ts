@@ -16,6 +16,7 @@ import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { rallyMul } from '../heroes/rally.ts';
+import { markMul, metalMul } from '../heroes/hellfire.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
 import { dist, distToSegment, BODY_Y } from './space.ts';
@@ -40,9 +41,9 @@ export function spreadRoll(rng: Rng): number {
   return SPREAD_LO + (SPREAD_HI - SPREAD_LO) * rng();
 }
 
-/** A hero's ATK right now, with Inspiration. */
+/** A hero's ATK right now, with Inspiration, Mike's Rally and Eddie's Metalhead. */
 export function heroAtk(s: S, h: Hero): number {
-  return h.st.atk * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s);
+  return h.st.atk * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s) * metalMul(h);
 }
 
 export interface HitOpts {
@@ -58,6 +59,8 @@ export interface HitOpts {
   burn?: { frames: number; tick: number; dmg: number };
   util?: Utility;
   noCrit?: boolean;
+  /** The hit crits, if it gets through a guard: a solo pulse struck on the beat. */
+  crit?: boolean;
   sfx?: SfxId;
   hitstop?: number;
   shake?: number;
@@ -102,7 +105,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const first = s.armed;
   if (!blocked) s.armed = false;
   const fiat = first && by.id === 'mike' && hasTalent('mike', by.level);
-  const crit = !blocked && !o.noCrit && (fiat || critRoll < critChance(HERO_DEFS[by.id], by.level));
+  const crit = !blocked && !o.noCrit && (o.crit === true || fiat || critRoll < critChance(HERO_DEFS[by.id], by.level));
   let dmg = rollDamage(o.power, heroAtk(s, by), e.def, spread);
   if (crit) dmg *= 2;
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
@@ -117,6 +120,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
+  // Eddie's Hellfire DM: a marked boss or elite takes 20 percent more from the whole party.
+  dmg = Math.round(dmg * markMul(s, e));
   const dealt = Math.min(dmg, e.hp);
   e.hp -= dmg;
   e.flash = 1;

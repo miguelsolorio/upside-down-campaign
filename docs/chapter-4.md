@@ -147,7 +147,7 @@ The first half of the chapter is being built (`docs/level-10.md`, `docs/level-11
 - **Hopper's return.** He joins 4.1 at the average of the four best heroes the save has, less one, the recruit rule with "the party" read as the one the player would field (nobody in 4.1's pool has played yet). A real run brings him in at Lv 5. 4.1 replays for XP like any stage, and he keeps his best level.
 - **The split.** Hopper stays in Kamchatka: he is in no pool from 4.2 to 4.4, and comes back in chapter 5. Erica's cart stays open on the map through the split, and the stash rides to Kamchatka in Joyce's care package.
 - **Eddie** is locked in for 4.2 as well as 4.3: the route's first mirror needs his riff, and he joins there. He walks in at the level of the party he joins, averaged and less one, not the whole pool's.
-- **The solo in 4.2** is the design table's, without the highway: a ring pulses on the beat, and Attack pressed on a pulse crits and widens it. The highway's rules for hits, misses and the streak are kept, on one lane, so 4.3 adds the lanes and the picture.
+- **The solo in 4.2** is a stand-in: a six second stand that pulses a ring of damage. The note highway is its own module (`src/solo/`, `createSolo`), built by the session that runs the build and plugged in through the stand-in's seam (`src/heroes/eddie_solo.ts`).
 - **The curse's lesson** in 4.2 takes the active hero, or the next who is neither Eddie nor Max, and teaches two ways out: the Walkman and breaking the clock that chimed.
 - **The Walkman** is the save's from the 4.2 beat, whoever is in the party.
 - **4.2 doesn't end the chapter.** It is the last stage built, so it shows the feedback note, but CHAPTER FOUR CLEAR waits for 4.4.

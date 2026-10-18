@@ -63,7 +63,7 @@ export interface Hero {
   dash: Dash | null;
   /** Frames since this hero last took a hit, capped at 600. Steve's Hair of steel reads it. */
   unhurt: number;
-  /** Frames Special has been held toward a Lv 6 variant (heroes/hold.ts), 0 when it isn't. -1 after the variant fired, until the key comes up. */
+  /** Frames Special has been held toward a Lv 6 variant (heroes/hold.ts), or Hopper's Attack toward his wind-up, 0 when it isn't. -1 after the variant fired, until the key comes up. */
   holdT: number;
 }
 

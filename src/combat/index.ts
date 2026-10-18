@@ -144,6 +144,19 @@
 //   h 24, life 52, t < 40 the warning) across the row the hero stood on, power 1.0 and knockback 4 for a hero in it. Word vomit staggers a leg
 //   30 frames (its slam waits) and does nothing to the body; knockback, the candy bar and traps do nothing to either. At 0 HP the body and its
 //   four legs die in one tick (one groupCleared `flayer`), the pools dry up, the Flayed it sent drop with no kill, and the legs' 0 XP stays 0.
+// - Hopper (heroes/hopper.ts): the Haymaker is a slow punch (cooldown 30, power 1.6, an 80 degree arc either side, no chain, the `haymaker`
+//   sfx) and the Ground slam (8 MP) a 360 degree shockwave of 44 px (a `nova` fx, the `slam` sfx) that stuns every foe 60 frames. Both break
+//   a `crack` prop. The slam's knockback (3.5) and the wind-up's (5) break a guard's block, the haymaker's (2.8) does not. Coffee (Lv 3):
+//   Eggos, Cokes and the stash heal him 25 percent more. Wind-up (Lv 6): his Attack fires when the key comes up. Held 24 frames
+//   (ActorView.charge fills) it is the wind-up haymaker, power x1.8 and knockback 5, and a tap is the plain haymaker. A hit lets go of the hold.
+// - Eddie (heroes/eddie.ts, eddie_solo.ts, hellfire.ts): the Flying V swings a 75 degree arc (the `vswing` sfx) with a `riff` fx ring of 28 px where
+//   the arc ends, which hits a foe the arc missed for 0.5. The arc, the ring and every solo pulse shatter a `mirror` or `clock` prop they reach:
+//   propCleared, the `shatter` sfx and a `glass` fx. The mirror is walkable after, the clock stays solid. The Hellfire solo is a stand-in
+//   (docs/level-11.md): 360 frames planted (480 with Dustin in the party), anim `cast`, a `riff` pulse every 30 frames (power 0.4, knockback 1.5,
+//   40 px) and HudView.solo { t, life, streak 0, ring 40, beat }. A swap or a KO ends it, a hit does not. The seam for the real one is
+//   startStand, pulse(crit) and endStand. Metalhead (Lv 3): +10 percent ATK. Hellfire DM (Lv 6): his hits mark a boss or an elite for 300
+//   frames (ActorView.marked) and every party hit on it deals 20 percent more.
+// - A party of one (Hopper in 4.1) is a swap that does nothing and makes no sound; his KO is allDown.
 // - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;

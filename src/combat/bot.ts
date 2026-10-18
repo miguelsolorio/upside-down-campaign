@@ -7,7 +7,7 @@
 // charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a
 // pod's swell unless a demodog is closing in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it
 // while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
-// are on her (bot_ward.ts). When to cast each hero's Special, and the Lv 6 holds, are in bot_talents.ts. Rifle
+// are on her (bot_ward.ts). When to cast each hero's Special, the Lv 6 holds and Hopper's wind-up are in bot_talents.ts. Rifle
 // bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
 // recovers, with the power box when there is a shooter (bot_grigori.ts). Billy's charge and grab are stepped out of, his wall stun is hit
 // and Eleven is walked up to him once he kneels (bot_billy.ts). Against the Mind Flayer it steps off a warned line, band or pool and hits the
@@ -31,7 +31,7 @@ import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
 import { backOffFrom, slamThreat } from './bot_threat.ts';
-import { createCaster } from './bot_talents.ts';
+import { breaksGuard, createCaster } from './bot_talents.ts';
 
 export interface BotWaypoint extends Vec2 {
   /** Prop id to open when reached. */ open?: string;
@@ -311,6 +311,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     const me = v.hud.party.find((p) => p.active);
     if (!me || me.ko) return out;
     const { x: hx, y: hy } = sim.heroPos();
+    // Eddie's solo plants him: the bot presses nothing until it is over, unless he is hurt enough to swap out (below).
+    if (v.hud.solo && me.hp / me.hpMax >= 0.35) { lastMag = 0; return out; }
     const style = STYLE[me.id];
     let wp: Vec2 | undefined = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
 
@@ -402,7 +404,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
         const shielded = isGuard(near.kind) && near.up && inArc(near, hx, hy);
         const spray = me.id === 'dustin' && shielded && !near.burning && me.mp >= HERO_DEFS.dustin.special.mp;
-        const orbit = shielded && !desperate && !careless && me.id !== 'eleven' && !spray
+        const orbit = shielded && !desperate && !careless && !breaksGuard(me) && !spray
           ? orbitPoint(near, hx, hy, Math.max(style.hold, near.kind === 'warden' ? 46 : 34)) : null;
         if (orbit) {
           [mx, my] = walkTo(hx, hy, orbit[0], orbit[1]);
@@ -421,7 +423,9 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
         if (near.d <= style.reach && aligned && !orbit) {
           out.attackHeld = true;
           // Each hero's Special, and the Lv 6 holds, are in bot_talents.ts.
-          if (frame - lastSpecial > 60 && caster.cast(me, { near, foes, miss, shielded, dart: threat !== null, ward: ward !== null }, out)) lastSpecial = frame;
+          const scene = { near, foes, miss, shielded, dart: threat !== null, ward: ward !== null };
+          if (frame - lastSpecial > 60 && caster.cast(me, scene, out)) lastSpecial = frame;
+          caster.swing(me, scene, out);
         }
       }
       if (v.hud.burstReady && (foes.filter((f) => f.d < 190).length >= 2 || foes.some((f) => (f.pose === 'stun' || f.pose === 'howl') && f.d < 190))) {

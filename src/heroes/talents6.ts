@@ -1,9 +1,11 @@
-// One frame of the Lv 6 talents' clocks, Dart and Steve's leap. The sim runs it right after the active hero acts.
+// One frame of the Lv 6 talents' clocks, Dart and Steve's leap, and of Eddie's solo and his Hellfire DM marks. The sim runs it right after the active hero acts.
 import type { S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
 import { tickHeal } from './cleric.ts';
 import { stepDart } from './dart.ts';
 import { stepLeap } from './ahoy.ts';
+import { stepStand } from './eddie_solo.ts';
+import { tickMarks } from './hellfire.ts';
 
 export function updateTalents(s: S): void {
   const t = s.t6;
@@ -16,4 +18,6 @@ export function updateTalents(s: S): void {
   tickHeal(s);
   stepDart(s);
   stepLeap(s);
+  stepStand(s);
+  tickMarks(s);
 }

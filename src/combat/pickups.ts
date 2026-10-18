@@ -1,9 +1,11 @@
 // Eggos, Cokes and quarters. Items within the magnet radius drift to the active hero and are collected on contact. Erica's stash
-// (docs/level-7.md) is spent here too: an Eggo when the active hero is low, a Coke when a special is pressed short of MP.
+// (docs/level-7.md) is spent here too: an Eggo when the active hero is low, a Coke when a special is pressed short of MP. Hopper's Coffee
+// (Lv 3) makes all of it heal him 25 percent more.
 import type { Hero, Item, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { addFx, floater, sfx } from './fx.ts';
 import { dist } from './space.ts';
+import { coffee } from '../heroes/hopper.ts';
 
 export const MAGNET_RADIUS = 18;
 export const EGGO_HEAL = 0.4;
@@ -22,7 +24,7 @@ function collect(s: S, it: Item): void {
     if (h.hp >= h.st.hp) {
       for (const o of s.heroes) if (!o.ko && o.hp < o.st.hp && (t === h || o.hp / o.st.hp < t.hp / t.st.hp)) t = o;
     }
-    const gain = Math.min(t.st.hp - t.hp, Math.round(t.st.hp * EGGO_HEAL));
+    const gain = Math.min(t.st.hp - t.hp, Math.round(t.st.hp * EGGO_HEAL * coffee(t)));
     t.hp += gain;
     // Regen leaves hp fractional, so the room left is too. The bar fills exactly; only the label rounds.
     if (Math.round(gain) > 0) floater(s, `+${Math.round(gain)}`, h.x, h.y - 18, 'leaf');
@@ -33,7 +35,7 @@ function collect(s: S, it: Item): void {
     if (h.mp >= h.st.mp) {
       for (const o of s.heroes) if (!o.ko && o.mp < o.st.mp && (t === h || o.mp / o.st.mp < t.mp / t.st.mp)) t = o;
     }
-    const gain = Math.min(t.st.mp - t.mp, Math.round(t.st.mp * COKE_MP));
+    const gain = Math.min(t.st.mp - t.mp, Math.round(t.st.mp * COKE_MP * coffee(t)));
     t.mp += gain;
     if (Math.round(gain) > 0) floater(s, `+${Math.round(gain)}`, h.x, h.y - 18, 'cyan');
     addFx(s, 'heal', h.x, h.y - 6, h.dir, 0, 24, 14, 14);
@@ -77,7 +79,7 @@ function spendStash(s: S, h: Hero, item: 'eggo' | 'coke', gain: number): void {
 export function updateStash(s: S): void {
   const h = activeHero(s);
   if (s.over || h.ko || s.stash.eggo <= 0 || h.hp >= h.st.hp * STASH_EGGO_BELOW || s.frame - s.eggoAt < STASH_EGGO_GAP) return;
-  const gain = Math.min(h.st.hp - h.hp, Math.round(h.st.hp * EGGO_HEAL));
+  const gain = Math.min(h.st.hp - h.hp, Math.round(h.st.hp * EGGO_HEAL * coffee(h)));
   h.hp += gain;
   s.eggoAt = s.frame;
   spendStash(s, h, 'eggo', gain);
@@ -89,7 +91,7 @@ export function updateStash(s: S): void {
  */
 export function drinkCoke(s: S, h: Hero): boolean {
   if (s.stash.coke <= 0 || h.ko) return false;
-  const gain = Math.min(h.st.mp - h.mp, Math.round(h.st.mp * COKE_MP));
+  const gain = Math.min(h.st.mp - h.mp, Math.round(h.st.mp * COKE_MP * coffee(h)));
   h.mp += gain;
   spendStash(s, h, 'coke', gain);
   return true;

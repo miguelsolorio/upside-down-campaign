@@ -14,6 +14,8 @@ import { drinkCoke } from './pickups.ts';
 import { endDash, stepDash } from '../heroes/skate.ts';
 import { isHeld } from '../enemies/hold.ts';
 import { holdsSpecial, readHold, useVariant, variantMp, variantReady } from '../heroes/hold.ts';
+import { readWind, windsUp } from '../heroes/hopper.ts';
+import { standOn } from '../heroes/eddie_solo.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -62,7 +64,8 @@ function castVariant(s: S, h: Hero): void {
 
 function tryActions(s: S, h: Hero, input: SimInput): void {
   const def = HERO_DEFS[h.id];
-  const casting = h.act === 'special' && h.actT > 0;
+  // Eddie's solo keeps him planted, even in the tick a hit has cancelled his cast.
+  const casting = (h.act === 'special' && h.actT > 0) || standOn(s, h);
   if (holdsSpecial(h) && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
     castVariant(s, h);
     return;
@@ -82,13 +85,15 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
     sfx(s, 'noMp');
     floater(s, 'NO MP', h.x, h.y - 18, 'mist', false, 28);
   }
-  const wantsBasic = s.buf.attack > 0 || input.attackHeld;
-  if (!casting && wantsBasic && h.cdBasic <= 0) {
+  // Hopper from Lv 6 swings when Attack comes up (heroes/hopper.ts); everyone else swings on the press, and again while it is held.
+  const swing = windsUp(h) ? readWind(s, h, input) : s.buf.attack > 0 || input.attackHeld ? 'tap' : 'none';
+  if (!casting && swing !== 'none' && h.cdBasic <= 0) {
     s.buf.attack = 0;
+    s.t6.windQ = 0;
     // Smash first: a prop it lights is solved, so the same swing doesn't also count as the wrong hero trying it.
     smashAimed(s, h);
     pokeAimed(s, h, def.basic.reach);
-    useBasic(s, h);
+    useBasic(s, h, swing === 'wind');
   }
 }
 
@@ -133,6 +138,9 @@ export function updateActive(s: S, input: SimInput): void {
       const sp = def.speed * speedFactor(h) * speedMul(h.stat) * lock * Math.min(1, mag);
       if (live) { moveBody(s, h, ux * sp, uy * sp, true); meant = sp; }
     }
+  } else if (windsUp(h)) {
+    // A flinch lets go of a wind-up: the key has to come up and go down again.
+    h.holdT = 0;
   }
   if (h.vx !== 0 || h.vy !== 0) {
     moveBody(s, h, h.vx, h.vy);

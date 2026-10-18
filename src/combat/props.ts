@@ -1,6 +1,7 @@
 // Props the sim reacts to: logs and vans (cleared by a push), gates (opened by the world), targets, consoles and fire-door
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
-// A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat.
+// A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat or Hopper's fists.
+// A haunted mirror and the grandfather clock shatter under Eddie's riff (his swing, its ring and the solo's pulses).
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
 // for any hero who swings at it from up close. A cipher door (docs/level-8.md) decodes while a hero with `read` stands near. A breaker
 // lit by a shot fires the power boxes (powerbox.ts).
@@ -167,6 +168,44 @@ export function smashCracks(s: S, h: Hero, aim: number, reach: number, half: num
   }
 }
 
+/** A riff can shatter this prop: a mirror or a clock still whole, that asks for `riff` (the default). */
+function riffable(p: Prop): boolean {
+  return (p.kind === 'mirror' || p.kind === 'clock') && p.state !== 'open' && (p.hitBy ?? 'riff') === 'riff';
+}
+
+/** A riff shatters a mirror or the clock: propCleared, glass and a crash. The mirror is open and walkable after, the clock open and still solid. */
+export function shatterProp(s: S, p: Prop): void {
+  if (p.state === 'open') return;
+  p.state = 'open';
+  if (p.kind === 'mirror') p.solid = false;
+  p.t = 0;
+  s.events.push({ t: 'propCleared', propId: p.id });
+  sfx(s, 'shatter');
+  addFx(s, 'glass', p.x + p.w / 2, p.y + p.h / 2, 'down', 0, 24, p.w, 0);
+}
+
+/** Eddie's swing lands: every whole mirror and clock inside the cone shatters, found the way smashCracks finds a crack. */
+export function riffCone(s: S, h: Hero, aim: number, reach: number, half: number): void {
+  const hy = h.y - 2;
+  for (const p of s.props) {
+    if (!riffable(p)) continue;
+    const q = nearestOnRect(p, h.x, hy);
+    const d = dist(h.x, hy, q.x, q.y);
+    if (d > reach + 4) continue;
+    if (d > 2 && angleDiff(Math.atan2(q.y - hy, q.x - h.x), aim) > half) continue;
+    shatterProp(s, p);
+  }
+}
+
+/** A sound ring of radius `r` round (cx, cy), the swing's small one or a solo pulse: every whole mirror and clock it touches shatters. */
+export function riffRing(s: S, cx: number, cy: number, r: number): void {
+  for (const p of s.props) {
+    if (!riffable(p)) continue;
+    const q = nearestOnRect(p, cx, cy);
+    if (dist(cx, cy, q.x, q.y) <= r) shatterProp(s, p);
+  }
+}
+
 /** A log (or anything pushable) is shoved out of the way. */
 export function clearProp(s: S, p: Prop): void {
   if (p.state === 'open') return;
@@ -188,6 +227,7 @@ export function openPropById(s: S, id: string): void {
   if (p.kind === 'gap') { crossGap(s, p); return; }
   if (p.kind === 'crack') { breakCrack(s, p); return; }
   if (p.kind === 'cipher') { decodeCipher(s, p); return; }
+  if (p.kind === 'mirror' || p.kind === 'clock') { shatterProp(s, p); return; }
   if (p.kind === 'target' || p.kind === 'console' || p.kind === 'camera' || p.kind === 'firebox' || p.kind === 'breaker') { lightTarget(s, p); return; }
   p.state = 'open';
   p.solid = false;

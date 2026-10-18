@@ -6,6 +6,7 @@
 // strike, a band of white and hot that thins out. And the pools of goo a slam leaves (SimView.pools), drawn on the floor under the actors:
 // a puddle that creeps out as it lands, bubbles, and thins to a dither as it dries. Pure pixel work: nothing here uses alpha.
 import type { FxView, PoolView } from '../core/types.ts';
+import { settings } from '../core/settings.ts';
 import type { ColorName } from './palette.ts';
 import { BAYER4, hash2, linepx, rect, unit } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
@@ -94,7 +95,7 @@ const WARN = 40;
 /**
  * The sweep. Warning: the band's top and bottom edges in hot red with dashes marching along them, the inside hatched in dark red, and in
  * its last 12 frames the hatch brightens and the dashes thicken. Then the strike: white at the middle and hot above and below it, solid,
- * and thinning out to a dither over the rest of its life.
+ * and thinning out to a dither over the rest of its life. With Reduce flashing on the strike is a hatch of hot red instead, never a solid white band.
  */
 export function sweep(ctx: Ctx, f: FxView): void {
   const x = Math.round(f.x), y = Math.round(f.y), w = Math.round(f.w), h = Math.round(f.h), t = Math.max(0, f.t);
@@ -109,6 +110,13 @@ export function sweep(ctx: Ctx, f: FxView): void {
     return;
   }
   const q = clamp((t - WARN) / Math.max(1, f.life - WARN)), thin = q < 0.35 ? 1 : q < 0.65 ? 0.5 : 0.25;
+  if (settings.reduceFlashing) {
+    // Reduce flashing: no solid white band to flash across the arena. The strike is the warning's hatch in a brighter red, thinning out the same way.
+    ctx.drawImage(band(w, h, 'hot', thin >= 1 ? 2 : 1), x, y);
+    rect(ctx, x, y, w, 1, 'red');
+    rect(ctx, x, y + h - 1, w, 1, 'red');
+    return;
+  }
   for (let j = 0; j < h; j++) {
     const mid = Math.abs(j - (h - 1) / 2), col: ColorName = mid < 2 ? 'white' : mid < h * 0.3 ? 'cream' : mid < h * 0.42 ? 'hot' : 'red';
     if (thin >= 1) rect(ctx, x, y + j, w, 1, col);

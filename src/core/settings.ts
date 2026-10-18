@@ -65,9 +65,19 @@ export function skipsDialogue(): boolean {
   return settings.skipDialogue || flags.rush;
 }
 
+/**
+ * With nothing saved yet, a phone or computer set to reduce motion starts the game calm: REDUCE FLASH on and SHAKE off. Once the
+ * player has saved a setting, theirs wins, so turning either back up in the options sticks.
+ */
+export function calmFromSystem(): void {
+  if (typeof matchMedia !== 'function' || !matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  settings.reduceFlashing = true;
+  settings.shake = 0;
+}
+
 export function loadSettings(): void {
   const raw = storage.get(KEY);
-  if (!raw) return;
+  if (!raw) { calmFromSystem(); return; }
   let rev = REV;
   try {
     const { rev: was = 1, ...saved } = JSON.parse(raw) as Partial<Settings> & { rev?: number };

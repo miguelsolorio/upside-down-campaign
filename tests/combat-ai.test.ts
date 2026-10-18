@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createState } from '../src/combat/init.ts';
 import { hurtHero } from '../src/combat/damage.ts';
-import { setReduceFlashing, setShakeScale } from '../src/combat/index.ts';
+import { CALM_FLASH, setReduceFlashing, setShakeScale } from '../src/combat/index.ts';
 import { ENEMY_DEFS } from '../src/enemies/index.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { arena, agent, inp, makeWhite, ofType, rat, run, sfxIds, tc, tf } from './sim-helpers.ts';
@@ -265,7 +265,8 @@ test('shake and flash follow the settings passed in', () => {
   f1.sim.step(inp({ burstPressed: true }));
   assert.ok(f1.sim.view().flash > 0.8);
   setReduceFlashing(true);
-  assert.ok(f1.sim.view().flash <= 0.2);
+  assert.ok(f1.sim.view().flash <= CALM_FLASH);
+  assert.ok(CALM_FLASH < 0.1 + 1e-9, 'a calm flash moves the relative luminance by under 0.1');
   setReduceFlashing(false);
 });
 

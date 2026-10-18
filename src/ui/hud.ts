@@ -20,8 +20,8 @@ import { drawStash } from './hudstash.ts';
 import { BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, hudBand, leftShift, levelDx, slotRects } from './hudlayout.ts';
 import type { BossLayout, SlotRect } from './hudlayout.ts';
 
-/** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
-const KEY_COLOR = 'slate';
+/** Shortcut keys are drawn a step under the names, so the names stay what you read first. Mist on the HUD's ink reads at 6:1; slate did not (2.9:1). */
+const KEY_COLOR = 'mist';
 /** The active hero's shortcut key sits this far left of the name. */
 const ACTIVE_KEY_X = LEFT_X - 7;
 /** On a bench slot the face sits a little below the top, so the slot is centered in the strip like the active portrait.

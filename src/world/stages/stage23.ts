@@ -138,8 +138,9 @@ export const STAGE_23: StageData = {
   // stage runs at 1.0: see "Result" in docs/level-6.md for the numbers. With Mike's Rally (Lv 6) the careful bot let Eleven fall in 23 of
   // 100 runs at 95 HP, so she has 110 (stage23_data.ts). Measured with node scripts/measure-stage.ts 2.3 chief 100 [--careless]: chief
   // clears 87 (17 of 20, she falls in 12) for about 361 damage, 0.55 KOs, 40% lowest HP and 109 s, careless 93, kid 20 of 20, upside 27
-  // (4 of 20). A factor under 1 would clear more, but it takes the KOs from 0.55 to 0.28, so the factor stays at 1.
-  enemyMult: 1,
+  // (4 of 20). A factor under 1 would clear more, but it takes the KOs from 0.55 to 0.28, so the factor stayed at 1 until the bonds
+  // (docs/bonds.md): Babysit's heal for Dustin took the KOs to 0.40 over 200 seeds, so 1.04 puts them back at 0.61 with the same 181 of 200.
+  enemyMult: 1.04,
   // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
   xpMult: 1.6,
   burrows: BURROWS,

@@ -6,7 +6,7 @@ import { BURST_POWER } from '../combat/burst.ts';
 import { damageRange } from '../combat/damage.ts';
 import { emptyStats } from '../progression/xp.ts';
 import type { Stats } from '../progression/xp.ts';
-import { LV6, TALENTS, hasTalent } from '../progression/talents.ts';
+import { LV6, LV9, TALENTS, hasTalent } from '../progression/talents.ts';
 import { HERO_DEFS, critChance, roleAt, statsAt } from './defs.ts';
 import { metalMul } from './hellfire.ts';
 
@@ -70,16 +70,20 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         special(hit(sp.power), `Burns ${burn} every ${secs(sp.x.burnTick)} for ${secs(sp.x.burn)}`, Math.floor(sp.x.life / sp.x.tick)),
       ];
     }
-    case 'lucas':
+    case 'lucas': {
+      // Volley (Lv 9): five rocks, each as strong as a Triple shot's.
+      const volley = hasTalent('lucas', level, LV9);
+      const n = volley ? sp.x.volley : sp.x.n;
       return [
         basic(b.power, 'Long shot, aims eight ways'),
-        special(hit(sp.power), `${sp.x.n} rocks in a fan`, sp.x.n),
+        special(hit(sp.power), `${n} rocks in a fan`, n),
       ];
+    }
     case 'eleven': {
       const flip = hasTalent('eleven', level);
       return [
         basic(b.power * (flip ? b.x.flipPower : 1), flip ? 'Shove that clears logs, Flip on' : 'Shove that clears logs'),
-        special(hit(sp.power), 'Beam through every foe in line'),
+        special(hit(sp.power), hasTalent('eleven', level, LV9) ? 'Wide beam, stuns every foe hit' : 'Beam through every foe in line'),
       ];
     }
     case 'will':

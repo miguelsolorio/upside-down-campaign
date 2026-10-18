@@ -5,7 +5,7 @@ import { ENEMY_DEFS, DIFFICULTY_MULT } from '../src/enemies/index.ts';
 import { STAT_KEYS, emptyStats } from '../src/progression/index.ts';
 import { hasEmDash } from '../src/core/text.ts';
 
-test('the four Level 1 heroes each define basic, special and a Lv 3 talent', () => {
+test('the eleven heroes each define basic, special and talents at Lv 3, 6 and 9', () => {
   assert.deepEqual([...HERO_IDS].sort(), ['dustin', 'eddie', 'eleven', 'hopper', 'lucas', 'max', 'mike', 'nancy', 'robin', 'steve', 'will']);
   for (const id of HERO_IDS) {
     const d = HERO_DEFS[id];
@@ -19,7 +19,7 @@ test('the four Level 1 heroes each define basic, special and a Lv 3 talent', () 
     }
     assert.equal(d.basic.mp, 0, `${id} basic is free`);
     assert.ok(d.special.mp > 0, `${id} special costs MP`);
-    assert.deepEqual(d.talents.map((t) => t.level), [3, 6]);
+    assert.deepEqual(d.talents.map((t) => t.level), [3, 6, 9]);
     for (const t of d.talents) assert.ok(t.name.length > 0 && t.text.length <= 32);
   }
 });

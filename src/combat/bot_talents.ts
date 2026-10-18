@@ -9,12 +9,15 @@
 //   - Hopper slams with two foes within 40 px or a guard's shield up in front of him. From Lv 6 his Attack fires on release (`swing`): it
 //     taps for the plain haymaker, and holds the wind-up against a guard with its shield up, which the wind-up breaks.
 //   - Eddie plays the Hellfire solo with two foes within 56 px, and then presses nothing until it is over (bot.ts).
+//   - Dustin, from Lv 9, holds Special for Cerebro once a stage, when the living party is under 55 percent of its MP (the HUD's
+//     `once` says whether Suzie is still to call). The other Lv 9 talents need no input: Overload, Volley, King Steve, Final girl and
+//     Dry wit are in the moves and the damage, Oath and Extra life catch a fall, and Hive link comes with a swap to Will.
 // A hold keeps Special down for HOLD_FRAMES and two more, whatever else the bot does meanwhile, then lets go.
 import type { HeroId, PartyHud, SimInput, SimView } from '../core/types.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import { HOLD_FRAMES } from '../heroes/hold.ts';
 import { WIND_FRAMES } from '../heroes/hopper.ts';
-import { LV6 } from '../progression/talents.ts';
+import { LV6, LV9 } from '../progression/talents.ts';
 import { isShieldedKind } from '../enemies/shield.ts';
 
 /** What bot.ts knows about a foe that the casting rules read. */
@@ -40,6 +43,15 @@ const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hy
 const isGuard = isShieldedKind;
 /** Frames between the bot's Sensory tanks. */
 const SENSE_GAP = 1200;
+/** Cerebro is worth a call when the living party holds under this share of its MP. */
+const SUZIE_BELOW = 0.55;
+
+/** The share of its MP the living party holds. 1 for an empty party. */
+function partyMp(v: SimView): number {
+  const up = v.hud.party.filter((p) => !p.ko);
+  const max = up.reduce((n, p) => n + p.mpMax, 0);
+  return max > 0 ? up.reduce((n, p) => n + p.mp, 0) / max : 1;
+}
 
 /** Hopper's slam crowd, and Eddie's: foes this close make the cast worth its MP. */
 const SLAM_CROWD = 40;
@@ -132,6 +144,7 @@ export function createCaster(): Caster {
         out.specialHeld = holdLeft > 0;
         return;
       }
+      if (me.id === 'dustin' && me.level >= LV9 && me.once === 'ready' && partyMp(v) < SUZIE_BELOW) { startHold(out); return; }
       const x = HERO_DEFS.eleven.special;
       if (me.id === 'eleven' && me.level >= LV6 && calm && me.mp >= x.x.senseMp + x.mp && frame - senseAt >= SENSE_GAP) {
         senseAt = frame;

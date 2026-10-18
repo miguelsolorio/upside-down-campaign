@@ -25,6 +25,7 @@ import { stepBurst, tryBurst } from './burst.ts';
 import { dust, floater, sfx } from './fx.ts';
 import { updateTraps } from '../heroes/nancy.ts';
 import { buildView } from './view.ts';
+import { applyBonds } from './bonds.ts';
 
 function runTimers(s: S): void {
   if (s.timers.length === 0) return;
@@ -67,6 +68,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   s.frame++;
   s.stats.frames++;
   s.sfxSeen.clear();
+  applyBonds(s);
   if (s.over) {
     tickVisuals(s);
     ageBodies(s);

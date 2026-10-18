@@ -18,6 +18,8 @@ import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
 import { hasTalent } from '../progression/talents.ts';
 import { rallyMul } from '../heroes/rally.ts';
 import { markMul, metalMul } from '../heroes/hellfire.ts';
+import { atk9, berserkUp, witBonus } from '../heroes/talents9.ts';
+import { screenCovers } from './bonds.ts';
 import { INSPIRATION_ATK } from '../progression/xp.ts';
 import type { Enemy, Hero, Rng, S } from './state.ts';
 import { dist, distToSegment, BODY_Y } from './space.ts';
@@ -42,9 +44,9 @@ export function spreadRoll(rng: Rng): number {
   return SPREAD_LO + (SPREAD_HI - SPREAD_LO) * rng();
 }
 
-/** A hero's ATK right now, with Inspiration, Mike's Rally and Eddie's Metalhead. */
+/** A hero's ATK right now, with bonds, Inspiration, Rally, the Lv 9 talents of Steve and Nancy, and Eddie's Metalhead. */
 export function heroAtk(s: S, h: Hero): number {
-  return h.st.atk * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s) * metalMul(h);
+  return h.st.atk * (1 + h.bond.atk) * (s.inspire > 0 ? 1 + INSPIRATION_ATK : 1) * rallyMul(s) * atk9(s, h) * metalMul(h);
 }
 
 export interface HitOpts {
@@ -109,7 +111,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const first = s.armed;
   if (!blocked) s.armed = false;
   const fiat = first && by.id === 'mike' && hasTalent('mike', by.level);
-  const crit = !blocked && !o.noCrit && (o.crit === true || fiat || critRoll < critChance(HERO_DEFS[by.id], by.level));
+  const crit = !blocked && !o.noCrit && (o.crit === true || fiat || critRoll < critChance(HERO_DEFS[by.id], by.level) + by.bond.crit);
   let dmg = rollDamage(o.power, heroAtk(s, by), e.def, spread);
   if (crit) dmg *= 2;
   if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
@@ -127,6 +129,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (coldSpot(s, e)) dmg = Math.round(dmg * COLD_BONUS);
   // Eddie's Hellfire DM: a marked boss or elite takes 20 percent more from the whole party.
   dmg = Math.round(dmg * markMul(s, e));
+  // Robin's Dry wit makes a confused foe take a quarter more.
+  if (e.stat.confuse > 0) dmg = Math.round(dmg * witBonus(s, e));
   const dealt = Math.min(dmg, e.hp);
   e.hp -= dmg;
   e.flash = 1;
@@ -217,11 +221,14 @@ function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'ho
   h.hp = Math.max(0, h.hp - dmg);
   h.invuln = Math.max(h.invuln, invuln);
   h.blink = true;
-  h.hurtT = HERO_HURT_FRAMES;
   h.flash = 1;
-  h.actId++; h.actT = 0; h.act = null;
-  h.vx += Math.cos(angle) * kb;
-  h.vy += Math.sin(angle) * kb;
+  // Hopper's Berserk (Lv 9): low on HP, nothing makes him flinch or knocks him back.
+  if (!berserkUp(h)) {
+    h.hurtT = HERO_HURT_FRAMES;
+    h.actId++; h.actT = 0; h.act = null;
+    h.vx += Math.cos(angle) * kb;
+    h.vy += Math.sin(angle) * kb;
+  }
   floater(s, String(dmg), h.x, h.y - 18, color);
   s.events.push({ t: 'hit', dmg, crit: false, x: h.x, y: h.y - BODY_Y, onEnemy: false });
   sfx(s, 'hurt');
@@ -241,7 +248,7 @@ export function hurtHero(s: S, h: Hero, sx: number, sy: number, power: number, a
   if (h.ko || s.over || s.god || h.invuln > 0) return 0;
   const spread = spreadRoll(s.rng);
   let dmg = Math.max(1, Math.round((power * atk * spread - heroDef(s, h) * 0.5) * s.mult * s.foeMult));
-  const shielded = behindShield(s, sx, sy, h.x, h.y);
+  const shielded = behindShield(s, sx, sy, h.x, h.y) || screenCovers(s, h);
   if (shielded) dmg = Math.max(1, Math.round(dmg * 0.5));
   return wound(s, h, dmg, Math.atan2(h.y - sy, h.x - sx), kb, shielded ? 'sky' : 'hot', invuln);
 }

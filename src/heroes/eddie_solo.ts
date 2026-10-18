@@ -14,7 +14,8 @@ import { HERO_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
 import { BODY_Y } from '../combat/space.ts';
-import { addFx, sfx } from '../combat/fx.ts';
+import { addFx, floater, sfx } from '../combat/fx.ts';
+import { LV9, hasTalent } from '../progression/talents.ts';
 import { riffRing } from '../combat/props.ts';
 import { beginAct, coneHits } from './common.ts';
 import { eddieHit } from './eddie.ts';
@@ -79,7 +80,16 @@ export function stepStand(s: S): void {
   // A hit cancels the cast: he stands back in it, planted, once the flinch is over.
   if (h.act !== 'special') { h.act = 'special'; h.actT = st.life - st.t; h.lock = 0; }
   if (st.t % PULSE_GAP === 0) pulse(s, h);
-  if (st.t >= st.life) endStand(s, h);
+  if (st.t < st.life) return;
+  // Encore (Lv 9): the solo plays once more, for no MP.
+  if (!st.encore && hasTalent('eddie', h.level, LV9)) {
+    st.encore = true;
+    st.t = 0;
+    h.actT = st.life;
+    floater(s, 'ENCORE', h.x, h.y - 24, 'yellow', true, 50);
+    return;
+  }
+  endStand(s, h);
 }
 
 /** HudView.solo: null unless Eddie is playing. beat is the frames to the next pulse. */

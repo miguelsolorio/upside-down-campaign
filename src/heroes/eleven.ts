@@ -1,8 +1,8 @@
 // Eleven, the Sorcerer. Basic: Push, a free cone shove that clears logs and vans. Special: Mind Blast, a piercing beam,
 // the only thing that finishes a pinned Demogorgon.
-// The Flip talent (Lv 3) makes Push hit harder and throw farther.
+// The Flip talent (Lv 3) makes Push hit harder and throw farther. Overload (Lv 9) widens the Mind Blast and stuns what it crosses.
 import { HERO_DEFS } from './defs.ts';
-import { hasTalent } from '../progression/talents.ts';
+import { LV9, hasTalent } from '../progression/talents.ts';
 import type { Hero, S } from '../combat/state.ts';
 import { angleDiff, BODY_Y, dist, distToSegment, nearestOnRect, pointSolid } from '../combat/space.ts';
 import { addFx, sfx } from '../combat/fx.ts';
@@ -38,6 +38,9 @@ export function elevenBasic(s: S, h: Hero): void {
 export function elevenSpecial(s: S, h: Hero): void {
   const d = HERO_DEFS.eleven.special;
   const aim = h.aim;
+  // Overload: a wider beam, and every foe it crosses is stunned (a boss shrugs the stun off, as it does any).
+  const over = hasTalent('eleven', h.level, LV9);
+  const width = over ? d.x.overWidth : d.x.width;
   beginAct(h, d, 'special');
   sfx(s, 'beam');
   later(s, h, d.at, () => {
@@ -47,11 +50,11 @@ export function elevenSpecial(s: S, h: Hero): void {
     let len = 0;
     while (len < d.reach && !pointSolid(s, ox + cx * (len + 4), oy + BODY_Y + cy * (len + 4))) len += 4;
     const ex = ox + cx * len, ey = oy + cy * len;
-    addFx(s, 'beam', ox, oy, h.dir, aim, d.x.life, len, d.x.width * 2);
+    addFx(s, 'beam', ox, oy, h.dir, aim, d.x.life, len, width * 2);
     for (const e of s.enemies) {
       if (e.dead || e.dormant || e.hp <= 0) continue;
-      if (distToSegment(e.x, e.y - BODY_Y, ox, oy, ex, ey) > d.x.width + 6) continue;
-      hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: aim, stagger: 18, beam: true });
+      if (distToSegment(e.x, e.y - BODY_Y, ox, oy, ex, ey) > width + 6) continue;
+      hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: aim, stagger: 18, beam: true, stun: over ? d.x.overStun : 0 });
     }
   });
 }

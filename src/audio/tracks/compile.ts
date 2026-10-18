@@ -36,7 +36,20 @@ export interface Compiled {
 
 const cache = new WeakMap<Track, Compiled>();
 
-export function stepSeconds(track: Track): number { return 60 / track.bpm / 4; }
+/** How many tempo phases the track has: one unless it lists `phases`. */
+export function phaseCount(track: Track): number {
+  return track.phases?.length ?? 1;
+}
+
+/** Tempo of a phase in bpm. A phase outside the list is clamped to its nearest end. */
+export function phaseBpm(track: Track, phase = 0): number {
+  const list = track.phases;
+  if (!list || list.length === 0) return track.bpm;
+  return list[Math.max(0, Math.min(list.length - 1, Math.round(phase)))];
+}
+
+/** Seconds in one sixteenth at the tempo of `phase`. */
+export function stepSeconds(track: Track, phase = 0): number { return 60 / phaseBpm(track, phase) / 4; }
 
 /** Steps in each bar: track.barSteps, or sixteen everywhere when the track does not set it. */
 export function barLengths(track: Track): readonly number[] {
@@ -53,10 +66,15 @@ function startsOf(track: Track): number[] {
 }
 
 /** Seconds in one bar of the loop. The bar wraps, so any non-negative index works. */
-export function barSeconds(track: Track, bar = 0): number {
+export function barSeconds(track: Track, bar = 0, phase = 0): number {
   const c = compile(track);
   const i = ((bar % c.bars) + c.bars) % c.bars;
-  return c.stepSec * (c.starts[i + 1] - c.starts[i]);
+  return stepSeconds(track, phase) * (c.starts[i + 1] - c.starts[i]);
+}
+
+/** Seconds one pass of the track takes at the tempo of `phase`: a scene's clock when the music cannot play. */
+export function loopSeconds(track: Track, phase = 0): number {
+  return compile(track).loop * stepSeconds(track, phase);
 }
 
 /** The sixteenth step where bar `barIndex` starts, counted from the start of play. The index may run past the loop. */
@@ -66,9 +84,9 @@ export function barStartSteps(track: Track, barIndex: number): number {
   return laps * c.loop + c.starts[barIndex - laps * c.bars];
 }
 
-/** Seconds from the start of play to the start of bar `barIndex`. */
-export function barStartSeconds(track: Track, barIndex: number): number {
-  return barStartSteps(track, barIndex) * compile(track).stepSec;
+/** Seconds from the start of play to the start of bar `barIndex`, if the whole piece plays at one phase's tempo. */
+export function barStartSeconds(track: Track, barIndex: number, phase = 0): number {
+  return barStartSteps(track, barIndex) * stepSeconds(track, phase);
 }
 
 /** Which bar of the loop is sounding `seconds` after play started. */
@@ -85,6 +103,9 @@ export function compile(track: Track): Compiled {
   const cached = cache.get(track);
   if (cached) return cached;
   const stepSec = stepSeconds(track);
+  // A drum rings for a fixed number of seconds, so it spans more steps at a faster tempo. Its length in steps is
+  // taken at the fastest phase, which makes the gaps (and so findOverlaps) hold at every phase.
+  const drumStepSec = Math.min(stepSec, ...(track.phases ?? []).map((bpm) => 60 / bpm / 4));
   const starts = startsOf(track);
   const loop = starts[track.bars];
   const notes: CNote[] = [];
@@ -95,7 +116,7 @@ export function compile(track: Track): Compiled {
         for (const e of c.bars[bar]) {
           notes.push({
             slot: 'noi', layer: c.layer, ch, bar, step: e.step, abs: base + e.step,
-            gate: DRUM_SECONDS[e.drum] / stepSec, gap: 0, midi: 0, drum: e.drum, vel: e.vel ?? 1, inst: null,
+            gate: DRUM_SECONDS[e.drum] / drumStepSec, gap: 0, midi: 0, drum: e.drum, vel: e.vel ?? 1, inst: null,
           });
         }
       } else {
@@ -151,25 +172,25 @@ export function noteTiming(n: CNote, stepSec: number): { gate: number; release: 
   return { gate: Math.min(n.gate * stepSec, Math.max(0.01, span - release - 0.0002)), release };
 }
 
-/** [start, end) in seconds for each note, release tail included. */
-export function voiceSpans(track: Track, layers?: readonly LayerId[]): [number, number][] {
+/** [start, end) in seconds for each note, release tail included, at the tempo of `phase`. */
+export function voiceSpans(track: Track, layers?: readonly LayerId[], phase = 0): [number, number][] {
   const c = compile(track);
+  const stepSec = stepSeconds(track, phase);
   const spans: [number, number][] = [];
   for (const n of c.notes) {
     if (layers && !layers.includes(n.layer)) continue;
-    const t = noteTiming(n, c.stepSec);
-    const start = n.abs * c.stepSec;
+    const t = noteTiming(n, stepSec);
+    const start = n.abs * stepSec;
     spans.push([start, start + t.gate + t.release]);
   }
   return spans;
 }
 
 /** The most voices sounding at once over two trips around the loop, so a tail that crosses the seam is counted. */
-export function maxVoices(track: Track, layers?: readonly LayerId[]): number {
-  const c = compile(track);
-  const loop = c.loop * c.stepSec;
+export function maxVoices(track: Track, layers?: readonly LayerId[], phase = 0): number {
+  const loop = loopSeconds(track, phase);
   const events: [number, number][] = [];
-  for (const [a, b] of voiceSpans(track, layers)) {
+  for (const [a, b] of voiceSpans(track, layers, phase)) {
     for (const shift of [0, loop]) {
       events.push([a + shift, 1]);
       events.push([b + shift, -1]);

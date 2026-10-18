@@ -67,7 +67,11 @@ function tryActions(s: S, h: Hero, input: SimInput): void {
   const def = HERO_DEFS[h.id];
   // Eddie's solo keeps him planted, even in the tick a hit has cancelled his cast.
   const casting = (h.act === 'special' && h.actT > 0) || standOn(s, h);
-  if (holdsSpecial(h) && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
+  const holds = holdsSpecial(s, h);
+  // Cerebro spent mid-hold leaves the key down with nothing to read: forget the hold, the press is already used.
+  // Hopper's Wind-up keeps its own hold on Attack (heroes/hopper.ts).
+  if (!holds && !windsUp(h)) h.holdT = 0;
+  if (holds && readHold(s, h, input) && !casting && h.cdSpecial <= 0) {
     castVariant(s, h);
     return;
   }

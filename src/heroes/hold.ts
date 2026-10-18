@@ -1,13 +1,15 @@
 // The held Special (docs/game-design.md, "Controls": hold for the Lv 6 variant where a hero has one). Will's Cleric, Nancy's
 // Molotov and Eleven's Sensory tank are held: from Lv 6 a tap casts the Special when the key comes up, and holding it for
-// HOLD_FRAMES casts the variant. Before Lv 6, and for everyone else, Special casts on the press as it always has.
+// HOLD_FRAMES casts the variant. Before Lv 6, and for everyone else, Special casts on the press as it always has. Dustin joins them
+// at Lv 9 with Cerebro, but only while it is unspent: once Suzie has been called this stage his Special casts on the press again.
 //
 // Hero.holdT counts the frames held. 0 is not holding, -1 is the variant fired and the key not yet up, so one long hold casts
 // one variant. A press that comes up on the same frame (the bot's tap) casts the Special that frame.
 import type { SimInput } from '../core/types.ts';
-import { LV6, hasTalent } from '../progression/talents.ts';
+import { LV6, LV9, hasTalent } from '../progression/talents.ts';
 import type { Hero, S } from '../combat/state.ts';
 import { HERO_DEFS } from './defs.ts';
+import { callSuzie } from './cerebro.ts';
 import { castHeal, healReady } from './cleric.ts';
 import { throwMolotov } from './molotov.ts';
 import { sensoryTank } from './sensory.ts';
@@ -18,15 +20,16 @@ export const HOLD_FRAMES = 24;
 /** What a press buffers, the same as an attack's (combat/hero.ts). */
 const TAP_BUFFER = 8;
 
-/** True when this hero has a held variant at their level. */
-export function holdsSpecial(h: Hero): boolean {
+/** True when this hero has a held variant at their level, and this stage. */
+export function holdsSpecial(s: S, h: Hero): boolean {
+  if (h.id === 'dustin') return hasTalent('dustin', h.level, LV9) && !s.t6.cerebro;
   return (h.id === 'will' || h.id === 'nancy' || h.id === 'eleven') && hasTalent(h.id, h.level, LV6);
 }
 
 /** What the variant costs. */
 export function variantMp(h: Hero): number {
   const x = HERO_DEFS[h.id].special.x;
-  return h.id === 'will' ? x.healMp : h.id === 'nancy' ? x.molMp : h.id === 'eleven' ? x.senseMp : 0;
+  return h.id === 'dustin' ? 0 : h.id === 'will' ? x.healMp : h.id === 'nancy' ? x.molMp : h.id === 'eleven' ? x.senseMp : 0;
 }
 
 /** False while the variant has a wait of its own (Will's heal). */
@@ -39,6 +42,7 @@ export function useVariant(s: S, h: Hero): void {
   if (h.id === 'will') castHeal(s, h);
   else if (h.id === 'nancy') throwMolotov(s, h);
   else if (h.id === 'eleven') sensoryTank(s, h);
+  else if (h.id === 'dustin') callSuzie(s, h);
 }
 
 /**
@@ -72,6 +76,6 @@ export function readHold(s: S, h: Hero, input: SimInput): boolean {
 }
 
 /** How full the charge ring is, 0..1, or 0 when the hero isn't holding. Hopper's Lv 6 Attack fills it over its own 24 frames. */
-export function chargeOf(h: Hero): number {
-  return h.holdT > 0 && (holdsSpecial(h) || windsUp(h)) ? Math.min(1, h.holdT / (windsUp(h) ? WIND_FRAMES : HOLD_FRAMES)) : 0;
+export function chargeOf(s: S, h: Hero): number {
+  return h.holdT > 0 && (holdsSpecial(s, h) || windsUp(h)) ? Math.min(1, h.holdT / (windsUp(h) ? WIND_FRAMES : HOLD_FRAMES)) : 0;
 }

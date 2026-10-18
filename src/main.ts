@@ -102,6 +102,8 @@ syncFocus();
 
 if (flags.sheet) g.scenes.go(createSheetScene());
 else if (flags.audio) g.scenes.go(createAudioLabScene());
+// The solo's stand-in stage is the variation sheet's art, so it loads only when asked for.
+else if (flags.solo) void import('./solo/dev.ts').then((m) => g.scenes.go(m.createSoloDevScene()));
 else startGame(g);
 
 // Handy for the dev panel, the bot and browser-driven checks.

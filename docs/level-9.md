@@ -241,3 +241,9 @@ Stage XP is 278 before `xpMult` 2, so it pays 556, the Flayed the bosses call on
 - **The fight is about two thirds of the run,** over the usual half. The route is short (about 40 s), and both phases are one fight.
 - **The Lv 6 talents moved it.** Tuned before main brought them in, the stage sat at 1.43. With Mike's and Dustin's talents the careful bot cleared 20 of 20 at 62% lowest HP there, so the factor went to 1.6.
 - **Eleven catches up** (`CATCH_UP`): she walks in at Lv 4, not 3. Only the reach needs her, so it barely moves the bands.
+
+## After the bonds
+
+Mike and Eleven's Friends don't lie (+10% ATK, `docs/bonds.md`) is live in the party 3.3 brings. Chief cleared all of 200 runs for 280 damage, 0.34 KOs, 51% lowest HP and 110 s, and the careless bot cleared 129 of 200. `enemyMult` went from 1.6 to 1.65, which puts the careful bot back: 98 of 100 for 283 damage, 0.38 KOs, 50% lowest HP and 115 s, the fight 64% of the run; careless 72, kid 100, upside 33, NORMAL 100 (careless 81). At 1.7 the KOs are 0.49 but upside clears 38 of 200, under its floor, so the factor stops at 1.65. KOs and lowest HP are outside their bands as before.
+
+The stage pays more now: `xpMult` 2 to 2.25, 626 XP (`docs/pace.md`, "After the bonds").

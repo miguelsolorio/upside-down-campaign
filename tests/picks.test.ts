@@ -42,7 +42,7 @@ test('a seed is fixed up: strangers and repeats go, a missing lock takes the las
 test('a card reads from the state: name, level, gate word, party place and the lock', () => {
   const s = open();
   const max = rowOf(s, at(s, 'max'));
-  assert.deepEqual(max, { id: 'max', name: 'Max', level: 4, gate: 'DASH', slot: 4, locked: true });
+  assert.deepEqual(max, { id: 'max', name: 'Max', level: 4, gate: 'DASH', slot: 4, locked: true, bond: 'MAD MAX' });
   const mike = rowOf(s, 0);
   assert.equal(mike.slot, 1);
   assert.equal(mike.gate, '');
@@ -204,7 +204,7 @@ test('Eleven opens PUSH, Robin READ and Nancy SHOOT, and BURN too from her Lv 6 
   assert.equal(rowOf(five, at9(five, 'nancy')).gate, 'SHOOT');
   assert.equal(rowOf(s, at9(s, 'lucas')).gate, 'SHOOT');
   assert.equal(rowOf(s, at9(s, 'mike')).gate, '');
-  assert.deepEqual(rowOf(s, at9(s, 'robin')), { id: 'robin', name: 'Robin', level: rowOf(s, at9(s, 'robin')).level, gate: 'READ', slot: 3, locked: true });
+  assert.deepEqual(rowOf(s, at9(s, 'robin')), { id: 'robin', name: 'Robin', level: rowOf(s, at9(s, 'robin')).level, gate: 'READ', slot: 3, locked: true, bond: '' });
 });
 
 test('nine heroes: up and down walk three rows and the START row and wrap round, in the column the cursor left', () => {
@@ -269,7 +269,8 @@ test('six stay three cards by two, as the owner picked them', () => {
   assert.deepEqual(cardRect(l, 0), { x: 11, y: 52, w: 74, h: 44 });
   assert.deepEqual(cardRect(l, 4), { x: 91, y: 102, w: 74, h: 44 });
   assert.deepEqual(l.start, { x: 11, y: 154, w: 56, h: 11 });
-  assert.equal(l.legendY, 157);
+  assert.equal(l.legendY, 154);
+  assert.equal(l.bondY, 160, 'the bond line sits under the legend, inside START\'s row');
 });
 
 test('nine are three cards by three, on shorter cards, and the panel fits between the map\'s strip and its party band', () => {
@@ -281,6 +282,7 @@ test('nine are three cards by three, on shorter cards, and the panel fits betwee
     assert.ok(rectIn(l.panel, { x: 0, y: 0, w: 256, h: 224 }));
     assert.ok(rectIn(l.start, l.panel), 'START is inside the panel');
     assert.ok(l.legendY + 5 <= l.panel.y + l.panel.h - 4 && l.legendY >= l.start.y, 'and so is the legend, level with START');
+    assert.ok(l.bondY >= l.legendY + 6 && l.bondY + 5 <= l.panel.y + l.panel.h - 4, 'and the bond line, under the legend');
     for (let i = 0; i < n; i++) {
       const c = cardRect(l, i);
       assert.ok(rectIn(c, l.panel), `card ${i} is inside the panel`);

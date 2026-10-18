@@ -25,6 +25,8 @@ export type SfxId =
   /** legslam: a Mind Flayer leg striking. sever: a leg cut. shatter: the skylight breaking. boom: the Key's machine blowing
    *  up under the mall. reach: Eleven reaching Billy. */
   | 'legslam' | 'sever' | 'shatter' | 'boom' | 'reach'
+  /** squeal: the feedback that cuts the Hellfire solo short after three misses in a row (src/solo). */
+  | 'squeal'
   /** haymaker: Hopper's punch (docs/level-10.md). vswing: Eddie's Flying V. riff: one pulse of his solo. feedback: the squeal that
    *  cuts a solo short. chime: a grandfather clock's chime, the curse counting. curse: a hero lifted by the curse. walkman: Max
    *  playing her Walkman. ghoul: a Creel ghoul stepping out of a mirror (docs/level-11.md). */
@@ -33,8 +35,11 @@ export type SfxId =
 
 /** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen, 2.1 and 4.2. starcourt: 3.1 to 3.3. sour:
  *  starcourt going sour near the Mind Flayer, in 3.3 (docs/level-9.md). kamchatka: mirkwood in the snow, slower and colder, for
- *  4.1 (docs/level-10.md). */
-export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins' | 'starcourt' | 'sour' | 'kamchatka';
+ *  4.1 (docs/level-10.md). abyss: the final boss, 5.3, three tempo phases (audio.phase). ending: the epilogue, plays once
+ *  (audio.musicEnded). solo: Eddie's Hellfire riff and the 4.3 rooftop song, two sections of one track that the note highway starts
+ *  on its own (src/solo). */
+export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins' | 'starcourt' | 'sour' | 'kamchatka'
+  | 'abyss' | 'ending' | 'solo';
 export type JingleId = 'levelUp' | 'recruit' | 'clear' | 'gameOver' | 'item' | 'dice';
 export type StingerId = 'scare' | HeroId;
 export interface AudioMetrics {
@@ -69,6 +74,20 @@ export interface AudioApi {
    */
   focus(on: boolean): void;
   tracks(): TrackId[];
-  /** Offline render for QA and WAV export. */
-  renderOffline(id: TrackId, seconds: number, opts?: { combat?: boolean }): Promise<AudioMetrics>;
+  /**
+   * Sets the tempo phase of the music now wanted: 0 is the track's own tempo, and each step is faster. Only `abyss` has
+   * phases (160, 164 and 168 bpm); any other track ignores the call, and a phase past the last is clamped to it. It takes
+   * hold at the next bar line. Asking for a different track starts it back at phase 0, and asking for the track already
+   * playing leaves the phase alone, so a fight sets 0 when it starts.
+   */
+  phase(n: number): void;
+  /**
+   * True once a play-once track (`ending`) has played its last bar. False for a looping track, while it plays, and while
+   * the browser has not yet let sound start: a scene that waits on it also keeps its own clock (see trackSeconds).
+   */
+  musicEnded(): boolean;
+  /** Seconds one pass of the track takes at its first tempo. For `ending` this is its whole length. */
+  trackSeconds(id: TrackId): number;
+  /** Offline render for QA and WAV export. `phase` renders at that tempo phase. */
+  renderOffline(id: TrackId, seconds: number, opts?: { combat?: boolean; phase?: number }): Promise<AudioMetrics>;
 }

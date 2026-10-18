@@ -38,8 +38,8 @@ test('enemyMult stacks on the difficulty setting rather than replacing it', () =
 
 test('stage data passes enemyMult to the sim; stage 1.1 leaves it out and 1.2 sets it', () => {
   assert.equal(STAGE_11.enemyMult, undefined, 'the woods play as the difficulty setting says');
-  assert.equal(STAGE_12.enemyMult, 1.3, 'the Lab is thirty percent tougher');
+  assert.equal(STAGE_12.enemyMult, 1.36, 'the Lab is thirty-six percent tougher (thirty before the bonds)');
   const opts = simOptions(STAGE_12, stageGrid(STAGE_12), { party: [{ id: 'mike' }] });
-  assert.equal(opts.enemyMult, 1.3);
+  assert.equal(opts.enemyMult, 1.36);
   assert.equal(simOptions(STAGE_11, stageGrid(STAGE_11), { party: [{ id: 'mike' }] }).enemyMult, undefined);
 });

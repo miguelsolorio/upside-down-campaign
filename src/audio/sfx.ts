@@ -15,6 +15,8 @@ import { LEVELS9, SFX9 } from './sfx_level9.ts';
 import type { Sfx9 } from './sfx_level9.ts';
 import { LEVELS1011, SFX1011 } from './sfx_level1011.ts';
 import type { Sfx1011 } from './sfx_level1011.ts';
+import { LEVELS_SOLO, SFX_SOLO } from './sfx_solo.ts';
+import type { SfxSolo } from './sfx_solo.ts';
 
 // A die bouncing: bursts that space out as it settles.
 const RATTLE = [0, 0.05, 0.1, 0.17, 0.25, 0.34, 0.45].map((at, i) =>
@@ -177,9 +179,9 @@ const BASE_SFX = {
   ], 0.02),
   alert: R([T('p50', 880, 0.05, 0.3, { hold: true }), T('p50', 1320, 0.09, 0.3, { at: 0.05, hold: true })], 0.01),
   step: R([N(7, 5000, 0.025, 0.4, { f: bp(900, undefined, 1.5) })], 0.08),
-} satisfies Record<Exclude<SfxId, Sfx34 | Sfx56 | Sfx78 | Sfx9 | Sfx1011>, Recipe>;
+} satisfies Record<Exclude<SfxId, Sfx34 | Sfx56 | Sfx78 | Sfx9 | Sfx1011 | SfxSolo>, Recipe>;
 
-export const SFX: Record<SfxId, Recipe> = { ...BASE_SFX, ...SFX34, ...SFX56, ...SFX78, ...SFX9, ...SFX1011 };
+export const SFX: Record<SfxId, Recipe> = { ...BASE_SFX, ...SFX34, ...SFX56, ...SFX78, ...SFX9, ...SFX1011, ...SFX_SOLO };
 
 /**
  * Gain per effect, measured with an offline render so every effect peaks where it should: impacts near 0.5,
@@ -198,6 +200,7 @@ const LEVEL: Record<SfxId, number> = {
   ...LEVELS78,
   ...LEVELS9,
   ...LEVELS1011,
+  ...LEVELS_SOLO,
 };
 
 /** Plays one effect at context time t. `mul` scales every pitch, so 1.05 is about a semitone sharp. */

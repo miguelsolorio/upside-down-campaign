@@ -9,16 +9,18 @@ import { paintRoles } from './kit.ts';
 import { FRAMES, eddieFrame, FW } from './eddie_kit.ts';
 import { EDDIE_OPTS } from './eddie_opts.ts';
 import { demobatFrame } from './demobat_kit.ts';
+import { BLUE, GOLD, RED, gem, target } from '../../solo/art.ts';
+import type { Hue } from '../../solo/art.ts';
+
+// The lane colors, the note gem and the strum target are the game's own now (src/solo/art.ts); the sheet draws them from there.
+export { BLUE, GOLD, RED, gem, target };
+export type { Hue as Lane };
 
 export const SW = 256, SH = 224, HUD = 20;
 /** Where Eddie stands: the middle of his frame, in screen px. */
 export const EX = 128, EY = 112;
 
-export interface Lane { col: ColorName; shade: ColorName; hi: ColorName }
-export const RED: Lane = { col: 'red', shade: 'blood1', hi: 'pink' };
-export const BLUE: Lane = { col: 'blue', shade: 'dusk', hi: 'sky' };
-export const GOLD: Lane = { col: 'amber', shade: 'orange', hi: 'cream' };
-export const GREEN: Lane = { col: 'pine3', shade: 'pine1', hi: 'leaf' };
+export const GREEN: Hue = { col: 'pine3', shade: 'pine1', hi: 'leaf' };
 
 type Pt = readonly [number, number];
 
@@ -65,24 +67,6 @@ export function backdrop(ringR = 30): Px {
   return p;
 }
 
-/** A note gem, 10 by 8: the lane color, a dark lower lip, a bright glint, an ink rim. Small is 8 by 6, for the far end of the neck. */
-export function gem(l: Lane, size: 'big' | 'mid' | 'small' = 'big'): Px {
-  const [w, h, rx, ry] = size === 'big' ? [12, 9, 4.6, 3.3] : size === 'mid' ? [10, 8, 3.7, 2.7] : [8, 6, 2.7, 2];
-  const p = new Px(w, h), cx = w / 2, cy = h / 2;
-  p.ellipse(cx, cy, rx, ry, l.shade).ellipse(cx, cy - 0.6, rx - 0.3, ry - 0.5, l.col);
-  p.set(Math.floor(cx - rx * 0.45), Math.floor(cy - ry * 0.5), l.hi);
-  if (size === 'big') p.set(Math.floor(cx - rx * 0.45) + 1, Math.floor(cy - ry * 0.5), l.hi);
-  return p.outline('ink');
-}
-
-/** The strum target for a lane: a hollow ring in the lane's color, lit and filled when struck. */
-export function target(l: Lane, struck = false): Px {
-  const p = new Px(14, 11), cx = 7, cy = 5.5;
-  p.ellipse(cx, cy, 5.6, 4.2, struck ? l.hi : l.col).ellipse(cx, cy, 4.4, 3.1, struck ? l.hi : l.shade).ellipse(cx, cy, 3.8, 2.6, struck ? l.col : 'ink');
-  if (struck) p.ellipse(cx, cy, 1.8, 1.2, 'white');
-  return p.outline('ink');
-}
-
 const ARROW = [
   '.....k.....',
   '....kck....',
@@ -97,7 +81,7 @@ const ARROW = [
 ];
 
 /** An arrow note pointing up, turned for the other three. Hollow in slate for the receptor. */
-export function arrow(dir: 'left' | 'down' | 'up' | 'right', l: Lane | null): Px {
+export function arrow(dir: 'left' | 'down' | 'up' | 'right', l: Hue | null): Px {
   const p = new Px(11, 10).art(ARROW, { k: 'ink', c: l ? l.col : 'shadow' });
   if (l) p.set(5, 2, l.hi).set(4, 3, l.hi).set(4, 6, l.hi).set(4, 7, l.hi);
   if (dir === 'up') return p;

@@ -1,6 +1,6 @@
 // URL flags. ?dev=1 opens the dev panel, ?bot=1 plays by itself, ?sheet=1 shows the sprite sheet,
 // ?audio=1 shows the audio lab, ?skip=1 jumps past the title and prologue, ?stage=1.1 picks the stage,
-// ?time=day or ?time=night draws the stage in that light whatever the stage says.
+// ?time=day or ?time=night draws the stage in that light whatever the stage says. ?solo=1 plays the Hellfire solo on its own.
 import type { TimeOfDay } from './types.ts';
 
 export interface Flags {
@@ -8,6 +8,8 @@ export interface Flags {
   bot: boolean;
   sheet: boolean;
   audio: boolean;
+  /** ?solo=1: Eddie's Hellfire solo on its own, the rooftop song, to try by hand (src/solo/dev.ts). With ?bot=1 a bot plays it. */
+  solo: boolean;
   mute: boolean;
   god: boolean;
   skip: boolean;
@@ -33,6 +35,7 @@ function parse(): Flags {
     bot: on('bot'),
     sheet: on('sheet'),
     audio: on('audio'),
+    solo: on('solo'),
     mute: on('mute'),
     god: on('god'),
     skip: on('skip') || on('rush'),

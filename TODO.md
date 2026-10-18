@@ -16,6 +16,20 @@ Scope for this pass: the first half of chapter 4. Level 10 (stage 4.1, Kamchatka
 - [ ] Tuned on HARD (`chief`) and paced (`docs/pace.md`)
 - [ ] Verified in the browser (muted), docs and TODO updated, merged into main
 
+## This pass (bonds)
+
+- [x] Rules: `heroes/bonds.ts`, pure. Five bonds live (Friends don't lie, Party of four, Mad Max, Babysitter's club, Scoops troop), Chief and kid and Hellfire in the data with `on: false` so chapter 4 only flips them. A bond counts while every member is in the party, led or benched, up or down. See `docs/bonds.md`
+- [x] Combat: one hook, `applyBonds` (`combat/bonds.ts`), writes `hero.bond` each tick when the roster changed. ATK (`heroAtk`), the crit roll, DEF (`heroDef`) and the speed factor read it, Babysit heals Dustin (`babysitHeal`), and a hit on Eleven under Mike's DM screen is halved from any side within 32 px (`screenCovers`)
+- [x] Showing them: green corner tags and a bond line (with an ADDS preview) on the picks panel, a BONDS block of up to three lines on the character sheet (the stats and moves moved down, `MOVE_PITCH` 18), and a callout under the HUD for 4 s when a stage starts with one or a recruit completes one (`world/bondbanner.ts`). The tiny font gained `' + % , : . -`
+- [x] Balance on HARD, 100 seeds: only 1.2, 2.3 and 3.3 went outside a band, and were pulled back with `enemyMult` (1.3 to 1.36, 1 to 1.04, 1.6 to 1.65). 1.3, 2.1 and 2.2 hold their bands as they are; 1.1, 3.1 and 3.2 did not move
+- [x] Pace: the carried run's mean did not move (1642 XP for the lead after chapter 3, 1641 with bonds), but the ten seeds `tests/pace.test.ts` reads dipped under its floor, so 3.3's `xpMult` went from 2 to 2.25 and four Dustin lines in `ARRIVAL` moved. `pace.test.ts` is green
+- [x] Tests: `tests/bonds.test.ts` and `tests/bonds-combat.test.ts` (rules, data, picks, sheet, callout, the sim). Five old tests read numbers bonds change and moved with them: the burst's first sweep, the Demogorgon's stun, the Flayer's open head, the Grigori bot's window (1800 to 1500 frames) and the 3.3 scene test's seed (15 to 21)
+- [x] Verified: typecheck clean, 1823 tests pass (main brought in first), the production build passes. In the browser (muted): the picks panel's tags, bond line and ADDS preview, the sheet's BONDS block, and the callout under the HUD for two bonds, with no console errors
+- [x] Merged into main (9bc2292, a fast-forward) under the owner's standing go-ahead. Not pushed
+- [ ] Owner plays it: the picks panel's tags and line, the sheet, the callout, and whether Friends don't lie covering Eleven reads right
+- [ ] Chapter 4 switches on Chief and kid and Hellfire (`docs/bonds.md`, "Chapter 4"): flip `on`, add `hopper` and `eddie` to `HeroId`, read `hero.bond.solo` in the Hellfire solo, update the "off" assertions in `tests/bonds.test.ts`, re-measure the stages
+- [ ] Party of four is the quietest bond (+8% DEF is about 3% less damage taken, since DEF counts half). A call for the owner: raise it, or leave it as the spec wrote it
+
 ## This pass (level 9)
 
 - [x] Owner's calls (2026-10-15): Eleven is locked in. Hopper is an npc who leaves to go down to the Key, and the machine's boom takes him; he isn't playable yet. The Mind Flayer is the legs fight (four legs slam telegraphed lines, cut all four and the head comes down). Billy is phase one of the boss in the same arena, pinned at 0 HP until Eleven reaches him. The chapter ends on Hopper's letter, then CHAPTER THREE CLEAR with the feedback note, then the map with nothing ahead
@@ -65,6 +79,19 @@ Scope for this pass: the first half of chapter 4. Level 10 (stage 4.1, Kamchatka
 - [x] Verified in the browser (muted, 3.1 at Lv 6): the sheet's two talent rows, Will as CLERIC, Nancy's held Molotov and its pool, Dart at Dustin's heels. No console errors
 - [ ] Owner plays the talents by hand, the hold above all
 - [ ] The bot's screen rule: Mike stops for the DM screen with two foes in reach, and the cast slows him, so on NORMAL 3.1 the bot takes 182 damage, not 77. A rule that raises it before contact may play better, and would need the stages measured again
+
+## Lv 9 talents
+
+- [x] Built for the nine heroes, each with a NEW TALENT callout and a character sheet line (`TALENTS`, `LV9`): Overload, Oath, Cerebro, Volley, Hive link, King Steve, Final girl, Max's Extra life and Robin's Dry wit. Hopper's and Eddie's come with their kits and add their own entries. The record, and where the table left the how open, is "The Lv 9 talents as built" in `docs/game-design.md`
+- [x] In `heroes/`: `oath.ts`, `cerebro.ts`, `hive.ts`, `extralife.ts` and `talents9.ts` (King Steve, Final girl, Dry wit, the HUD's `once`), Overload in `eleven.ts`, Volley in `lucas.ts`. Their flags and the Hive clock are in `combat/talent_state.ts`. Extra life and Oath are asked in `reapHeroes`; Hive link starts in `trySwap`; Cerebro is a held Special for Dustin until Suzie is called (`holdsSpecial` takes the sim now). Once a stage resets on a stage start and a retry (the sim is built afresh) and on getting up from a wipe (`resetTalentState`)
+- [x] The sheet holds six rows now (three moves, three talents): `MOVE_PITCH` 16, `NOTE_DY` 8, the panel two rows taller and the stats and rule a row higher. `PartyHud.once` is the one new field on the view
+- [x] Bot: Dustin holds Special for Cerebro once a stage when the living party is under 55% of its MP. The rest need no input (Oath and Extra life catch a fall, Hive link comes with any swap to Will)
+- [x] Tests: `tests/talents9.test.ts`, `talents9-lives.test.ts` (24: each unlocks at 9 and not 8, does what it says, once a stage resets on a stage and a retry, the defense is left alone, the bot's Cerebro). `progression`, `heroes`, `will`, `charsheet` and `bonds` tests moved from two talents to three
+- [x] Measured on HARD (`chief`, 20 seeds, `scripts/measure-campaign.ts` and `measure-stage.ts` 3.1 to 3.3): bit for bit what it was. No hero reaches Lv 9 in the nine stages (the lead ends 3.3 at Lv 8), so nothing moved and no `enemyMult` changed. With every hero forced to Lv 9 (`--party=...:9`) the stages still clear 20 of 20, a little easier: 3.3 damage 126 to 109 for Mike, Dustin, Robin and Eleven, and 3.1 147 to 110 and 3.2 294 to 196 for Lucas, Max, Steve and Will (3.3 with Lucas, Eleven, Steve and Will 140 to 146)
+- [x] Verified in the browser (muted, 3.1 at Lv 9, `?level=9`): the sheet's six rows for Mike, Lucas, Eleven and Will, and Dustin's hold calling Suzie (rings, SUZIE and MP +30%). No console errors
+- [ ] Owner plays the Lv 9 talents by hand: the Cerebro hold, Oath's beat before the ally stands, Hive link on a swap
+- [ ] Chapter 4's curse must take a hero to 0 HP and let `reapHeroes` notice, or Extra life will not catch it
+- [ ] Re-measure the chapter 4 and 5 stages with the Lv 9 talents on (heroes reach Lv 9 to 12 there)
 
 ## Difficulty pass (NORMAL and HARD, Starcourt eased)
 
@@ -250,4 +277,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Next: chapters 4 and 5, the other heroes, bonds, the Lv 9 talents (Max's is open), the remaining tracks, docs polish.
+Next: chapters 4 and 5, the other heroes (and their Lv 9 talents), the remaining tracks, docs polish.

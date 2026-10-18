@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { SimEvent } from '../src/core/types.ts';
-import { damageRange, hitEnemy, rollDamage } from '../src/combat/damage.ts';
+import { damageRange, heroAtk, hitEnemy, rollDamage } from '../src/combat/damage.ts';
 import { addPool } from '../src/combat/pools.ts';
 import { startLine } from '../src/enemies/flayer_legs.ts';
 import { footBlocked } from '../src/combat/space.ts';
@@ -359,7 +359,7 @@ test('head: it takes downMul times the damage while it is down', () => {
   run(r.sim, 6);
   const hp = r.body.hp;
   const dealt = hammer(r, r.body, 2);
-  assert.equal(dealt, Math.round(rollDamage(2, r.hero.st.atk, FLAYER.def, 1) * FX.downMul), 'downMul');
+  assert.equal(dealt, Math.round(rollDamage(2, heroAtk(r.s, r.hero), FLAYER.def, 1) * FX.downMul), 'downMul');
   assert.equal(r.body.hp, hp - dealt);
   assert.ok(ofType(run(r.sim, 1), 'hit').some((h) => h.onEnemy));
 });

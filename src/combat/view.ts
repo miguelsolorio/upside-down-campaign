@@ -26,6 +26,7 @@ import { isMarked } from '../heroes/hellfire.ts';
 import { soloHud } from '../heroes/eddie_solo.ts';
 import { ghoulPose, inGlass, mirrorK } from '../enemies/ghoul_hit.ts';
 import { chimesOn, walkmanHud } from './curse.ts';
+import { onceOf } from '../heroes/talents9.ts';
 
 let shakeScale = 1;
 let reduceFlash = false;
@@ -44,7 +45,7 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
   };
   // Lucas under his Camo is drawn faint, and a held Special shows its ring. Neither is set otherwise.
   if (active && camoHides(s, h)) v.hidden = true;
-  const charge = active ? chargeOf(h) : 0;
+  const charge = active ? chargeOf(s, h) : 0;
   if (charge > 0) v.charge = charge;
   // A cursed hero hangs where the curse found them, with the chimes sounded so far over their head.
   const chimes = chimesOn(s, h);
@@ -194,14 +195,20 @@ function fxList(s: S): FxView[] {
 }
 
 function partyHud(s: S): PartyHud[] {
-  return s.heroes.map((h, i) => ({
-    id: h.id, name: HERO_DEFS[h.id].name, level: h.level,
-    hp: h.ko ? 0 : Math.max(1, Math.ceil(h.hp)), hpMax: h.st.hp,
-    mp: Math.floor(h.mp), mpMax: h.st.mp, mpCost: HERO_DEFS[h.id].special.mp,
-    xp: h.level >= MAX_LEVEL ? xpToNext(h.level) : h.xp, xpNext: xpToNext(h.level),
-    ko: h.ko, active: i === s.active,
-    ...(chimesOn(s, h) > 0 ? { curse: chimesOn(s, h) } : {}),
-  }));
+  return s.heroes.map((h, i) => {
+    const row: PartyHud = {
+      id: h.id, name: HERO_DEFS[h.id].name, level: h.level,
+      hp: h.ko ? 0 : Math.max(1, Math.ceil(h.hp)), hpMax: h.st.hp,
+      mp: Math.floor(h.mp), mpMax: h.st.mp, mpCost: HERO_DEFS[h.id].special.mp,
+      xp: h.level >= MAX_LEVEL ? xpToNext(h.level) : h.xp, xpNext: xpToNext(h.level),
+      ko: h.ko, active: i === s.active,
+    };
+    const once = onceOf(s, h);
+    if (once) row.once = once;
+    const chimes = chimesOn(s, h);
+    if (chimes > 0) row.curse = chimes;
+    return row;
+  });
 }
 
 export function buildView(s: S): SimView {

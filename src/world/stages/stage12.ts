@@ -140,9 +140,10 @@ export const STAGE_12: StageData = {
   // A dark shape walks along the chamber behind the observation glass, east to west.
   scare: { from: { x: 468, y: 248 }, to: { x: 292, y: 244 }, frames: 96 },
   hazards: HAZARDS,
-  // The Lab's enemies are better trained than the woods': 30 percent more HP and 30 percent harder hits than the
+  // The Lab's enemies are better trained than the woods': 36 percent more HP and 36 percent harder hits than the
   // difficulty setting alone gives. Measured with a bot that never dodges, this is what keeps the Lab dangerous on chief.
-  enemyMult: 1.3,
+  // It was 30 until the bonds (docs/bonds.md): Mike and Eleven's +10% ATK made the Lab a little too easy, and 36 puts it back.
+  enemyMult: 1.36,
   // XP factor for the campaign's pace (docs/pace.md), set with node scripts/measure-campaign.ts.
   xpMult: 0.4,
   waypoints: WAYPOINTS,

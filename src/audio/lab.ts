@@ -1,7 +1,8 @@
 // ?audio=1 audio lab. Owner: Audio agent. A small menu to play every track, toggle the combat layer, fire every
 // effect and render a track to a WAV file in music/.
-//   Up, Down: select    Enter: play    Space: combat layer    R: render 30 s and save    Left, Right: music volume
+//   Up, Down: select    Enter: play    Space: combat layer    R: render 30 s (all of a track that plays once) and save    Left, Right: music volume
 //   E: render the selected effect offline through the limiter and show its peak, RMS and limiter reduction
+//   P: step the tempo phase of the track that is playing (The Abyss has three)
 import type { Game, Scene } from '../core/scene.ts';
 import type { AudioMetrics, ColorName, JingleId, SfxId, Speaker, StingerId, TrackId } from '../core/types.ts';
 import { drawText } from '../gfx/index.ts';
@@ -12,6 +13,7 @@ import { renderWith } from './render.ts';
 import { playSfx, SFX } from './sfx.ts';
 import { JINGLES, STINGERS } from './tracks/jingles.ts';
 import { TRACKS, TRACK_IDS } from './tracks/index.ts';
+import { loopSeconds, phaseBpm, phaseCount } from './tracks/compile.ts';
 import { BLIPS } from './cues.ts';
 
 type Kind = 'music' | 'stop' | 'jingle' | 'sting' | 'blip' | 'sfx';
@@ -68,13 +70,14 @@ export function createAudioLabScene(): Scene {
   let sel = 0;
   let top = 0;
   let combat = false;
+  let phase = 0;
   let busy = false;
   let status = 'PRESS ENTER TO PLAY';
   let metrics: AudioMetrics | null = null;
 
   const play = (it: Item): void => {
     switch (it.kind) {
-      case 'music': audio.music(it.id as TrackId); audio.intensity(combat ? 1 : 0); break;
+      case 'music': audio.music(it.id as TrackId); audio.intensity(combat ? 1 : 0); phase = 0; break;
       case 'stop': audio.music(null); break;
       case 'jingle': audio.jingle(it.id as JingleId); break;
       case 'sting': audio.stinger(it.id as StingerId); break;
@@ -93,7 +96,9 @@ export function createAudioLabScene(): Scene {
     busy = true;
     status = `RENDERING ${name.toUpperCase()}...`;
     try {
-      const m = await audio.renderOffline(id, 30, { combat: withCombat });
+      // A track that plays once is rendered whole, with three seconds for the tail to ring out.
+      const seconds = TRACKS[id].once ? Math.ceil(loopSeconds(TRACKS[id])) + 3 : 30;
+      const m = await audio.renderOffline(id, seconds, { combat: withCombat, phase: position()?.id === id ? phase : 0 });
       metrics = m;
       if (!m.wav) throw new Error('no wav');
       const body = await toDataUrl(m.wav);
@@ -146,6 +151,15 @@ export function createAudioLabScene(): Scene {
         status = combat ? 'COMBAT LAYER ON' : 'COMBAT LAYER OFF';
         break;
       case 'KeyR': void render(); break;
+      case 'KeyP': {
+        const now = position();
+        const n = now ? phaseCount(TRACKS[now.id]) : 1;
+        if (!now || n < 2) { status = 'THIS TRACK HAS ONE TEMPO'; break; }
+        phase = (phase + 1) % n;
+        audio.phase(phase);
+        status = `TEMPO PHASE ${phase + 1} OF ${n}: ${phaseBpm(TRACKS[now.id], phase)} BPM`;
+        break;
+      }
       case 'KeyE': void measureSfx(); break;
       case 'ArrowLeft': case 'ArrowRight': {
         if (!game) break;
@@ -174,7 +188,8 @@ export function createAudioLabScene(): Scene {
       drawText(ctx, 'AUDIO LAB', 6, 4, 'yellow');
       drawText(ctx, audio.isMuted() ? 'MUTED (M)' : 'M: MUTE', 250, 4, audio.isMuted() ? 'red' : 'slate', { align: 'right' });
       const pos = position();
-      drawText(ctx, pos ? `NOW ${pos.id.toUpperCase()}  BAR ${pos.bar + 1}/${pos.bars}` : 'NOW SILENT', 6, 14, 'cyan');
+      const over = audio.musicEnded() ? '  ENDED' : '';
+      drawText(ctx, pos ? `NOW ${pos.id.toUpperCase()}  BAR ${pos.bar + 1}/${pos.bars}${over}` : 'NOW SILENT', 6, 14, 'cyan');
       drawText(ctx, `COMBAT ${combat ? 'ON ' : 'OFF'}`, 250, 14, combat ? 'hot' : 'mist', { align: 'right' });
       ctx.fillStyle = '#2c3a63';
       ctx.fillRect(4, 25, 248, 1);
@@ -205,7 +220,7 @@ export function createAudioLabScene(): Scene {
       }
       drawText(ctx, status, 6, 182, busy ? 'amber' : 'leaf');
       drawText(ctx, 'UP DOWN SELECT   ENTER PLAY', 6, 196, 'mist');
-      drawText(ctx, 'SPACE COMBAT   R RENDER   E MEASURE SFX', 6, 205, 'mist');
+      drawText(ctx, 'SPACE COMBAT   R RENDER   P PHASE   E SFX', 6, 205, 'mist');
       drawText(ctx, `LEFT RIGHT MUSIC VOLUME ${game ? Math.round(game.settings.musicVol * 100) : 0}%`, 6, 214, 'mist');
     },
   };

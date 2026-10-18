@@ -233,6 +233,8 @@ export interface PartyHud {
   xp: number; xpNext: number; ko: boolean; active: boolean;
   /** The chimes sounded on a hero under the clock curse, 1 to 3. Absent when not cursed. */
   curse?: number;
+  /** A Lv 9 talent that works once a stage (Mike's Oath, Dustin's Cerebro, Max's Extra life): ready, or spent. Absent for anyone without one. */
+  once?: 'ready' | 'spent';
 }
 export interface HudView {
   party: PartyHud[];

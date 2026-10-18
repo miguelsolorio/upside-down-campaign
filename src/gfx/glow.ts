@@ -30,6 +30,28 @@ const LIFT = [0, 0.3, 0.6, 0.95, 1.35];
 /** The color a light adds: amber, so the pools read as warm against the green woods. */
 const WARM = [255, 190, 90];
 
+/**
+ * The smoothed falloff of a pool of radius R at each whole-pixel offset, one quadrant (the pool is symmetric): index
+ * |dy| * (R + 1) + |dx|, -1 outside the radius. It depends on R alone, so it is built once per radius, not per pixel per frame.
+ */
+const shapes = new Map<number, Float64Array>();
+function shapeOf(R: number): Float64Array {
+  let t = shapes.get(R);
+  if (!t) {
+    const n = R + 1;
+    t = new Float64Array(n * n);
+    for (let dy = 0; dy < n; dy++) {
+      for (let dx = 0; dx < n; dx++) {
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const f = 1 - d / R;
+        t[dy * n + dx] = d >= R ? -1 : f * f * (3 - 2 * f);
+      }
+    }
+    shapes.set(R, t);
+  }
+  return t;
+}
+
 /** The part of the world view a set of pools touches, in view px: x0..x1 and y0..y1 inclusive. */
 interface Box { x0: number; y0: number; x1: number; y1: number }
 
@@ -66,16 +88,15 @@ function fillSteps(lights: readonly Glow[], t: number, level: number): Box | nul
   for (let y = uy0; y <= uy1; y++) step.fill(0, y * W + ux0, y * W + ux1 + 1);
   for (const P of pools) {
     const { cx, cy, R, k } = P;
+    const shape = shapeOf(R), n = R + 1;
     for (let y = P.y0; y <= P.y1; y++) {
-      const dy = y - cy;
+      const row = Math.abs(y - cy) * n, bayer = (y & 3) * 4;
       for (let x = P.x0; x <= P.x1; x++) {
-        const dx = x - cx;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d >= R) continue;
-        const f = 1 - d / R;
-        const q = f * f * (3 - 2 * f) * k, lo = Math.floor(q);
+        const base = shape[row + Math.abs(x - cx)] as number;
+        if (base < 0) continue;
+        const q = base * k, lo = Math.floor(q);
         // Ordered dither between steps: a Bayer threshold decides whether this pixel rounds up.
-        const s = Math.min(4, lo + (q - lo > ((BAYER4[(y & 3) * 4 + (x & 3)] as number) + 0.5) / 16 ? 1 : 0));
+        const s = Math.min(4, lo + (q - lo > ((BAYER4[bayer + (x & 3)] as number) + 0.5) / 16 ? 1 : 0));
         const i = y * W + x;
         if (s > (step[i] as number)) step[i] = s;
       }
@@ -86,6 +107,10 @@ function fillSteps(lights: readonly Glow[], t: number, level: number): Box | nul
 
 /** One lifted channel: the pixel's value brightened by the step's lift, plus the warm light's share. */
 const lifted = (v: number, lift: number, warm: number): number => Math.min(255, v * (1 + lift) + warm * lift * 0.2);
+
+/** lifted() for every step and channel value, rounded the way a canvas byte rounds: index step * 768 + channel * 256 + value. */
+const LUT = new Uint8ClampedArray(5 * 768);
+for (let st = 0; st < 5; st++) for (let c = 0; c < 3; c++) for (let v = 0; v < 256; v++) LUT[st * 768 + c * 256 + v] = lifted(v, LIFT[st] as number, WARM[c] as number);
 
 /** Paints the pools onto what is already on the canvas. level scales every pool, for a stutter or a fade. */
 export function paintGlow(ctx: Ctx, lights: readonly Glow[], t: number, level = 1): void {
@@ -124,19 +149,13 @@ export function paintStageGlow(ctx: Ctx, stage: BakedStage, camX: number, camY: 
   if (source.length < w * h) source = new Uint32Array(w * h);
   stagePixels(stage, Math.round(camX) + box.x0, Math.round(camY) + box.y0, w, h, t, source);
   if (!patch || patch.width < w || patch.height < h) patch = ctx.createImageData(Math.max(w, patch?.width ?? 0), Math.max(h, patch?.height ?? 0));
-  const out = patch.data, stride = patch.width * 4;
-  const src = new Uint8Array(source.buffer, 0, w * h * 4);
+  const out = new Uint32Array(patch.data.buffer), stride = patch.width;
   for (let y = 0; y < h; y++) {
-    for (let x = 0, i = (box.y0 + y) * W + box.x0, q = y * w * 4, p = y * stride; x < w; x++, i++, q += 4, p += 4) {
-      const s = step[i] as number, lift = LIFT[s] as number;
-      if (s === 0) {
-        out[p] = src[q] as number; out[p + 1] = src[q + 1] as number; out[p + 2] = src[q + 2] as number;
-      } else {
-        out[p] = lifted(src[q] as number, lift, WARM[0] as number);
-        out[p + 1] = lifted(src[q + 1] as number, lift, WARM[1] as number);
-        out[p + 2] = lifted(src[q + 2] as number, lift, WARM[2] as number);
-      }
-      out[p + 3] = 255;
+    for (let x = 0, i = (box.y0 + y) * W + box.x0, q = y * w, p = y * stride; x < w; x++, i++, q++, p++) {
+      const v = source[q] as number, st = step[i] as number;
+      if (st === 0) { out[p] = v; continue; }
+      const b = st * 768;
+      out[p] = ((LUT[b + (v & 255)] as number) | ((LUT[b + 256 + ((v >> 8) & 255)] as number) << 8) | ((LUT[b + 512 + ((v >> 16) & 255)] as number) << 16) | 0xff000000) >>> 0;
     }
   }
   ctx.putImageData(patch, box.x0, VIEW_TOP + box.y0, 0, 0, w, h);

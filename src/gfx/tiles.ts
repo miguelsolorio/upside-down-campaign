@@ -28,8 +28,11 @@ export interface BakedStage { readonly w: number; readonly h: number; readonly n
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
 /** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain and the base's machine. They are baked at their first step and drawn over at the others. */
 interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block }
-interface StageData extends BakedStage { canvas: HTMLCanvasElement; px: Uint32Array; water: WaterSpot[]; pulses: PulseSpot[] }
+/** px is the baked pixels (0 where a moving tile goes); solid is the same with black in place of 0, as the frame shows it. */
+interface StageData extends BakedStage { canvas: HTMLCanvasElement; px: Uint32Array; solid: Uint32Array; water: WaterSpot[]; pulses: PulseSpot[] }
 
+/** Opaque black, packed the way ImageData holds it. What the frame holds where there is no stage. */
+const BLACK = 0xff000000;
 const T = 16;
 const WATER_TICKS = 16;
 /** Frames each step of a pulse lasts: the veins and the tears move through four steps. */
@@ -136,7 +139,8 @@ export function bakeStage(rows: string[], night = false): BakedStage {
       }
     }
   }
-  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), px, water, pulses };
+  const solid = px.map((v) => (v === 0 ? BLACK : v));
+  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), px, solid, water, pulses };
   return data;
 }
 
@@ -163,22 +167,19 @@ export function drawStage(ctx: Ctx, stage: BakedStage, camX: number, camY: numbe
   }
 }
 
-/** Opaque black, packed the way ImageData holds it. What the frame holds where there is no stage. */
-const BLACK = 0xff000000;
-
 /**
  * The pixels drawStage leaves on screen for the world rectangle (x, y, w, h) at frame t, into out: opaque, black where there is
  * no stage. It is what the light pools lift (gfx/glow.ts), so a pool never has to read the canvas back, which stalls the frame.
  */
 export function stagePixels(stage: BakedStage, x: number, y: number, w: number, h: number, t: number, out: Uint32Array): void {
   const s = stage as StageData;
-  out.fill(BLACK, 0, w * h);
-  const x0 = Math.max(0, x), x1 = Math.min(s.w, x + w);
-  if (x1 > x0) {
-    for (let j = Math.max(0, y); j < Math.min(s.h, y + h); j++) {
-      const row = j * s.w, o = (j - y) * w - x;
-      for (let i = x0; i < x1; i++) { const v = s.px[row + i] as number; if (v !== 0) out[o + i] = v; }
-    }
+  const xs = Math.max(0, x), xe = Math.min(s.w, x + w);
+  for (let j = 0; j < h; j++) {
+    const o = j * w, wy = y + j;
+    if (wy < 0 || wy >= s.h || xe <= xs) { out.fill(BLACK, o, o + w); continue; }
+    if (xs > x) out.fill(BLACK, o, o + xs - x);
+    out.set(s.solid.subarray(wy * s.w + xs, wy * s.w + xe), o + xs - x);
+    if (xe < x + w) out.fill(BLACK, o + xe - x, o + w);
   }
   /** One animated tile on top, the way drawStage draws its canvas. */
   const lay = (tile: Px, tx: number, ty: number): void => {

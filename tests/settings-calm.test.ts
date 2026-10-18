@@ -43,3 +43,16 @@ test('calm from the system: a saved setting wins, so turning the flashes back up
   assert.equal(settings.reduceFlashing, false);
   assert.equal(settings.shake, 1);
 });
+
+const { variantOf } = await import('../src/gfx/actor_kit.ts');
+
+test('hit flash: with Reduce flashing on a hit never shows the solid white silhouette, only the dithered tint', () => {
+  const hit = { flash: 1, tint: null, hidden: false };
+  settings.reduceFlashing = false;
+  assert.equal(variantOf(hit), 'w', 'a full flash is the white silhouette');
+  settings.reduceFlashing = true;
+  assert.equal(variantOf(hit), 'tw', 'calm: the dithered white tint');
+  assert.equal(variantOf({ ...hit, flash: 0.3 }), 'tw', 'a faint flash still shows');
+  assert.equal(variantOf({ ...hit, flash: 0 }), 'n', 'no flash, no change');
+  settings.reduceFlashing = false;
+});

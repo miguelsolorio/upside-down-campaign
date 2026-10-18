@@ -3,6 +3,7 @@
 // (a hidden enemy in the corn: a thin ghost of dither, so only a careful eye sees it; a hidden hero, Lucas under his Camo, is half dither
 // with his outline kept, so the player still sees him). Pure pixel work until canvasFromPixels.
 import type { ActorView } from '../core/types.ts';
+import { settings } from '../core/settings.ts';
 import { canvasFromPixels, px32 } from './canvas.ts';
 import type { ColorName } from './palette.ts';
 import type { Px } from './px.ts';
@@ -28,11 +29,20 @@ export function ghostKeep(hero: boolean, x: number, y: number, ink: boolean): bo
   return ((x + y) & 1) === 0 && (x & 1) === 0;
 }
 
+/**
+ * How white a hit flash may show. With Reduce flashing on it stops short of the solid white silhouette (over 0.6) and shows the dithered
+ * white tint, so a boss the size of the Mind Flayer, hit five times a second, never flashes white across a quarter of the screen.
+ */
+export function flashOf(v: Look): number {
+  return settings.reduceFlashing ? Math.min(v.flash, 0.5) : v.flash;
+}
+
 /** Which look a view asks for, as a short key. */
 export function variantOf(v: Look): string {
   if (v.hidden) return v.kind === 'hero' ? 'hh' : 'h';
-  if (v.flash > 0.6) return 'w';
-  if (v.flash > 0.25) return 'tw';
+  const flash = flashOf(v);
+  if (flash > 0.6) return 'w';
+  if (flash > 0.25) return 'tw';
   return v.tint ? `t${v.tint}` : 'n';
 }
 

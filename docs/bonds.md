@@ -34,7 +34,7 @@ Both are in `BONDS` with `on: false`, their numbers set. Nothing shows them or c
 
 1. Add `'hopper'` and `'eddie'` to `HeroId` (`core/types.ts`). `BondHero` already names them and stays valid.
 2. Set `on: true` on `chief-and-kid` and `hellfire` in `src/heroes/bonds.ts`. Hopper's and Eleven's DEF is then live through `heroDef`, and the picks panel, the sheet and the callout list them.
-3. Hellfire's effect is Eddie's `hero.bond.solo`, frames to add to the Hellfire solo's length. Nothing in combat reads it yet, because there is no solo; read it where the solo's duration is set.
+3. Hellfire's effect is Eddie's `hero.bond.solo`, frames to add to the Hellfire solo's length. Nothing reads it yet, because Eddie is not playable and the solo (`src/solo/`, `createSolo`) is not wired to his special. Read it where the solo's length is set.
 4. `tests/bonds.test.ts` pins the two as off ("the design's seven bonds are in the data, and Hopper and Eddie's two are off"), and `liveBonds()` is asserted there. Update those lines when they go on. The same file shows how to flip `on` for a moment (`chief.on = true`, restore in `finally`).
 5. The character sheet fits three bond lines for a hero. Dustin has Party of four, Babysitter's club and Hellfire, which is exactly three.
 6. Re-measure the stages with the new party mixes: `node scripts/measure-stage.ts <stage> chief 100`.

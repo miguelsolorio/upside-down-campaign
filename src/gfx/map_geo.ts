@@ -40,9 +40,10 @@ export const POS: Record<string, Pt> = {
   '3.2': { x: 96, y: 93 },
   '3.3': { x: 118, y: 48 },
   // Chapter 4 (docs/map-screen.md, "Chapter four on the map"): Kamchatka is half a world away, so 4.1 sits on the inset in the top left corner
-  // (map_inset.ts), on its lower right corner where the token stands over the picture. 4.2 is a stand-in spot until Art draws the Creel House.
+  // (map_inset.ts), on its lower right corner where the token stands over the picture. The Creel House stands on its hill in the top right of
+  // the town (map_house.ts), 4.2 in front of it on the road.
   '4.1': { x: 57, y: 30 },
-  '4.2': { x: 186, y: 40 },
+  '4.2': { x: 188, y: 57 },
 };
 
 /** The place each stage sits in. */
@@ -62,6 +63,7 @@ export const LAND = {
   mall: { x: 118, base: 72 },
   food: { x: 118, base: 52 },
   bunker: { x: 96, y: HZ },
+  creel: { x: 190, base: 50 },
 };
 
 /** How far each leg of the route bows, in px: the sign picks the side. The last two are the flights to Kamchatka and back to the Creel House. */

@@ -8,6 +8,7 @@ import type { Part } from './types.ts';
 import { HOPPER_PORTRAIT, MAX_PORTRAIT, STEVE_PORTRAIT } from './portraits_l56.ts';
 import { ERICA_PORTRAIT, NANCY_PORTRAIT, ROBIN_PORTRAIT } from './portraits_l78.ts';
 import { BILLY_PORTRAIT } from './portraits_l9.ts';
+import { EDDIE_PORTRAIT } from './eddie.ts';
 
 export type Shirt = 'stripes' | 'plaid' | 'plain' | 'jacket' | 'cardigan';
 
@@ -229,6 +230,6 @@ const BASE_PORTRAITS = {
 export const PORTRAITS: Record<CharId, PortraitSpec> = {
   ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT,
   robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: BILLY_PORTRAIT,
-  // Eddie borrows Steve's until Art draws his Hellfire Club portrait (docs/level-11.md).
-  eddie: STEVE_PORTRAIT,
+  // Eddie's is the Hellfire Club pick, on its dark red ground (data/eddie.ts).
+  eddie: EDDIE_PORTRAIT,
 };

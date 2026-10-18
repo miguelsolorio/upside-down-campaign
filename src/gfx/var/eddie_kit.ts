@@ -25,11 +25,11 @@ export interface EddieOpt {
 
 /** The frame: the 16 px cell sits OX across and OY down in it. */
 export const FW = 28, FH = 22;
-const OX = 6, OY = 5;
+export const OX = 6, OY = 5;
 type Pt = readonly [number, number];
 
 /** Where the guitar goes in a frame, in cell coordinates: headstock, joint, which way the prongs open, and in front or behind. */
-interface Vee { head: Pt; joint: Pt; front: boolean; hands?: Pt[] }
+export interface Vee { head: Pt; joint: Pt; front: boolean; hands?: Pt[] }
 
 export interface FrameDef { label: string; view: View; anim: AnimId; f: number; body: BodyDef; vee: Vee }
 
@@ -73,7 +73,7 @@ const BODY = 6.2, FLARE = 0.62, NOTCH = 2.8, CUT = 0.8;
  * a V cut out of its far end, so it reads as two wings at any angle; the neck from the headstock to the joint; and a nub on the
  * headstock.
  */
-function veeBuf(v: Vee): Roles {
+export function veeBuf(v: Vee): Roles {
   const buf: Roles = new Uint8Array(FW * FH);
   const hx = v.head[0] + OX, hy = v.head[1] + OY, jx = v.joint[0] + OX, jy = v.joint[1] + OY;
   const len = Math.hypot(jx - hx, jy - hy) || 1, ux = (jx - hx) / len, uy = (jy - hy) / len;

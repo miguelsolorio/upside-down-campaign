@@ -11,6 +11,7 @@ import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } f
 import { arcade, gate, grey, lab, pumpkin, remap, roots, school, toUD, toUDLand, tunnels, woods } from './map_art.ts';
 import { bunker, foodCourt, mall } from './map_mall.ts';
 import { INSET, kamchatka } from './map_inset.ts';
+import { creelHouse } from './map_house.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
 
@@ -231,6 +232,7 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   stand(arcade(), 245, 90, lp);
   stand(mall(), LAND.mall.x, LAND.mall.base, locked('3.1'));
   const fc = stand(foodCourt(), LAND.food.x, LAND.food.base, locked('3.3'));
+  stand(creelHouse(), LAND.creel.x, LAND.creel.base, locked('4.2'));
   const plates: PlateSpec[] = [
     { cx: LAND.woods.x, y: wd.y0 - 12, name: 'MIRKWOOD', state: st['1.1'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.lab.x, y: lb.y0 - 12, name: 'LAB', state: st['1.2'] as NodeState, ud: false, point: 'down' },
@@ -241,6 +243,8 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
     { cx: LAND.mall.x + 6, y: fc.y0 - 19, name: 'STARCOURT', state: st['3.1'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.mall.x + 6, y: fc.y0 - 11, name: 'FOOD COURT', state: st['3.3'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.bunker.x - 26, y: LAND.bunker.y - 12, name: 'BASE', state: st['3.2'] as NodeState, ud: false, point: 'right' },
+    // The Creel House's plate hangs over its hill, pointing down at the roof.
+    { cx: LAND.creel.x, y: 15, name: 'CREEL HOUSE', state: st['4.2'] as NodeState, ud: false, point: 'down' },
     // Kamchatka's plate hangs under its inset, pointing up into it.
     { cx: INSET.x + 22, y: INSET.y + INSET.h, name: 'KAMCHATKA', state: st['4.1'] as NodeState, ud: false, point: 'up', night: true },
   ];

@@ -132,11 +132,9 @@ test('the guards are drawn as themselves: the rifle guard is not the 3.2 soldier
   assert.ok(same(enemy('kbaton', { guarding: false, anim: 'attack', alert: true }), enemy('kbaton', { guarding: true, anim: 'attack', alert: true })), 'the wind-up is the same either way');
   assert.ok(!same(enemy('kguard', { anim: 'attack', alert: true }), enemy('kguard', { anim: 'attack' })), 'the rifle guard aims under the "!" and fires after it, like the soldier');
   assert.ok(painted(enemy('kguard', { anim: 'ko' })) > 40);
-  // The ghoul and Eddie still borrow a sprite until another agent draws them; the guards and the pit do not.
+  // Nobody borrows a sprite any more (Eddie and the ghoul have their own frames, tests/art-ch4b.test.ts); the pit's Demogorgon is an alias for good.
   const actors = src('src/gfx/actors.ts');
-  const standIn = /const STAND_IN[^\n]*=\s*\{([^}]*)\}/.exec(actors);
-  assert.ok(standIn, 'the STAND_IN map is still there');
-  assert.doesNotMatch(standIn![1] as string, /kguard|kbaton|pitdemo/);
+  assert.doesNotMatch(actors, /STAND_IN/, 'no stand-in map is left');
   assert.match(actors, /const ALIAS[^\n]*pitdemo: 'demogorgon'/);
   assert.match(actors, /an alias for good, not a stand-in/);
 });

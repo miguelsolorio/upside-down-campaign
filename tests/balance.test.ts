@@ -26,8 +26,11 @@ test('time to kill at parity: rats in one to three hits, agents in three to five
     // Robin's scoop and Nancy's pistol are single hits.
     robin: HERO_DEFS.robin.basic.power,
     nancy: HERO_DEFS.nancy.basic.power,
+    hopper: HERO_DEFS.hopper.basic.power,
+    eddie: HERO_DEFS.eddie.basic.power,
   };
-  for (const id of HERO_IDS) {
+  // Hopper and Eddie join chapter 4 at Lv 5 or so, never at Lv 1 against chapter 1's foes: their numbers are measured in 4.1 and 4.2.
+  for (const id of HERO_IDS.filter((h) => h !== 'hopper' && h !== 'eddie')) {
     const atk = HERO_DEFS[id].base.atk;
     const r = hitsToKill(powers[id], atk, ENEMY_DEFS.rat.def, ENEMY_DEFS.rat.hp);
     const a = hitsToKill(powers[id], atk, ENEMY_DEFS.agent.def, ENEMY_DEFS.agent.hp);

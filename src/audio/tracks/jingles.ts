@@ -201,4 +201,7 @@ export const STINGERS: Record<StingerId, Cue> = {
   // Nancy: flat and decisive, on the triangle. F, F, then C a fourth down, all level: no vibrato, no slide, the same
   // length twice and a longer last note that sits. It lands like a hammer coming down. Triangle only, no noise.
   nancy: cue(line(150, 'tri', 0.3, [[0, 0.4, 'F4'], [0.5, 0.4, 'F4'], [1, 0.9, 'C4']]), [], 3, 1.5),
+  // Stand-ins until Audio writes Hopper's and Eddie's (docs/level-10.md, docs/level-11.md).
+  hopper: cue(line(150, 'tri', 0.3, [[0, 0.4, 'C3'], [0.5, 0.9, 'G2']]), [], 3, 1.5),
+  eddie: cue(line(150, 'p50', 0.26, [[0, 0.2, 'E3'], [0.2, 0.2, 'G3'], [0.4, 0.7, 'A3']]), [], 3, 1.5),
 };

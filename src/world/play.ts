@@ -14,7 +14,7 @@ import { createSim, setReduceFlashing, setShakeScale } from '../combat/index.ts'
 import { createBot } from '../combat/bot.ts';
 import type { Bot } from '../combat/bot.ts';
 import { HERO_IDS } from '../heroes/index.ts';
-import { emptyStats, xpToNext } from '../progression/index.ts';
+import { setLookStage } from '../gfx/index.ts';
 import { audio } from '../audio/index.ts';
 import { SCRIPTS, bark } from '../story/index.ts';
 import { createCharSheetScene, createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
@@ -33,6 +33,8 @@ import type { ArcadeVisit } from '../arcade/index.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
 import { boomView, deadBilly, leavers } from './aftermath.ts';
 import { devHooks } from './devhooks.ts';
+import { sheetHeroes } from './sheet_party.ts';
+import { createMemoryFade } from './memory.ts';
 import { createKlaxon } from './klaxon.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, inView, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
@@ -118,6 +120,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let banked = 0;
   /** What `banked` was when the live sim was built. The sim counts its own pickups from 0, so the run's total is this plus its stats. */
   let baseQuarters = 0;
+  /** The save has Max's Walkman, or a beat gave it this visit (docs/level-11.md). The room the curse turns red fades with memory. */
+  let walkman = opts.walkman === true;
+  const memory = createMemoryFade();
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -136,7 +141,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     baseQuarters = banked;
     sim = createSim(deadBilly(stage.sim({
       party, start: at, difficulty: game.settings.difficulty, seed: game.flags.seed, god: game.flags.god, skipSpawns: skip, openProps,
-      purse: (opts.purse ?? 0) + banked, ...(opts.stash ? { stash: opts.stash() } : {}),
+      purse: (opts.purse ?? 0) + banked, ...(opts.stash ? { stash: opts.stash() } : {}), walkman,
     }), skip, fell));
     view = sim.view();
     cameraSnap(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
@@ -159,6 +164,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     },
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
     boom() { audio.sfx('boom'); boom = 0; },
+    walkman() { if (!walkman) { walkman = true; sim.giveWalkman?.(); opts.onWalkman?.(); } },
     music: (track) => audio.music(track),
     // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
     light(prop) {
@@ -223,6 +229,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     levelFx.clear();
     klaxon.clear();
     boom = -1;
+    memory.reset();
     swapAge = null;
     deferred.length = 0;
     swallow.clear();
@@ -273,21 +280,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     game.scenes.push(sc);
   }
 
-  /** Every hero for the character sheet. Those in the party come with their level, XP and d20 bonus. A hero who
-   * isn't in the party comes in at Lv 1. */
-  function sheetParty(): CharSheetHero[] {
-    const live = sim.party();
-    return HERO_IDS.map((id): CharSheetHero => {
-      const slot = live.findIndex((m) => m.id === id);
-      const p = live[slot];
-      const hud = view.hud.party.find((m) => m.id === id);
-      if (!p) return { id, level: 1, xp: 0, xpNext: xpToNext(1), bonus: emptyStats(), joined: false, active: false, slot: -1 };
-      return {
-        id, level: p.level, xp: p.xp, xpNext: hud?.xpNext ?? xpToNext(p.level), bonus: { ...emptyStats(), ...p.bonus },
-        joined: true, active: hud?.active ?? false, slot,
-      };
-    });
-  }
+  const sheetParty = (): CharSheetHero[] => sheetHeroes(sim.party(), view.hud.party);
 
   /** The character sheet over the frozen level, open on this hero. Closing it goes straight back to play. */
   function openSheet(id: HeroId): void {
@@ -392,6 +385,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
 
     enter(g) {
       game = g;
+      setLookStage(stage.id);
       director = createDirector(stage.beats, stage.waves, env);
       const load = opts.resume;
       if (load) {
@@ -436,7 +430,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
       // The scare holds the whole level still, as dialogue does, so nothing lands a hit on a party that can't move.
       if (!scare) forward(sim.step(input));
-      view = sim.view();
+      view = sim.view(); memory.step(view);
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
       // A benched hero's face under the mouse is a button, and so is the active hero's name and level.
@@ -483,7 +477,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         camW = SCREEN_W;
       }
       const fig = figure();
-      drawWorld(ctx, stage, boom >= 0 ? boomView(view, boom, g.settings.shake) : view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 } });
+      drawWorld(ctx, stage, boom >= 0 ? boomView(view, boom, g.settings.shake) : view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 }, memory: memory.k() });
       drawFlash(ctx, view);
       drawLevelFx(ctx, levelFx.list(), view, cam);
       drawKlaxon(ctx, klaxon.level(g.settings.reduceFlashing));

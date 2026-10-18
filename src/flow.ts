@@ -5,7 +5,7 @@ import type { Game } from './core/scene.ts';
 import type { HeroId, PartySeed } from './core/types.ts';
 import { CHAPTERS, STAGE_ORDER, chapterOf, closesChapter, defaultParty, levelNumber, nextStage, opensChapter, partyFor } from './core/campaign.ts';
 import { flags } from './core/flags.ts';
-import { clearProgress, loadProgress, purseOf, recordClear, spendStash, stashOf, withPicks, withPurse, writeProgress } from './core/progress.ts';
+import { clearProgress, loadProgress, purseOf, recordClear, spendStash, stashOf, withPicks, withPurse, withWalkman, writeProgress } from './core/progress.ts';
 import type { Progress } from './core/progress.ts';
 import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
@@ -103,6 +103,9 @@ export function startGame(g: Game): void {
       purse: purseOf(progress),
       stash: () => stashOf(progress),
       onStashUsed: (item) => { progress = spendStash(progress, item); writeProgress(progress); },
+      // Max's Walkman, the 4.2 story item, is the save's as soon as the beat gives it (docs/level-11.md).
+      walkman: progress?.walkman === true,
+      onWalkman: () => { progress = withWalkman(progress); writeProgress(progress); },
       onClear: ({ stats, party: after, quarters }) => {
         // Progress marks the stage, keeps every hero at their best and banks the run's quarters. The map is the way on, so the
         // stage save goes.

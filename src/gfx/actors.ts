@@ -312,7 +312,12 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
 }
 
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
-export function drawActor(ctx: Ctx, v: ActorView): void {
+/** Chapter 4 stand-ins until Art draws them (docs/level-10.md, docs/level-11.md): each borrows a sprite that already exists. */
+const STAND_IN: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon', kguard: 'soldier', kbaton: 'guard', ghoul: 'flayed', eddie: 'steve' };
+
+export function drawActor(ctx: Ctx, w: ActorView): void {
+  const sub = STAND_IN[w.id];
+  const v: ActorView = sub ? { ...w, id: sub } : w;
   switch (v.id) {
     case 'demogorgon': drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big'); return;
     case 'demodog': drawFramed(ctx, v, dogFrame(v), DOG_W, DOG_H, 'big'); return;

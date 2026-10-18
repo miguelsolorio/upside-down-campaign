@@ -224,6 +224,9 @@ export function buildView(s: S): SimView {
       swapReady: s.swapCd > 0 ? Math.max(0, 1 - s.swapCd / SWAP_COOLDOWN) : 1, boss: bossBar(s),
       ward: wardHud(s),
       stash: { ...s.stash },
+      // Stand-ins until Sim builds the solo and the Walkman (docs/level-11.md).
+      solo: null,
+      walkman: null,
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

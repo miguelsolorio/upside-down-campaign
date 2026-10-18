@@ -250,6 +250,9 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
     case 'firebox': case 'vines': drawSchoolProp(ctx, v, art, calm()); return;
     case 'arcade': case 'hidden': drawTownProp(ctx, v, art, calm()); return;
     case 'gap': case 'crack': case 'rift': drawGateProp(ctx, v, art, calm()); return;
+    // Stand-ins until Art draws the haunted mirror and the grandfather clock (docs/level-11.md): a frame and a fill.
+    case 'mirror': rect(ctx, x, y, w, h, 'ink'); if (v.state !== 'open') rect(ctx, x + 2, y + 2, w - 4, h - 4, 'mist'); return;
+    case 'clock': rect(ctx, x, y, w, h, 'soil0'); rect(ctx, x + 3, y + 3, w - 6, 8, v.state === 'open' ? 'grey1' : 'bone'); return;
     case 'lights':
       ctx.drawImage(art(`lights${w}x${h}`, () => lightsArt(w, h)), x, y);
       drawLights(ctx, v, x, y);

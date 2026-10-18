@@ -83,6 +83,8 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   // He never speaks while he fights, so it is heard in one short line, and it has to read as him. His level is set by
   // ear-weighted energy like the others: a low square needs more peak than a bright one to be heard as loud.
   billy: { wave: 'p50', midi: 50, spread: 2, dur: 0.07, vol: 0.23, attack: 0.002, bend: -3, rough: GROWL },
+  // Stand-in until Audio writes Eddie's pulse with vibrato (docs/level-11.md).
+  eddie: { wave: 'p25', midi: 62, spread: 3, dur: 0.05, vol: 0.2, attack: 0.003 },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };

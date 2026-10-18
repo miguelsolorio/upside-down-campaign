@@ -149,7 +149,9 @@ test('each of them has a portrait of their own, drawn on the shared head, with e
 
 test('the three stand-ins are gone: no actor borrows another one\'s sprite or portrait', () => {
   const actors = readFileSync(new URL('../src/gfx/actors.ts', import.meta.url), 'utf8');
-  assert.doesNotMatch(actors, /STAND_IN/);
+  // Chapter 4's own stand-ins come and go with its build (docs/level-10.md, docs/level-11.md); none of chapter 3's may come back.
+  const standIns = /const STAND_IN[^;]*;/.exec(actors)?.[0] ?? '';
+  assert.doesNotMatch(standIns, /robin|nancy|erica|melter|flayed:|soldier:|grigori/);
   const portraits = readFileSync(new URL('../src/gfx/data/portraits.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(portraits, /robin: MAX_PORTRAIT|nancy: STEVE_PORTRAIT|erica: BASE_PORTRAITS/);
   const props = readFileSync(new URL('../src/gfx/props.ts', import.meta.url), 'utf8');

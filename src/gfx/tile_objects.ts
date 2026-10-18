@@ -18,6 +18,7 @@ import { fleshTile } from './tile_flesh.ts';
 import { mallObject } from './tile_mall.ts';
 import { baseObject } from './tile_base.ts';
 import { foodTable, foodTile, inCourt } from './tile_food.ts';
+import { ch4Tile } from './tile_ch4.ts';
 
 const GROUNDS = new Set<TileName>([
   'grass', 'grass2', 'dirt', 'trail', 'gravel', 'flowers', 'labfloor', 'labfloor2', 'hazard', 'vent',
@@ -356,7 +357,8 @@ export function objectTile(name: TileName, c: TileCtx): Px | null {
       return baseObject(name, c, under);
     case 'stallcap': case 'stall': case 'fryer': case 'escalator':
       return foodTile(name, c);
-    default: return null;
+    // Chapter 4's camp, pit, club and house (tile_ch4.ts).
+    default: return ch4Tile(name, c);
   }
 }
 

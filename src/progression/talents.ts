@@ -50,6 +50,15 @@ export const TALENTS: Record<HeroId, Talent[]> = {
     { name: 'Trap kit', text: 'Shotgun drops a bear trap', level: 3 },
     { name: 'Molotov', text: 'Hold Special: fire pool, burns', level: 6 },
   ],
+  // Chapter 4 (docs/level-10.md, docs/level-11.md). Hopper plays 4.1 alone; Eddie joins in 4.2. Berserk and Encore are Lv 9.
+  hopper: [
+    { name: 'Coffee', text: 'Food heals him 25% more', level: 3 },
+    { name: 'Wind-up', text: 'Hold Attack: a guard breaker', level: 6 },
+  ],
+  eddie: [
+    { name: 'Metalhead', text: '+10% ATK', level: 3 },
+    { name: 'Hellfire DM', text: 'Marks bosses: party +20% dmg', level: 6 },
+  ],
 };
 
 /** True once the hero is at or past the level of their talent at `at` (the Lv 3 one unless asked). */

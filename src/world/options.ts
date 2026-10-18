@@ -18,12 +18,14 @@ export interface SimBuild {
   /** Quarters the party walks in with, and Erica's stash (docs/level-7.md, "Erica and the stash"). */
   purse?: number;
   stash?: Stash;
+  /** The party has Max's Walkman (docs/level-11.md). */
+  walkman?: boolean;
 }
 
 /** Props that stay open across a retry or a load, and the ones the dev panel offers to open. */
 export const KEPT_PROPS: ReadonlySet<string> = new Set([
   'gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap',
-  'shutter', 'cipher',
+  'shutter', 'cipher', 'mirror', 'clock',
 ]);
 
 export function stageGrid(data: StageData): Grid {
@@ -48,6 +50,7 @@ export function simOptions(data: StageData, grid: Grid, b: SimBuild): SimOptions
     god: b.god,
     purse: b.purse,
     stash: b.stash,
+    walkman: b.walkman,
   };
 }
 

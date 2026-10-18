@@ -246,6 +246,41 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.07, poolEvery: 30, poolSlow: 20,
     },
   },
+  // Chapter 4 (docs/level-10.md, docs/level-11.md). Starting numbers: Sim tunes them inside the stages' targets. The Kamchatka guard
+  // is the soldier in winter (enemies/soldier.ts reads these x), the camp guard the riot guard with a baton (enemies/guard.ts), and the
+  // pit Demogorgon the 1.3 one sized for Hopper alone (enemies/demogorgon.ts). Its x mirrors the 1.3 one's.
+  kguard: {
+    kind: 'kguard', name: 'Guard', hp: 80, atk: 36, def: 5, speed: 0.7, xp: 12, aggro: 130,
+    windup: 30, power: 0.3, cooldown: 120, drop: 0.3, weight: 1.2,
+    x: {
+      near: 80, far: 120, panic: 60, back: 0.7, stamina: 50, speed: 3.2, range: 180, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6,
+      recover: 50, butt: 22, buttWindup: 20, buttPower: 0.8, buttKb: 3, buttReach: 28, buttRecover: 30, buttGap: 60, patrol: 0.5, lose: 240,
+    },
+  },
+  kbaton: {
+    kind: 'kbaton', name: 'Camp guard', hp: 110, atk: 34, def: 7, speed: 0.7, xp: 16, aggro: 100,
+    windup: 30, power: 0.9, cooldown: 110, drop: 0.35, weight: 1.4,
+    x: { range: 26, reach: 30, arc: 75, block: 0.2, breakKb: 3.2, breakT: 45, grace: 30, turn: 12, kb: 3.6, recover: 36, patrol: 0.5, lose: 240, hold: 18 },
+  },
+  pitdemo: {
+    kind: 'pitdemo', name: 'Demogorgon', hp: 600, atk: 34, def: 6, speed: 0.8, xp: 60, aggro: 200,
+    windup: 30, power: 0.5, cooldown: 100, drop: 1, weight: 4,
+    x: {
+      reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1, chargeKb: 5, stunT: 150, stunMul: 1.5, stunsToPin: 3,
+      petalsAt: 0.6, leapAt: 0.3, roarT: 40,
+      spitWindup: 26, spitEvery: 120, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.3,
+      crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
+    },
+  },
+  // The Creel ghoul (docs/level-11.md, "The ghoul"). see: px from its mirror a hero must come within for it to step out. rise: frames
+  // stepping out. gap: frames before the next ghoul of the same mirror. range, lungeT, lungeSpeed, recover, kb: the lunge. bob: px it
+  // floats. light: px from a lit lights prop that it takes lightMul in.
+  ghoul: {
+    kind: 'ghoul', name: 'Creel ghoul', hp: 110, atk: 38, def: 4, speed: 0.8, xp: 14, aggro: 140,
+    windup: 24, power: 0.8, cooldown: 90, drop: 0.25, weight: 1.1,
+    x: { see: 80, rise: 40, gap: 90, range: 40, lungeT: 10, lungeSpeed: 3.2, recover: 30, kb: 3, bob: 2, light: 48, lightMul: 1.5 },
+  },
 };
 
 /** Enemy HP and damage multiplier. */

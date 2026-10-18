@@ -1,10 +1,40 @@
 // The audio vocabulary: tracks, jingles, stingers and the mixer's API. Split out of types.ts to keep that file under 500
 // lines; types.ts re-exports all of it, so import from there. The same contract rule applies: report changes, don't make them.
-import type { HeroId, SfxId, Speaker } from './types.ts';
+import type { HeroId, Speaker } from './types.ts';
 
-/** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen and 2.1. starcourt: 3.1 to 3.3. sour:
- *  starcourt going sour near the Mind Flayer, in 3.3 (docs/level-9.md). */
-export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins' | 'starcourt' | 'sour';
+/** Every sound effect the sim and the scenes can ask for. */
+export type SfxId =
+  | 'swing' | 'hit' | 'crit' | 'kill' | 'hurt' | 'ko'
+  | 'rock' | 'rockHit' | 'dart' | 'push' | 'beam' | 'flame' | 'shield' | 'lure' | 'candyPop'
+  | 'dash' | 'swap' | 'burst' | 'pickup' | 'heal' | 'noMp' | 'nosebleed'
+  | 'select' | 'confirm' | 'cancel' | 'pause' | 'dialogOpen'
+  | 'gateOpen' | 'targetHit' | 'logPush' | 'lights' | 'flicker' | 'growl' | 'klaxon'
+  /** zap: an electric panel firing. steam: a vent venting. spotted: a camera sees you. block: a shield stops a hit.
+   *  bash: a guard's swing. slam: the Warden's ground slam. */
+  | 'zap' | 'steam' | 'spotted' | 'block' | 'bash' | 'slam'
+  /** roar: the Demogorgon's call. acid: a spit. lunge: a charge or demodog lunge. petals: the head opening.
+   *  chomp: a bite landing. thud: a charge hitting a wall. reveal: a hidden path showing. sizzle: vines burning away. */
+  | 'roar' | 'acid' | 'lunge' | 'petals' | 'chomp' | 'thud' | 'reveal' | 'sizzle'
+  /** howl: the Alpha calling its pack. skate: Max's dash rolling. crack: a cracked wall breaking. taunt: Steve's Babysit.
+   *  rumble: the Gate tearing at the floor during the defense. gateShut: the Gate closing for good. */
+  | 'howl' | 'skate' | 'crack' | 'taunt' | 'rumble' | 'gateShut'
+  /** pistol and shotgun: Nancy. scoop and babble: Robin. rifle: a soldier's burst, one per round. melt: a melting rat bursting.
+   *  grab: a Flayed or Grigori taking hold. decode: a cipher door opening. stash: an item from Erica's stash used. buy: a
+   *  purchase at Erica's cart. */
+  | 'pistol' | 'shotgun' | 'scoop' | 'babble' | 'rifle' | 'melt' | 'grab' | 'decode' | 'stash' | 'buy'
+  /** legslam: a Mind Flayer leg striking. sever: a leg cut. shatter: the skylight breaking. boom: the Key's machine blowing
+   *  up under the mall. reach: Eleven reaching Billy. */
+  | 'legslam' | 'sever' | 'shatter' | 'boom' | 'reach'
+  /** haymaker: Hopper's punch (docs/level-10.md). vswing: Eddie's Flying V. riff: one pulse of his solo. feedback: the squeal that
+   *  cuts a solo short. chime: a grandfather clock's chime, the curse counting. curse: a hero lifted by the curse. walkman: Max
+   *  playing her Walkman. ghoul: a Creel ghoul stepping out of a mirror (docs/level-11.md). */
+  | 'haymaker' | 'vswing' | 'riff' | 'feedback' | 'chime' | 'curse' | 'walkman' | 'ghoul'
+  | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
+
+/** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen, 2.1 and 4.2. starcourt: 3.1 to 3.3. sour:
+ *  starcourt going sour near the Mind Flayer, in 3.3 (docs/level-9.md). kamchatka: mirkwood in the snow, slower and colder, for
+ *  4.1 (docs/level-10.md). */
+export type TrackId = 'static' | 'mirkwood' | 'lab' | 'upside' | 'clock' | 'hawkins' | 'starcourt' | 'sour' | 'kamchatka';
 export type JingleId = 'levelUp' | 'recruit' | 'clear' | 'gameOver' | 'item' | 'dice';
 export type StingerId = 'scare' | HeroId;
 export interface AudioMetrics {

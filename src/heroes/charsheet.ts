@@ -107,6 +107,11 @@ function heroMoves(id: HeroId, level: number, atk: number): SheetMove[] {
         basic(b.power, 'Steady shots, aims eight ways'),
         special(hit(sp.power), hasTalent('nancy', level) ? 'Five pellets, drops a bear trap' : 'Five pellets, heavy knockback', sp.x.n),
       ];
+    // Stand-ins until Sim writes Hopper's and Eddie's lines (docs/level-10.md, docs/level-11.md).
+    case 'hopper':
+      return [basic(b.power, 'Slow, huge reach'), special(hit(sp.power), 'Shockwave all round, stuns')];
+    case 'eddie':
+      return [basic(b.power, 'Wide arc, a sound ring'), special(hit(sp.power), 'Six seconds on the beat')];
   }
 }
 

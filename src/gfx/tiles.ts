@@ -11,6 +11,7 @@ import type { Px } from './px.ts';
 import { bankMask, groundTile, waterTile } from './tile_ground.ts';
 import type { Block, Near, TileCtx } from './tile_ground.ts';
 import { objectTile, pulseTile } from './tile_objects.ts';
+import { ch4Tile } from './tile_ch4.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
 import { tunnelTile } from './tile_tunnel.ts';
 import { findCourts } from './tile_school.ts';
@@ -70,12 +71,15 @@ function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasEle
   return c;
 }
 
-function staticTile(name: TileName, c: TileCtx): Px {
-  return groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
+function staticTile(name: TileName, c: TileCtx, memory = false): Px {
+  return (memory ? ch4Tile(name, c, true) : null) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
 }
 
-/** rows use the legend in core/tiles.ts. night bakes the night art instead of the day art. */
-export function bakeStage(rows: string[], night = false): BakedStage {
+/**
+ * rows use the legend in core/tiles.ts. night bakes the night art instead of the day art. skin 'memory' bakes the Creel House's
+ * letters in its Blood red skin, for the room the 4.2 curse turns red (docs/level-11.md); every other tile bakes as always.
+ */
+export function bakeStage(rows: string[], night = false, skin?: 'memory'): BakedStage {
   const cols = rows[0]?.length ?? 0, nrows = rows.length;
   const names: TileName[] = [];
   for (let y = 0; y < nrows; y++) {
@@ -104,7 +108,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
       const court = courts[ty * cols + tx];
       const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
       if (isPulse(name)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
-      const day = staticTile(name, tc);
+      const day = staticTile(name, tc, skin === 'memory');
       const tile = night ? nightTile(day, name, tc) : day;
       if (night && litWindow(day, name)) windows.push({ x: tx * T + 8, y: ty * T + 16 });
       for (let j = 0; j < T; j++) {

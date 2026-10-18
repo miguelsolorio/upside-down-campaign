@@ -21,6 +21,9 @@ export function useBasic(s: S, h: Hero): void {
     case 'steve': steveBasic(s, h); break;
     case 'robin': robinBasic(s, h); break;
     case 'nancy': nancyBasic(s, h); break;
+    // Stand-ins until Sim writes Hopper's and Eddie's kits (docs/level-10.md, docs/level-11.md).
+    case 'hopper': steveBasic(s, h); break;
+    case 'eddie': mikeBasic(s, h); break;
   }
 }
 
@@ -35,5 +38,7 @@ export function useSpecial(s: S, h: Hero): void {
     case 'steve': steveSpecial(s, h); break;
     case 'robin': robinSpecial(s, h); break;
     case 'nancy': nancySpecial(s, h); break;
+    case 'hopper': steveSpecial(s, h); break;
+    case 'eddie': dustinSpecial(s, h); break;
   }
 }

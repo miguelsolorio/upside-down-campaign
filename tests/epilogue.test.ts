@@ -23,8 +23,8 @@ test('chapter three ends on Hopper\'s letter, and no other chapter has an epilog
 });
 
 test('the epilogue is for the chapter the last stage closes, and plays only with words in its script', () => {
-  const last = STAGE_ORDER[STAGE_ORDER.length - 1] as string;
-  assert.equal(closesChapter(last), true);
+  const last = [...STAGE_ORDER].reverse().find(closesChapter) as string;
+  assert.equal(last, '3.3', 'the last chapter end built is the food court: 4.2 is the middle of chapter 4');
   assert.equal(EPILOGUES[chapterOf(last)], 'l9_letter');
   // World fills the letter in. Until then the chapter goes straight to its results, as flow.ts expects.
   assert.equal(hasEpilogue(3), (SCRIPTS['l9_letter']?.lines.length ?? 0) > 0);
@@ -143,7 +143,7 @@ test('every chapter\'s last stage says CHAPTER n CLEAR, and the others say LEVEL
     const closes = closesChapter(id);
     const title = resultsTitle({ chapter: closes ? chapterOf(id) : undefined, final: nextStage(id) === null, level: levelNumber(id) });
     if (closes) said.push(title);
-    else assert.equal(title, `LEVEL ${levelNumber(id)} CLEAR`);
+    else assert.equal(title, nextStage(id) === null ? `END OF LEVEL ${levelNumber(id)}` : `LEVEL ${levelNumber(id)} CLEAR`);
   }
   assert.deepEqual(said, ['CHAPTER ONE CLEAR', 'CHAPTER TWO CLEAR', 'CHAPTER THREE CLEAR']);
 });

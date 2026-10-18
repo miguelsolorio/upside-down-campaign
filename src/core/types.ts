@@ -1,6 +1,7 @@
 // Shared types for the whole game. Pure types: no DOM, so Node tests can import this file.
 // This file is the contract. Do not edit it from a sub-agent; report the change you need instead.
 import type { ColorName } from '../gfx/palette.ts';
+import type { SfxId } from './types_audio.ts';
 
 export type { ColorName };
 
@@ -10,13 +11,14 @@ export interface Vec2 { x: number; y: number }
 export interface Rect { x: number; y: number; w: number; h: number }
 
 // ---------------------------------------------------------------- identity
-/** Playable so far. Will joins in chapter 2, Max and Steve in 2.2, Robin and Nancy in 3.1. Later: hopper, eddie. */
-export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | 'steve' | 'robin' | 'nancy';
+/** Playable so far. Will joins in chapter 2, Max and Steve in 2.2, Robin and Nancy in 3.1. Hopper plays 4.1 alone, in Kamchatka
+ *  (docs/level-10.md), and Eddie joins in 4.2 (docs/level-11.md). */
+export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | 'steve' | 'robin' | 'nancy' | 'hopper' | 'eddie';
 /** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1 and plays from
- *  2.2 on. Hopper is an npc at the Gate in 2.3 and at the food court in 3.3. Erica is an npc at Scoops Ahoy in 3.1 and runs
+ *  2.2 on. Hopper is an npc at the Gate in 2.3 and at the food court in 3.3, and plays from 4.1. Erica is an npc at Scoops Ahoy in 3.1 and runs
  *  the cart on the map. Billy is never an npc: he is the `billy` enemy, and the cast entry gives him a portrait and a voice
  *  for his one line in 3.3 (docs/level-9.md). */
-export type CharId = HeroId | 'joyce' | 'hopper' | 'erica' | 'billy';
+export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
 /**
  * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
  * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
@@ -26,10 +28,14 @@ export type CharId = HeroId | 'joyce' | 'hopper' | 'erica' | 'billy';
  * soldier: a Russian soldier with burst fire. grigori: the 3.2 mini-boss, who shrugs off frontal hits (docs/level-8.md).
  * billy: Flayed Billy, phase one of the 3.3 boss, pinned at 0 HP until Eleven reaches him. flayer: the Mind Flayer's body,
  * phase two. flayerleg: one of its four legs, hit on its own (docs/level-9.md).
+ * kguard: a Kamchatka guard, the soldier in winter. kbaton: a camp guard with a baton who blocks from the front, like a riot guard.
+ * pitdemo: the Demogorgon in the pit, the 4.1 mini-boss, finished by Hopper's slam (docs/level-10.md). ghoul: a Creel ghoul, who
+ * waits in a haunted mirror and steps out of it (docs/level-11.md).
  */
 export type EnemyKind =
   | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
-  | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg';
+  | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg'
+  | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -72,7 +78,8 @@ export interface ActorView {
    *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md).
    *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. Billy uses
    *  charge, grab, stun and pinned (kneeling). The Mind Flayer's body uses rise (coming in through the skylight) and down
-   *  (its head on the floor), and a leg uses warn (its line shown), slam (striking down it) and severed (docs/level-9.md). */
+   *  (its head on the floor), and a leg uses warn (its line shown), slam (striking down it) and severed (docs/level-9.md). The pit
+   *  Demogorgon uses the Demogorgon's. A ghoul uses rise (stepping out of its mirror) (docs/level-11.md). */
   pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab' | 'warn' | 'slam' | 'severed' | 'down';
   /** A Mind Flayer leg's tip in world px: the end of the line it strikes down. x, y is its root. Absent on everything else. */
   aim?: Vec2;
@@ -88,6 +95,11 @@ export interface ActorView {
   confused?: boolean;
   /** A dormant Flayed, waiting as a goo puddle until its group wakes. */
   puddle?: boolean;
+  /** A hero under the clock curse: the chimes sounded so far, 1 to 3. gfx draws the clock mark and its four pips over them, and
+   *  z lifts them. Drawn where the curse found them, benched or not (docs/level-11.md, "The curse"). Absent when not cursed. */
+  curse?: number;
+  /** A boss or elite marked by Eddie's Hellfire DM: the party's hits on it deal more. gfx draws a small d20 over it. */
+  marked?: boolean;
 }
 
 export type FxKind =
@@ -109,7 +121,11 @@ export type FxKind =
   /** slam: a Mind Flayer leg striking the floor, w its reach. glass: the skylight shattering as the Mind Flayer comes in,
    *  w the spread. sweep: a Mind Flayer leg sweeping a band across the arena: x, y its top-left, w and h its size, t < 40 the
    *  warning, then the strike. */
-  | 'slam' | 'glass' | 'sweep';
+  | 'slam' | 'glass' | 'sweep'
+  /** riff: Eddie's sound ring, x, y its center and w its diameter: the small one where his swing lands and each pulse of his solo.
+   *  chime: a ring off a grandfather clock's face as it chimes, w its diameter. walkman: notes round Max as she plays her Walkman,
+   *  w the spread (docs/level-11.md). */
+  | 'riff' | 'chime' | 'walkman';
 
 export interface FxView {
   kind: FxKind;
@@ -141,11 +157,15 @@ export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
  * cipher: a steel door with a Russian keypad, hitBy 'read'. Robin standing near it decodes it (PropView.k), then it opens.
  * powerbox: a floor plate that fires when a breaker is shot. Not solid. Lit while it fires.
  * breaker: a wall switch, hitBy 'shoot'. Lit by a shot, it fires every powerbox, then goes back to closed to be shot again.
+ * mirror: a haunted mirror, hitBy 'riff'. Solid until Eddie shatters it: open and walkable, and the ghouls still in it die with it.
+ *   Its PropView.k is the share of its ghouls still waiting in the glass.
+ * clock: a grandfather clock, hitBy 'riff', or `hits` basic attacks from anyone else. Its chime is the curse. Broken, it is open and
+ *   still solid (docs/level-11.md).
  */
 export type PropKind =
   | 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console'
   | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade' | 'gap' | 'crack' | 'rift'
-  | 'shutter' | 'cipher' | 'powerbox' | 'breaker';
+  | 'shutter' | 'cipher' | 'powerbox' | 'breaker' | 'mirror' | 'clock';
 /** alert: a camera that has just spotted the party. */
 export type PropState = 'closed' | 'open' | 'lit' | 'off' | 'alert';
 export interface PropView {
@@ -155,8 +175,8 @@ export interface PropView {
   state: PropState; t: number;
   /** A camera's current cone. angle is in radians, 0 = right, y down. live is false once it is shot. */
   cam?: { angle: number; range: number; half: number; live: boolean };
-  /** 0..1 progress a prop shows: how far the Gate (a rift) has closed during the defense, or how far a cipher door is
-   *  decoded. Absent means 0. */
+  /** 0..1 progress a prop shows: how far the Gate (a rift) has closed during the defense, how far a cipher door is
+   *  decoded, or the share of a mirror's ghouls still in its glass. Absent means 0. */
   k?: number;
 }
 
@@ -211,6 +231,8 @@ export interface PartyHud {
   /** What the hero's special costs, so the MP bar can show casts. */
   mpCost: number;
   xp: number; xpNext: number; ko: boolean; active: boolean;
+  /** The chimes sounded on a hero under the clock curse, 1 to 3. Absent when not cursed. */
+  curse?: number;
 }
 export interface HudView {
   party: PartyHud[];
@@ -230,6 +252,12 @@ export interface HudView {
   ward: { name: string; hp: number; hpMax: number; left: number; total: number } | null;
   /** What is left of the stash bought from Erica (docs/level-7.md, "Erica and the stash"). */
   stash: Stash;
+  /** Eddie's Hellfire solo while he plays (docs/level-11.md): t frames into it, life its length, the streak of hits on the beat,
+   *  ring the radius in px and beat the frames to the next pulse. Null otherwise. */
+  solo: { t: number; life: number; streak: number; ring: number; beat: number } | null;
+  /** Max's Walkman, when the party has it and Max is in the party: ready 0..1 as it recharges (1 is ready), on the frames of
+   *  protection from the curse left. Null otherwise. */
+  walkman: { ready: number; on: number } | null;
 }
 export interface SimView {
   /** Y-sorted, painter's order: heroes, followers, enemies, npcs. */
@@ -263,30 +291,6 @@ export interface SimInput {
   swapTo: number;
   burstPressed: boolean;
 }
-
-export type SfxId =
-  | 'swing' | 'hit' | 'crit' | 'kill' | 'hurt' | 'ko'
-  | 'rock' | 'rockHit' | 'dart' | 'push' | 'beam' | 'flame' | 'shield' | 'lure' | 'candyPop'
-  | 'dash' | 'swap' | 'burst' | 'pickup' | 'heal' | 'noMp' | 'nosebleed'
-  | 'select' | 'confirm' | 'cancel' | 'pause' | 'dialogOpen'
-  | 'gateOpen' | 'targetHit' | 'logPush' | 'lights' | 'flicker' | 'growl' | 'klaxon'
-  /** zap: an electric panel firing. steam: a vent venting. spotted: a camera sees you. block: a shield stops a hit.
-   *  bash: a guard's swing. slam: the Warden's ground slam. */
-  | 'zap' | 'steam' | 'spotted' | 'block' | 'bash' | 'slam'
-  /** roar: the Demogorgon's call. acid: a spit. lunge: a charge or demodog lunge. petals: the head opening.
-   *  chomp: a bite landing. thud: a charge hitting a wall. reveal: a hidden path showing. sizzle: vines burning away. */
-  | 'roar' | 'acid' | 'lunge' | 'petals' | 'chomp' | 'thud' | 'reveal' | 'sizzle'
-  /** howl: the Alpha calling its pack. skate: Max's dash rolling. crack: a cracked wall breaking. taunt: Steve's Babysit.
-   *  rumble: the Gate tearing at the floor during the defense. gateShut: the Gate closing for good. */
-  | 'howl' | 'skate' | 'crack' | 'taunt' | 'rumble' | 'gateShut'
-  /** pistol and shotgun: Nancy. scoop and babble: Robin. rifle: a soldier's burst, one per round. melt: a melting rat bursting.
-   *  grab: a Flayed or Grigori taking hold. decode: a cipher door opening. stash: an item from Erica's stash used. buy: a
-   *  purchase at Erica's cart. */
-  | 'pistol' | 'shotgun' | 'scoop' | 'babble' | 'rifle' | 'melt' | 'grab' | 'decode' | 'stash' | 'buy'
-  /** legslam: a Mind Flayer leg striking. sever: a leg cut. shatter: the skylight breaking. boom: the Key's machine blowing
-   *  up under the mall. reach: Eleven reaching Billy. */
-  | 'legslam' | 'sever' | 'shatter' | 'boom' | 'reach'
-  | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {
   hero: HeroId; from: number; to: number;
@@ -325,15 +329,23 @@ export type SimEvent =
   | { t: 'defended' }
   /** An item from Erica's stash was used. The play scene writes the stash back to progress at once. */
   | { t: 'stashUsed'; item: StashItem }
+  /** A clock chimed and cursed this hero (docs/level-11.md, "The curse"). */
+  | { t: 'cursed'; hero: HeroId }
+  /** A curse ended: its clock broken, Max's Walkman, or the fourth chime's KO. */
+  | { t: 'curseEnd'; hero: HeroId; how: 'clock' | 'walkman' | 'ko' }
+  /** Max played her Walkman. */
+  | { t: 'walkman' }
   | { t: 'burst' }
   | { t: 'natTwenty'; hero: HeroId; source: 'crit' | 'levelUp' };
 
 export type SimSpawn =
-  /** hidden: drawn faint until Will's Cold spot shows it or it attacks (docs/level-4.md). */
-  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean }
+  /** hidden: drawn faint until Will's Cold spot shows it or it attacks (docs/level-4.md). mirror: the prop id of the haunted mirror a
+   *  ghoul waits in (docs/level-11.md). */
+  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean; mirror?: string }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
-  /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. */
-  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; cam?: CamDef }
+  /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. hits: a clock's,
+   *  the basic attacks from up close it takes to break by a hero without its `hitBy`. */
+  | { kind: 'prop'; id: string; prop: PropKind; tx: number; ty: number; w?: number; h?: number; solid?: boolean; state?: PropState; hitBy?: Utility; pushBy?: Utility; smash?: boolean; hits?: number; cam?: CamDef }
   | { kind: 'npc'; id: CharId; tx: number; ty: number; dir: Dir };
 
 /** A tile the sim may bring enemies up from at run time: the Alpha's howl and the defense waves. */
@@ -390,6 +402,8 @@ export interface SimOptions {
   purse?: number;
   /** Items bought from Erica, spent by the sim on its own. Empty if left out. */
   stash?: Stash;
+  /** The party has Max's Walkman, a story item from 4.2 (docs/level-11.md). False if left out. */
+  walkman?: boolean;
   /** Spawn ids already cleared (retry from a checkpoint). Run-time spawns are never skipped. */
   skipSpawns?: string[];
   /** Prop ids already opened or cleared. */
@@ -443,6 +457,10 @@ export interface Sim {
   closeProp(id: string): void;
   /** Starts the stage's defense (SimOptions.defense). Does nothing without one, or once it has started. */
   defend(): void;
+  /** The clock prop chimes and curses a hero (docs/level-11.md, "The curse"). Optional so a stand-in sim can leave it out. */
+  curse?(prop: string): void;
+  /** The party gets Max's Walkman, the 4.2 story item. Optional like curse. */
+  giveWalkman?(): void;
   healParty(frac: number): void;
   /** Switches the difficulty mid-stage: hits land at the new factor at once, and each living enemy keeps its share of HP. */
   setDifficulty(d: Difficulty): void;
@@ -468,21 +486,8 @@ export interface DevHooks extends SimDev {
   state(): Record<string, string | number | boolean>;
 }
 
-// ---------------------------------------------------------------- dialogue and story
-export type Expr = 'neutral' | 'happy' | 'worried' | 'determined' | 'hurt' | 'shocked';
-export type Speaker = CharId | 'dm' | 'narrator';
-/** text: up to 3 lines of 32 characters. Use "\n" for a hard break. */
-export interface DialogueLine { who: Speaker; text: string; expr?: Expr }
-export interface DialogueScript { id: string; lines: DialogueLine[] }
-
-export type BarkEvent = 'swapIn' | 'levelUp' | 'ko' | 'lowHp' | 'special' | 'kill' | 'eggo' | 'crit' | 'idle';
-
-// ---------------------------------------------------------------- gfx vocabulary
-export type IconId =
-  | 'bulbRed' | 'bulbYellow' | 'bulbGreen' | 'bulbBlue' | 'bulbOff'
-  | 'd20' | 'd20Glow' | 'eggo' | 'coke' | 'quarter' | 'arrow' | 'cursor' | 'cursorDown' | 'cursorUp' | 'heart';
-export type PanelStyle = 'dialog' | 'hud' | 'menu';
-export interface TextOpts { align?: 'left' | 'center' | 'right'; shadow?: boolean }
+// ---------------------------------------------------------------- dialogue, story and the gfx vocabulary
+export type { Expr, Speaker, DialogueLine, DialogueScript, BarkEvent, IconId, PanelStyle, TextOpts } from './types_ui.ts';
 
 // ---------------------------------------------------------------- audio vocabulary
-export type { TrackId, JingleId, StingerId, AudioMetrics, AudioApi } from './types_audio.ts';
+export type { SfxId, TrackId, JingleId, StingerId, AudioMetrics, AudioApi } from './types_audio.ts';

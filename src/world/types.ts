@@ -25,6 +25,10 @@ export interface PlayOptions {
   stash?(): Stash;
   /** The sim used an item from the stash. Flow writes it to progress at once, so a retry never gives it back. */
   onStashUsed?(item: StashItem): void;
+  /** The save has Max's Walkman (Progress.walkman), the 4.2 story item: the sim starts with it (docs/level-11.md). */
+  walkman?: boolean;
+  /** A `walkman` step gave it mid-stage. Flow writes it to progress at once, so a retry or a quit keeps it. */
+  onWalkman?(): void;
 }
 
 /** A rectangle in tile coordinates. */
@@ -55,6 +59,11 @@ export type BeatStep =
   | { t: 'boom' }
   /** An npc leaves: Hopper going down to the Key at the start of 3.3. It does not wait. */
   | { t: 'leave'; npc: CharId }
+  /** The clock prop chimes and curses a hero (Sim.curse, docs/level-11.md, "The curse"). It does not wait: a `curseEnd` beat
+   *  follows when the curse ends. */
+  | { t: 'curse'; prop: string }
+  /** Max gets her Walkman back, a story item (Sim.giveWalkman): the save keeps it at once. It does not wait. */
+  | { t: 'walkman' }
   | { t: 'finish' };
 
 /** What fires a beat. Rect beats fire once, the first time the hero's tile enters the rectangle. `needs` holds a
@@ -67,7 +76,9 @@ export type BeatWhen =
   /** The boss with this spawn id is pinned (the sim's `pinned` event). */
   | { event: 'pinned'; spawn: string }
   /** The defense clock ran out with the ward standing (the sim's `defended` event). */
-  | { event: 'defended' };
+  | { event: 'defended' }
+  /** A curse ended, however it ended (the sim's `curseEnd` event). */
+  | { event: 'curseEnd' };
 
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
@@ -131,5 +142,7 @@ export interface StageData {
   burrows?: Burrow[];
   /** The stage's defense, started by a `defend` beat step (docs/level-6.md, "The defense"). */
   defense?: DefenseDef;
+  /** The room drawn in the memory skin (the Creel House in Blood red) while a curse counts: 4.2's parlor (docs/level-11.md). */
+  memory?: TileRect;
   waypoints: BotWaypoint[];
 }

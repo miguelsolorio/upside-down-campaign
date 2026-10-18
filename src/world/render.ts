@@ -3,7 +3,7 @@
 // World-space draws assume the caller translated by (-camX, VIEW_TOP - camY); drawWorld does that itself.
 import type { ActorView, Floater, HeroId, PropView, SimView, Vec2 } from '../core/types.ts';
 import type { Camera } from '../core/camera.ts';
-import { SCREEN_H, SCREEN_W, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
+import { SCREEN_H, SCREEN_W, TILE, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import { isSolidTile } from '../core/tiles.ts';
 import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
@@ -43,6 +43,8 @@ export interface WorldOpts {
   figure: Vec2 | null;
   /** The pools of light at night. level scales them all (the scare stutters them) and flicker adds jitter. */
   light: { level: number; flicker: number };
+  /** 0..1, how much of the stage's memory room shows in its Blood red skin while a curse counts (docs/level-11.md). */
+  memory?: number;
 }
 
 // ---------------------------------------------------------------- the scare figure
@@ -117,6 +119,18 @@ function solidAt(stage: Stage): (tx: number, ty: number) => boolean {
  * painter's pass by their bottom edge, then fx and floaters. On a screen wider than the clear band, the world past
  * the band fades to black.
  */
+/** The memory room in its own skin over the stage, clipped to the room and faded by k. */
+function drawMemory(ctx: Ctx, stage: Stage, camX: number, camY: number, t: number, k: number): void {
+  const r = stage.memory as NonNullable<Stage['memory']>;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(r.tx * TILE, r.ty * TILE, r.w * TILE, r.h * TILE);
+  ctx.clip();
+  ctx.globalAlpha = k;
+  drawStage(ctx, stage.memoryBaked as NonNullable<Stage['memoryBaked']>, camX, camY, t);
+  ctx.restore();
+}
+
 export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t: number, o: WorldOpts): void {
   ctx.save();
   // Nothing in the world may draw into the HUD strip, whatever the camera does.
@@ -126,6 +140,7 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   ctx.translate(-cam.x + view.shake.x, VIEW_TOP - cam.y + view.shake.y);
   const camX = cam.x - view.shake.x, camY = cam.y - view.shake.y;
   drawStage(ctx, stage.baked, camX, camY, t);
+  if (stage.memory && stage.memoryBaked && (o.memory ?? 0) > 0) drawMemory(ctx, stage, camX, camY, t, o.memory as number);
   const night = stage.time === 'night';
   // The pools go on the ground, under everything that moves, so the party is never tinted by them.
   if (night) paintGlow(ctx, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);

@@ -26,15 +26,15 @@ export function tileFeet(tx: number, ty: number): { x: number; y: number } {
 }
 
 const PROP_SIZE: Partial<Record<PropKind, [number, number]>> = { van: [48, 32] };
-const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack', 'shutter', 'cipher', 'breaker']);
+const SOLID_BY_DEFAULT = new Set<PropKind>(['log', 'gate', 'van', 'crate', 'floodlight', 'door', 'console', 'tank', 'rack', 'generator', 'vines', 'hidden', 'arcade', 'gap', 'crack', 'shutter', 'cipher', 'breaker', 'mirror', 'clock']);
 /** Props a hit lights instead of opens: they stay as they are and read 'lit' once solved. A shot camera is off for good. */
 const LIT_WHEN_SOLVED = new Set<PropKind>(['target', 'console', 'camera', 'firebox', 'breaker']);
 /** Props that stay solid once solved: the lit ones, and a gap, which is crossed and never filled in. */
-const SOLID_WHEN_SOLVED = new Set<PropKind>([...LIT_WHEN_SOLVED, 'gap']);
+const SOLID_WHEN_SOLVED = new Set<PropKind>([...LIT_WHEN_SOLVED, 'gap', 'clock']);
 /** What lights or clears a prop when its spawn does not say: a target, camera or fire-door box takes a shot, vines take fire. */
 const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
   target: 'shoot', camera: 'shoot', firebox: 'shoot', vines: 'burn', hidden: 'sense', gap: 'dash', crack: 'smash',
-  cipher: 'read', breaker: 'shoot',
+  cipher: 'read', breaker: 'shoot', mirror: 'riff', clock: 'riff',
 };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 

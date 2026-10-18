@@ -1,4 +1,5 @@
-// The results screen: time, kills, XP, quarters, level-ups and the party's levels. `final` ends the build with the feedback note.
+// The results screen: time, kills, XP, quarters, level-ups and the party's levels. `final` ends the build with the feedback note, and
+// `campaignEnd` (the last stage of the whole campaign) says CAMPAIGN COMPLETE over the same note.
 // A click anywhere does what confirm does. The mouse over CONTINUE stops its blink and lights it.
 import type { Scene } from '../core/scene.ts';
 import type { HeroSnapshot, RunStats } from '../core/types.ts';
@@ -24,11 +25,14 @@ const FOOT_AT = PARTY_AT + 24;
 const READY = FOOT_AT + 12;
 
 /** `chapter`: the stage closes that chapter, so the title says CHAPTER n CLEAR (docs/level-9.md, "The chapter end"). */
-export function createResultsScene(opts: { stats: RunStats; party: HeroSnapshot[]; level?: number; chapter?: number; final?: boolean; onContinue(): void }): Scene {
+export function createResultsScene(opts: {
+  stats: RunStats; party: HeroSnapshot[]; level?: number; chapter?: number; final?: boolean; campaignEnd?: boolean; onContinue(): void;
+}): Scene {
   const { stats, party } = opts;
-  const final = !!opts.final;
+  // The campaign's end closes the build like the last stage does: the feedback note, and the way on is the map.
+  const final = !!opts.final || !!opts.campaignEnd;
   const level = opts.level ?? 1;
-  const title = resultsTitle({ chapter: opts.chapter, final, level });
+  const title = resultsTitle({ chapter: opts.chapter, final, level, campaignEnd: opts.campaignEnd });
   let t = 0;
   let finished = false;
   // The Mind Flayer's legs die with its body, so the foes row names the body alone.

@@ -12,14 +12,16 @@ import type { Sky } from '../src/gfx/epilogue_room.ts';
 import { textWidth } from '../src/gfx/font.ts';
 import { EPILOGUES, SKY_AT, STEPS, blackAt, hasEpilogue, skyAt } from '../src/story/epilogue.ts';
 import { SCRIPTS } from '../src/story/scripts.ts';
-import { TITLE_SCALE, resultsTitle, titleSpan } from '../src/ui/format.ts';
+import { TITLE_SCALE, endsCampaign, resultsTitle, titleSpan } from '../src/ui/format.ts';
 
 // ---------------------------------------------------------------- wiring
-test('chapter three ends on Hopper\'s letter, and no other chapter has an epilogue yet', () => {
-  assert.deepEqual(EPILOGUES, { 3: 'l9_letter' });
+test('chapter three ends on Hopper\'s letter, chapter five on the basement, and no other chapter has an epilogue', () => {
+  assert.deepEqual(EPILOGUES, { 3: 'l9_letter', 5: 'l16_basement' });
   assert.equal(hasEpilogue(1), false);
   assert.equal(hasEpilogue(2), false);
+  assert.equal(hasEpilogue(3), true);
   assert.equal(hasEpilogue(4), false);
+  assert.equal(hasEpilogue(5), true);
 });
 
 test('the epilogue is for the chapter the last stage closes, and plays only with words in its script', () => {
@@ -146,6 +148,18 @@ test('every chapter\'s last stage says CHAPTER n CLEAR, and the others say LEVEL
     else assert.equal(title, `LEVEL ${levelNumber(id)} CLEAR`);
   }
   assert.deepEqual(said, ['CHAPTER ONE CLEAR', 'CHAPTER TWO CLEAR', 'CHAPTER THREE CLEAR']);
+});
+
+test('the last stage of the whole campaign says CAMPAIGN COMPLETE, and no other stage reads differently for it', () => {
+  assert.equal(resultsTitle({ chapter: 5, final: true, level: 16, campaignEnd: true }), 'CAMPAIGN COMPLETE');
+  assert.equal(resultsTitle({ chapter: 5, final: true, level: 16 }), 'CHAPTER FIVE CLEAR', 'the flag is what says it');
+  assert.equal(resultsTitle({ chapter: 3, final: true, level: 9 }), 'CHAPTER THREE CLEAR', 'the build\'s last stage still reads as before');
+  assert.equal(resultsTitle({ level: 4, campaignEnd: false }), 'LEVEL 4 CLEAR');
+  assert.equal(endsCampaign('5.3'), true);
+  for (const id of STAGE_ORDER) assert.equal(endsCampaign(id), false, `${id} is not the campaign's end`);
+  const [left, right] = titleSpan('CAMPAIGN COMPLETE', 256);
+  assert.ok(left >= 8 && 256 - right >= 8, `CAMPAIGN COMPLETE spans ${left} to ${right}, with a margin of 8 px or more`);
+  assert.ok(Math.abs(left - (256 - right)) <= 2, 'and is centered');
 });
 
 test('without a chapter the build\'s last level still says END OF LEVEL', () => {

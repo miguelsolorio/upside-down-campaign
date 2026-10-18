@@ -233,9 +233,13 @@ const CHAPTER_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
 export const TITLE_SCALE = 2;
 /** The 5 by 7 font advances 6 px a glyph, and a glyph's shadow sits 1 px right and down of it. */
 const GLYPH_ADVANCE = 6;
-/** What the results screen says: CHAPTER n CLEAR when the stage closes a chapter (docs/level-9.md, "The chapter end"), else
- * the level's end or clear. */
-export function resultsTitle(o: { chapter?: number; final?: boolean; level: number }): string {
+/** The last stage of the whole campaign (docs/chapter-5.md): clearing it says CAMPAIGN COMPLETE on the results. */
+export const CAMPAIGN_END = '5.3';
+export const endsCampaign = (stageId: string): boolean => stageId === CAMPAIGN_END;
+/** What the results screen says: CAMPAIGN COMPLETE at the campaign's end, CHAPTER n CLEAR when the stage closes a chapter
+ * (docs/level-9.md, "The chapter end"), else the level's end or clear. */
+export function resultsTitle(o: { chapter?: number; final?: boolean; level: number; campaignEnd?: boolean }): string {
+  if (o.campaignEnd) return 'CAMPAIGN COMPLETE';
   if (o.chapter) return `CHAPTER ${CHAPTER_WORDS[o.chapter] ?? o.chapter} CLEAR`;
   return o.final ? `END OF LEVEL ${o.level}` : `LEVEL ${o.level} CLEAR`;
 }

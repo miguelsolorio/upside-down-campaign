@@ -104,6 +104,8 @@ if (flags.sheet) g.scenes.go(createSheetScene());
 else if (flags.audio) g.scenes.go(createAudioLabScene());
 // The solo's stand-in stage is the variation sheet's art, so it loads only when asked for.
 else if (flags.solo) void import('./solo/dev.ts').then((m) => g.scenes.go(m.createSoloDevScene()));
+// The ending's Final Roll and THE END on their own, with a sample party. Loaded on demand like the solo.
+else if (flags.finale) void import('./ui/finale_dev.ts').then((m) => m.startFinaleDev(g));
 else startGame(g);
 
 // Handy for the dev panel, the bot and browser-driven checks.

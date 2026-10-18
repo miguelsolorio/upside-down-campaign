@@ -28,7 +28,7 @@ export interface BakedStage { readonly w: number; readonly h: number; readonly n
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
 /** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain and the base's machine. They are baked at their first step and drawn over at the others. */
 interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block }
-interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[]; pulses: PulseSpot[] }
+interface StageData extends BakedStage { canvas: HTMLCanvasElement; px: Uint32Array; water: WaterSpot[]; pulses: PulseSpot[] }
 
 const T = 16;
 const WATER_TICKS = 16;
@@ -36,6 +36,9 @@ const WATER_TICKS = 16;
 const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
 const pulseCache = new Map<string, HTMLCanvasElement>();
+/** The pixels behind those canvases, so a light pool can lift the animated tiles too without reading the canvas back. */
+const waterPxCache = new Map<string, Px>();
+const pulsePxCache = new Map<string, Px>();
 
 const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine';
 /** The tiles that paint one picture across a run of them, and so need to know where in it they are. */
@@ -47,24 +50,44 @@ function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
+function pulsePxAt(s: PulseSpot, phase: number, night: boolean): Px {
+  const key = `${night ? 'n' : 'd'}:${s.name}:${s.tx}:${s.ty}:${phase}`;
+  let p = pulsePxCache.get(key);
+  if (!p) {
+    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
+    const day = pulsePx(s.name, tc, phase);
+    p = night ? nightTile(day, s.name, tc) : day;
+    pulsePxCache.set(key, p);
+  }
+  return p;
+}
+
 function pulseCanvas(s: PulseSpot, phase: number, night: boolean): HTMLCanvasElement {
   const key = `${night ? 'n' : 'd'}:${s.name}:${s.tx}:${s.ty}:${phase}`;
   let c = pulseCache.get(key);
   if (!c) {
-    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
-    const day = pulsePx(s.name, tc, phase);
-    c = (night ? nightTile(day, s.name, tc) : day).toCanvas();
+    c = pulsePxAt(s, phase, night).toCanvas();
     pulseCache.set(key, c);
   }
   return c;
+}
+
+function waterPxAt(s: WaterSpot, frame: number, night: boolean): Px {
+  const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
+  let p = waterPxCache.get(key);
+  if (!p) {
+    const day = waterTile(s.deep, s.variant, frame, s.banks);
+    p = night ? nightWater(day, s.deep, s.variant, frame) : day;
+    waterPxCache.set(key, p);
+  }
+  return p;
 }
 
 function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasElement {
   const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
   let c = waterCache.get(key);
   if (!c) {
-    const day = waterTile(s.deep, s.variant, frame, s.banks);
-    c = (night ? nightWater(day, s.deep, s.variant, frame) : day).toCanvas();
+    c = waterPxAt(s, frame, night).toCanvas();
     waterCache.set(key, c);
   }
   return c;
@@ -113,7 +136,7 @@ export function bakeStage(rows: string[], night = false): BakedStage {
       }
     }
   }
-  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), water, pulses };
+  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), px, water, pulses };
   return data;
 }
 
@@ -138,6 +161,38 @@ export function drawStage(ctx: Ctx, stage: BakedStage, camX: number, camY: numbe
     if (px + T <= x0 || px >= x1 || py + T <= y0 || py >= y1) continue;
     ctx.drawImage(pulseCanvas(p, phase, s.night), px, py);
   }
+}
+
+/** Opaque black, packed the way ImageData holds it. What the frame holds where there is no stage. */
+const BLACK = 0xff000000;
+
+/**
+ * The pixels drawStage leaves on screen for the world rectangle (x, y, w, h) at frame t, into out: opaque, black where there is
+ * no stage. It is what the light pools lift (gfx/glow.ts), so a pool never has to read the canvas back, which stalls the frame.
+ */
+export function stagePixels(stage: BakedStage, x: number, y: number, w: number, h: number, t: number, out: Uint32Array): void {
+  const s = stage as StageData;
+  out.fill(BLACK, 0, w * h);
+  const x0 = Math.max(0, x), x1 = Math.min(s.w, x + w);
+  if (x1 > x0) {
+    for (let j = Math.max(0, y); j < Math.min(s.h, y + h); j++) {
+      const row = j * s.w, o = (j - y) * w - x;
+      for (let i = x0; i < x1; i++) { const v = s.px[row + i] as number; if (v !== 0) out[o + i] = v; }
+    }
+  }
+  /** One animated tile on top, the way drawStage draws its canvas. */
+  const lay = (tile: Px, tx: number, ty: number): void => {
+    const px = tx * T, py = ty * T;
+    for (let j = Math.max(0, y - py); j < Math.min(T, y + h - py); j++) {
+      const o = (py + j - y) * w + px - x;
+      for (let i = Math.max(0, x - px); i < Math.min(T, x + w - px); i++) { const v = tile.d[j * T + i] as number; if (v !== 0) out[o + i] = v; }
+    }
+  };
+  const near = (tx: number, ty: number): boolean => tx * T < x + w && tx * T + T > x && ty * T < y + h && ty * T + T > y;
+  const frame = ((t / WATER_TICKS) | 0) & 3;
+  for (const sp of s.water) if (near(sp.tx, sp.ty)) lay(waterPxAt(sp, frame, s.night), sp.tx, sp.ty);
+  const phase = ((t / PULSE_TICKS) | 0) & 3;
+  if (phase !== 0) for (const sp of s.pulses) if (near(sp.tx, sp.ty)) lay(pulsePxAt(sp, phase, s.night), sp.tx, sp.ty);
 }
 
 // ---------------------------------------------------------------- single tiles, for the sheet

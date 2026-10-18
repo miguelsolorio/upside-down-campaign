@@ -44,9 +44,11 @@ class FakeCtx {
     }
   }
   createImageData(w: number, h: number): { width: number; height: number; data: Uint8ClampedArray } { return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }; }
-  putImageData(img: { width: number; data: Uint8ClampedArray }, dx: number, dy: number): void {
+  /** With a dirty rect (sx, sy, sw, sh) only that part of the image goes down, at dx, dy, as the real one does for dx + sx. */
+  putImageData(img: { width: number; data: Uint8ClampedArray }, dx: number, dy: number, sx = 0, sy = 0, sw = img.width, sh = Infinity): void {
     const u = new Uint32Array(img.data.buffer);
-    for (let j = 0; j < u.length / img.width; j++) for (let i = 0; i < img.width; i++) this.raw(dx + i, dy + j, u[j * img.width + i] as number);
+    const rows = Math.min(sh, u.length / img.width - sy);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < Math.min(sw, img.width - sx); i++) this.raw(dx + sx + i, dy + sy + j, u[(sy + j) * img.width + sx + i] as number);
   }
   getImageData(x: number, y: number, w: number, h: number): { width: number; height: number; data: Uint8ClampedArray } {
     const out = new Uint32Array(w * h), c = this.canvas;

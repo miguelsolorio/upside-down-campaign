@@ -71,6 +71,20 @@
       ],
       "port": 5184,
       "autoPort": false
+    },
+    {
+      "name": "polish-proof",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5210",
+        "--strictPort"
+      ],
+      "port": 5210,
+      "autoPort": false
     }
   ]
 }

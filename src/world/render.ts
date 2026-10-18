@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01, hpBarColor } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintStageGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -128,7 +128,7 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   drawStage(ctx, stage.baked, camX, camY, t);
   const night = stage.time === 'night';
   // The pools go on the ground, under everything that moves, so the party is never tinted by them.
-  if (night) paintGlow(ctx, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);
+  if (night) paintStageGlow(ctx, stage.baked, camX, camY, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);
   // Cones and hazards lie on the floor too: after the tiles and the pools, before anything that stands on them.
   for (const p of view.props) {
     // A cone is a few hundred rays, so one whose reach cannot touch the screen is skipped.

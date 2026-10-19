@@ -321,13 +321,16 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     },
   },
   // The foe Demogorgon (enemies/demogorgon.ts on this def): the 1.3 swipe, charge and wall stun at a foe's size, with no petals or leap
-  // (petalsAt and leapAt 0 turn them off) and nothing to pin it (it dies at 0 HP). The keys are the Demogorgon's, above.
+  // (petalsAt and leapAt 0 turn them off) and nothing to pin it (it dies at 0 HP). The keys are the Demogorgon's, above. The swipe and the
+  // charge are down from the 1.3 boss's 0.6 and 1 (here and on the twins) to 0.3 and 0.4, as that boss's were tuned: stage 5.2 runs at
+  // enemyMult 2.72 (docs/level-15.md, "Result"), so the hits an undodged player eats are about the 1.3 fight's, and a player who dodges
+  // badly still wins sometimes: at 0.6 and 1 the bot that never dodges cleared 1 of 20 where the careful one cleared 19, and with these 13 and 16.
   demofoe: {
     kind: 'demofoe', name: 'Demogorgon', hp: 400, atk: 30, def: 9, speed: 0.85, xp: 40, aggro: 150,
-    windup: 30, power: 0.6, cooldown: 100, drop: 0.5, weight: 3,
+    windup: 30, power: 0.3, cooldown: 100, drop: 0.5, weight: 3,
     x: {
       reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
-      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1, chargeKb: 5, stunT: 120, stunMul: 1.5,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 0.4, chargeKb: 5, stunT: 120, stunMul: 1.5,
       petalsAt: 0, leapAt: 0, roarT: 40,
       spitWindup: 26, spitEvery: 120, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.3,
       crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
@@ -341,10 +344,10 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // fallLoss the share of its max HP the fall costs (it never kills).
   twin: {
     kind: 'twin', name: 'Demogorgon', hp: 560, atk: 32, def: 10, speed: 0.8, xp: 70, aggro: 200,
-    windup: 30, power: 0.6, cooldown: 100, drop: 1, weight: 4,
+    windup: 30, power: 0.3, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
-      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargeRange: 230, chargePower: 1, chargeKb: 5, stunT: 120, stunMul: 1.5,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargeRange: 230, chargePower: 0.4, chargeKb: 5, stunT: 120, stunMul: 1.5,
       petalsAt: 0, leapAt: 0, roarT: 40,
       spitWindup: 26, spitEvery: 300, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.3,
       crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,

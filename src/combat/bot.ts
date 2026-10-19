@@ -139,7 +139,11 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       const gi = gt.y * nav.w + gt.x;
       if (gi !== pathGoal || pathAge > 30 || (path.length === 0 && dist(hx, hy, gx, gy) > 10)) {
         const h = tileOf(hx, hy);
-        path = astar(nav, h.x, h.y, gt.x, gt.y) ?? [];
+        let found = astar(nav, h.x, h.y, gt.x, gt.y);
+        // On a stage with a void a tile the stuck check learned can cut a one-tile bridge in two: with no route left, forget what it learned and
+        // plan again. (Elsewhere a learned tile is a shut gate, and the bot walks on into it, as it always has.)
+        if (!found && learned.size > 0 && opts.grid.drop) { learned.clear(); nav = base; found = astar(nav, h.x, h.y, gt.x, gt.y); }
+        path = found ?? [];
         pathGoal = gi;
         pathAge = 0;
       }

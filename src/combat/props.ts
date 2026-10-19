@@ -2,7 +2,8 @@
 // boxes (lit by a shot or a flame), vines (burned away by a flame) and hidden paths (shown by a hero who can sense them).
 // A gap (a drop across a tunnel) is crossed by Max's Skate dash and a crack in a wall is broken by Steve's nail bat or Hopper's fists.
 // A haunted mirror and the grandfather clock shatter under Eddie's riff (his swing, its ring and the solo's pulses), and the clock
-// under `hits` basic attacks from up close by anyone else.
+// under `hits` basic attacks from up close by anyone else. So do a crack and a wall of vines marked `smash`, for a party that has nobody to
+// open them outright (5.2's burn1 and crack1).
 // Cameras (cameras.ts) are targets too: a shot lights one, and it never spots again. A prop marked `smash` also lights
 // for any hero who swings at it from up close. A cipher door (docs/level-8.md) decodes while a hero with `read` stands near. A breaker
 // lit by a shot fires the power boxes (powerbox.ts).
@@ -121,21 +122,28 @@ function updateCipher(s: S, p: Prop): void {
 
 /**
  * A hero starts a basic attack. Every unlit `smash` prop within arm's reach in front of him lights, whoever he is. A clock that takes
- * `hits` counts the attack too, from a hero without the riff, and breaks on the last one.
+ * `hits` counts the attack too, from a hero without the riff, and breaks on the last one; so does a shut crack or wall of vines with `smash` and
+ * `hits`, which gives way (broken, or cleared) on the last.
  */
 export function smashAimed(s: S, h: Hero): void {
   const hy = h.y - 2;
   const riff = utilitiesAt(h.id, h.level).includes('riff');
   for (const p of s.props) {
     const clock = p.kind === 'clock' && p.hits > 0 && p.state !== 'open' && !riff;
-    if (!clock && (!p.smash || p.state === 'lit')) continue;
+    // A crack or a wall of vines that takes `hits` blows (5.2's burn1 and crack1) is worn down by anyone's basic attack, for a party with neither
+    // of the heroes who open it outright.
+    const chip = (p.kind === 'crack' || p.kind === 'vines') && p.smash === true && p.hits > 0 && p.state === 'closed';
+    if (!clock && !chip && (!p.smash || p.state === 'lit')) continue;
     // The nearest point of the prop to his feet, as in pokes.ts: a prop in a wall face is a few px above them.
     const nx = Math.max(p.x, Math.min(h.x, p.x + p.w)), ny = Math.max(p.y, Math.min(hy, p.y + p.h));
     const d = dist(h.x, hy, nx, ny);
     if (d > SMASH_REACH) continue;
     if (d > 2 && angleDiff(Math.atan2(ny - hy, nx - h.x), h.aim) > SMASH_HALF) continue;
-    if (!clock) { lightTarget(s, p); continue; }
-    if (++p.struck >= p.hits) { shatterProp(s, p); continue; }
+    if (!clock && !chip) { lightTarget(s, p); continue; }
+    if (++p.struck >= p.hits) {
+      if (p.kind === 'crack') breakCrack(s, p); else if (p.kind === 'vines') clearVines(s, p); else shatterProp(s, p);
+      continue;
+    }
     sfx(s, 'thud');
     dust(s, nx, ny, 2);
   }

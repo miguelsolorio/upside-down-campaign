@@ -34,7 +34,9 @@ import { botRoute, idle, playStage, rectTiles, stageKit, tileOf } from './stage-
 const { bakeStage, samplePx } = await import('../src/gfx/tiles.ts');
 
 const MEMBERS: HeroId[] = ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'hopper'];
-const STAGES: [string, StageData, string[]][] = [['5.1', STAGE_51, ROWS_51], ['5.2', STAGE_52, ROWS_52]];
+// 5.1 is built (tests/stage51*.test.ts); only the stand-ins are held to the stub checks below.
+// 5.2 is built too (tests/stage52*.test.ts), so no stand-in is left.
+const STAGES: [string, StageData, string[]][] = [];
 const CH5_TILES = [...LOCKDOWN_TILES, ...ABYSS_TILES, ...HEART_TILES] as TileName[];
 const around = (n: TileName): Near => ({ n, e: n, s: n, w: n });
 
@@ -136,14 +138,15 @@ test('baking a stage: 5.1 is opaque, 5.2 leaves the void clear for the backdrop 
     return Array.from({ length: 256 }, (_, i) => c.px[(ty * 16 + ((i / 16) | 0)) * W + tx * 16 + (i % 16)] as number);
   };
   const night = bakeStage(ROWS_51, true), dusk = bakeStage(ROWS_51, false);
-  assert.deepEqual([night.w, night.h], [28 * 16, 9 * 16]);
-  for (let ty = 0; ty < 9; ty++) for (let tx = 0; tx < 28; tx++) assert.ok(cell(night, tx, ty, night.w).every((p) => p >>> 24 === 255), `5.1 ${tx},${ty} is opaque at night`);
+  const w51 = ROWS_51[0]?.length ?? 0, h51 = ROWS_51.length;
+  assert.deepEqual([night.w, night.h], [w51 * 16, h51 * 16]);
+  for (let ty = 0; ty < h51; ty++) for (let tx = 0; tx < w51; tx++) assert.ok(cell(night, tx, ty, night.w).every((p) => p >>> 24 === 255), `5.1 ${tx},${ty} is opaque at night`);
   assert.notDeepEqual(cell(night, 5, 3, night.w), cell(dusk, 5, 3, dusk.w), 'night is not day');
   const abyss = bakeStage(ROWS_52, false);
-  assert.deepEqual([abyss.w, abyss.h], [28 * 16, 12 * 16]);
-  assert.ok(cell(abyss, 14, 10, abyss.w).filter((p) => p !== 0).length <= 8, 'the void, deep in it, is clear bar a speck of debris');
-  assert.ok(cell(abyss, 4, 4, abyss.w).every((p) => p >>> 24 === 255), 'the lawn is opaque');
-  assert.ok(cell(abyss, 8, 4, abyss.w).some((p) => p === 0) && cell(abyss, 8, 4, abyss.w).some((p) => p >>> 24 === 255), 'a bridge shows the void between its slats');
+  assert.deepEqual([abyss.w, abyss.h], [(ROWS_52[0]?.length ?? 0) * 16, ROWS_52.length * 16]);
+  assert.ok(cell(abyss, 1, 1, abyss.w).filter((p) => p !== 0).length <= 8, 'the void, deep in it, is clear bar a speck of debris');
+  assert.ok(cell(abyss, 9, 35, abyss.w).every((p) => p >>> 24 === 255), 'the lawn is opaque');
+  assert.ok(cell(abyss, 19, 35, abyss.w).some((p) => p === 0) && cell(abyss, 19, 35, abyss.w).some((p) => p >>> 24 === 255), 'a bridge shows the void between its slats');
 });
 
 // ---------------------------------------------------------------- the campaign
@@ -256,7 +259,7 @@ test('a stage with all five stand-ins runs: they walk, fight and show up in the 
   for (const [kind, name] of [['commander', 'THE COMMANDER'], ['twin', 'THE TWINS'], ['trooper', null], ['agent5', null], ['demofoe', null]] as [EnemyKind, string | null][]) {
     const sim = createSim({
       ...simOptions(STAGE_52, stageGrid(STAGE_52), { party: defaultParty('5.2'), seed: 3, difficulty: 'chief' }),
-      spawns: [{ kind: 'enemy', id: 'foe', type: kind, tx: 8, ty: 4, group: 'g' }],
+      spawns: [{ kind: 'enemy', id: 'foe', type: kind, tx: 9, ty: 35, group: 'g' }],
     });
     for (let f = 0; f < 240; f++) sim.step(idle);
     const v = sim.view();

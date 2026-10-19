@@ -26,6 +26,8 @@ import { drawTownProp } from './props_town.ts';
 import { drawGateProp } from './props_gate.ts';
 import { drawL78Prop, kioskArt } from './props_l78.ts';
 import { drawArmyProp } from './props_army.ts';
+import { drawAbyssProp } from './props_abyss.ts';
+import { inAbyss } from './looks.ts';
 
 const cache = new Map<string, HTMLCanvasElement>();
 function cached(key: string, build: () => HTMLCanvasElement): HTMLCanvasElement {
@@ -211,6 +213,8 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
   const x = Math.round(v.x), y = Math.round(v.y);
   const w = Math.round(v.w), h = Math.round(v.h);
   const art = (key: string, build: () => Px): HTMLCanvasElement => cached(night ? `${key}:night` : key, () => (night ? nightSprite(build()) : build()).toCanvas());
+  // The Abyss draws its hidden bridge and its rock fall its own way (props_abyss.ts).
+  if ((v.kind === 'hidden' || v.kind === 'door') && inAbyss() && drawAbyssProp(ctx, v, art, settings.reduceFlashing)) return;
   switch (v.kind) {
     case 'log': ctx.drawImage(art(`log${w}x${h}${v.state === 'open'}`, () => logArt(w, h, v.state === 'open')), x - 1, y - 1); return;
     case 'gate': ctx.drawImage(art(`gate${w}x${h}${v.state === 'open'}`, () => gateArt(w, h, v.state === 'open')), x, y); return;

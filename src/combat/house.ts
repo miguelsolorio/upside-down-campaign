@@ -15,8 +15,11 @@ export type GhoulMove = 'glass' | 'rise' | 'drift' | 'wind' | 'lunge' | 'recover
  */
 export interface GhoulState { move: GhoulMove; t: number; mirror: string; sx: number; sy: number; awake: boolean }
 
-/** One clock curse counting: the hero, the clock that chimed, the chimes sounded, the frames since the last one and the gap to the next. */
-export interface Curse { hero: Hero; clock: string; chimes: number; t: number; gap: number }
+/**
+ * One clock curse counting: the hero, the clock that chimed, the chimes sounded, the frames since the last one and the gap to the next. `orb` is
+ * the id of the memory orb the clock marked in Vecna's fight (breaking it lifts the curse), and '' for a curse with none.
+ */
+export interface Curse { hero: Hero; clock: string; chimes: number; t: number; gap: number; orb: string }
 
 export interface HouseState {
   /** Per haunted mirror: how many ghouls it started with, and the frame the last one stepped out of it. */

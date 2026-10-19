@@ -7,12 +7,14 @@ import type { Rng, Stats } from '../progression/xp.ts';
 import type { TalentState } from './talent_state.ts';
 import type { GhoulState, HouseState } from './house.ts';
 import type { FlayerState, LegState, Pool } from './flayer_state.ts';
+import type { OrbState, VecnaState } from './vecna_state.ts';
 import type { BatState } from '../enemies/demobat_hit.ts';
 import type { RoofState } from './roof.ts';
 import type { BondMods } from '../heroes/bonds.ts';
 
 export type { Rng, Stats };
 export type { FlayerMove, FlayerState, LegMove, LegState, Pool, SweepBand } from './flayer_state.ts';
+export type { Lash, OrbState, Rock, VecnaMove, VecnaState } from './vecna_state.ts';
 
 export interface Pos { x: number; y: number }
 
@@ -252,6 +254,11 @@ export interface Enemy {
   /** A Creel ghoul only (docs/level-11.md), and a demobat only (docs/level-12.md). */
   ghoul: GhoulState | null;
   bat: BatState | null;
+  /** Vecna's body, or one of his memory orbs, only (docs/level-13.md). */
+  vecna: VecnaState | null;
+  orb: OrbState | null;
+  /** The numbers this spawn runs on when it overrides its def's x (SimSpawn.x): the def's with the spawn's laid over. Null means the def's (xOf in enemies/defs.ts). */
+  tune: Record<string, number> | null;
 }
 
 /** A Flayed, Grigori or Billy holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */

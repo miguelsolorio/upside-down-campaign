@@ -14,7 +14,8 @@
 // nearest leg, then the head when it is down (bot_flayer.ts). It steps out of a ghoul's lunge line during the wind-up (bot_ghoul.ts), slams
 // the pinned pit Demogorgon with Hopper (bot_boss.ts), and under a curse swaps to Max if her Walkman is ready, else to Eddie, and attacks the
 // clock (bot_curse.ts), careless or not. Against a flock of demobats a hero who shoots leads, a bat out of a swing's reach is ignored, and a dive's
-// line is left during the wind-up (bot_demobat.ts). It ignores hazards and cameras.
+// line is left during the wind-up (bot_demobat.ts). Against Vecna it leaves a whip's line, breaks the marked orb under a curse, shoots him in
+// Float or breaks an orb to pull him down, and otherwise hits him (bot_vecna.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -33,6 +34,7 @@ import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 import { createGrigoriSense } from './bot_grigori.ts';
 import { createBillySense } from './bot_billy.ts';
 import { createFlayerSense } from './bot_flayer.ts';
+import { createVecnaSense } from './bot_vecna.ts';
 import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
@@ -163,7 +165,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     for (const a of v.actors) {
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
       // The Mind Flayer's body and legs are the plan's (bot_flayer.ts), not the nearest foe.
-      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.id === 'flayer' || a.id === 'flayerleg') continue;
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.id === 'flayer' || a.id === 'flayerleg' || a.id === 'vecna' || a.id === 'orb') continue;
       // A bat circling out of reach is not a target for a swing (bot_demobat.ts).
       if (a.id === 'demobat' && !batFoe(a, dist(hx, hy, a.x, a.y), shoots, reach)) continue;
       out.push({
@@ -264,6 +266,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   const bil = createBillySense({ walkable, walkTo });
   // The Mind Flayer's plan reads the map as built, not the tiles the stuck check has learned to avoid.
   const fl = createFlayerSense({ walkable: (x, y) => walkable(x, y, base), walkTo, careless });
+  const vc = createVecnaSense({ walkable, walkTo, clearLine, careless });
   const caster = createCaster();
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
@@ -324,10 +327,10 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     // the careful bot took more than the careless one that way (docs/level-11.md, "Result").
     const low = me ? me.hp < me.hpMax * 0.5 : false;
     const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy)
-      ?? bats.dodge(v, hx, hy, walkable) ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
+      ?? bats.dodge(v, hx, hy, walkable) ?? vc.dodge(v, hx, hy) ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
-    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
+    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style) ?? vc.plan(v, hx, hy, style);
     // A flock of demobats in sight: a hero who shoots leads, and the one he relieved comes back when it is gone.
     const lead = fin ? -1 : bats.lead(v, me, hx, hy);
     if (lead >= 0 && frame - lastSwap > 40) { out.swapTo = lead; lastSwap = frame; }

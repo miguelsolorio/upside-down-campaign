@@ -5,6 +5,7 @@
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { activeHero } from '../combat/state.ts';
 import { sfx } from '../combat/fx.ts';
+import { orbBroken } from '../combat/vecna_state.ts';
 
 /** A hit with at least this much knockback (before the target's weight) makes a Flayed let go. */
 export const HOLD_BREAK_KB = 3;
@@ -54,8 +55,8 @@ export function updateHolds(s: S): void {
 
 /**
  * True while the enemy is coming up out of the goo, or is the Mind Flayer coming in through the skylight (and its legs with it), or is a
- * severed leg: it can't be hit or confused and it doesn't attack.
+ * severed leg, or a broken memory orb: it can't be hit or confused and it doesn't attack.
  */
 export const untouchable = (e: Enemy): boolean =>
   (e.flayed !== null && e.flayed.move === 'rise') || (e.flayer !== null && e.flayer.move === 'rise') ||
-  (e.leg !== null && (e.leg.move === 'severed' || e.leg.body?.flayer?.move === 'rise'));
+  (e.leg !== null && (e.leg.move === 'severed' || e.leg.body?.flayer?.move === 'rise')) || orbBroken(e);

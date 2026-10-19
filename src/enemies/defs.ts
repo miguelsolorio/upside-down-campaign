@@ -291,16 +291,20 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 20, power: 0.8, cooldown: 150, drop: 0.15, weight: 0.8,
     x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, kb: 2, roofPower: 0.6, roofN: 5, roofGap: 45 },
   },
-  // Vecna (enemies/vecna.ts): speedMul scales his timings and walk, chimeEvery the clock's curse (a spawn's x can override both, as
-  // 5.3 does). whip*: the vine lash. throw*: Float's debris. heal: the share of his max HP each standing orb gives every healEvery.
-  // floatAt and burnAt: the HP shares of his phases. downT: frames an orb's break pulls him down in Float, downMul what he takes then.
+  // Vecna (enemies/vecna.ts, vecna_phase.ts): speedMul scales his walk and the timings of his whip, throw and rise, chimeEvery the clock's
+  // curse (a spawn's x can override both, as 5.3 does). Windup and power are the whip's and the rock's wind-up. whip*: the vine lash: every
+  // whipEvery frames (burnWhipEvery in Burn), whipLen px long, whipHalf px either side of the line, whipKb its shove, lashT frames out.
+  // throw*: Float's rock: every throwEvery frames, throwPower, throwSplash px, throwT frames in the air. hold and floatHold: px he stops short
+  // of the hero on the floor and in the air. heal: the share of his max HP each standing orb gives every healEvery. floatAt and burnAt: the HP
+  // shares of his phases. floatZ: his height in Float, riseT the frames to rise or land. downT: frames an orb's break pulls him down for in
+  // Float, downMul what he takes then. curseT: frames of the chime pose. splashT: frames a rock's splash is drawn.
   vecna: {
     kind: 'vecna', name: 'Vecna', hp: 1400, atk: 24, def: 7, speed: 0.4, xp: 150, aggro: 400,
     windup: 24, power: 0.7, cooldown: 120, drop: 1, weight: 99,
     x: {
-      speedMul: 1, chimeEvery: 900, whipEvery: 120, burnWhipEvery: 80, whipLen: 60, whipHalf: 10, whipKb: 3,
-      throwEvery: 150, throwPower: 0.8, throwSplash: 20, throwT: 40, floatAt: 0.6, burnAt: 0.25, floatZ: 24,
-      heal: 0.01, healEvery: 120, downT: 300, downMul: 1.5,
+      speedMul: 1, chimeEvery: 900, whipEvery: 120, burnWhipEvery: 80, whipLen: 60, whipHalf: 10, whipKb: 3, lashT: 10,
+      throwEvery: 150, throwPower: 0.8, throwSplash: 20, throwT: 40, hold: 26, floatHold: 80, floatAt: 0.6, burnAt: 0.25, floatZ: 24, riseT: 30,
+      heal: 0.01, healEvery: 120, downT: 300, downMul: 1.5, curseT: 40, splashT: 12,
     },
   },
   // A memory orb (enemies/orb.ts): rooted, harmless, broken at 0 HP and back at full after regrow frames.
@@ -310,6 +314,9 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     x: { regrow: 1200 },
   },
 };
+
+/** The numbers an enemy runs on: its def's x, or the def's with its spawn's overrides laid over (SimSpawn.x, Enemy.tune). */
+export const xOf = (e: { kind: EnemyKind; tune: Record<string, number> | null }): Record<string, number> => e.tune ?? ENEMY_DEFS[e.kind].x;
 
 /** Enemy HP and damage multiplier. */
 export const DIFFICULTY_MULT: Record<Difficulty, number> = { kid: 0.7, normal: 0.85, chief: 1, upside: 1.4 };

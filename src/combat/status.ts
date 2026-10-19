@@ -6,6 +6,7 @@ import { demoSettle, isPinned } from '../enemies/demo_hit.ts';
 import { billySettle, isBillyPinned } from '../enemies/billy_hit.ts';
 import { flayerShielded } from '../enemies/flayer_hit.ts';
 import { sever } from '../enemies/flayer_legs.ts';
+import { orbBreak } from '../enemies/orb.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 
 export const BURN_PERIOD = 30;
@@ -39,6 +40,7 @@ export function tickEnemyStatus(s: S): void {
           if (e.demo) demoSettle(s, e, false);
           billySettle(s, e);
           sever(s, e);
+          orbBreak(s, e);
           e.flash = Math.max(e.flash, 0.5);
           e.hurtSeen = true;
           s.stats.damageDealt += dmg;

@@ -16,6 +16,7 @@ import { closePropById, openPropById, updateProps } from './props.ts';
 import { updatePowerboxes } from './powerbox.ts';
 import { wakeFlayed } from '../enemies/flayed.ts';
 import { wakeFlayer } from '../enemies/flayer.ts';
+import { wakeVecna } from '../enemies/vecna_phase.ts';
 import { startDefense, updateDefense } from './defense.ts';
 import { startCurse, swapped, updateCurse } from './curse.ts';
 import { setRoof, soloNote, updateRoof } from './roof.ts';
@@ -171,6 +172,7 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
         // A Flayed comes up out of its puddle before it hunts.
         wakeFlayed(e);
         wakeFlayer(s, e);
+        wakeVecna(s, e);
       }
     },
     openProp: (id) => openPropById(s, id),

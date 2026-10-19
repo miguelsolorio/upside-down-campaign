@@ -5,6 +5,7 @@
 //   the one up, it tags out to someone else first, and the next frame swaps back to her.
 //   Otherwise it swaps to Eddie (or keeps whoever is up, if he is down), walks up to the nearest clock still standing and attacks it. Eddie's
 //   swing breaks it at once, anyone else takes a few hits.
+// In Vecna's fight (memory orbs in the view) only the Walkman is here: the attic's clock never breaks, and the marked orb is bot_vecna.ts's.
 // The careless bot does the same: it is the lesson, not a dodge.
 import type { HeroId, PropView, SimView } from '../core/types.ts';
 import type { Finish } from './bot_boss.ts';
@@ -30,10 +31,12 @@ export function createCurseSense(): CurseSense {
   return {
     plan(v, hx, hy, walkTo) {
       if (!v.hud.party.some((p) => (p.curse ?? 0) > 0)) return null;
+      // In Vecna's fight the attic's clock never breaks: after the Walkman, the way out is the marked orb (bot_vecna.ts).
+      const fight = v.actors.some((a) => a.kind === 'enemy' && a.id === 'orb');
       const clocks = v.props.filter((p) => p.kind === 'clock' && p.state !== 'open');
-      if (clocks.length === 0) return null;
+      if (clocks.length === 0 && !fight) return null;
       const near = (p: PropView): number => { const q = nearest(p, hx, hy); return dist(hx, hy, q.x, q.y); };
-      const clock = clocks.reduce((a, b) => (near(b) < near(a) ? b : a));
+      const clock = clocks.length > 0 ? clocks.reduce((a, b) => (near(b) < near(a) ? b : a)) : null;
       const me = v.hud.party.find((p) => p.active);
       if (!me) return null;
       const slot = (id: HeroId): number => v.hud.party.findIndex((p) => p.id === id && !p.ko && (p.curse ?? 0) === 0);
@@ -45,6 +48,7 @@ export function createCurseSense(): CurseSense {
         const other = v.hud.party.findIndex((p) => p.id !== 'max' && !p.ko && (p.curse ?? 0) === 0);
         if (other >= 0) { out.swapTo = other; return out; }
       }
+      if (fight || !clock) return null;
       if (me.id !== 'eddie') out.swapTo = slot('eddie');
       const q = nearest(clock, hx, hy);
       const d = dist(hx, hy, q.x, q.y);

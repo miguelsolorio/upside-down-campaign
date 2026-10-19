@@ -24,6 +24,7 @@ import { billyReach, isBillyPinned } from './billy_hit.ts';
 import { flayerUpdate } from './flayer.ts';
 import { legUpdate, legWait } from './flayer_legs.ts';
 import { flayerRooted } from './flayer_hit.ts';
+import { updateVecna, vecnaUpdate } from './vecna.ts';
 import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
@@ -67,6 +68,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.billy) { billyUpdate(s, e, hero); return; }
   if (e.flayer) { flayerUpdate(s, e, hero); return; }
   if (e.leg) { legUpdate(s, e, hero); return; }
+  if (e.vecna) { vecnaUpdate(s, e, hero); return; }
+  if (e.orb) { setEnemyAnim(e, 'idle'); return; }
   // A Creel ghoul floats at the hero and ignores the candy bar too.
   if (e.ghoul) { ghoulUpdate(s, e, hero); return; }
   // A demobat flies over everything and ignores the candy bar, too.
@@ -102,7 +105,7 @@ function unhide(e: Enemy): void {
   if (e.hidden && (e.mode === 'windup' || e.mode === 'lunge')) e.hidden = false;
 }
 
-const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e) || flayerRooted(e);
+const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e) || flayerRooted(e) || e.orb !== null;
 
 function separate(s: S): void {
   // A flyer passes over the rest: the flock keeps its own slots.
@@ -127,9 +130,11 @@ function separate(s: S): void {
 }
 
 export function updateEnemies(s: S): void {
-  const hero = activeHero(s);
   updateGlobs(s);
   updateHolds(s);
+  // Vecna's clock may curse the hero who is up, and the party swaps away before the brains read who that is.
+  updateVecna(s);
+  const hero = activeHero(s);
   for (const e of s.enemies) {
     if (e.dead) continue;
     // A ghoul in its mirror is dormant, and still keeps an eye out for a hero who comes near.

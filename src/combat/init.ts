@@ -21,6 +21,8 @@ import { newGrigori } from '../enemies/grigori_hit.ts';
 import { newBilly } from '../enemies/billy_hit.ts';
 import { newFlayer, newLeg } from '../enemies/flayer_hit.ts';
 import { linkFlayer } from '../enemies/flayer_legs.ts';
+import { newOrb, newVecna } from './vecna_state.ts';
+import { linkVecna } from '../enemies/vecna_phase.ts';
 
 const TRAIL = 256;
 
@@ -56,6 +58,8 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
   const elite = sp.tier === 'elite';
   const hp = enemyHp(s, sp.type, elite);
   const patrol = (sp.patrol ?? []).map((p) => tileFeet(p.tx, p.ty));
+  // A spawn's own x lies over its def's (SimSpawn.x): Vecna and his orbs read it through xOf.
+  const tune = sp.x ? { ...def.x, ...sp.x } : null;
   return {
     uid, id: sp.id, kind: sp.type, group: sp.group,
     x: f.x, y: f.y, hx: f.x, hy: f.y, dir: sp.dir ?? 'down', vx: 0, vy: 0, z: sp.type === 'demobat' ? HOVER : 0,
@@ -75,6 +79,7 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     flayer: sp.type === 'flayer' ? newFlayer() : null, leg: sp.type === 'flayerleg' ? newLeg(f.x, f.y) : null,
     ghoul: sp.type === 'ghoul' ? newGhoul(s, sp.mirror ?? '', sp.dormant !== true) : null,
     bat: sp.type === 'demobat' ? newBat() : null,
+    vecna: sp.type === 'vecna' ? newVecna(tune ?? def.x) : null, orb: sp.type === 'orb' ? newOrb() : null, tune,
   };
 }
 
@@ -169,7 +174,8 @@ export function createState(opts: SimOptions): S {
       });
     }
   }
-  // The Mind Flayer's legs find their body, and their tips lie at rest.
+  // The Mind Flayer's legs find their body, and their tips lie at rest. Vecna finds his orbs.
   linkFlayer(s);
+  linkVecna(s);
   return s;
 }

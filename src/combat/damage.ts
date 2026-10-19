@@ -13,6 +13,8 @@ import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigor
 import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
 import { flayerBlock, flayerRooted, flayerTakes } from '../enemies/flayer_hit.ts';
 import { sever } from '../enemies/flayer_legs.ts';
+import { orbBreak } from '../enemies/orb.ts';
+import { vecnaMiss, vecnaReached, vecnaTakes } from '../enemies/vecna_phase.ts';
 import { HOLD_BREAK_KB, isHolding, releaseHold, untouchable } from '../enemies/hold.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
@@ -94,9 +96,11 @@ export function alertEnemy(s: S, e: Enemy): void {
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.dead || e.dormant || e.hp <= 0 || untouchable(e) || !batReached(e, o)) return 0;
-  // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy and the Mind Flayer and its legs are never staggered, stunned or broken off a
-  // wind-up by a hit.
-  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e);
+  // Vecna in Float is out of reach of a swing or a blast (a shot, a beam, the burst and a solo pulse still land).
+  if (!vecnaReached(e, o)) { vecnaMiss(s, e); return 0; }
+  // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy, the Mind Flayer and its legs, and Vecna and his orbs are never staggered, stunned
+  // or broken off a wind-up by a hit.
+  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e) || e.vecna !== null || e.orb !== null;
   // A pinned Demogorgon shrugs off everything but the beam, and a pinned Billy everything at all. They report the try and take nothing. So
   // does the Mind Flayer's body while a leg stands.
   const finisher = isFinisher(e, by.id, o.beam === true, o.slam === true);
@@ -126,6 +130,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.billy) dmg = Math.round(dmg * billyTakes(e));
   // The Mind Flayer's head takes half again while it is down.
   if (e.flayer) dmg = Math.round(dmg * flayerTakes(e));
+  // Vecna takes half again while a broken orb has him on the floor.
+  if (e.vecna) dmg = Math.round(dmg * vecnaTakes(e));
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more, and a lit string of lights a ghoul half again.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (e.ghoul) dmg = Math.round(dmg * ghoulTakes(s, e));
@@ -150,7 +156,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const planted = e.kind === 'flayed';
   const breaksHold = planted && (o.kb ?? 0) >= HOLD_BREAK_KB;
   if (holding && breaksHold) releaseHold(s, e);
-  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e) || billyImmovable(e) || flayerRooted(e))) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e) || billyImmovable(e) || flayerRooted(e) || e.vecna !== null || e.orb !== null)) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
@@ -164,6 +170,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
     demoSettle(s, e, finisher);
     billySettle(s, e);
     sever(s, e);
+    orbBreak(s, e);
   } else if (!shielded) {
     if (!(planted && !breaksHold)) {
       e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));

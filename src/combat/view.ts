@@ -16,6 +16,8 @@ import { grigoriPose } from '../enemies/grigori_hit.ts';
 import { billyK, billyPose, isBillyPinned } from '../enemies/billy_hit.ts';
 import { flayedPose } from '../enemies/flayed.ts';
 import { flayerPose, legPose } from '../enemies/flayer_hit.ts';
+import { orbPose } from '../enemies/orb.ts';
+import { vecnaAim, vecnaFx, vecnaPose } from '../enemies/vecna_phase.ts';
 import { poolViews } from './pools.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
@@ -26,7 +28,7 @@ import { isMarked } from '../heroes/hellfire.ts';
 import { soloHud } from '../heroes/eddie_solo.ts';
 import { ghoulPose, inGlass, mirrorK } from '../enemies/ghoul_hit.ts';
 import { batPose } from '../enemies/demobat_hit.ts';
-import { chimesOn, walkmanHud } from './curse.ts';
+import { chimesOn, markedOrb, walkmanHud } from './curse.ts';
 import { onceOf } from '../heroes/talents9.ts';
 
 let shakeScale = 1;
@@ -65,7 +67,8 @@ function enemyView(s: S, e: Enemy): ActorView {
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
   if (e.elite) v.elite = true;
-  if (!e.dead && isMarked(s, e)) v.marked = true;
+  // A foe Eddie's Hellfire DM marked. A memory orb is marked by the clock instead: the orb whose break lifts a curse.
+  if (!e.dead && (e.orb ? markedOrb(s, e.id) : isMarked(s, e))) v.marked = true;
   if (e.stat.confuse > 0 && !e.dead) v.confused = true;
   if (isShielded(e)) v.guarding = guarding(e);
   // A hidden enemy is faint until Cold spot has it or it strikes. Revealed, it says so, so gfx can tell the two apart.
@@ -107,6 +110,19 @@ function enemyView(s: S, e: Enemy): ActorView {
     const pose = flayerPose(e.flayer);
     if (pose) v.pose = pose;
   }
+  if (e.vecna && !e.dead) {
+    const pose = vecnaPose(e.vecna);
+    if (pose) v.pose = pose;
+    // The whip's line, from his feet to its tip, while he winds up and lashes.
+    const aim = vecnaAim(e.vecna);
+    if (aim) v.aim = aim;
+  }
+  if (e.orb && !e.dead) {
+    const pose = orbPose(e.orb);
+    if (pose) v.pose = pose;
+    // A broken orb is a stalk: no bar over it.
+    if (e.orb.broken) v.bar = null;
+  }
   // A leg is drawn from its root to its tip: x, y is the root, aim the tip (where the enemy stands and is hit).
   if (e.leg) {
     v.x = e.leg.rx; v.y = e.leg.ry;
@@ -136,16 +152,19 @@ function propView(s: S, p: Prop): PropView {
 }
 
 const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI',
-  billy: 'BILLY', flayer: 'MIND FLAYER', pitdemo: 'DEMOGORGON' };
+  billy: 'BILLY', flayer: 'MIND FLAYER', pitdemo: 'DEMOGORGON', vecna: 'VECNA' };
 
-/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
+/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy, Mind Flayer or Vecna that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number; parts?: number[] } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
     if (!name || e.dormant || e.dead || e.hp <= 0 || isBillyPinned(e)) continue;
     const bar = { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
     // The Mind Flayer's four legs, as the share of HP each has left: 0 for a severed one. The legs never fill the bar themselves.
-    return e.flayer ? { ...bar, parts: e.flayer.legs.map((l) => (l.dead || l.hp <= 0 ? 0 : Math.min(1, l.hp / l.hpMax))) } : bar;
+    const share = (o: Enemy): number => (o.dead || o.hp <= 0 ? 0 : Math.min(1, o.hp / o.hpMax));
+    // Vecna's four orbs the same way: 0 for a broken one.
+    if (e.vecna) return { ...bar, parts: e.vecna.orbs.map(share) };
+    return e.flayer ? { ...bar, parts: e.flayer.legs.map(share) } : bar;
   }
   return null;
 }
@@ -189,6 +208,7 @@ function fxList(s: S): FxView[] {
   }
   // A bear trap on the floor: one 'trap' fx for as long as it lasts, w by h its size. It is gone once an enemy springs it.
   for (const t of s.traps) out.push({ kind: 'trap', x: t.x, y: t.y, dir: 'down', angle: 0, t: t.age, life: t.life, w: 14, h: 8 });
+  out.push(...vecnaFx(s));
   const pet = s.t6.dart;
   if (pet) out.push({ kind: 'pet', x: pet.x, y: pet.y, dir: pet.dir, angle: 0, t: pet.t, life: pet.life, w: petBiting(pet) ? 1 : 0, h: 0 });
   if (s.lure) out.push({ kind: 'candy', x: s.lure.x, y: s.lure.y - 2, dir: 'down', angle: 0, t: s.lure.age, life: s.lure.life, w: 8, h: 0 });

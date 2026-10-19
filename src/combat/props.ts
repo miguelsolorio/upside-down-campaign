@@ -17,6 +17,7 @@ import { senseRange } from '../heroes/sensory.ts';
 import { fireBoxes } from './powerbox.ts';
 import { shatterGhouls } from '../enemies/ghoul_hit.ts';
 import { liftCurse } from './curse.ts';
+import { fightOn } from '../enemies/vecna_phase.ts';
 
 /** Frames the vines burn (state 'lit', still solid) before they are gone. */
 export const VINE_BURN = 30;
@@ -127,7 +128,7 @@ export function smashAimed(s: S, h: Hero): void {
   const hy = h.y - 2;
   const riff = utilitiesAt(h.id, h.level).includes('riff');
   for (const p of s.props) {
-    const clock = p.kind === 'clock' && p.hits > 0 && p.state !== 'open' && !riff;
+    const clock = p.kind === 'clock' && p.hits > 0 && p.state !== 'open' && !riff && !fightOn(s);
     if (!clock && (!p.smash || p.state === 'lit')) continue;
     // The nearest point of the prop to his feet, as in pokes.ts: a prop in a wall face is a few px above them.
     const nx = Math.max(p.x, Math.min(h.x, p.x + p.w)), ny = Math.max(p.y, Math.min(hy, p.y + p.h));
@@ -179,9 +180,9 @@ export function smashCracks(s: S, h: Hero, aim: number, reach: number, half: num
   }
 }
 
-/** A riff can shatter this prop: a mirror or a clock still whole, that asks for `riff` (the default). */
-function riffable(p: Prop): boolean {
-  return (p.kind === 'mirror' || p.kind === 'clock') && p.state !== 'open' && (p.hitBy ?? 'riff') === 'riff';
+/** A riff can shatter this prop: a mirror or a clock still whole, that asks for `riff` (the default). The attic's clock can't break while Vecna lives. */
+function riffable(s: S, p: Prop): boolean {
+  return (p.kind === 'mirror' || (p.kind === 'clock' && !fightOn(s))) && p.state !== 'open' && (p.hitBy ?? 'riff') === 'riff';
 }
 
 /**
@@ -203,7 +204,7 @@ export function shatterProp(s: S, p: Prop): void {
 export function riffCone(s: S, h: Hero, aim: number, reach: number, half: number): void {
   const hy = h.y - 2;
   for (const p of s.props) {
-    if (!riffable(p)) continue;
+    if (!riffable(s, p)) continue;
     const q = nearestOnRect(p, h.x, hy);
     const d = dist(h.x, hy, q.x, q.y);
     if (d > reach + 4) continue;
@@ -215,7 +216,7 @@ export function riffCone(s: S, h: Hero, aim: number, reach: number, half: number
 /** A sound ring of radius `r` round (cx, cy), the swing's small one or a solo pulse: every whole mirror and clock it touches shatters. */
 export function riffRing(s: S, cx: number, cy: number, r: number): void {
   for (const p of s.props) {
-    if (!riffable(p)) continue;
+    if (!riffable(s, p)) continue;
     const q = nearestOnRect(p, cx, cy);
     if (dist(cx, cy, q.x, q.y) <= r) shatterProp(s, p);
   }

@@ -198,6 +198,22 @@
 // - Sim.dismissHero(id): the hero leaves the party for good. Gone from the view and the HUD, never swapped to, not counted when the party goes down;
 //   if they were up the party swaps to the next hero who can fight (nobody left is allDown). party() still reports them, after the others. The last
 //   hero in the party can't be dismissed.
+// - Vecna (enemies/vecna.ts, vecna_phase.ts, orb.ts; docs/level-13.md): `vecna` and four `orb` spawns (ids orb1 to orb4) in one group. hud.boss reads
+//   VECNA with `parts`, the four orbs' HP shares (0 when broken). A spawn's `x` lays over its def's numbers for that spawn: speedMul scales his walk,
+//   whip, throw and rise, chimeEvery sets the clock. Waking the group (spawnGroup) starts the clock and the heal. Clock: he walks (0.4 px a frame) and
+//   every 120 frames, inside 60 px, whips: pose 'whip' and the "!" for a 24 frame wind-up with ActorView.aim the tip of the line (locked on the hero),
+//   then a 'whip' fx for the 10 frames of the lash (x, y where it starts on the floor, angle, w its length, h its width), power 0.7 for a hero within
+//   10 px of the line, once. Every chimeEvery frames (900) the attic's clock (the first 'clock' prop) chimes and curses a random hero who is standing
+//   and not cursed, never the last one standing, and marks a random standing orb (ActorView.marked; breaking it lifts that curse, { t: 'curseEnd',
+//   how: 'orb' }); the curse's four chimes are a third of the interval apart. Nothing happens while the Walkman is on or with no orb standing. Each
+//   standing orb heals him 1% of his max HP every 120 frames. Float (60%, { t: 'phase', spawnId, phase: 2 }): z 24, pose 'float', out of reach of a
+//   swing or a blast (HitOpts without `air` or `beam`), no whip; every 150 frames a rock (pose 'throw' and a 24 frame "!", then a 'debris' fx for the
+//   40 frames it falls: x, y the mark, h its height, w 40; and 12 more of splash with h 0; plus a 'mark' fx w 40 h 20 where it lands) for power 0.8
+//   inside 20 px. A broken orb pulls him down for 300 frames (pose 'stun', x1.5, reachable). Burn (25%, phase 3): on the floor, a 'blaze' fx over him,
+//   the whip every 80 frames, the clock at half the interval. An orb is rooted, harmless and hit by anyone; at 0 HP it breaks (pose 'severed', `orb`
+//   sfx, no kill, can't be hit) and regrows whole after 1200 frames. No knockback, stagger, stun, confusion or trap on either. At 0 HP he dies and his
+//   orbs with him in one pass (one groupCleared `boss`), and every curse the orbs were marked for is lifted. The attic's clock can't be broken while
+//   he lives. The bot is bot_vecna.ts.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

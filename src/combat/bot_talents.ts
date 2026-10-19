@@ -68,8 +68,8 @@ export function breaksGuard(me: PartyHud): boolean {
   return me.id === 'eleven' || (me.id === 'hopper' && (me.level >= LV6 || me.mp >= HERO_DEFS.hopper.special.mp));
 }
 
-/** The plain Special: is it worth casting now? */
-function wantsSpecial(me: PartyHud, s: CastScene): boolean {
+/** The plain Special: is it worth casting now? (bot_vecna.ts asks it too, against a boss.) */
+export function wantsSpecial(me: PartyHud, s: CastScene): boolean {
   const { near, foes } = s;
   const id: HeroId = me.id;
   const cost = HERO_DEFS[id].special.mp;

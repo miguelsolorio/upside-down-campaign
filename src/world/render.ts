@@ -190,9 +190,10 @@ const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mis
  * The controls stacked tight in the bottom left corner of the clear band. `fade` runs 0 to 1: keys in amber and words
  * in bone at 0, a neutral grey at 1, in palette steps rather than alpha.
  */
-export function drawControlsCorner(ctx: Ctx, fade = 0): void {
+export function drawControlsCorner(ctx: Ctx, fade = 0, alone = false): void {
   const [keyColor, wordColor] = CORNER_STEPS[Math.min(CORNER_STEPS.length - 1, Math.floor(clamp01(fade) * CORNER_STEPS.length))] as [ColorName, ColorName];
-  const rows = controlRows();
+  // A hero alone (Hopper in 4.1) has nobody to swap to, so the corner leaves the swap out.
+  const rows = controlRows().filter((r) => !alone || r.what !== 'SWAP');
   rows.forEach((r, i) => {
     const x = VIEW_X + 4, y = SCREEN_H - 9 - (rows.length - 1 - i) * 8;
     const w = drawText(ctx, r.keys, x, y, keyColor, { shadow: true });

@@ -529,7 +529,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
       // The subtitle sits where the corner controls do, so it replaces them while it shows.
       if (hint) drawSubtitle(ctx, hint.text);
-      else drawControlsCorner(ctx, hintFade);
+      else drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);
       bonds.draw(ctx);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);

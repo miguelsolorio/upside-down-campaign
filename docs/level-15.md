@@ -123,6 +123,7 @@ Kid clears 20 of 20 (272 damage), upside 7 of 20. The deck's bats moved nothing 
 - **The bot got stuck on a one-tile bridge** (one seed of 20 at 2.7): the stuck check had learned the tile at the bridge's mouth as a wall and the one route to the deck was gone. On a stage with a void it now forgets what it learned when A* finds no route and plans again (`combat/bot.ts`); other stages behave as before.
 - The twins go over the rim about eight times in a careful run, each a 15% HP loss for the twin that falls, and the bot is never on the void.
 - `sense1` opens by flag in the bot's route, as 2.1's hidden path does, with Will in the party; `tests/stage52-gates.test.ts` has Will reveal it by walking up to its foot.
+- **Bonds (Chief and kid and Hellfire went on, 2026-10-19; `docs/bonds.md`, "Chapter 4 and 5").** The default party (no Hopper) has no pair, and came back to the digit on HARD with 20 seeds: 18 cleared, 467 damage, 1.15 KOs, 27% lowest HP, 140 s; careless 19, 620, 1.10, 36%, 136 s. A party that holds Chief and kid (`--party=mike:10+817,hopper:8,eleven:7,will:8`, Dustin and Robin out) over 100 seeds: bond off 80 cleared, 511 damage, 1.83 KOs, 26%, 153 s, careless 94; bond on 86, 501, 1.63, 28%, 158 s, careless 95. It stays in band, so no `enemyMult` change.
 
 ## After the pace pass
 

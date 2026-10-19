@@ -104,15 +104,17 @@ export function mountTouchUi(): TouchUi {
 
       const theme = shellTheme(settings.shell, !!dark?.matches);
       const burstReady = input.offered('burst');
+      // The party's size dims SWAP at one hero, so a second hero joining redraws the overlay.
+      const party = input.partySize();
       const held = pad.held();
       const dpad = pad.dpad();
       // Only what shows: which buttons are down and which arms the D-pad leans on, not the thumb's exact angle.
       const arms = pressedArms(dpad).map(Number).join('');
       feel(held, arms);
-      const state = `${layoutKey}|${theme.name}|${[...held].sort().join()}|${arms}|${burstReady}`;
+      const state = `${layoutKey}|${theme.name}|${[...held].sort().join()}|${arms}|${burstReady}|${party}`;
       if (state !== drawn) {
         drawn = state;
-        drawTouch(ctx, { layout, held, dpad, burstReady, theme });
+        drawTouch(ctx, { layout, held, dpad, burstReady, party, theme });
       }
       return layout;
     },

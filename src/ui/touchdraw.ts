@@ -5,10 +5,10 @@
 // The name on the body is the game's own. touch-controls.html shows it on phone frames.
 import type { Rect, TouchButton, TouchLayout } from '../core/touchlayout.ts';
 import type { Vec2 } from '../core/types.ts';
-import { drawKeys } from './touchkeys.ts';
+import { drawKeys, swapDims } from './touchkeys.ts';
 import { PILL_TILT, SANS, SLOT_TILT, capsule, center, circle, roundRect } from './touchshapes.ts';
 import type { C2D } from './touchshapes.ts';
-import { LIGHT, alpha } from './touchtheme.ts';
+import { LIGHT, UNAVAILABLE, alpha } from './touchtheme.ts';
 import type { ShellTheme } from './touchtheme.ts';
 
 export { pressedArms } from './touchkeys.ts';
@@ -20,6 +20,8 @@ export interface TouchView {
   dpad: Vec2 | null;
   /** The d20 key glows gold while the Crit is ready. */
   burstReady: boolean;
+  /** The party's size as the play scene gives it, or null where no scene does. SWAP dims at one hero. */
+  party?: number | null;
   /** The shell's colours. The grey Game Boy when left out. */
   theme?: ShellTheme;
 }
@@ -229,11 +231,12 @@ function drawGrill(ctx: C2D, l: TouchLayout, T: ShellTheme): void {
   ctx.restore();
 }
 
-/** The shallow wells the round buttons and the D-pad sit in, and the words printed by the buttons. */
-function drawSockets(ctx: C2D, l: TouchLayout, T: ShellTheme): void {
+/** The shallow wells the round buttons and the D-pad sit in, and the words printed by the buttons. SWAP's fades when `dim`. */
+function drawSockets(ctx: C2D, l: TouchLayout, T: ShellTheme, dim: boolean): void {
   const b = l.buttons;
   if (T.keys === 'plastic') {
     for (const id of ['a', 'b', 'burst', 'swap'] as const) {
+      ctx.globalAlpha = dim && id === 'swap' ? UNAVAILABLE : 1;
       const c = center(b[id]);
       const r = b[id].w / 2;
       const g = ctx.createRadialGradient(c.x, c.y - r * 0.2, r * 0.6, c.x, c.y, r + 4);
@@ -243,6 +246,7 @@ function drawSockets(ctx: C2D, l: TouchLayout, T: ShellTheme): void {
       circle(ctx, c.x, c.y, r + 4);
       ctx.fill();
     }
+    ctx.globalAlpha = 1;
     // The faint arrows pressed into the body by each arm of the D-pad.
     const { dpad: d, dpadR: r } = l;
     const t = r * 0.16;
@@ -268,7 +272,9 @@ function drawSockets(ctx: C2D, l: TouchLayout, T: ShellTheme): void {
     label(ctx, T, id.toUpperCase(), r0.x + r0.w * 0.72, r0.y + r0.h + big + 2, big);
   }
   const small = Math.max(8, Math.min(11, b.swap.w * 0.2));
+  ctx.globalAlpha = dim ? UNAVAILABLE : 1;
   label(ctx, T, 'SWAP', center(b.swap).x, b.swap.y + b.swap.h + small + 2, small);
+  ctx.globalAlpha = 1;
   label(ctx, T, 'CRIT', center(b.burst).x, b.burst.y + b.burst.h + small + 2, small);
   for (const id of ['select', 'start'] as const) {
     const r0 = b[id];
@@ -281,29 +287,30 @@ function drawSockets(ctx: C2D, l: TouchLayout, T: ShellTheme): void {
   }
 }
 
-function drawShell(ctx: C2D, l: TouchLayout, T: ShellTheme): void {
+/** The shell's parts in order. `dim` fades SWAP's socket and its word. Exported for the tests; the page reaches it through `shellFor`. */
+export function drawShell(ctx: C2D, l: TouchLayout, T: ShellTheme, dim: boolean): void {
   drawBody(ctx, l, T);
   if (!T.bare) drawGroove(ctx, l, T);
   drawBezel(ctx, l, T);
   drawLogo(ctx, l, T);
   drawGrill(ctx, l, T);
-  drawSockets(ctx, l, T);
+  drawSockets(ctx, l, T, dim);
 }
 
 // ---------------------------------------------------------------- the whole thing
-/** The never-moving parts for each layout, already drawn at the overlay's size in one theme. */
-const shells = new WeakMap<TouchLayout, { theme: ShellTheme; canvas: HTMLCanvasElement }>();
+/** The never-moving parts for each layout, already drawn at the overlay's size in one theme and SWAP's dim state. */
+const shells = new WeakMap<TouchLayout, { theme: ShellTheme; dim: boolean; canvas: HTMLCanvasElement }>();
 
-function shellFor(l: TouchLayout, w: number, h: number, T: ShellTheme): HTMLCanvasElement {
+function shellFor(l: TouchLayout, w: number, h: number, T: ShellTheme, dim: boolean): HTMLCanvasElement {
   const have = shells.get(l);
-  if (have && have.theme === T && have.canvas.width === w && have.canvas.height === h) return have.canvas;
+  if (have && have.theme === T && have.dim === dim && have.canvas.width === w && have.canvas.height === h) return have.canvas;
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d') as C2D;
   ctx.setTransform(w / l.viewport.w, 0, 0, h / l.viewport.h, 0, 0);
-  drawShell(ctx, l, T);
-  shells.set(l, { theme: T, canvas: c });
+  drawShell(ctx, l, T, dim);
+  shells.set(l, { theme: T, dim, canvas: c });
   return c;
 }
 
@@ -314,7 +321,7 @@ export function drawTouch(ctx: C2D, v: TouchView): void {
   const { width: w, height: h } = ctx.canvas;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, w, h);
-  ctx.drawImage(shellFor(l, w, h, T), 0, 0);
+  ctx.drawImage(shellFor(l, w, h, T, swapDims(v.party)), 0, 0);
   ctx.setTransform(w / l.viewport.w, 0, 0, h / l.viewport.h, 0, 0);
   drawKeys(ctx, v, T);
   ctx.setTransform(1, 0, 0, 1, 0, 0);

@@ -42,6 +42,9 @@ export interface ShellTheme {
 /** The die once the Crit is ready: gold like the HUD die, on every shell. */
 export const DIE_READY: DieColors = { center: PAL.cream, top: PAL.yellow, side: PAL.amber, low: PAL.amber, line: PAL.orange };
 
+/** The opacity of a key nobody can use right now (SWAP for a hero alone). It stays where it is, only fainter. */
+export const UNAVAILABLE = 0.35;
+
 /** The original grey Game Boy. */
 export const LIGHT: ShellTheme = {
   name: 'light',

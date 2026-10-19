@@ -114,7 +114,7 @@ const game: Game = {
   input: {
     poll: noop, held: (a: string) => pressed.has(a), pressed: (a: string) => pressed.has(a), released: () => false, axis: () => ({ x: 0, y: 0 }),
     device: () => 'keyboard', hover: () => null, moved: () => false, wheel: () => 0, clicked: () => null, point: noop, notice: () => null,
-    capture: () => noop, offer: noop, offered: () => false, interrupted: () => false,
+    capture: () => noop, offer: noop, offered: () => false, party: noop, partySize: () => null, interrupted: () => false,
   } as unknown as Game['input'],
   settings: { difficulty: 'chief', shake: 1, reduceFlashing: false } as unknown as Game['settings'],
   flags: { bot: false, god: false, dev: false, level: 0, seed: 1, party: null } as unknown as Game['flags'],

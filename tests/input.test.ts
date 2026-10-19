@@ -279,6 +279,16 @@ test('an offer lasts until the next poll', () => {
   assert.ok(!i.offered('skip'));
 });
 
+test('a scene gives the party size for the touch screen until the next poll, and none gives null', () => {
+  const i = make();
+  i.poll();
+  assert.equal(i.partySize(), null, 'a menu says nothing');
+  i.party(1);
+  assert.equal(i.partySize(), 1);
+  i.poll();
+  assert.equal(i.partySize(), null);
+});
+
 /** A stand-in game canvas drawn at 2x from the page's top left, with its own listeners. */
 function fakeCanvas() {
   const on = new Map<string, Handler[]>();

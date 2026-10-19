@@ -14,8 +14,8 @@ import type { TileCtx } from './tile_ground.ts';
  *  flash (4.3's bolts). Tiles a skin doesn't touch bake as they always do. */
 export type Skin = 'memory' | 'upside' | 'flash';
 
-/** A chapter 4 tile, or null when `name` isn't one. `phase` is the step of a club tile that moves (the window's rain and lightning, the table's candles); the default is the one the stage is baked with. */
+/** A chapter 4 tile, or null when `name` isn't one. `phase` is the step of a tile that moves: a club tile's (the window's rain and lightning, the table's candles; the default is the one the stage is baked with), or 4.3's veins. */
 export function ch4Tile(name: TileName, c: TileCtx, skin?: Skin, phase?: number): Px | null {
   return campTile(name, c) ?? pitTile(name, c) ?? clubTile(name, c, phase) ?? creelTile(name, c, skin === 'memory')
-    ?? udTile(name, c, skin === 'flash');
+    ?? udTile(name, c, skin === 'flash', phase ?? 0);
 }

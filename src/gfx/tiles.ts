@@ -18,6 +18,8 @@ import { clubNear, clubPulses, windowPhase } from './tile_club.ts';
 import { creelNear } from './tile_creel.ts';
 import { campBarrel, campNear } from './tile_camp.ts';
 import { pitNear } from './tile_pit.ts';
+import { parkNear } from './tile_udpark.ts';
+import { townNear } from './tile_udtown.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
 import { tunnelTile } from './tile_tunnel.ts';
 import { findCourts } from './tile_school.ts';
@@ -33,8 +35,8 @@ export interface Spot { readonly x: number; readonly y: number }
 export interface BakedStage { readonly w: number; readonly h: number; readonly night: boolean; readonly windows: readonly Spot[] }
 
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
-/** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain, the base's machine, the camp's burning drum, and the Hellfire Club's windows, the floor under them and the table with its candles. They are baked at their first step and drawn over at the others. */
-interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block }
+/** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain, the base's machine, the camp's burning drum, the Hellfire Club's windows, the floor under them and the table with its candles, and the veins over Upside Down Hawkins' lawns. They are baked at their first step and drawn over at the others. */
+interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block; skin?: Skin }
 interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[]; pulses: PulseSpot[] }
 
 const T = 16;
@@ -44,24 +46,25 @@ const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
 const pulseCache = new Map<string, HTMLCanvasElement>();
 
-const isPulse = (n: TileName, near: Near): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel' || clubPulses(n, near);
+const isPulse = (n: TileName, near: Near): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel' || n === 'udveins' || clubPulses(n, near);
 /** The tiles that paint one picture across a run of them, and so need to know where in it they are: the club's table, and a run of its posters, which is the banner. */
 const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' || n === 'lift' || n === 'drift' || n === 'dndtable' || n === 'clubposter';
 
 /** The pixels of a pulsing tile at a step of its pulse. */
-function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
+function pulsePx(name: TileName, c: TileCtx, phase: number, skin?: Skin): Px {
   if (name === 'veins') return tunnelTile(name, c, phase) as Px;
+  if (name === 'udveins') return ch4Tile(name, c, skin, phase) as Px;
   if (name === 'barrel') return campBarrel(c, phase);
   if (name === 'clubwindow' || name === 'clubfloor' || name === 'dndtable') return ch4Tile(name, c, undefined, phase) as Px;
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
 function pulseCanvas(s: PulseSpot, phase: number, night: boolean): HTMLCanvasElement {
-  const key = `${night ? 'n' : 'd'}:${s.name}:${s.tx}:${s.ty}:${phase}`;
+  const key = `${night ? 'n' : 'd'}${s.skin ?? ''}:${s.name}:${s.tx}:${s.ty}:${phase}`;
   let c = pulseCache.get(key);
   if (!c) {
     const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
-    const day = pulsePx(s.name, tc, phase);
+    const day = pulsePx(s.name, tc, phase, s.skin);
     c = (night ? nightTile(day, s.name, tc) : day).toCanvas();
     pulseCache.set(key, c);
   }
@@ -116,7 +119,7 @@ export function bakeStage(rows: string[], night = false, skin?: Skin): BakedStag
       if (isBlock(name)) { const ox = run(tx, ty, -1, 0, name), oy = run(tx, ty, 0, -1, name); blk = { ox, oy, w: ox + 1 + run(tx, ty, 1, 0, name), h: oy + 1 + run(tx, ty, 0, 1, name) }; }
       const court = courts[ty * cols + tx];
       const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
-      if (isPulse(name, near)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
+      if (isPulse(name, near)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}), ...(skin ? { skin } : {}) });
       const day = staticTile(name, tc, skin);
       const tile = night ? nightTile(day, name, tc) : day;
       if (night && litWindow(day, name)) windows.push({ x: tx * T + 8, y: ty * T + 16 });
@@ -277,7 +280,7 @@ export function samplePx(name: TileName, v: number): Px {
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = creelNear(name, v, clubNear(name, v, pitNear(name, v, campNear(name, v, foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))))))))));
+  near = parkNear(name, v, townNear(name, v, creelNear(name, v, clubNear(name, v, pitNear(name, v, campNear(name, v, foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))))))))))));
   // The fountain, the lift and the machine are one picture over a block: v 0 is its top left piece, v 1 the one beside it, v 2 one inside.
   if (name === 'fountain' || name === 'lift' || name === 'machine') {
     const floor: TileName = name === 'machine' ? 'basefloor' : 'mallfloor';

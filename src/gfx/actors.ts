@@ -4,7 +4,8 @@
 // Which frame of the atlas a view asks for is actor_pick.ts. A dormant Flayed is a puddle and a rising one comes up out of it
 // (actor_goo.ts). The Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts,
 // actor_dog.ts, actor_alpha.ts, actor_plant.ts), and so are Billy, kneeling with his veins fading and slumped once he is free
-// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts).
+// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts). So are Eddie (actor_eddie.ts), the Creel ghoul (actor_ghoul.ts) and the
+// demobat (actor_demobat.ts), a flier whose shadow stays on the ground under the height `z` lifts it to.
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
@@ -22,6 +23,7 @@ import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
 import { BILLY_H, BILLY_W, billyFrame } from './actor_billy.ts';
 import { EDDIE_H, EDDIE_W, eddieFrameOf } from './actor_eddie.ts';
 import { GHOUL_H, GHOUL_W, ghoulFrameOf } from './actor_ghoul.ts';
+import { BAT_H, BAT_W, batFrameFor } from './actor_demobat.ts';
 import { drawMarks } from './actor_mark.ts';
 import { drawFlayer, drawFlayerLeg } from './actor_flayer.ts';
 import type { Frame } from './actor_kit.ts';
@@ -313,8 +315,8 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
 
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
-/** 4.3's and 4.4's foes borrow a sprite until Art draws them (docs/level-12.md, docs/level-13.md). */
-const BORROWED: Partial<Record<string, ActorView['id']>> = { demobat: 'rat', vecna: 'billy', orb: 'pod' };
+/** 4.4's foes borrow a sprite until Art draws them (docs/level-13.md). */
+const BORROWED: Partial<Record<string, ActorView['id']>> = { vecna: 'billy', orb: 'pod' };
 
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. A hero under the curse and a foe Eddie has marked wear their marks over it. */
 export function drawActor(ctx: Ctx, w: ActorView): void {
@@ -333,6 +335,7 @@ function drawBody(ctx: Ctx, w: ActorView): number | null {
     case 'billy': return drawFramed(ctx, v, billyFrame(v), BILLY_W, BILLY_H, v.kind === 'npc' ? 'small' : 'big');
     case 'eddie': return drawFramed(ctx, v, eddieFrameOf(v), EDDIE_W, EDDIE_H, 'small');
     case 'ghoul': return drawFramed(ctx, v, ghoulFrameOf(v), GHOUL_W, GHOUL_H, 'small');
+    case 'demobat': return drawFramed(ctx, v, batFrameFor(v), BAT_W, BAT_H, 'small');
     case 'flayer': drawFlayer(ctx, v); return null;
     case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); return null;
     case 'vine': { const head = drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return head; }

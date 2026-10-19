@@ -44,9 +44,10 @@ export const POS: Record<string, Pt> = {
   // the town (map_house.ts), 4.2 in front of it on the road.
   '4.1': { x: 57, y: 30 },
   '4.2': { x: 188, y: 57 },
-  // Stand-in spots until Art places them (docs/level-12.md, docs/level-13.md): Upside Down Hawkins under the town, and Vecna's lair
-  // under the Creel House.
-  '4.3': { x: 150, y: 132 },
+  // Upside Down Hawkins (4.3) is a window onto the town's street on the far side (map_udtown.ts), under the horizon, above it as the other
+  // places down there are: the route drops to it from the Creel House through the horizon, and the token turns over on the way. Vecna's lair
+  // (4.4) is still a stand-in spot until Art places it (docs/level-13.md).
+  '4.3': { x: 152, y: 137 },
   '4.4': { x: 230, y: 152 },
 };
 
@@ -68,6 +69,7 @@ export const LAND = {
   food: { x: 118, base: 52 },
   bunker: { x: 96, y: HZ },
   creel: { x: 190, base: 50 },
+  udtown: { x: 152, top: 148 },
 };
 
 /** How far each leg of the route bows, in px: the sign picks the side. The last two are the flights to Kamchatka and back to the Creel House. */
@@ -98,6 +100,13 @@ function leg(a: Pt, b: Pt, bend: number): Leg {
 
 /** Leg i runs from node i to node i + 1. */
 export const LEGS: Leg[] = ORDER.slice(0, -1).map((id, i) => leg(POS[id] as Pt, POS[ORDER[i + 1] as string] as Pt, BEND[i] as number));
+
+/** Where the route from the Creel House goes under the horizon on its way to Upside Down Hawkins: the first point of that leg at or below the ground's cut edge. The map opens a hole there. */
+export const DROP: Pt = (() => {
+  const l = LEGS[ORDER.indexOf('4.2')] as Leg;
+  const at = l.pts.find(([x, y]) => y >= hzAt(x)) ?? (l.pts[l.pts.length - 1] as [number, number]);
+  return { x: Math.round(at[0]), y: Math.round(at[1]) };
+})();
 
 const idx = (id: string): number => ORDER.indexOf(id as typeof ORDER[number]);
 

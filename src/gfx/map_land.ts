@@ -7,11 +7,12 @@ import type { ColorName } from './palette.ts';
 import { BAYER4, ctx2d, makeCanvas, px32, rect } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 import { drawTinyText } from './font.ts';
-import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
+import { BAND_Y, DROP, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
 import { arcade, gate, grey, lab, pumpkin, remap, roots, school, toUD, toUDLand, tunnels, woods } from './map_art.ts';
 import { bunker, foodCourt, mall } from './map_mall.ts';
 import { INSET, kamchatka } from './map_inset.ts';
 import { creelHouse } from './map_house.ts';
+import { UDTOWN_H, dropHole, udTown } from './map_udtown.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
 
@@ -298,6 +299,7 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
 
   // The hole in the patch, and what is down there. The bunker of the base stands on the cut of the earth: underground, but not upside down.
   drawHole(P, lp);
+  dropHole(P, DROP.x, DROP.y, !locked('4.3'));
   const bk = bunker();
   if (locked('3.2')) remap(bk, grey);
   P.blit(bk, LAND.bunker.x - (bk.w >> 1), hzAt(LAND.bunker.x) - bk.h + 1);
@@ -319,6 +321,10 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   const gt = gate(!locked('2.3'));
   P.blit(gt, gx - (gt.w >> 1), LAND.gate.top);
 
+  const ut = udTown(!locked('4.3'));
+  if (locked('4.3')) remap(ut, grey);
+  P.blit(ut, LAND.udtown.x - (ut.w >> 1), LAND.udtown.top);
+
   paintRoute(P, st);
 
   // Kamchatka's inset goes over the route, which runs in to its edge; map.ts draws it again over the clouds.
@@ -327,6 +333,10 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   P.blit(inset, INSET.x, INSET.y);
 
   plates.push({ cx: LAND.tunnels.x, y: LAND.tunnels.top + tn.h + 3, name: 'TUNNELS', state: st['2.2'] as NodeState, ud: true, point: 'up' });
+  // Upside Down Hawkins' plate is one stacked sign under its window, like STARCOURT and FOOD COURT above: HAWKINS goes down first, so UPSIDE DOWN,
+  // whose pointer is the one that reaches the window, draws over its own.
+  plates.push({ cx: LAND.udtown.x, y: LAND.udtown.top + UDTOWN_H + 8, name: 'HAWKINS', state: st['4.3'] as NodeState, ud: true, point: 'up' });
+  plates.push({ cx: LAND.udtown.x, y: LAND.udtown.top + UDTOWN_H + 1, name: 'UPSIDE DOWN', state: st['4.3'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
   return { px: P, plates, veins, inset };
 }

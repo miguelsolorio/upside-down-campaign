@@ -13,7 +13,8 @@ Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Ha
 - [x] Verified: typecheck clean, 2511 tests pass, the production build passes, the bot plays the whole campaign from 1.1 to 5.3 headless, and 5.3 played to the Final Roll, the epilogue, THE END, the results and the map in the browser, muted, with no console errors
 - [ ] Owner plays chapter 5 by hand: the Commander's shield, the twins over the void, the channel, the Final Roll
 - [ ] 5.1 and 5.2 run over the damage band (bench regen hides about half of what's taken); 5.1's seed 16 sticks above `enemyMult` 1.58 (bot navigation)
-- [ ] Hopper's and Eddie's Lv 9 talents; Vecna's sink in 5.3 is still chapter 4's KO thinning
+- [x] Hopper's and Eddie's Lv 9 talents: Berserk in `src/heroes/talents9.ts`, Encore in `src/heroes/eddie_solo.ts`, both in `tests/talents9.test.ts`
+- [ ] Vecna's sink in 5.3 is still chapter 4's KO thinning
 
 ## This pass (levels 10 to 13)
 
@@ -29,11 +30,12 @@ Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Ha
 - [x] Levels 12 and 13 (the parent's follow-on): specs `docs/level-12.md` and `docs/level-13.md`, the spine (demobat, Vecna and his orbs, the song and fall steps, the storm's flash, the Upside Down skin, per-spawn tuning), Sim C (the demobat, the rooftop, Eddie's fall), Sim D (Vecna, the orbs, the phases), Art C (Blue storm, the demobat), Art D (the Creel House in the Upside Down, the attic, Vecna), World 4.3 and 4.4
 - [x] Tuned on HARD: 4.3 at 1.5 (chief 98 of 100, careless 19 of 20), 4.4 at 1.7 (chief 100 of 100, careless 15 of 20: the careful bot steps out of every telegraphed attack, so its numbers sit above the band to keep the careless floor). Pace: 4.3 pays 2.8 and 4.4 pays 2.9, the lead ends chapter 4 at Lv 10 in eight runs of ten, never under Lv 9 (`tests/pace.test.ts`)
 - [x] Merged into main at the owner's word (2026-10-18). Not pushed
-- [ ] Audio for 4.3 and 4.4: the seven effects and Vecna's blip are stand-ins (`audio/sfx_level1213.ts`)
-- [ ] The docs' "Result" sections for 4.3 and 4.4, and `docs/pace.md` for chapter 4
+- [x] Audio for 4.3 and 4.4: the seven effects and Vecna's blip are written, not stand-ins (`src/audio/sfx_level1213.ts`, `cues.ts`, `tests/audio-ch4b.test.ts`; 7cc1b5f)
+- [x] The docs' "Result" sections for 4.3 and 4.4 (`docs/level-12.md`, `docs/level-13.md`), and `docs/pace.md` for chapter 4 (8d6415b)
 - [ ] A muted browser pass over the map from 3.3 to 4.4 with the bot
 - [x] Eddie's special through the note highway (`createSolo` with the `riff` chart, `world/songs.ts` and `riff.ts`; the headless runs play it with the solo's bot), and `world/play.ts` split under 500 (the arcade visit moved to `world/arcadevisit.ts`)
-- [ ] Follow-ups: the touch overlay's SWAP button for a lone hero; a chapter four epilogue
+- [x] Follow-up: the touch overlay's SWAP button is faint while one hero stands (`swapDims` in `touchkeys.ts`, the socket and word in `touchdraw.ts`, the party size from `input.party` in `play.ts`), and the overlay redraws when a second hero joins. Verified: typecheck clean, 2515 tests pass, the production build passes. In the browser at `?mute=1&stage=4.1` with the mobile preset, SWAP is faint with Hopper alone, lit again once Eddie joined, and lit on the title; no console errors
+- [ ] Follow-up: a chapter four epilogue
 
 ## This pass (polish and proof)
 
@@ -121,8 +123,8 @@ Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Ha
 - [x] Measured on HARD (`chief`, 20 seeds, `scripts/measure-campaign.ts` and `measure-stage.ts` 3.1 to 3.3): bit for bit what it was. No hero reaches Lv 9 in the nine stages (the lead ends 3.3 at Lv 8), so nothing moved and no `enemyMult` changed. With every hero forced to Lv 9 (`--party=...:9`) the stages still clear 20 of 20, a little easier: 3.3 damage 126 to 109 for Mike, Dustin, Robin and Eleven, and 3.1 147 to 110 and 3.2 294 to 196 for Lucas, Max, Steve and Will (3.3 with Lucas, Eleven, Steve and Will 140 to 146)
 - [x] Verified in the browser (muted, 3.1 at Lv 9, `?level=9`): the sheet's six rows for Mike, Lucas, Eleven and Will, and Dustin's hold calling Suzie (rings, SUZIE and MP +30%). No console errors
 - [ ] Owner plays the Lv 9 talents by hand: the Cerebro hold, Oath's beat before the ally stands, Hive link on a swap
-- [ ] Chapter 4's curse must take a hero to 0 HP and let `reapHeroes` notice, or Extra life will not catch it
-- [ ] Re-measure the chapter 4 and 5 stages with the Lv 9 talents on (heroes reach Lv 9 to 12 there)
+- [x] Chapter 4's curse takes a hero to 0 HP (`fell` in `src/combat/curse.ts`), and `reapHeroes` notices it in the same tick, after `updateCurse`, so Extra life catches it
+- [x] Re-measured chapter 4 and 5 with the Lv 9 talents on: the talents landed before the 4.3 and 4.4 tuning (d40d516) and the chapter 5 pacing (fccca04), and `docs/pace.md` has both chapters' numbers
 
 ## Difficulty pass (NORMAL and HARD, Starcourt eased)
 
@@ -308,4 +310,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Every stage is built. Next: the owner's play-through of the whole campaign, then a balance pass from that feedback, Hopper's and Eddie's Lv 9 talents, and docs polish.
+Every stage is built. Next: the owner's play-through of the whole campaign, then a balance pass from that feedback, and docs polish.

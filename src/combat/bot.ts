@@ -315,7 +315,11 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     }
 
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
-    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
+    // A ghoul's lunge is only worth leaving when the hero is low: stepping off every one gives the next ghoul in line a free swing, and
+    // the careful bot took more than the careless one that way (docs/level-11.md, "Result").
+    const low = me ? me.hp < me.hpMax * 0.5 : false;
+    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy)
+      ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
     const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);

@@ -148,9 +148,12 @@ export const STAGE_42: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
-  // The first guesses (docs/level-11.md, "Result"): the stage's own numbers wait for the lead's pass.
-  enemyMult: 1,
-  xpMult: 1.8,
+  // Tuned by the lead on HARD with the ghoul rebased (175 HP, 60 ATK) and the careful bot's lunge dodge kept for when it is low
+  // (docs/level-11.md, "Result"): node scripts/measure-stage.ts 4.2 chief 100 clears 86, none stuck, for 257 damage, 1.55 KOs, 44% lowest
+  // HP and 81 s; careless 89 of 100.
+  enemyMult: 1.5,
+  // Pays the lead about a third of the way from chapter 3's Lv 8 to chapter 4's Lv 10 (docs/pace.md).
+  xpMult: 2.1,
   // The parlor with its walls: the room the curse turns Blood red while the chimes count (docs/level-11.md, "The curse").
   memory: rect(13, 1, 16, 7),
   waypoints: WAYPOINTS,

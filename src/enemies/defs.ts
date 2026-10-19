@@ -277,7 +277,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // stepping out. gap: frames before the next ghoul of the same mirror. range, lungeT, lungeSpeed, recover, kb: the lunge. bob: px it
   // floats. light: px from a lit lights prop that it takes lightMul in.
   ghoul: {
-    kind: 'ghoul', name: 'Creel ghoul', hp: 110, atk: 38, def: 4, speed: 0.8, xp: 14, aggro: 140,
+    kind: 'ghoul', name: 'Creel ghoul', hp: 175, atk: 60, def: 4, speed: 0.8, xp: 14, aggro: 140,
     windup: 24, power: 0.8, cooldown: 90, drop: 0.25, weight: 1.1,
     x: { see: 80, rise: 40, gap: 90, range: 40, lungeT: 10, lungeSpeed: 3.2, recover: 30, kb: 3, bob: 2, light: 48, lightMul: 1.5 },
   },

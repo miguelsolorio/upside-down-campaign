@@ -34,7 +34,7 @@ Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Ha
 - [x] The docs' "Result" sections for 4.3 and 4.4 (`docs/level-12.md`, `docs/level-13.md`), and `docs/pace.md` for chapter 4 (8d6415b)
 - [ ] A muted browser pass over the map from 3.3 to 4.4 with the bot
 - [x] Eddie's special through the note highway (`createSolo` with the `riff` chart, `world/songs.ts` and `riff.ts`; the headless runs play it with the solo's bot), and `world/play.ts` split under 500 (the arcade visit moved to `world/arcadevisit.ts`)
-- [x] Follow-up: the touch overlay's SWAP button is faint while one hero stands (`swapDims` in `touchkeys.ts`, the socket and word in `touchdraw.ts`, the party size from `input.party` in `play.ts`), and the overlay redraws when a second hero joins. Verified: typecheck clean, 2515 tests pass, the production build passes. In the browser at `?mute=1&stage=4.1` with the mobile preset, SWAP is faint with Hopper alone, lit again once Eddie joined, and lit on the title; no console errors
+- [x] Follow-up: the touch overlay's SWAP button is faint while one hero stands (`swapDims` in `touchkeys.ts`, the socket and word in `touchdraw.ts`, the party size from `input.party` in `play.ts`), and the overlay redraws when a second hero joins. Verified: typecheck clean, 2522 tests pass (main brought in first), the production build passes. In the browser at `?mute=1&stage=4.1` with the mobile preset, SWAP is faint with Hopper alone, lit again once Eddie joined, and lit on the title; no console errors
 - [ ] Follow-up: a chapter four epilogue
 
 ## This pass (polish and proof)

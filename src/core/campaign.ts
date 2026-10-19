@@ -115,9 +115,10 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   // the party he joins (CATCH_UP) (docs/level-10.md, docs/level-11.md).
   '4.1': [{ id: 'hopper', level: 5 }],
   '4.2': [{ id: 'mike', level: 8, xp: 150 }, { id: 'dustin', level: 7, xp: 224 }, { id: 'robin', level: 5, xp: 230 }, { id: 'eddie', level: 5 }],
-  // 4.3 from the run through a stub 4.3; 4.4 from the run through the built one, which pays 245 XP at xpMult 1.8 (docs/level-12.md, docs/level-13.md).
-  '4.3': [{ id: 'mike', level: 8, xp: 500 }, { id: 'dustin', level: 7, xp: 473 }, { id: 'robin', level: 6, xp: 189 }, { id: 'eddie', level: 5, xp: 256 }],
-  '4.4': [{ id: 'mike', level: 9, xp: 260 }, { id: 'dustin', level: 8, xp: 463 }, { id: 'robin', level: 7, xp: 138 }, { id: 'eleven', level: 5, xp: 188 }],
+  // 4.3 and 4.4 from the run through the built stages, Eddie's riff played on the note highway by the solo's bot (world/songs.ts); 4.4 pays 245 XP at xpMult 1.8
+  // (docs/level-12.md, docs/level-13.md).
+  '4.3': [{ id: 'mike', level: 8, xp: 590 }, { id: 'dustin', level: 7, xp: 485 }, { id: 'robin', level: 6, xp: 180 }, { id: 'eddie', level: 5, xp: 225 }],
+  '4.4': [{ id: 'mike', level: 9, xp: 340 }, { id: 'dustin', level: 8, xp: 485 }, { id: 'robin', level: 7, xp: 125 }, { id: 'eleven', level: 5, xp: 189 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

@@ -13,7 +13,7 @@ import { activeHero } from './state.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { sendDive } from '../enemies/demobat.ts';
-import { endStand, pulse } from '../heroes/eddie_solo.ts';
+import { endStand, pulse, standNote } from '../heroes/eddie_solo.ts';
 import { dist } from './space.ts';
 import { sfx } from './fx.ts';
 import { trySwap } from './party.ts';
@@ -75,11 +75,12 @@ export function updateRoof(s: S): void {
   bringBats(s, h, 1);
 }
 
-/** Sim.soloNote. A hit pulses the ring, a miss sends the nearest circling bat down. */
-export function soloNote(s: S, hit: boolean, perfect: boolean): void {
+/** Sim.soloNote. A hit pulses the ring, a miss sends the nearest circling bat down. Off the roof it is a note of Eddie's own solo (heroes/eddie_solo.ts). */
+export function soloNote(s: S, hit: boolean, perfect: boolean, radius?: number): void {
   const r = s.roof;
   const h = eddieOf(s);
-  if (!r.on || !h) return;
+  if (!r.on) { standNote(s, hit, perfect, radius); return; }
+  if (!h) return;
   const sp = HERO_DEFS.eddie.special.x;
   if (hit) {
     r.streak++;

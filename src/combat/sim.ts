@@ -7,6 +7,7 @@ import { createState, setDifficulty } from './init.ts';
 import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
 import { updateTalents } from '../heroes/talents6.ts';
+import { endSolo } from '../heroes/eddie_solo.ts';
 import { ageBodies, awardXp, awayFrom, dismissHero, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
 import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
@@ -181,7 +182,8 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     curse(prop) { if (startCurse(s, prop) === activeHero(s)) awayFrom(s); },
     giveWalkman() { s.house.walkman = true; },
     rooftop: (on) => setRoof(s, on),
-    soloNote: (hit, perfect) => soloNote(s, hit, perfect),
+    soloNote: (hit, perfect, radius) => soloNote(s, hit, perfect, radius),
+    soloEnd: (cut) => endSolo(s, cut),
     dismissHero: (id) => dismissHero(s, id),
     healParty: (frac) => healParty(s, frac),
     setDifficulty: (d) => setDifficulty(s, d),

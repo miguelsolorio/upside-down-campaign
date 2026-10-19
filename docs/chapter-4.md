@@ -48,7 +48,7 @@ The owner's call: the solo plays as a retro Guitar Hero. While Eddie plays, a no
 - **The chart comes from the music.** The sequencer schedules one bar at a time, so the solo's notes can be read off the same bar the audio plays, and the highway is always in time with what you hear. The solo's track is original, like everything else (no borrowed songs).
 - **The timing window is forgiving** (the owner's call). A note struck within 6 frames of its beat (100 ms at 60 fps) is a hit, within 2 frames (33 ms) a perfect. Touch and wireless pads add lag, so the window leans wide, and a perfect still takes timing.
 - **What a miss costs.** A miss shrinks the ring a step and resets the streak. Three misses in a row cut the solo short with a squeal of feedback, and the 9 MP is spent. On the 4.3 rooftop each miss also lets a demobat through to dive at the party, so the song's misses are its damage.
-- **Open:** how many notes a 6 s solo has, and how the bot plays it for the tests.
+- **Settled:** the 6 s `riff` has 11 notes. The tests' bot plays 9 in 10 (careful) or 7 in 10 (careless), the way it plays the rooftop (`docs/level-11.md`, "The Hellfire solo").
 
 ### Haunted mirrors (the riff gate)
 

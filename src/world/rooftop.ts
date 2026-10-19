@@ -17,13 +17,22 @@ export type SongChart = 'rooftop';
 export const SONG_BOT: BotOpts = { accuracy: 0.9, jitter: 3 };
 export const SONG_CARELESS: BotOpts = { accuracy: 0.7, jitter: 5 };
 
+/** What a song reads of the keys: the three lane actions, and a window that lost focus. */
+export type SongInput = Pick<InputState, 'pressed' | 'interrupted' | 'offer'>;
+
 export interface Song {
   /** One 60 Hz tick. */
-  step(input?: Pick<InputState, 'pressed' | 'interrupted' | 'offer'>): void;
+  step(input?: SongInput): void;
   /** Paints the highway (the live one only). */
   draw(ctx: Ctx): void;
   /** True once the song is over and the director can go on. */
   readonly done: boolean;
+  /** True from the moment it ends, a little before done: the highway's closing beat may still play. */
+  readonly over: boolean;
+  /** Ends it now, as a quit: the sim hears it end. */
+  stop(): void;
+  /** Holds the highway and its music for the pause menu; a press on a lane brings it back. */
+  pause(): void;
 }
 
 /** The highway for the play scene. A long song: a miss is only a miss (maxMisses Infinity). With `bot`, the solo's bot plays it. */
@@ -46,7 +55,10 @@ export function liveSong(sim: Sim, chart: SongChart, done: () => void, bot?: Bot
       if (solo.done && !called) { called = true; if (!ended) sim.rooftop?.(false); done(); }
     },
     draw(ctx) { if (!solo.done) solo.draw(ctx); },
+    stop: () => solo.stop(),
+    pause: () => solo.pause(),
     get done() { return called; },
+    get over() { return solo.over; },
   };
 }
 
@@ -70,6 +82,9 @@ export function botSong(sim: Sim, chart: SongChart, done: () => void, opts: BotO
       if (frame >= c.length) { over = true; sim.rooftop?.(false); done(); }
     },
     draw() { /* headless */ },
+    stop() { if (!over) { over = true; sim.rooftop?.(false); } },
+    pause() { /* headless */ },
     get done() { return over; },
+    get over() { return over; },
   };
 }

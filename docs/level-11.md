@@ -114,13 +114,15 @@ Listed in `puzzles` in `stage42.ts`, in this order.
 
 ### The Hellfire solo
 
-The real solo, the note highway with its charts, its timing and the bot's play, is being built by the session that runs the build as a module of its own (`src/solo/`, `createSolo`), and plugs in later. 4.2 ships a plain stand-in with the seam ready for it (`src/heroes/eddie_solo.ts`: start the stand, one pulse with an optional crit, end the stand).
+The solo is the note highway (`src/solo/`, `createSolo`) playing the `riff` chart over the stage, 11 notes in 6 s. The sim's side is `src/heroes/eddie_solo.ts`; the play scene's is `src/world/songs.ts` and `riff.ts`.
 
-- **The stand.** For 360 frames (480 with Dustin) he plants his feet and plays: anim `cast` the whole time, movement does nothing, and Special does nothing. A swap away ends it. The MP is spent at the start.
-- **The pulses.** Every 30 frames the ring round him pulses (fx `riff`, sfx `riff`): power 0.4 and knockback 1.5 to every foe within 40 px, and a 40 frame stun to flyers (4.2 has none; the demobats of 4.3 are flyers). Each pulse is a riff: it opens a mirror or the clock it reaches.
-- **No timing yet.** Hits on the beat, perfects, misses, the streak, the ring widening and shrinking, and the feedback that cuts a solo short all come with the module.
-- **The view.** `HudView.solo` while he plays: `t`, `life`, `ring` (the radius in px), `beat` (frames to the next pulse), and `streak` 0. The HUD draws nothing for it yet: the module draws its own highway.
-- **The bot** casts it with two or more foes within 56 px.
+- **The stand.** He plants his feet and plays: anim `cast` the whole time, movement does nothing, and Special does nothing. A swap away ends it. The MP is spent at the start. `HudView.solo` going from null to set is how the play scene knows to start the highway, a tick later; the action keys then belong to the highway (Eddie's swap still works), and its end ends the stand.
+- **The notes.** Each struck note pulses the ring round him (fx `riff`, sfx `riff`): power 0.4 and knockback 1.5 to every foe within the ring, a crit on a perfect, and a 40 frame stun to flyers. The ring is the highway's own (`ringRadius`, 28 px to start and 20 to 52 px by the streak): a hit widens it, a miss narrows it a step and breaks the streak. Each pulse is a riff: it opens a mirror or the clock it reaches. Three misses in a row cut the solo short with the squeal, and the 9 MP is spent.
+- **The lead-in.** The notes take a second to come down the neck. Until the first one is struck or missed, the stand-in's clock keeps pulsing the 40 px ring every 30 frames, so he is not bare for that second; the first note takes the stand over, and the clock stops. With no highway at all (a test) the clock plays the whole stand: 360 frames, 480 with Dustin, 12 or 16 pulses.
+- **The Hellfire bond** (Dustin in the party) is the clock's 480 frames and `HudView.solo.life`. A highway sets its own length, so the bonded stand holds until the riff ends, as the lone Eddie's does.
+- **Encore** (Lv 9): when the riff finishes, the highway plays once more (an `ENCORE` floater, the clock covering the gap), unless three misses cut the first.
+- **The view.** `HudView.solo` while he plays: `t`, `life`, `ring` (the radius in px), `streak` (hits in a row, once a note has been played) and `beat` (frames to the next clock pulse, 0 once a highway drives it). The HUD draws nothing for it: the highway draws itself.
+- **The bot** casts it with two or more foes within 56 px. The headless runs (`scripts/measure-stage.ts`, `campaign-run.ts`) play the riff through the judge, 9 notes in 10 for the careful bot and 7 in 10 for the careless one, as they play the rooftop; the browser's `?bot=1` plays the live highway with the solo's bot.
 
 ## The ghoul
 

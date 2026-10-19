@@ -381,8 +381,13 @@ export interface Sim {
   giveWalkman?(): void;
   /** The 4.3 rooftop (docs/level-12.md): on, Eddie is planted as the active hero and a flock circles him; off, it ends. Optional. */
   rooftop?(on: boolean): void;
-  /** One note of the rooftop's song: a hit pulses Eddie's ring (a crit when perfect), a miss sends a bat down at him. Optional. */
-  soloNote?(hit: boolean, perfect: boolean): void;
+  /** One note of a song on the note highway. On the rooftop a hit pulses Eddie's ring (a crit when perfect) and a miss sends a bat down at him.
+   *  In his Hellfire solo a hit pulses the ring at `radius` px, the highway's own, and a miss narrows it; the first note takes the stand over
+   *  from its own clock, which pulses until then, while the notes come down the neck. Optional. */
+  soloNote?(hit: boolean, perfect: boolean, radius?: number): void;
+  /** Eddie's Hellfire solo on the note highway is over (docs/level-11.md): the stand ends with it, unless Encore (Lv 9) plays it once more.
+   *  `cut` is three misses in a row, which allows no Encore. Optional. */
+  soloEnd?(cut?: boolean): void;
   /** A hero leaves the party for good mid-stage: Eddie's fall at the end of 4.3. Gone from the view and the HUD, kept in party() so
    *  progress keeps their level. Optional. */
   dismissHero?(id: HeroId): void;

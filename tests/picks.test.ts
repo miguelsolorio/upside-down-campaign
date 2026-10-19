@@ -381,7 +381,7 @@ test('the gate words: RIFF for Eddie and SMASH for Hopper, beside the others', (
   assert.equal(rowOf(s, at10(s, 'hopper')).gate, 'SMASH');
   assert.equal(rowOf(s, at10(s, 'steve')).gate, 'SMASH', 'Steve still smashes too');
   assert.equal(rowOf(s, at10(s, 'mike')).gate, '');
-  assert.deepEqual(rowOf(s, at10(s, 'eddie')), { id: 'eddie', name: 'Eddie', level: s.pool[at10(s, 'eddie')]?.level, gate: 'RIFF', slot: 4, locked: true, bond: '' });
+  assert.deepEqual(rowOf(s, at10(s, 'eddie')), { id: 'eddie', name: 'Eddie', level: s.pool[at10(s, 'eddie')]?.level, gate: 'RIFF', slot: 4, locked: true, bond: 'HELLFIRE' }, 'Dustin is in this party, so Eddie wears the Hellfire tag');
 });
 
 test('ten heroes: left and right wrap inside their row of four, and the short last row of two', () => {

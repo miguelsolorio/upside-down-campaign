@@ -1,5 +1,5 @@
-// Bonds (docs/game-design.md, "Bonds"): the rules that say which bonds a party has and what each gives, the data the Chapter 4 session
-// switches on, and everything that prints them: the picks panel's card tags and bond line, the character sheet's lines, the
+// Bonds (docs/game-design.md, "Bonds"): the rules that say which bonds a party has and what each gives, the data (all seven are on,
+// Chief and kid and Hellfire since chapter 4), and everything that prints them: the picks panel's card tags and bond line, the character sheet's lines, the
 // stage-start callout. The sim side is in bonds-combat.test.ts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,12 +19,12 @@ const ids = (bs: readonly BondDef[]): string[] => bs.map((b) => b.id);
 const byId = (id: string): BondDef => BONDS.find((b) => b.id === id) as BondDef;
 
 // ---------------------------------------------------------------- which bonds a party has
-test('the design\'s seven bonds are in the data, and Hopper and Eddie\'s two are off', () => {
+test('the design\'s seven bonds are in the data, and all seven are on', () => {
   assert.deepEqual(BONDS.map((b) => [b.id, b.on]), [
-    ['friends', true], ['party-of-four', true], ['chief-and-kid', false], ['mad-max', true],
-    ['babysitters-club', true], ['scoops-troop', true], ['hellfire', false],
+    ['friends', true], ['party-of-four', true], ['chief-and-kid', true], ['mad-max', true],
+    ['babysitters-club', true], ['scoops-troop', true], ['hellfire', true],
   ]);
-  assert.deepEqual(liveBonds().map((b) => b.id), ['friends', 'party-of-four', 'mad-max', 'babysitters-club', 'scoops-troop']);
+  assert.deepEqual(liveBonds().map((b) => b.id), ['friends', 'party-of-four', 'chief-and-kid', 'mad-max', 'babysitters-club', 'scoops-troop', 'hellfire']);
   assert.deepEqual(byId('friends').heroes, ['mike', 'eleven']);
   assert.deepEqual(byId('party-of-four').heroes, ['mike', 'dustin', 'lucas', 'will']);
   assert.deepEqual(byId('chief-and-kid').heroes, ['hopper', 'eleven']);
@@ -59,22 +59,30 @@ test('Party of four needs all four of them, not two or three', () => {
   }
 });
 
+test('Chief and kid and Hellfire count in any party that holds the pair, and not otherwise', () => {
+  assert.deepEqual(ids(activeBonds(['hopper', 'eleven'])), ['chief-and-kid']);
+  assert.deepEqual(ids(activeBonds(['eleven', 'mike', 'nancy', 'hopper'])), ['friends', 'chief-and-kid'], 'order and company do not matter, list order does');
+  assert.deepEqual(ids(activeBonds(['eddie', 'dustin'])), ['hellfire']);
+  assert.deepEqual(ids(activeBonds(['dustin', 'steve', 'hopper', 'eddie'])), ['babysitters-club', 'hellfire']);
+  assert.deepEqual(ids(activeBonds(['hopper', 'eleven', 'eddie', 'dustin'])), ['chief-and-kid', 'hellfire'], 'the two together');
+  assert.deepEqual(ids(activeBonds(['hopper', 'mike', 'eddie', 'lucas'])), [], 'Hopper without Eleven, Eddie without Dustin');
+  assert.deepEqual(ids(activeBonds(['hopper', 'dustin', 'eleven', 'eddie'])), ['chief-and-kid', 'hellfire']);
+});
+
 test('a bond that is switched off never counts, even with both heroes there, until `on` is flipped', () => {
   const party: BondHero[] = ['hopper', 'eleven', 'eddie', 'dustin'];
-  assert.deepEqual(activeBonds(party), [], 'Chief and kid and Hellfire wait');
-  assert.equal(modsFor(party, 'hopper').def, 0);
   const chief = byId('chief-and-kid'), hellfire = byId('hellfire');
-  chief.on = true; hellfire.on = true;
+  chief.on = false; hellfire.on = false;
   try {
-    assert.deepEqual(ids(activeBonds(party)), ['chief-and-kid', 'hellfire'], 'switching them on is all chapter 4 does');
-    assert.equal(modsFor(party, 'hopper').def, 0.1);
-    assert.equal(modsFor(party, 'eleven').def, 0.1);
-    assert.equal(modsFor(party, 'eddie').solo, 120, 'the solo lasts 2 s longer, at 60 Hz');
-    assert.equal(modsFor(party, 'dustin').solo, 0, 'it is Eddie\'s solo');
+    assert.deepEqual(activeBonds(party), [], 'switched off, they wait');
+    assert.equal(modsFor(party, 'hopper').def, 0);
+    assert.equal(modsFor(party, 'eddie').solo, 0);
+    assert.deepEqual(bondsOf('hopper'), [], 'and a bond that is off is not listed');
+    assert.deepEqual(bondRows('eddie', party), []);
   } finally {
-    chief.on = false; hellfire.on = false;
+    chief.on = true; hellfire.on = true;
   }
-  assert.deepEqual(activeBonds(party), []);
+  assert.deepEqual(ids(activeBonds(party)), ['chief-and-kid', 'hellfire']);
 });
 
 test('gainedBonds names what one more hero brings, and missingFrom who a bond still waits for', () => {
@@ -85,7 +93,13 @@ test('gainedBonds names what one more hero brings, and missingFrom who a bond st
   assert.deepEqual(missingFrom(byId('friends'), ['mike', 'eleven']), []);
   assert.deepEqual(bondsOf('steve').map((b) => b.id), ['babysitters-club', 'scoops-troop']);
   assert.deepEqual(bondsOf('nancy'), [], 'Nancy has none yet');
-  assert.deepEqual(bondsOf('hopper'), [], 'and a bond that is off is not listed');
+  assert.deepEqual(bondsOf('hopper').map((b) => b.id), ['chief-and-kid']);
+  assert.deepEqual(bondsOf('eddie').map((b) => b.id), ['hellfire']);
+  assert.deepEqual(bondsOf('eleven').map((b) => b.id), ['friends', 'chief-and-kid']);
+  assert.deepEqual(bondsOf('dustin').map((b) => b.id), ['party-of-four', 'babysitters-club', 'hellfire'], 'three, which is the sheet\'s limit');
+  assert.deepEqual(gainedBonds(['hopper', 'mike'], ['hopper', 'mike', 'eleven']).map((b) => b.id), ['friends', 'chief-and-kid'], 'Eleven brings both');
+  assert.deepEqual(gainedBonds(['eddie', 'mike'], ['eddie', 'mike', 'dustin']).map((b) => b.id), ['hellfire']);
+  assert.deepEqual(missingFrom(byId('hellfire'), ['eddie']), ['dustin']);
 });
 
 // ---------------------------------------------------------------- what they give
@@ -98,6 +112,9 @@ test('what each bond gives each member, as the design says', () => {
   assert.deepEqual(m(['steve', 'dustin'], 'steve'), { ...NO_MODS, babysit: 0.2 });
   assert.deepEqual(m(['steve', 'dustin'], 'dustin'), NO_MODS, 'Dustin only gets patched up, he gives nothing');
   for (const h of ['steve', 'robin'] as const) assert.deepEqual(m(['steve', 'robin'], h), { ...NO_MODS, crit: 0.1 });
+  for (const h of ['hopper', 'eleven'] as const) assert.deepEqual(m(['eleven', 'hopper'], h), { ...NO_MODS, def: 0.1 });
+  assert.deepEqual(m(['eddie', 'dustin'], 'eddie'), { ...NO_MODS, solo: 120 }, 'the solo lasts 2 s longer, at 60 Hz');
+  assert.deepEqual(m(['eddie', 'dustin'], 'dustin'), NO_MODS, 'it is Eddie\'s solo, Dustin gives nothing');
 });
 
 test('bonuses from two bonds add, and a hero outside every bond, or outside the party, gets nothing', () => {
@@ -105,6 +122,8 @@ test('bonuses from two bonds add, and a hero outside every bond, or outside the 
   assert.deepEqual(modsFor(['lucas', 'max', 'mike', 'dustin', 'will'], 'lucas'), { ...NO_MODS, def: 0.08, spd: 0.1 }, 'five, as a roster can hold');
   assert.deepEqual(modsFor(['mike', 'eleven', 'lucas', 'max'], 'lucas'), { ...NO_MODS, spd: 0.1 });
   assert.deepEqual(modsFor(['mike', 'eleven', 'lucas', 'max'], 'nancy'), NO_MODS);
+  assert.deepEqual(modsFor(['mike', 'eleven', 'hopper', 'nancy'], 'eleven'), { ...NO_MODS, atk: 0.1, cover: 32, def: 0.1 }, 'Eleven holds two bonds at once');
+  assert.deepEqual(modsFor(['mike', 'dustin', 'lucas', 'will', 'eddie'], 'dustin'), { ...NO_MODS, def: 0.08 }, 'Hellfire gives Dustin nothing');
   assert.deepEqual(modsFor([], 'mike'), NO_MODS);
   assert.deepEqual(modsFor(['mike'], 'mike'), NO_MODS);
 });
@@ -211,6 +230,70 @@ test('picks panel: the bond line always fits beside START, for every four of nin
   assert.ok(longest > 150, `the widest is ${longest}, so the check bites`);
 });
 
+// Eddie is in the 4.2 and 4.3 pools and falls on the 4.3 roof; Hopper is in chapter 5's (and is alone in 4.1), so the two never share a pool.
+const POOL_EDDIE: HeroId[] = [...POOL9, 'eddie'];
+const POOL_HOPPER: HeroId[] = [...POOL9, 'hopper'];
+const poolEddie = poolFor('4.2', POOL_EDDIE.map((id) => ({ id, level: 8 })));
+const poolHopper = poolFor('5.1', POOL_HOPPER.map((id) => ({ id, level: 8 })));
+const openIn = (pool: typeof poolEddie, seed: HeroId[]): PicksState => createPicks(pool, [], seed);
+const onIn = (s: PicksState, id: HeroId): PicksState => moveTo(s, s.pool.findIndex((p) => p.id === id));
+const tagIn = (s: PicksState, id: HeroId): string => rowOf(s, s.pool.findIndex((p) => p.id === id)).bond;
+
+test('picks panel: Chief and kid shows like the other five: the corner tag, the perk line and the ADDS preview', () => {
+  assert.deepEqual(poolHopper.map((p) => p.id).sort(), [...POOL_HOPPER].sort(), 'chapter 5\'s pool holds Hopper and Eleven');
+  const s = openIn(poolHopper, ['hopper', 'eleven', 'lucas', 'will']);
+  assert.equal(tagIn(s, 'hopper'), 'CHIEF');
+  assert.equal(tagIn(s, 'eleven'), 'CHIEF');
+  assert.equal(tagIn(s, 'lucas'), '', 'nobody else in the party has it');
+  assert.equal(tagIn(s, 'mike'), '', 'and the bench has no tag');
+  assert.deepEqual(bondLine(onIn(s, 'hopper')), { text: 'Chief and kid: +10% DEF', preview: false });
+  assert.deepEqual(bondLine(onIn(s, 'eleven')), { text: 'Chief and kid: +10% DEF', preview: false });
+  assert.equal(bondLine(onIn(s, 'nancy'))?.text, 'Chief and kid: +10% DEF', 'off the pair, the party\'s bond, with its perk while there is only one');
+  const open = openIn(poolHopper, ['hopper', 'lucas', 'will']);
+  assert.equal(tagIn(open, 'hopper'), '');
+  assert.deepEqual(bondLine(onIn(open, 'eleven')), { text: 'ADDS Chief and kid: +10% DEF', preview: true });
+  const both = openIn(poolHopper, ['hopper', 'mike', 'lucas']);
+  const adds = bondLine(onIn(both, 'eleven'));
+  assert.ok(adds?.preview && adds.text.startsWith('ADDS ') && adds.text.includes('Chief and kid'), `Eleven would bring two: ${adds?.text}`);
+});
+
+test('picks panel: Hellfire shows like the other five: the corner tag, the perk line and the ADDS preview', () => {
+  assert.deepEqual(poolEddie.map((p) => p.id).sort(), [...POOL_EDDIE].sort(), '4.2 and 4.3 pool Eddie with Dustin');
+  const s = openIn(poolEddie, ['eddie', 'dustin', 'lucas', 'robin']);
+  assert.equal(tagIn(s, 'eddie'), 'HELLFIRE');
+  assert.equal(tagIn(s, 'dustin'), 'HELLFIRE');
+  assert.equal(tagIn(s, 'robin'), '');
+  assert.deepEqual(bondLine(onIn(s, 'eddie')), { text: 'Hellfire: SOLO LASTS 2S MORE', preview: false });
+  assert.deepEqual(bondLine(onIn(s, 'dustin')), { text: 'Hellfire: SOLO LASTS 2S MORE', preview: false });
+  const open = openIn(poolEddie, ['eddie', 'lucas', 'robin']);
+  assert.deepEqual(bondLine(onIn(open, 'dustin')), { text: 'ADDS Hellfire: SOLO LASTS 2S MORE', preview: true });
+  const club = openIn(poolEddie, ['eddie', 'dustin', 'steve', 'robin']);
+  assert.equal(tagIn(club, 'dustin'), '2 BONDS', 'Hellfire and Babysitter\'s club');
+  assert.equal(tagIn(club, 'eddie'), 'HELLFIRE');
+  assert.equal(bondLine(onIn(club, 'dustin'))?.text, "Babysitter's club, Hellfire");
+});
+
+test('picks panel: the bond line always fits beside START, for every four of Eddie\'s pool and of Hopper\'s, at every place the cursor can be', () => {
+  let longest = 0, lines = 0;
+  const printed = new Set<string>();
+  for (const [pool, ids11] of [[poolEddie, POOL_EDDIE], [poolHopper, POOL_HOPPER]] as const) {
+    for (let a = 0; a < 10; a++) for (let b = a + 1; b < 10; b++) for (let c = b + 1; c < 10; c++) for (let d = c + 1; d < 10; d++) {
+      const s = openIn(pool, [a, b, c, d].map((i) => ids11[i] as HeroId));
+      for (let i = 0; i <= s.pool.length; i++) {
+        const text = bondLine(moveTo(s, i))?.text;
+        if (!text) continue;
+        lines++;
+        printed.add(text);
+        longest = Math.max(longest, tinyWidth(text));
+        assert.ok(tinyWidth(text) <= BOND_LINE_W, `"${text}" is ${tinyWidth(text)} px`);
+      }
+    }
+  }
+  assert.ok(lines > 500, `${lines} lines checked`);
+  assert.ok([...printed].some((t) => t.includes('Chief and kid')) && [...printed].some((t) => t.includes('Hellfire')), 'both new bonds were printed');
+  assert.ok(longest > 150, `the widest is ${longest}, so the check bites`);
+});
+
 // ---------------------------------------------------------------- the character sheet
 test('sheet: a hero\'s bonds, the active ones first and green, the rest naming who they need', () => {
   const party: HeroId[] = ['mike', 'eleven', 'lucas', 'max'];
@@ -224,6 +307,18 @@ test('sheet: a hero\'s bonds, the active ones first and green, the rest naming w
     { text: 'Scoops troop  needs Robin', active: false },
   ]);
   assert.deepEqual(bondRows('nancy', party), [], 'Nancy has no bonds yet');
+  assert.deepEqual(bondRows('hopper', ['hopper', 'eleven']), [{ text: 'Chief and kid  +10% DEF', active: true }]);
+  assert.deepEqual(bondRows('hopper', ['hopper', 'mike']), [{ text: 'Chief and kid  needs Eleven', active: false }]);
+  assert.deepEqual(bondRows('eleven', ['hopper', 'eleven', 'mike']), [
+    { text: "Friends don't lie  +10% ATK, SHARED SCREEN", active: true },
+    { text: 'Chief and kid  +10% DEF', active: true },
+  ]);
+  assert.deepEqual(bondRows('eddie', ['eddie', 'dustin']), [{ text: 'Hellfire  SOLO LASTS 2S MORE', active: true }]);
+  assert.deepEqual(bondRows('dustin', ['eddie', 'dustin', 'steve']), [
+    { text: "Babysitter's club  BABYSIT HEALS DUSTIN", active: true },
+    { text: 'Hellfire  SOLO LASTS 2S MORE', active: true },
+    { text: 'Party of four  needs Mike, Lucas, Will', active: false },
+  ], 'Dustin\'s three lines are the sheet\'s limit');
 });
 
 test('sheet: every line fits beside the portrait, whoever is missing', () => {
@@ -279,6 +374,17 @@ test('callout: a hero who joins mid-stage and completes a bond brings it up, and
   assert.deepEqual(ids(b.showing()), ['friends', 'mad-max'], 'the strip was up, so the new bond is added under it');
   for (let i = 0; i < BANNER_FRAMES - 1; i++) b.tick();
   assert.equal(b.showing().length, 2, 'and the clock started again');
+});
+
+test('callout: a stage that starts with Hopper and Eleven, or Eddie and Dustin, names the bond', () => {
+  const b = createBondBanner();
+  b.sync(['hopper', 'eleven', 'eddie', 'dustin']);
+  assert.deepEqual(ids(b.showing()), ['chief-and-kid', 'hellfire']);
+  const joiner = createBondBanner();
+  joiner.sync(['hopper', 'mike', 'eddie']);
+  assert.deepEqual(joiner.showing(), []);
+  joiner.sync(['hopper', 'mike', 'eddie', 'dustin']);
+  assert.deepEqual(ids(joiner.showing()), ['hellfire'], 'Dustin joins and completes Hellfire');
 });
 
 test('callout: it names at most three, and every line of it fits the screen', () => {

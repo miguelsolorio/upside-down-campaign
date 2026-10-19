@@ -137,3 +137,4 @@ Stage XP is 245 before `xpMult` 2.8, so it pays about 690.
 - **The ladder beat is its own** so a retry from its string walks into the `roof` beat again and the song after it: a light lit inside the roof beat left the song's `after` trigger behind for good.
 - **The ground has more foes than the spec's table** so the stage's XP clears its 240 floor (World's call), and an Eggo waits at the ladder's foot.
 - **The fall:** after the song Eddie leaves the party (`Sim.dismissHero`); progress keeps his level, and the 4.4 pool has no Eddie.
+- **Bonds (Chief and kid and Hellfire went on, 2026-10-19; `docs/bonds.md`, "Chapter 4 and 5").** Hellfire is on and the default party holds it, but the bond was already counted here (Dustin's 480 frames), so nothing moved: on HARD with 20 seeds, the same to the digit with the bond on and off. 20 cleared, 301 damage, 1.50 KOs, 41% lowest HP, 129 s; careless 18, 360, 1.35, 46%, 125 s. No `enemyMult` change.

@@ -273,11 +273,11 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     },
     special: {
       name: 'Hellfire solo', mp: 9, cd: 60, power: 0.4, dur: 360, at: 30, lock: 0, reach: 40, kb: 1.5, sfx: 'riff',
-      // dur: frames of the stand, bond with Dustin in the party. at: frames between pulses. reach: the ring's starting radius, between
+      // dur: frames of the stand (the Hellfire bond adds its own, bonds.ts SOLO_EXTRA). at: frames between pulses. reach: the ring's starting radius, between
       // ringMin and ringMax in steps of ringStep. window and perfect: frames from a pulse that a press is a hit or a perfect. misses: in
       // a row, end it. flyerStun: frames a pulse stuns a flyer. Hellfire DM (Lv 6): a mark lasts mark frames and the party's hits on
       // a marked foe deal markBonus more.
-      x: { bond: 480, ringMin: 24, ringMax: 72, ringStep: 8, window: 6, perfect: 2, misses: 3, flyerStun: 40, mark: 300, markBonus: 0.2 },
+      x: { ringMin: 24, ringMax: 72, ringStep: 8, window: 6, perfect: 2, misses: 3, flyerStun: 40, mark: 300, markBonus: 0.2 },
     },
     talents: TALENTS.eddie,
   },

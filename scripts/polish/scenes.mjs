@@ -7,9 +7,11 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, r) => (v.
 const port = Number(args.port ?? 5210), mode = args.mode ?? 'desktop', secs = Number(args.secs ?? 6);
 const hooks = readFileSync(new URL('./pagehooks.js', import.meta.url), 'utf8');
 const sampler = readFileSync(new URL('./sampler.js', import.meta.url), 'utf8');
-const PROGRESS = JSON.stringify({ v: 1, cleared: ['1.1', '1.2', '1.3', '2.1'], heroes: [
-  { id: 'mike', level: 5, xp: 40 }, { id: 'dustin', level: 4, xp: 10 }, { id: 'lucas', level: 4, xp: 0 }, { id: 'eleven', level: 4, xp: 0 }, { id: 'will', level: 3, xp: 0 }], purse: 40 });
+const PROGRESS = JSON.stringify({ v: 1, cleared: ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1'], heroes: [
+  { id: 'mike', level: 7, xp: 40 }, { id: 'dustin', level: 6, xp: 10 }, { id: 'lucas', level: 6, xp: 0 }, { id: 'eleven', level: 6, xp: 0 }, { id: 'will', level: 5, xp: 0 }], purse: 40 });
 const SET = (skip) => JSON.stringify({ musicVol: 0.7, sfxVol: 0.8, scanlines: true, shake: 1, reduceFlashing: false, skipDialogue: skip, difficulty: 'normal', shell: 'auto', rumble: true, rev: 2 });
+/** Which game each cabinet in the Palace plays (src/arcade/cabinets.ts), so this runs against a production build too. */
+const CABINET_GAMES = { cab1: 'galaga', cab2: 'pacman', cab3: 'centipede', cab4: 'dragonslair', cab5: 'mspacman', cab6: 'centipede', cab7: 'mspacman', cab8: 'galaga', digdug: 'digdug' };
 const q = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))] ?? 0; };
 const mean = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
 const r2 = (n) => Math.round(n * 1000) / 1000;
@@ -75,7 +77,7 @@ try {
   const cabs = JSON.parse(await c.evaluate(`JSON.stringify(window.__ud.play.sim.view().props.filter((p) => p.kind === 'arcade').map((p) => ({ id: p.id, x: p.x + p.w / 2, y: p.y + p.h + 8 })))`));
   const seen = new Set();
   for (const cab of cabs) {
-    const game = await c.evaluate(`(async () => (await import('/src/arcade/cabinets.ts')).gameFor(${JSON.stringify(cab.id)}))()`);
+    const game = CABINET_GAMES[cab.id] ?? cab.id;
     if (seen.has(game)) continue; seen.add(game);
     await c.evaluate(`window.__ud.play.sim.dev.teleport(${cab.x}, ${cab.y})`);
     await c.sleep(600);

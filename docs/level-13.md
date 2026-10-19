@@ -46,7 +46,7 @@ One stage, five to eight minutes, and the end of chapter 4. The party goes into 
 
 | | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|---|
-| Vecna | 1400 | 24 | 7 | 0.4 | 150 |
+| Vecna | 1000 | 32 | 7 | 0.4 | 150 |
 | Orb | 80 | 0 | 2 | 0 | 0 |
 
 - **Clock (100% to 60%).** He walks slowly at the active hero. Every 120 frames, in reach, a vine whip: a 24 frame wind-up, a lash along a 60 px line, power 0.7. Every `chimeEvery` frames (900, 15 s) the attic's clock chimes and curses a hero (`curse` rules, `docs/level-11.md`, with this fight's pick) and one standing orb is marked (`ActorView.marked`). Each standing orb heals him 1% of his max HP every 120 frames.
@@ -89,4 +89,20 @@ The same bands as `docs/level-3.md`, "Targets", measured on HARD. "Boss" runs fr
 
 ## Result
 
-To be measured.
+Measured with `node scripts/measure-stage.ts 4.4` on HARD (`chief`) at `enemyMult` 1.7, with the party a real run brings (Mike 9, Dustin 8, Robin 7, Eleven 5). "Boss" runs from the `vecna` beat to the finish.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Careless, 100 | Kid | Upside | NORMAL |
+|---|---|---|---|---|---|---|---|
+| Cleared | 20 | 100, none stuck | 15 | 86 | 20 | 15 | 20 |
+| Damage taken | 259 | 247 | 564 | 546 | 177 | 534 | 218 |
+| KOs | 0.05 | 0.15 | 2.75 | 2.59 | 0.05 | 2.30 | 0 |
+| Lowest party HP | 65% | 68% | 19% | 19% | 75% | 28% | 72% |
+| Time | 119 s | 113 s | 115 s | 114 s | 100 s | 112 s | 107 s |
+| Boss time | 52 s (43%) | 47 s (41%) | 52 s | 52 s | 35 s | 54 s | 42 s |
+
+Stage XP is 280 before `xpMult` 2.9, so it pays about 810: the lead ends chapter 4 at Lv 10 (`docs/pace.md`).
+
+- **The first Vecna was long and safe for the careful bot**: 1400 HP and soft telegraphed hits, a 100 s fight it won every time at 74% HP. He is 1000 HP and 32 ATK now, the lash winds up in 14 frames for half his ATK and reaches 72 px across a 28 px band, and the rocks splash 28 px for 0.6.
+- **Chief sits above the band, to keep the careless floor.** Every attack of his is telegraphed, and the careful bot steps out of nearly all of them: it clears 100 of 100 at 68% lowest HP at any factor where the careless bot still clears 12 of 20. At 1.8 the careless bot fell to 50 of 100; at 2.0 the careful one first lost (18 of 20) and the careless one cleared 3.
+- **A killing blow plays the phases it crossed**: a big hit from above 25% to 0 used to skip Burn and its script. Vecna now moves through every phase line he passed, in order, before he falls (`combat/kills.ts`).
+- **The orbs regrow** after 20 s, so a party without a ranged hero can always pull him down in Float; no hero is locked in.

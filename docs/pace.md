@@ -1,6 +1,6 @@
 # Pace
 
-How fast the party levels over a real run, measured over the stages built so far (1.1 to 3.2). The target is in `docs/game-design.md`, "Leveling rules": Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4. `tests/pace.test.ts` holds the run to it.
+How fast the party levels over a real run, measured over the stages built so far (1.1 to 4.4). The target is in `docs/game-design.md`, "Leveling rules": Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4. `tests/pace.test.ts` holds the run to it.
 
 ## What the target means
 
@@ -160,3 +160,24 @@ Bonds (`docs/bonds.md`) change what a party does inside a stage, so every stage 
 ## Lv 9 talents
 
 The Lv 9 talents (`docs/game-design.md`, "The Lv 9 talents as built") only matter to a hero at Lv 9 or more, and none gets there in the nine stages built: the carried run's lead ends 3.3 at Lv 8 (8.0, 7 to 8 over 20 seeds). So `node scripts/measure-campaign.ts chief 20` and `measure-stage.ts` 3.1, 3.2 and 3.3 on chief came back to the digit, every band as it was and no `enemyMult` touched. Chapters 4 and 5 are where Lv 9 to 12 heroes play, and their stages are measured with the talents on. Forcing a party to Lv 9 (`--party=mike:9,...`) makes 3.1 to 3.3 a little easier and clears all 20 runs (`TODO.md`, "Lv 9 talents").
+
+
+## Chapter 4 (Levels 10 to 13)
+
+The run carries on through 4.1 to 4.4 (`docs/level-10.md` to `docs/level-13.md`).
+
+- **Hopper plays 4.1 alone.** Nobody in its pool has played, so he joins at the average of the four best heroes the save has, less one (`joinLevel`): Lv 5 with no XP. 4.1 pays 2.2, so he reaches Lv 6 and the Wind-up before the pit and ends it with about 820 XP. The lead doesn't move in 4.1.
+- **Eddie** joins 4.2 at the level of the party he joins, averaged, less one (`CATCH_UP`): Lv 5. He falls in 4.3 and is in no pool after it.
+- **Pay:** 4.2 at 2.1 (about 500), 4.3 at 2.8 (about 690), 4.4 at 2.9 (about 810). The lead needs about 1300 XP across the chapter (from Lv 8's 1531 and up to Lv 10's 2902), all of it from 4.2 to 4.4.
+- **Arrival:** 4.2 is Mike 8, Dustin 7, Robin 5, Eddie 5; 4.3 is Mike 8, Dustin 7, Robin 6, Eddie 5; 4.4 is Mike 9, Dustin 8, Robin 7, Eleven 5. Mike's XP into 4.2 to 4.4 is set between the 40-seed and the test's 10-seed medians, which sit 50 to 80 XP apart (the roof and the attic spread the XP by who stands).
+
+The lead's total XP after each stage, the mean of 40 runs on chief, the bot keeping the lead:
+
+| Stage | Mike | Dustin | Robin | Eleven | Hopper | Eddie |
+|---|---|---|---|---|---|---|
+| 4.1 | 1708 | 1260 | 623 | 597 | 820 | |
+| 4.2 | 2056 | 1511 | 858 | 597 | 820 | 670 |
+| 4.3 | 2433 | 1964 | 1189 | 597 | 820 | 979 |
+| 4.4 | 3086 | 2449 | 1597 | 1048 | 820 | 979 |
+
+- **The lead ends chapter 4 at Lv 10 in about eight runs of ten** (9.8 on average over 40), never under Lv 9; the party averages 8.2. `tests/pace.test.ts` asks for Lv 10 in seven of its ten and never under Lv 9.

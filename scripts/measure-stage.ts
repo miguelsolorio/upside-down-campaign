@@ -21,8 +21,8 @@
 import { createSim } from '../src/combat/index.ts';
 import { createBot } from '../src/combat/bot.ts';
 import { simOptions, stageGrid } from '../src/world/options.ts';
-import { SONG_BOT, SONG_CARELESS, botSong } from '../src/world/rooftop.ts';
-import type { Song } from '../src/world/rooftop.ts';
+import { SONG_BOT, SONG_CARELESS } from '../src/world/rooftop.ts';
+import { headlessSongs } from '../src/world/songs.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import { STAGE_11 } from '../src/world/stages/stage11.ts';
 import { STAGE_12 } from '../src/world/stages/stage12.ts';
@@ -74,21 +74,21 @@ for (let seed = 1; seed <= N; seed++) {
   const grid = stageGrid(S);
   const sim = createSim(simOptions(S, grid, { party, seed, difficulty: difficulty as Difficulty }));
   const bot = createBot({ grid, waypoints: S.waypoints, careless });
-  // The 4.3 rooftop's song, played by the solo's bot in step with the sim (world/rooftop.ts).
-  let song: Song | null = null;
+  // The note highway, played by the solo's bot in step with the sim: the 4.3 rooftop's song and Eddie's riff (world/songs.ts).
+  const songs = headlessSongs(() => sim, careless ? SONG_CARELESS : SONG_BOT);
   const dir = createDirector(S.beats, S.waves, {
     sim: () => sim, say: (_i, done) => done(), scare: (done) => done(), open: (id) => sim.openProp(id),
     alarm: () => undefined, jingle: () => undefined, finish: () => undefined,
     // A beat that lights a string does what the play scene's lightUp does to the party.
     light: (id) => { sim.openProp(id); sim.healParty(0.5); },
     walkman: () => sim.giveWalkman?.(),
-    solo: (chart, done) => { song = botSong(sim, chart, done, careless ? SONG_CARELESS : SONG_BOT); },
+    solo: (chart, done) => songs.play(chart, done),
   });
   let allDown = false, f = 0, lowest = 1, bossAt = -1, wardDown = false;
   for (; f < 30000 && !dir.finished() && !allDown; f++) {
-    const ev = sim.step(song ? IDLE : bot.next(sim));
+    const ev = sim.step(songs.holds ? IDLE : bot.next(sim));
     dir.events(ev);
-    if (song) { song.step(); if (song.done) song = null; }
+    songs.step(undefined, sim.view().hud.solo);
     if (ev.some((e) => e.t === 'allDown')) allDown = true;
     // In a defense (2.3) the one the party guards going down loses the run too.
     if (ev.some((e) => e.t === 'wardDown')) { allDown = true; wardDown = true; }

@@ -12,9 +12,9 @@ export interface Pet { x: number; y: number; dir: Dir; age: number; life: number
 /** Steve's Ahoy leap while it flies (heroes/ahoy.ts): from (sx, sy) to (tx, ty), `t` of `n` frames. */
 export interface Leap { sx: number; sy: number; tx: number; ty: number; t: number; n: number }
 
-/** Eddie's Hellfire solo while he plays (heroes/eddie_solo.ts): `t` frames into the stand of `life`, the ring's radius, the frame it began on. */
-/** Eddie's stand while he plays. encore: Encore (Lv 9) has already played it again. */
-export interface Stand { hero: Hero; t: number; life: number; ring: number; born: number; encore?: boolean }
+/** Eddie's Hellfire solo while he plays (heroes/eddie_solo.ts): `t` frames into the stand of `life`, the ring's radius, the frame it began on.
+ *  driven: the notes of a highway pulse the ring (Sim.soloNote), not the clock, and `streak` counts the hits in a row. encore: Encore (Lv 9) has already played it again. */
+export interface Stand { hero: Hero; t: number; life: number; ring: number; born: number; streak: number; driven: boolean; encore?: boolean }
 
 export interface TalentState {
   /** Frames of Mike's Rally left: the party's ATK is up. */

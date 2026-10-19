@@ -4,7 +4,7 @@
 import type { Game, Scene } from '../core/scene.ts';
 import type { BarkEvent, HeroId, PartySeed, PropView, Sim, SimEvent, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { SCREEN_W, TILE } from '../core/config.ts';
-import { burstHint, labelOf } from '../core/bindings.ts';
+import { burstHint } from '../core/bindings.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { savingAllowed, writeSave } from '../core/save.ts';
 import { cameraFollow, cameraSnap, createCamera } from '../core/camera.ts';
@@ -28,16 +28,15 @@ import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
 import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
 import { takenItems } from './taken.ts';
 import { nearUsable } from './interact.ts';
-import { TITLES, arcadeBoard, createArcadeScene, gameFor, postScore } from '../arcade/index.ts';
-import type { ArcadeVisit } from '../arcade/index.ts';
+import { createArcade } from './arcadevisit.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
 import { createBondBanner } from './bondbanner.ts';
 import { boomView, deadBilly, leavers } from './aftermath.ts';
 import { devHooks } from './devhooks.ts';
 import { sheetHeroes } from './sheet_party.ts';
 import { createMemoryFade } from './memory.ts';
-import { SONG_BOT, liveSong } from './rooftop.ts';
-import type { Song } from './rooftop.ts';
+import { SONG_BOT } from './rooftop.ts';
+import { liveSongs } from './songs.ts';
 import { stormFlash } from './storm.ts';
 import { createKlaxon } from './klaxon.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, inView, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
@@ -55,12 +54,6 @@ const WIPE_FRAMES = 100;
 const CLEAR_FRAMES = 70;
 /** How long the SAVED callout stays over the lights. */
 const SAVED_FRAMES = 120;
-/** The prize for beating MADMAX at Dig Dug. Max's line waits for the prize floaters to clear, then shows a while. */
-const MADMAX_XP = 25;
-const MADMAX_QUARTERS = 5;
-const MAX_LINE = "Beginner's luck. Rematch tomorrow.";
-const MAX_LINE_FROM = 80;
-const MAX_LINE_TO = 290;
 interface Checkpoint { x: number; y: number; state: DirectorState }
 /** What a rebuilt sim carries over: the party, the spawns to leave dead and the props to leave open. */
 interface Progress { party: PartySeed[]; skip: string[]; open: string[] }
@@ -119,9 +112,6 @@ export function createPlayScene(opts: PlayOptions): Scene {
   let swapAge: number | null = null;
   /** The screen width the camera last framed. A resize snaps the camera instead of letting it drift over. */
   let camW = SCREEN_W;
-  /** The MADMAX prize is paid once a visit. Frames since it was paid, for Max's line, or -1. */
-  let madmaxPaid = false;
-  let maxLine = -1;
   /** Quarters the whole run had picked up when the last string of lights was lit (SaveData.quarters). A retry or a load starts here. */
   let banked = 0;
   /** What `banked` was when the live sim was built. The sim counts its own pickups from 0, so the run's total is this plus its stats. */
@@ -129,8 +119,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** The save has Max's Walkman, or a beat gave it this visit (docs/level-11.md). The room the curse turns red fades with memory. */
   let walkman = opts.walkman === true;
   const memory = createMemoryFade();
-  /** The rooftop's song while it plays (docs/level-12.md): the highway takes the action keys, so the sim gets IDLE meanwhile. */
-  let song: Song | null = null;
+  /** The note highway's songs (songs.ts): the rooftop's, which takes the whole keyboard, and Eddie's riff, which takes the action keys. */
+  const songs = liveSongs(() => sim, () => (bot ? SONG_BOT : undefined));
+  const arcade = createArcade({ sim: () => sim, view: () => view, show, close: closeOverlay });
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -173,7 +164,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
     boom() { audio.sfx('boom'); boom = 0; },
     walkman() { if (!walkman) { walkman = true; sim.giveWalkman?.(); opts.onWalkman?.(); } },
-    solo(chart, done) { song = liveSong(sim, chart, () => { song = null; deferred.push(done); }, bot ? SONG_BOT : undefined); },
+    solo(chart, done) { songs.play(chart, () => deferred.push(done)); },
     music: (track) => audio.music(track), phase: (n) => audio.phase(n),
     // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
     light(prop) {
@@ -192,11 +183,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     /** Rebuilds the sim at the last lit string with the party's progress, as RETRY on the game over card does. For tests and the console. */
     retry(): void { retry(); },
     /** Dev only: finishes a run at a cabinet with this score, as if it had been played, to check the board and the prize. */
-    arcade(cabinet: string, score: number): void {
-      if (!game.flags.dev) return;
-      const r = postScore(arcadeBoard(), gameFor(cabinet), playerName(), score);
-      arcadeDone({ game: r.game, runs: [r], beatMadmax: r.beatMadmax });
-    },
+    arcade(cabinet: string, score: number): void { if (game.flags.dev) arcade.finish(cabinet, score); },
   };
   function expose(): void {
     const ud = (globalThis as unknown as { __ud?: Record<string, unknown> }).__ud;
@@ -212,6 +199,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
     speech = { who, text, t: 0 };
     speechCd = 240;
   }
+
+  /** Puts a scene over the frozen level. */
+  function show(sc: Scene): void { overlay = sc; game.scenes.push(sc); }
 
   function closeOverlay(sc: Scene): void {
     if (game.scenes.top() === sc) game.scenes.pop();
@@ -239,7 +229,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     klaxon.clear();
     boom = -1;
     memory.reset();
-    song = null;
+    songs.clear();
     swapAge = null;
     deferred.length = 0;
     swallow.clear();
@@ -278,16 +268,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
   function pushGameOver(): void {
     if (bot) { retry(); return; }
     const sc = createGameOverScene({ onRetry: () => { closeOverlay(sc); retry(); }, onQuit: () => opts.onQuit(), ...(wipeReason ? { reason: wipeReason } : {}) });
-    overlay = sc;
-    game.scenes.push(sc);
+    show(sc);
   }
 
   function pause(): void {
+    songs.pause();
     const sc = createPauseScene({
       onResume: () => { sim.setDifficulty(game.settings.difficulty); closeOverlay(sc); }, onQuit: () => opts.onQuit(), onStartOver: () => opts.onStartOver(), party: sheetParty,
     });
-    overlay = sc;
-    game.scenes.push(sc);
+    show(sc);
   }
 
   const sheetParty = (): CharSheetHero[] => sheetHeroes(sim.party(), view.hud.party);
@@ -295,8 +284,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** The character sheet over the frozen level, open on this hero. Closing it goes straight back to play. */
   function openSheet(id: HeroId): void {
     const sc = createCharSheetScene({ heroes: sheetParty, start: id, onBack: () => closeOverlay(sc) });
-    overlay = sc;
-    game.scenes.push(sc);
+    show(sc);
     audio.sfx('pause');
   }
 
@@ -329,35 +317,6 @@ export function createPlayScene(opts: PlayOptions): Scene {
       }
     }
     director.events(ev);
-  }
-
-  // ---------------------------------------------------------------- the arcade
-  /** The name a high score goes under: the hero at the cabinet. */
-  function playerName(): string {
-    return (view.hud.party.find((m) => m.active)?.id ?? 'mike').toUpperCase();
-  }
-
-  /** The cabinet's game over the frozen level. Leaving it comes straight back to play. */
-  function openArcade(pr: PropView): void {
-    const sc = createArcadeScene({
-      game: gameFor(pr.id), player: playerName(), board: arcadeBoard(),
-      onExit: (visit) => { closeOverlay(sc); arcadeDone(visit); },
-    });
-    overlay = sc;
-    game.scenes.push(sc);
-  }
-
-  /** Beating MADMAX pays the party once a visit, and Max has something to say about it. */
-  function arcadeDone(visit: ArcadeVisit): void {
-    if (!visit.beatMadmax || madmaxPaid) return;
-    madmaxPaid = true;
-    sim.bonus(MADMAX_XP, MADMAX_QUARTERS);
-    maxLine = 0;
-  }
-
-  /** The callout over a usable prop: the key alone at the lights, the key and the game at a cabinet. */
-  function promptText(pr: PropView): string {
-    return pr.kind === 'arcade' ? `${labelOf('interact')}: ${TITLES[gameFor(pr.id)]}` : labelOf('interact');
   }
 
   function lightUp(pr: PropView): void {
@@ -437,10 +396,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const click = g.input.clicked();
       const lead = view.hud.party.find((m) => m.active);
       if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
-      const input = frozen || song ? IDLE : bot ? bot.next(sim) : playerInput(g);
+      const input = frozen || songs.holds ? IDLE : songs.keys(bot ? bot.next(sim) : playerInput(g));
       // The scare holds the whole level still, as dialogue does, so nothing lands a hit on a party that can't move.
       if (!scare) forward(sim.step(input));
-      song?.step(g.input);
+      songs.step(g.input, view.hud.solo);
       view = sim.view(); memory.step(view);
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
@@ -462,7 +421,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       prompt = frozen || director.busy() || view.hud.boss || view.hud.ward ? null : nearUsable(view.props, sim.heroPos());
       burstCall = !frozen && !director.busy() && !prompt && view.hud.burstReady;
       if (prompt && !bot && g.input.pressed('interact')) {
-        if (prompt.kind === 'arcade') openArcade(prompt); else lightUp(prompt);
+        if (prompt.kind === 'arcade') arcade.open(prompt); else lightUp(prompt);
       }
       if (wipeT >= 0 && ++wipeT === WIPE_FRAMES) pushGameOver();
       if (clearT >= 0 && ++clearT === CLEAR_FRAMES) opts.onClear({ stats: sim.stats(), party: sim.party(), quarters: runQuarters() });
@@ -478,7 +437,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       bonds.tick();
       if (swapAge !== null) swapAge++;
       if (saved && ++saved.t > SAVED_FRAMES) saved = null;
-      if (maxLine >= 0 && ++maxLine > MAX_LINE_TO) maxLine = -1;
+      arcade.tick();
       const me = view.hud.party.find((m) => m.active);
       if (me && !me.ko && me.hp / me.hpMax < 0.25 && g.frame % 60 === 0) speak(me.id, 'lowHp');
     },
@@ -515,16 +474,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const hover = at ? slotAt(view.hud.party, at.x, at.y) : -1;
       const levelHot = !!at && onLevel(view.hud.party, at.x, at.y);
       drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, levelHot, device: g.input.device() });
-      song?.draw(ctx);
+      songs.draw(ctx);
       // The prize floaters and Max's line sit over the cabinets, so the cabinet's prompt waits until they're done.
-      if (prompt && maxLine < 0) drawCallout(ctx, promptText(prompt), prompt.x + prompt.w / 2, prompt.y - (prompt.kind === 'arcade' ? 10 : 2), cam, 'yellow');
+      if (prompt && !arcade.talking) drawCallout(ctx, arcade.promptText(prompt), prompt.x + prompt.w / 2, prompt.y - (prompt.kind === 'arcade' ? 10 : 2), cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
       if (speech) {
         const a = view.actors.find((m) => m.kind === 'hero' && m.id === speech?.who) ?? { x: view.focus.x, y: view.focus.y };
         drawCallout(ctx, speech.text, a.x, a.y - 24, cam);
       }
-      const max = maxLine >= MAX_LINE_FROM ? view.actors.find((m) => m.kind === 'npc' && m.id === 'max') : undefined;
-      if (max) drawCallout(ctx, MAX_LINE, max.x, max.y - 38, cam, 'pink', 18);
+      arcade.draw(ctx, cam);
       // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
       if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
       // The subtitle sits where the corner controls do, so it replaces them while it shows. A dialogue box does too, or they peek out round it.

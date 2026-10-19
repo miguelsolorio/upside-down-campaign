@@ -153,9 +153,12 @@
 //   the arc ends, which hits a foe the arc missed for 0.5. The arc, the ring and every solo pulse shatter a `mirror` or `clock` prop they reach:
 //   propCleared, the `shatter` sfx and a `glass` fx. The mirror is walkable after, the clock stays solid. The Hellfire solo is a stand-in
 //   (docs/level-11.md): 360 frames planted (480 with Dustin in the party), anim `cast`, a `riff` pulse every 30 frames (power 0.4, knockback 1.5,
-//   40 px) and HudView.solo { t, life, streak 0, ring 40, beat }. A swap or a KO ends it, a hit does not. The seam for the real one is
-//   startStand, pulse(crit) and endStand. Metalhead (Lv 3): +10 percent ATK. Hellfire DM (Lv 6): his hits mark a boss or an elite for 300
-//   frames (ActorView.marked) and every party hit on it deals 20 percent more.
+//   40 px) and HudView.solo { t, life, streak 0, ring 40, beat }. A swap or a KO ends it, a hit does not. The play scene plays the real one:
+//   it sees HudView.solo go from null to set and runs the `riff` chart on the note highway, calling Sim.soloNote(hit, perfect, radius): a hit pulses the ring at the highway's radius (a crit when perfect) and a miss only narrows
+//   it; the first note takes the stand over from the clock, which pulses until then while the notes come down the neck. HudView.solo's streak
+//   and ring follow, beat is 0. Sim.soloEnd(cut) ends the stand when the solo does, or plays it once more for Encore (Lv 9), unless `cut`
+//   (three misses in a row). Metalhead (Lv 3): +10 percent ATK. Hellfire DM (Lv 6): his hits mark a boss or an elite
+//   for 300 frames (ActorView.marked) and every party hit on it deals 20 percent more.
 // - A party of one (Hopper in 4.1) is a swap that does nothing and makes no sound; his KO is allDown.
 // - The Kamchatka guard (`kguard`) runs the soldier's brain, the camp guard (`kbaton`) the riot guard's, shield and all (enemies/shield.ts,
 //   isShieldedKind), and the pit Demogorgon (`pitdemo`) the Demogorgon's, each on its own def. hud.boss reads DEMOGORGON for the pit one too. It

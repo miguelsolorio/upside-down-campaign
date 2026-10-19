@@ -19,7 +19,8 @@ Scope for this pass: chapter 4. Level 10 (stage 4.1, Kamchatka: Hopper alone, th
 - [ ] Audio for 4.3 and 4.4: the seven effects and Vecna's blip are stand-ins (`audio/sfx_level1213.ts`)
 - [ ] The docs' "Result" sections for 4.3 and 4.4, and `docs/pace.md` for chapter 4
 - [ ] A muted browser pass over the map from 3.3 to 4.4 with the bot
-- [ ] Follow-ups: Eddie's special through `createSolo` (the seam is `heroes/eddie_solo.ts`); split `world/play.ts` (538 lines, over 500 since before this pass); the touch overlay's SWAP button for a lone hero; a chapter four epilogue
+- [x] Eddie's special through the note highway (`createSolo` with the `riff` chart, `world/songs.ts` and `riff.ts`; the headless runs play it with the solo's bot), and `world/play.ts` split under 500 (the arcade visit moved to `world/arcadevisit.ts`)
+- [ ] Follow-ups: the touch overlay's SWAP button for a lone hero; a chapter four epilogue
 
 ## This pass (polish and proof)
 

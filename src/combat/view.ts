@@ -36,7 +36,12 @@ let reduceFlash = false;
 
 /** Screen shake setting, 0 (off) to 1 (full). The view's shake offset is multiplied by it. */
 export function setShakeScale(n: number): void { shakeScale = Math.max(0, Math.min(1, Number.isFinite(n) ? n : 1)); }
-/** Reduce-flashing setting. When on, the view's flash never goes above 0.2. */
+/**
+ * The most white a screen flash may lay over the world with Reduce flashing on. A flash this faint moves the picture's relative
+ * luminance by under 0.1 whatever is behind it, the size of jump the web content flash rules (WCAG 2.3.1) count as a flash.
+ */
+export const CALM_FLASH = 0.1;
+/** Reduce-flashing setting. When on, the view's flash never goes above CALM_FLASH. */
 export function setReduceFlashing(on: boolean): void { reduceFlash = on; }
 
 function heroView(s: S, h: Hero, active: boolean): ActorView {
@@ -275,6 +280,6 @@ export function buildView(s: S): SimView {
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },
-    flash: reduceFlash ? Math.min(s.flash, 0.2) : s.flash,
+    flash: reduceFlash ? Math.min(s.flash, CALM_FLASH) : s.flash,
   };
 }

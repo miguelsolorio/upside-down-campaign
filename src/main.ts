@@ -12,6 +12,7 @@ import { initGfx } from './gfx/index.ts';
 import { createSheetScene } from './gfx/sheet.ts';
 import { audio } from './audio/index.ts';
 import { createAudioLabScene } from './audio/lab.ts';
+import { perfMark, perfOn } from './core/perf.ts';
 import { createToast } from './ui/toast.ts';
 import { mountTouchUi } from './ui/touchui.ts';
 import type { TouchLayout } from './core/touchlayout.ts';
@@ -104,6 +105,8 @@ if (flags.sheet) g.scenes.go(createSheetScene());
 else if (flags.audio) g.scenes.go(createAudioLabScene());
 // The solo's stand-in stage is the variation sheet's art, so it loads only when asked for.
 else if (flags.solo) void import('./solo/dev.ts').then((m) => g.scenes.go(m.createSoloDevScene()));
+// The ending's Final Roll and THE END on their own, with a sample party. Loaded on demand like the solo.
+else if (flags.finale) void import('./ui/finale_dev.ts').then((m) => m.startFinaleDev(g));
 else startGame(g);
 
 // Handy for the dev panel, the bot and browser-driven checks.
@@ -131,6 +134,8 @@ startLoop(
     g.scenes.draw(ctx);
     toast.draw(ctx);
     view.imageSmoothingEnabled = false;
+    const t = perfOn ? performance.now() : 0;
     view.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    if (perfOn) perfMark.copy = performance.now() - t;
   },
 );

@@ -16,6 +16,7 @@ import { L10_SCRIPTS } from './scripts_l10.ts';
 import { L11_SCRIPTS } from './scripts_l11.ts';
 import { L12_SCRIPTS } from './scripts_l12.ts';
 import { L13_SCRIPTS } from './scripts_l13.ts';
+import { L16_SCRIPTS } from './scripts_l16.ts';
 
 function line(who: Speaker, text: string, expr?: Expr): DialogueLine {
   return expr ? { who, text, expr } : { who, text };
@@ -169,6 +170,7 @@ const ALL: DialogueScript[] = [
   ...L11_SCRIPTS,
   ...L12_SCRIPTS,
   ...L13_SCRIPTS,
+  ...L16_SCRIPTS,
 ];
 
 export const SCRIPTS: Record<string, DialogueScript> = Object.fromEntries(ALL.map((s) => [s.id, s]));

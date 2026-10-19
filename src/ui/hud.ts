@@ -22,8 +22,9 @@ import { ACTIVE_KEY_X, BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, FACE_Y
 import type { BossLayout, SlotRect } from './hudlayout.ts';
 import { CURSE_FRAME, drawCurse, drawTape } from './hudcurse.ts';
 
-/** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
-const KEY_COLOR = 'slate';
+/** Shortcut keys are drawn a step under the names, so the names stay what you read first. Mist on the HUD's ink reads at 6:1; slate did not (2.9:1). */
+const KEY_COLOR = 'mist';
+/** The active hero's key offset, a bench slot's face and key: ACTIVE_KEY_X, FACE_Y and KEY_DX in hudlayout.ts. */
 type Walkman = HudView['walkman'];
 /** A caption is tiny and quiet, so the value under it is what you read first. */
 const CAPTION_COLOR = 'mist';

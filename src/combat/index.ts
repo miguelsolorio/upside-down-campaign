@@ -217,7 +217,7 @@
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 
-export { setShakeScale, setReduceFlashing } from './view.ts';
+export { setShakeScale, setReduceFlashing, CALM_FLASH } from './view.ts';
 
 export function createSim(opts: SimOptions): Sim {
   return buildSim(opts).sim;

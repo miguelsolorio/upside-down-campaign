@@ -232,9 +232,9 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
         bigText(ctx, page === 'pad' ? 'GAMEPAD' : 'CONTROLS', 128, 6, 'yellow', 2, 'center', true);
 
         const noun = page === 'pad' ? 'BTN' : 'KEY';
-        drawText(ctx, 'ACTION', 24, 25, 'slate');
-        drawText(ctx, `${noun} 1`, (CELL_X[0] as number) + CELL_W / 2, 25, 'slate', { align: 'center' });
-        drawText(ctx, `${noun} 2`, (CELL_X[1] as number) + CELL_W / 2, 25, 'slate', { align: 'center' });
+        drawText(ctx, 'ACTION', 24, 25, 'mist');
+        drawText(ctx, `${noun} 1`, (CELL_X[0] as number) + CELL_W / 2, 25, 'mist', { align: 'center' });
+        drawText(ctx, `${noun} 2`, (CELL_X[1] as number) + CELL_W / 2, 25, 'mist', { align: 'center' });
 
         for (let r = 0; r < VISIBLE; r++) {
           const idx = top + r;
@@ -255,7 +255,7 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
                 if (blinkOn(t, 30, 20)) drawText(ctx, 'PRESS', x + CELL_W / 2, y, 'white', { align: 'center' });
               } else {
                 const c = cell(page, e.action, s);
-                drawText(ctx, c.text, x + CELL_W / 2, y, c.empty ? 'slate' : on ? 'white' : 'bone', { align: 'center' });
+                drawText(ctx, c.text, x + CELL_W / 2, y, c.empty ? 'mist' : on ? 'white' : 'bone', { align: 'center' });
               }
             }
           } else if (e.kind === 'page') {
@@ -284,14 +284,14 @@ export function createControlsScene(opts: { onBack(): void }): Scene {
           const hint = entry().kind === 'key' ? `${rebind}. LEFT RIGHT PICKS A SLOT.` : choose;
           drawText(ctx, hint, 128, 175, 'mist', { align: 'center' });
           if (notice) drawText(ctx, notice.text, 128, 184, notice.ok ? 'leaf' : 'hot', { align: 'center' });
-          else if (!pad && entry().kind === 'key') drawText(ctx, 'BKSP CLEARS THIS SLOT.', 128, 184, 'slate', { align: 'center' });
+          else if (!pad && entry().kind === 'key') drawText(ctx, 'BKSP CLEARS THIS SLOT.', 128, 184, 'mist', { align: 'center' });
         }
         if (page === 'pad') {
-          drawText(ctx, 'ALWAYS ON: A CONFIRMS AND USES, B BACKS', 128, 198, 'slate', { align: 'center' });
-          drawText(ctx, 'STICK, D-PAD, VIEW AND START STAY PUT', 128, 207, 'slate', { align: 'center' });
+          drawText(ctx, 'ALWAYS ON: A CONFIRMS AND USES, B BACKS', 128, 198, 'mist', { align: 'center' });
+          drawText(ctx, 'STICK, D-PAD, VIEW AND START STAY PUT', 128, 207, 'mist', { align: 'center' });
         } else {
-          drawText(ctx, 'ALWAYS ON: ARROWS, ENTER, ESC', 128, 198, 'slate', { align: 'center' });
-          drawText(ctx, 'ATTACK AND TALK KEYS ALSO CONFIRM', 128, 207, 'slate', { align: 'center' });
+          drawText(ctx, 'ALWAYS ON: ARROWS, ENTER, ESC', 128, 198, 'mist', { align: 'center' });
+          drawText(ctx, 'ATTACK AND TALK KEYS ALSO CONFIRM', 128, 207, 'mist', { align: 'center' });
         }
       });
     },

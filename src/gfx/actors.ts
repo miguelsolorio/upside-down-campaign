@@ -31,7 +31,7 @@ import { whipWarn } from './fx_vecna.ts';
 import { drawMarks } from './actor_mark.ts';
 import { drawFlayer, drawFlayerLeg } from './actor_flayer.ts';
 import type { Frame } from './actor_kit.ts';
-import { ghostKeep } from './actor_kit.ts';
+import { flashOf, ghostKeep } from './actor_kit.ts';
 import { chargeRing } from './fx_l6.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
@@ -155,8 +155,9 @@ function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
 
 function atlasFor(sh: Sheet, v: ActorView): HTMLCanvasElement {
   if (v.hidden && v.kind === 'hero') return sh.faint ?? (sh.faint = render(sh, 'faint'));
-  if (v.flash > 0.6) return sh.white ?? (sh.white = render(sh, 'white'));
-  const tint: ColorName | null = v.flash > 0.25 ? 'white' : v.tint;
+  const flash = flashOf(v);
+  if (flash > 0.6) return sh.white ?? (sh.white = render(sh, 'white'));
+  const tint: ColorName | null = flash > 0.25 ? 'white' : v.tint;
   if (tint) {
     let c = sh.tints.get(tint);
     if (!c) { c = render(sh, tint); sh.tints.set(tint, c); }

@@ -10,8 +10,9 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01, hpBarColor } from '../ui/format.ts';
-import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintStageGlow, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
+import { outlinedText } from '../gfx/outline.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import type { Stage } from './stage.ts';
@@ -83,10 +84,10 @@ function drawFloater(ctx: Ctx, f: Floater): void {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(2, 2);
-    drawText(ctx, f.text, 0, 0, f.color, { align: 'center', shadow: true });
+    outlinedText(ctx, f.text, 0, 0, f.color, 'center');
     ctx.restore();
   } else {
-    drawText(ctx, f.text, x, y, f.color, { align: 'center', shadow: true });
+    outlinedText(ctx, f.text, x, y, f.color, 'center');
   }
 }
 
@@ -151,7 +152,7 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   }
   const night = stage.time === 'night';
   // The pools go on the ground, under everything that moves, so the party is never tinted by them.
-  if (night) paintGlow(ctx, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);
+  if (night) paintStageGlow(ctx, stage.baked, camX, camY, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);
   // Cones and hazards lie on the floor too: after the tiles and the pools, before anything that stands on them.
   for (const p of view.props) {
     // A cone is a few hundred rays, so one whose reach cannot touch the screen is skipped.
@@ -183,8 +184,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   if (VIEW_W < SCREEN_W) drawSideFade(ctx, VIEW_X, VIEW_X + VIEW_W, VIEW_TOP, SCREEN_H - VIEW_TOP);
 }
 
-/** Key and word colors from bright to faded. The last step is one neutral grey, dim enough to ignore and still readable. */
-const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mist'], ['slate', 'slate']];
+/** Key and word colors from bright to faded. The last step is mist, dim enough to ignore and still over 4.5:1 on a night floor (slate was 2 to 3:1 and hard to read). */
+const CORNER_STEPS: [ColorName, ColorName][] = [['amber', 'bone'], ['bone', 'mist'], ['mist', 'mist']];
 
 /**
  * The controls stacked tight in the bottom left corner of the clear band. `fade` runs 0 to 1: keys in amber and words
@@ -196,8 +197,8 @@ export function drawControlsCorner(ctx: Ctx, fade = 0, alone = false): void {
   const rows = controlRows().filter((r) => !alone || r.what !== 'SWAP');
   rows.forEach((r, i) => {
     const x = VIEW_X + 4, y = SCREEN_H - 9 - (rows.length - 1 - i) * 8;
-    const w = drawText(ctx, r.keys, x, y, keyColor, { shadow: true });
-    drawText(ctx, r.what, x + w + 4, y, wordColor, { shadow: true });
+    const w = outlinedText(ctx, r.keys, x, y, keyColor);
+    outlinedText(ctx, r.what, x + w + 4, y, wordColor);
   });
 }
 

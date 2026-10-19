@@ -46,7 +46,7 @@ function drawTab(ctx: Ctx, h: CharSheetHero, i: number, on: boolean, hot: boolea
   const fx = TAB_NAMES ? r.x + TAB_FACE_DX : r.x + Math.floor((r.w - 11) / 2), fy = r.y + 2;
   outline(ctx, fx, fy, 11, 11, on ? 'amber' : 'slate');
   clipped(ctx, fx + 1, fy + 1, 9, 9, () => drawPortrait(ctx, h.id, 'neutral', fx - 7, fy - 5, !h.joined));
-  if (TAB_NAMES) drawTinyText(ctx, HERO_DEFS[h.id].name, r.x + TAB_NAME_DX, r.y + 5, on ? 'yellow' : h.joined ? 'bone' : 'slate');
+  if (TAB_NAMES) drawTinyText(ctx, HERO_DEFS[h.id].name, r.x + TAB_NAME_DX, r.y + 5, on ? 'yellow' : h.joined ? 'bone' : 'mist');
 }
 
 function drawHeader(ctx: Ctx, h: CharSheetHero, s: HeroSheet): void {
@@ -87,18 +87,18 @@ function drawStats(ctx: Ctx, s: HeroSheet): void {
 function drawMove(ctx: Ctx, m: SheetMove, y: number): void {
   const dim = !!m.locked;
   drawTinyText(ctx, KIND_LABEL[m.kind], LEFT, y + 1, 'mist');
-  const nameW = drawText(ctx, m.name, TEXT_X, y, dim ? 'slate' : 'white');
+  const nameW = drawText(ctx, m.name, TEXT_X, y, dim ? 'mist' : 'white');
   if (m.mp > 0) drawText(ctx, `${m.mp} MP`, TEXT_X + nameW + 6, y, 'sky');
   if (m.kind === 'talent') {
-    drawText(ctx, m.locked ? `AT LV${m.level}` : 'ON', RIGHT, y, m.locked ? 'slate' : 'leaf', { align: 'right' });
+    drawText(ctx, m.locked ? `AT LV${m.level}` : 'ON', RIGHT, y, m.locked ? 'mist' : 'leaf', { align: 'right' });
   } else if (m.dmg) {
     const dmg = damageLabel(m);
     drawText(ctx, dmg, RIGHT, y, 'yellow', { align: 'right' });
     drawText(ctx, 'DMG', RIGHT - textWidth(dmg) - 4, y, 'mist', { align: 'right' });
   } else {
-    drawText(ctx, 'NO DMG', RIGHT, y, 'slate', { align: 'right' });
+    drawText(ctx, 'NO DMG', RIGHT, y, 'mist', { align: 'right' });
   }
-  drawText(ctx, m.note, TEXT_X, y + NOTE_DY, dim ? 'slate' : 'mist');
+  drawText(ctx, m.note, TEXT_X, y + NOTE_DY, 'mist');
 }
 
 export function createCharSheetScene(opts: { heroes: () => CharSheetHero[]; start?: HeroId; onBack(): void }): Scene {
@@ -174,7 +174,7 @@ export function createCharSheetScene(opts: { heroes: () => CharSheetHero[]; star
         drawStats(ctx, s);
         s.moves.forEach((m, i) => drawMove(ctx, m, MOVES_Y + i * MOVE_PITCH));
 
-        drawText(ctx, switchHint(), LEFT, FOOT_Y, 'slate');
+        drawText(ctx, switchHint(), LEFT, FOOT_Y, 'mist');
         const label = backLabel();
         drawText(ctx, label, RIGHT, FOOT_Y, hotBack ? 'yellow' : 'mist', { align: 'right' });
         if (hotBack) box(ctx, RIGHT - textWidth(label), FOOT_Y + 8, textWidth(label) - 1, 1, 'yellow');

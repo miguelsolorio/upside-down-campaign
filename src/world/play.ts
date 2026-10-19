@@ -527,9 +527,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (max) drawCallout(ctx, MAX_LINE, max.x, max.y - 38, cam, 'pink', 18);
       // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
       if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
-      // The subtitle sits where the corner controls do, so it replaces them while it shows.
+      // The subtitle sits where the corner controls do, so it replaces them while it shows. A dialogue box does too, or they peek out round it.
       if (hint) drawSubtitle(ctx, hint.text);
-      else drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);
+      else if (!dialog.active) drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);
       bonds.draw(ctx);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);

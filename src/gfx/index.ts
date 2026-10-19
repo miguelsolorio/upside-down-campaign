@@ -19,7 +19,7 @@ export { drawFx } from './fx.ts';
 export { drawPool } from './fx_l9.ts';
 export { drawItem, drawProp } from './props.ts';
 export { drawCamCone, drawHazard } from './overlays.ts';
-export { paintGlow } from './glow.ts';
+export { paintGlow, paintStageGlow } from './glow.ts';
 export { drawSideFade, FADE_W } from './edges.ts';
 export type { Glow } from './glow.ts';
 export { drawPortrait, drawIcon, drawPanel, drawBar, drawBarV } from './ui.ts';

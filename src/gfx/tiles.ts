@@ -39,8 +39,12 @@ export interface BakedStage { readonly w: number; readonly h: number; readonly n
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
 /** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain, the base's machine, the camp's burning drum, the Hellfire Club's windows, the floor under them and the table with its candles, the veins over Upside Down Hawkins' lawns, and the Creel House in its Upside Down skin: the window that flashes and the veins and spores over its boards. They are baked at their first step and drawn over at the others. */
 interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block; skin?: Skin }
-interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[]; pulses: PulseSpot[]; layers: LairLayer[] }
+/** px is the baked pixels (0 where a moving tile goes); solid is the same with black in place of 0, as the frame shows it. layers are
+ *  pictures laid over the bake (the attic's vines, 4.4). */
+interface StageData extends BakedStage { canvas: HTMLCanvasElement; px: Uint32Array; solid: Uint32Array; water: WaterSpot[]; pulses: PulseSpot[]; layers: LairLayer[] }
 
+/** Opaque black, packed the way ImageData holds it. What the frame holds where there is no stage. */
+const BLACK = 0xff000000;
 const T = 16;
 const WATER_TICKS = 16;
 /** Frames each step of a pulse lasts: the veins and the tears move through four steps. */
@@ -48,6 +52,9 @@ const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
 const pulseCache = new Map<string, HTMLCanvasElement>();
 const layerCache = new Map<string, HTMLCanvasElement>();
+/** The pixels behind those canvases, so a light pool can lift the animated tiles too without reading the canvas back. */
+const waterPxCache = new Map<string, Px>();
+const pulsePxCache = new Map<string, Px>();
 
 const isPulse = (n: TileName, near: Near): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel' || n === 'udveins' || clubPulses(n, near);
 /** The tiles that paint one picture across a run of them, and so need to know where in it they are: the club's table, and a run of its posters, which is the banner. */
@@ -63,13 +70,23 @@ function pulsePx(name: TileName, c: TileCtx, phase: number, skin?: Skin): Px {
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
+function pulsePxAt(s: PulseSpot, phase: number, night: boolean): Px {
+  const key = `${night ? 'n' : 'd'}${s.skin ?? ''}:${s.name}:${s.tx}:${s.ty}:${phase}`;
+  let p = pulsePxCache.get(key);
+  if (!p) {
+    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
+    const day = pulsePx(s.name, tc, phase, s.skin);
+    p = night ? nightTile(day, s.name, tc) : day;
+    pulsePxCache.set(key, p);
+  }
+  return p;
+}
+
 function pulseCanvas(s: PulseSpot, phase: number, night: boolean): HTMLCanvasElement {
   const key = `${night ? 'n' : 'd'}${s.skin ?? ''}:${s.name}:${s.tx}:${s.ty}:${phase}`;
   let c = pulseCache.get(key);
   if (!c) {
-    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
-    const day = pulsePx(s.name, tc, phase, s.skin);
-    c = (night ? nightTile(day, s.name, tc) : day).toCanvas();
+    c = pulsePxAt(s, phase, night).toCanvas();
     pulseCache.set(key, c);
   }
   return c;
@@ -82,12 +99,22 @@ function layerCanvas(l: LairLayer, phase: number): HTMLCanvasElement {
   return c;
 }
 
+function waterPxAt(s: WaterSpot, frame: number, night: boolean): Px {
+  const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
+  let p = waterPxCache.get(key);
+  if (!p) {
+    const day = waterTile(s.deep, s.variant, frame, s.banks);
+    p = night ? nightWater(day, s.deep, s.variant, frame) : day;
+    waterPxCache.set(key, p);
+  }
+  return p;
+}
+
 function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasElement {
   const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
   let c = waterCache.get(key);
   if (!c) {
-    const day = waterTile(s.deep, s.variant, frame, s.banks);
-    c = (night ? nightWater(day, s.deep, s.variant, frame) : day).toCanvas();
+    c = waterPxAt(s, frame, night).toCanvas();
     waterCache.set(key, c);
   }
   return c;
@@ -141,7 +168,8 @@ export function bakeStage(rows: string[], night = false, skin?: Skin): BakedStag
     }
   }
   const layers = skin === 'upside' ? lairLayers(names, cols) : [];
-  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), water, pulses, layers };
+  const solid = px.map((v) => (v === 0 ? BLACK : v));
+  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), px, solid, water, pulses, layers };
   return data;
 }
 
@@ -173,6 +201,35 @@ export function drawStage(ctx: Ctx, stage: BakedStage, camX: number, camY: numbe
     if (l.x + l.w <= x0 || l.x >= x1 || l.y + l.h <= y0 || l.y >= y1) continue;
     ctx.drawImage(layerCanvas(l, phase), l.x, l.y);
   }
+}
+
+/**
+ * The pixels drawStage leaves on screen for the world rectangle (x, y, w, h) at frame t, into out: opaque, black where there is
+ * no stage. It is what the light pools lift (gfx/glow.ts), so a pool never has to read the canvas back, which stalls the frame.
+ */
+export function stagePixels(stage: BakedStage, x: number, y: number, w: number, h: number, t: number, out: Uint32Array): void {
+  const s = stage as StageData;
+  const xs = Math.max(0, x), xe = Math.min(s.w, x + w);
+  for (let j = 0; j < h; j++) {
+    const o = j * w, wy = y + j;
+    if (wy < 0 || wy >= s.h || xe <= xs) { out.fill(BLACK, o, o + w); continue; }
+    if (xs > x) out.fill(BLACK, o, o + xs - x);
+    out.set(s.solid.subarray(wy * s.w + xs, wy * s.w + xe), o + xs - x);
+    if (xe < x + w) out.fill(BLACK, o + xe - x, o + w);
+  }
+  /** One animated tile on top, the way drawStage draws its canvas. */
+  const lay = (tile: Px, tx: number, ty: number): void => {
+    const px = tx * T, py = ty * T;
+    for (let j = Math.max(0, y - py); j < Math.min(T, y + h - py); j++) {
+      const o = (py + j - y) * w + px - x;
+      for (let i = Math.max(0, x - px); i < Math.min(T, x + w - px); i++) { const v = tile.d[j * T + i] as number; if (v !== 0) out[o + i] = v; }
+    }
+  };
+  const near = (tx: number, ty: number): boolean => tx * T < x + w && tx * T + T > x && ty * T < y + h && ty * T + T > y;
+  const frame = ((t / WATER_TICKS) | 0) & 3;
+  for (const sp of s.water) if (near(sp.tx, sp.ty)) lay(waterPxAt(sp, frame, s.night), sp.tx, sp.ty);
+  const phase = ((t / PULSE_TICKS) | 0) & 3;
+  if (phase !== 0) for (const sp of s.pulses) if (near(sp.tx, sp.ty)) lay(pulsePxAt(sp, phase, s.night), sp.tx, sp.ty);
 }
 
 // ---------------------------------------------------------------- single tiles, for the sheet

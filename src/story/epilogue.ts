@@ -3,6 +3,7 @@
 // gfx/epilogue_room.ts: it fades in slowly, the night in its window paling toward sunrise while the letter plays line by line
 // through the shared dialogue box, then fades out slowly. Like the prologue, the skip-story setting, the skip key and a click on
 // the box's skip label skip it. No music. Opaque.
+// Chapter five's is the basement in 1987, with its own room, its music and a last die (epilogue_end.ts).
 import type { Scene } from '../core/scene.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
@@ -13,9 +14,10 @@ import type { Sky } from '../gfx/epilogue_room.ts';
 import { audio } from '../audio/index.ts';
 import { createDialogueBox } from '../ui/index.ts';
 import { SCRIPTS } from './scripts.ts';
+import { createBasementEpilogue } from './epilogue_end.ts';
 
 /** The script each chapter's epilogue plays. A chapter without one goes straight to its results. */
-export const EPILOGUES: Record<number, string> = { 3: 'l9_letter' };
+export const EPILOGUES: Record<number, string> = { 3: 'l9_letter', 5: 'l16_basement' };
 
 /** True when the chapter has an epilogue with words in it. */
 export const hasEpilogue = (chapter: number): boolean => (SCRIPTS[EPILOGUES[chapter] ?? '']?.lines.length ?? 0) > 0;
@@ -49,6 +51,7 @@ export function skyAt(clock: number): Sky {
 }
 
 export function createEpilogueScene(opts: { chapter: number; onDone(): void }): Scene {
+  if (opts.chapter === 5) return createBasementEpilogue({ onDone: opts.onDone });
   const box = createDialogueBox();
   const script = SCRIPTS[EPILOGUES[opts.chapter] ?? ''];
   let idx = 0;

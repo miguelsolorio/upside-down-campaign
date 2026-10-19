@@ -1,5 +1,6 @@
 // Effects, drawn with pixel-snapped rects and driven by t and life. Nothing is pre-rendered, nothing blends:
 // fades are dithers. angle is in radians with 0 pointing right and y growing down.
+import { settings } from '../core/settings.ts';
 import type { Dir, FxView } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import { arcPx, discPx, hash2, linepx, rect, ringPx, unit } from './canvas.ts';
@@ -24,6 +25,7 @@ function coneHalf(w: number, h: number, fallback: number): number {
   return w > 0 && h > 0 ? Math.asin(clamp(h / (2 * w), 0, 1)) : fallback;
 }
 
+/** The melee arc. With Reduce flashing on it is bone and mist, not white and cream: a big arc every dozen frames is a flash of its own in a dark arena. */
 function slash(ctx: Ctx, f: FxView, ang: number, p: number): void {
   const R = f.w > 0 ? f.w : 28;
   const half = coneHalf(f.w, f.h, Math.PI * 0.4);
@@ -42,7 +44,7 @@ function slash(ctx: Ctx, f: FxView, ang: number, p: number): void {
       const x = Math.round(f.x + c * r), y = Math.round(f.y + s * r);
       if (!keep(x, y, fade)) continue;
       const edge = r >= R - 1;
-      const col: ColorName = u > 0.7 || edge ? 'white' : u > 0.25 ? 'cream' : 'bone';
+      const col: ColorName = settings.reduceFlashing ? (u > 0.7 || edge ? 'bone' : u > 0.25 ? 'mist' : 'slate') : u > 0.7 || edge ? 'white' : u > 0.25 ? 'cream' : 'bone';
       rect(ctx, x, y, 1, 1, col);
     }
   }

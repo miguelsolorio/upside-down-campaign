@@ -26,7 +26,7 @@ export function rig(over: { seed?: number; skip?: string[]; party?: PartySeed[];
 }
 
 /** Every spawn the first two phases are made of, as a retry would carry them in its kill list. */
-export const VECNA_IDS = ['vecna'];
+export const VECNA_IDS = ['vecna', 'orb1', 'orb2', 'orb3', 'orb4'];
 export const SPIDER_IDS = ['flayer', 'leg1', 'leg2', 'leg3', 'leg4'];
 
 export const kind = (r: Rig, k: Enemy['kind']): Enemy => r.s.enemies.find((e) => e.kind === k) as Enemy;
@@ -72,7 +72,7 @@ export function toSpider(r: Rig): SimEvent[] {
   const ev: SimEvent[] = [];
   r.sim.defend();
   ev.push(...steps(r, 2));
-  kind(r, 'vecna5').hp = 0;
+  kind(r, 'vecna').hp = 0;
   ev.push(...until(r, () => r.s.finale?.phase === 2));
   ev.push(...steps(r, 60));
   return ev;

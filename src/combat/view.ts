@@ -34,6 +34,7 @@ import { chimesOn, markedOrb, walkmanHud } from './curse.ts';
 import { channelHud, channelView } from './channel.ts';
 import { isChanneling } from './finale_state.ts';
 import { finaleBar } from './finale.ts';
+import { sinks } from './kills.ts';
 import { onceOf } from '../heroes/talents9.ts';
 
 let shakeScale = 1;
@@ -68,12 +69,12 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
 }
 
 function enemyView(s: S, e: Enemy): ActorView {
-  // The final boss's two bodies do not flicker out: Vecna sinks and the Mind Flayer, dead, kneels (pose 'down') for the rest of the stage.
+  // The final boss's two bodies do not flicker out: Vecna sinks (kills.ts) and the Mind Flayer, dead, kneels (pose 'down') for the rest of the stage.
   const kneels = e.dead && e.kind === 'flayer5';
   const v: ActorView = {
     kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir,
     anim: kneels ? 'idle' : e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
-    blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1 && e.kind !== 'vecna5' && !kneels, strained: false,
+    blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1 && !sinks(e) && !kneels, strained: false,
     tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : e.stat.slow > 0 ? 'purple' : null,
     alert: !e.dead && e.mode === 'windup',
     z: e.dead ? 0 : Math.max(e.z, Math.min(5, Math.hypot(e.vx, e.vy) * 1.2)),

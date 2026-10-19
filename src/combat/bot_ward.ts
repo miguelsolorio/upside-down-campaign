@@ -44,7 +44,7 @@ export function createWardSense(): WardSense {
     const them = v.actors.filter((a) => a.kind === 'hero' && ch.channelers.some((c) => c.id === a.id && c.hp > 0));
     const first = them[0];
     if (!first) return null;
-    const foes = v.actors.filter((a) => a.kind === 'enemy' && a.anim !== 'ko' && !a.puddle && a.id !== 'flayer5' && a.id !== 'leg5' && a.id !== 'vecna5');
+    const foes = v.actors.filter((a) => a.kind === 'enemy' && a.anim !== 'ko' && !a.puddle && a.id !== 'flayer5' && a.id !== 'leg5' && a.id !== 'demobat');
     if (foes.length === 0) {
       const mx = them.reduce((n, c) => n + c.x, 0) / them.length, my = them.reduce((n, c) => n + c.y, 0) / them.length;
       return { x: mx, y: my, leash: CHANNEL_LEASH };

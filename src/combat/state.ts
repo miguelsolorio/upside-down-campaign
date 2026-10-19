@@ -254,7 +254,7 @@ export interface Enemy {
   leg: LegState | null;
   /** A Creel ghoul only (docs/level-11.md), and a demobat only (docs/level-12.md). */
   ghoul: GhoulState | null;
-  /** A trooper, the Commander or a twin only (enemies/ch5_state.ts), and the final boss's Vecna and Mind Flayer (enemies/fin_state.ts). */
+  /** A trooper, the Commander or a twin only (enemies/ch5_state.ts), and the final boss's Mind Flayer (enemies/fin_state.ts). */
   ch5: Ch5State | null;
   fin: FinState | null;
   bat: BatState | null;
@@ -290,7 +290,7 @@ export interface Defense {
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet' | 'bottle' | 'orb';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet' | 'bottle';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;

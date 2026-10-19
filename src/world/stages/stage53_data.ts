@@ -3,12 +3,13 @@
 import type { Burrow, Dir, EnemyKind, FinaleDef, ItemKind, LightSource, PropKind, SimSpawn, Utility } from '../../core/types.ts';
 
 type Enemy = Extract<SimSpawn, { kind: 'enemy' }>;
-interface Foe { dormant?: boolean; dir?: Dir }
+interface Foe { dormant?: boolean; dir?: Dir; x?: Record<string, number> }
 
 const foe = (id: string, type: EnemyKind, group: string, tx: number, ty: number, o: Foe = {}): SimSpawn => {
   const e: Enemy = { kind: 'enemy', id, type, tx, ty, group };
   if (o.dormant) e.dormant = true;
   if (o.dir) e.dir = o.dir;
+  if (o.x) e.x = o.x;
   return e;
 };
 const item = (id: string, kind: ItemKind, tx: number, ty: number): SimSpawn => ({ kind: 'item', id, item: kind, tx, ty });
@@ -27,20 +28,32 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, w: number, h: 
 /** Basic attacks from anyone but Dustin and Nancy that wear burn1 down: the fallback when neither is picked (src/combat/props.ts, smashAimed). */
 export const CHIP_HITS = 12;
 
+// ---------------------------------------------------------------- the boss
+// Phase one is 4.4's Vecna with his four memory orbs (enemies/vecna.ts), at 1.3 times his pace, the clock chiming every 12 s (720 frames), and
+// sinking for 64 frames at 0 HP (combat/kills.ts, `sinks`). The orbs stand round him as the rug's corners do in the attic (stage44_data.ts):
+// 4 tiles out to each side and 2 above and below his tile, which is (18, 9).
+export const VECNA_X = { speedMul: 1.3, chimeEvery: 720, sinkT: 64 } as const;
+const ORB_X = [14, 22] as const;
+const ORB_Y = [7, 11] as const;
+const BOSS: SimSpawn[] = [
+  foe('vecna', 'vecna', 'boss', 18, 9, { dormant: true, dir: 'down', x: { ...VECNA_X } }),
+  foe('orb1', 'orb', 'boss', ORB_X[0], ORB_Y[0], { dormant: true }), foe('orb2', 'orb', 'boss', ORB_X[1], ORB_Y[0], { dormant: true }),
+  foe('orb3', 'orb', 'boss', ORB_X[0], ORB_Y[1], { dormant: true }), foe('orb4', 'orb', 'boss', ORB_X[1], ORB_Y[1], { dormant: true }),
+];
+
 // ---------------------------------------------------------------- enemies
-// 340 XP before xpMult (docs/level-16.md, "Spawns and the XP budget"): three Flayed (33) and three demodogs (27) in the climb, Vecna (120) and the
-// Mind Flayer (160, its four legs pay nothing). Demobats are left out of the climb: chapter 4 has not built them (docs/chapter-5.md), and the
-// demodogs stand in for them. When they land they take the demodogs' places and the budget stays where it is. The waves of the channel are run-time
-// spawns worth 1 XP each and are not in the count. The climb is awake and waits where it stands; Vecna and the spider sleep in the arena until
-// the `vecna` beat starts the fight (Sim.defend), and the spider until Vecna is down. Vecna stands in the middle of the arena's north half, the body
-// at the arena's north tip, its legs spread along its front (the 3.3 layout in a circle).
+// 350 XP before xpMult (docs/level-16.md, "Spawns and the XP budget"): two Flayed (22) and three demobats (18) in the climb, Vecna (150, his orbs
+// pay nothing) and the Mind Flayer (160, its four legs pay nothing). The waves of the channel are run-time spawns worth 1 XP each and are not in the
+// count. The climb is awake and waits where it stands; Vecna and the spider sleep in the arena until the `vecna` beat starts the fight (Sim.defend),
+// and the spider until Vecna is down. Vecna stands in the middle of the arena's north half, the body at the arena's north tip, its legs spread along
+// its front (the 3.3 layout in a circle).
 const ENEMIES: SimSpawn[] = [
-  // The hall: a Flayed and a demodog at each end and in the middle, the party coming in from the south-east.
-  foe('climb_dog1', 'demodog', 'climb', 24, 36), foe('climb_flayed1', 'flayed', 'climb', 20, 35),
-  foe('climb_dog2', 'demodog', 'climb', 16, 36), foe('climb_flayed2', 'flayed', 'climb', 13, 35),
-  foe('climb_dog3', 'demodog', 'climb', 11, 36), foe('climb_flayed3', 'flayed', 'climb', 18, 34),
+  // The hall: a Flayed and a demobat at each end and one more bat in the middle, the party coming in from the south-east.
+  foe('climb_bat1', 'demobat', 'climb', 24, 36), foe('climb_flayed1', 'flayed', 'climb', 20, 35),
+  foe('climb_bat2', 'demobat', 'climb', 16, 36), foe('climb_flayed2', 'flayed', 'climb', 13, 35),
+  foe('climb_bat3', 'demobat', 'climb', 18, 34),
   // The arena.
-  foe('vecna', 'vecna5', 'boss', 18, 9, { dormant: true, dir: 'down' }),
+  ...BOSS,
   foe('flayer', 'flayer5', 'flayer', 18, 4, { dormant: true, dir: 'down' }),
   foe('leg1', 'leg5', 'flayer', 13, 5, { dormant: true, dir: 'down' }), foe('leg2', 'leg5', 'flayer', 16, 5, { dormant: true, dir: 'down' }),
   foe('leg3', 'leg5', 'flayer', 20, 5, { dormant: true, dir: 'down' }), foe('leg4', 'leg5', 'flayer', 23, 5, { dormant: true, dir: 'down' }),
@@ -84,7 +97,7 @@ export const FINALE: FinaleDef = {
   channelers: [{ hero: 'eleven', tx: 12, ty: 14 }, { hero: 'will', tx: 23, ty: 14 }],
   hp: 380, frames: 40 * S,
   waves: [
-    { at: 0, n: 2, type: 'demodog' }, { at: 5 * S, n: 1, type: 'flayed' }, { at: 10 * S, n: 2, type: 'demodog' }, { at: 16 * S, n: 2, type: 'demodog' },
-    { at: 21 * S, n: 1, type: 'flayed' }, { at: 27 * S, n: 2, type: 'demodog' }, { at: 32 * S, n: 1, type: 'flayed' }, { at: 35 * S, n: 2, type: 'demodog' },
+    { at: 0, n: 2, type: 'demodog' }, { at: 5 * S, n: 1, type: 'flayed' }, { at: 10 * S, n: 2, type: 'demodog' }, { at: 16 * S, n: 3, type: 'demobat' },
+    { at: 21 * S, n: 1, type: 'flayed' }, { at: 27 * S, n: 2, type: 'demodog' }, { at: 32 * S, n: 1, type: 'flayed' }, { at: 35 * S, n: 3, type: 'demobat' },
   ],
 };

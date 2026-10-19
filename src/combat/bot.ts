@@ -13,8 +13,8 @@
 // the pinned pit Demogorgon with Hopper (bot_boss.ts), and under a curse swaps to Max if her Walkman is ready, else to Eddie, and attacks the
 // clock (bot_curse.ts), careless or not. Against a flock of demobats a hero who shoots leads, a bat out of a swing's reach is ignored, and a dive's
 // line is left during the wind-up (bot_demobat.ts). Against Vecna it leaves a whip's line, breaks the marked orb under a curse, shoots him in Float
-// or breaks an orb to pull him down, and otherwise hits him (bot_vecna.ts). In the final fight it steps out of Vecna's blast and orbs (bot_finale.ts,
-// bot_threat.ts), hits the Mind Flayer's legs and its open chest (bot_flayer.ts), and guards the channeler like the Gate's ward (bot_ward.ts).
+// or breaks an orb to pull him down, and otherwise hits him (bot_vecna.ts). In the final fight it plays Vecna as above, hits the Mind Flayer's legs
+// and its open chest (bot_flayer.ts), and guards the channeler like the Gate's ward (bot_ward.ts).
 // It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
@@ -34,7 +34,6 @@ import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 import { createGrigoriSense } from './bot_grigori.ts';
 import { createBillySense } from './bot_billy.ts';
 import { createFlayerSense } from './bot_flayer.ts';
-import { createFinaleSense } from './bot_finale.ts';
 import { createVoidSense } from './bot_void.ts';
 import { createVecnaSense } from './bot_vecna.ts';
 import { STYLE } from './bot_style.ts';
@@ -264,7 +263,6 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
   const edge = createVoidSense(opts.grid, walkable);
-  const vecna = createFinaleSense({ walkable });
   const ghoul = createGhoulSense();
   const bats = createBatSense();
   const curse = createCurseSense();
@@ -337,7 +335,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     // A ghoul's lunge is only worth leaving when the hero is low: stepping off every one gives the next ghoul in line a free swing, and
     // the careful bot took more than the careless one that way (docs/level-11.md, "Result").
     const low = me ? me.hp < me.hpMax * 0.5 : false;
-    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? vecna.dodge(v, hx, hy)
+    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy)
       ?? bats.dodge(v, hx, hy, walkable) ?? vc.dodge(v, hx, hy) ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);

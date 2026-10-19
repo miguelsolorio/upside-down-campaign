@@ -2,8 +2,10 @@
 // bar. S.finale (finale_state.ts) holds the phase. The stage's `defend` beat step starts it (Sim.defend()), at the first boss still standing,
 // so a retry that finds Vecna or the spider already down (the kill list carries them) starts at the next phase.
 //
-//   1 VECNA: group `boss` wakes (enemies/vecna5.ts, a stand-in kit). At 0 HP he sinks for sinkT frames in anim 'ko' (combat/kills.ts), and SINK_WAIT
-//     frames into it the party gets its breather and phase two begins.
+//   1 VECNA: group `boss` wakes: chapter 4's Vecna and his four memory orbs (enemies/vecna.ts), run at 1.3 times his pace with the clock chiming every
+//     12 s (the spawn's x: speedMul 1.3, chimeEvery 720), the curse as 4.4 built it and Max's Walkman working. At 0 HP he sinks for the spawn's sinkT
+//     frames in anim 'ko' (combat/kills.ts), his orbs and every curse they marked going with him, and SINK_WAIT frames into it the party gets its
+//     breather and phase two begins.
 //   2 THE MIND FLAYER: group `flayer` wakes. Its chest is shut and takes no hit until a hit on a leg opens it for chestT frames (enemies/flayer_legs.ts,
 //     flayer_hit.ts); with every leg cut the head comes down and the chest is open then too. At 0 HP it dies as 3.3's does (one `groupCleared`, the
 //     legs with it) and its body stays, kneeling (pose 'down'), for the rest of the stage. KNEEL_WAIT frames later, a breather and phase three.
@@ -35,7 +37,7 @@ function begin(s: S, f: Finale, phase: 1 | 2 | 3): void {
   f.wait = 0;
   s.events.push({ t: 'bossPhase', phase });
   if (phase > 1) healParty(s, BREATHER);
-  if (phase === 1) wakeGroup(s, (standing(s, 'vecna5') as Enemy).group);
+  if (phase === 1) wakeGroup(s, (standing(s, 'vecna') as Enemy).group);
   else if (phase === 2) wakeGroup(s, (standing(s, 'flayer5') as Enemy).group);
   else startChannel(s, f);
 }
@@ -44,7 +46,7 @@ function begin(s: S, f: Finale, phase: 1 | 2 | 3): void {
 export function startFinale(s: S): void {
   const f = s.finale;
   if (!f || f.phase !== 0) return;
-  begin(s, f, standing(s, 'vecna5') ? 1 : standing(s, 'flayer5') ? 2 : 3);
+  begin(s, f, standing(s, 'vecna') ? 1 : standing(s, 'flayer5') ? 2 : 3);
 }
 
 /** The clock ran out with the channelers standing: the Final Roll of every hero still up, and nothing run-time is left on the field. */
@@ -65,7 +67,7 @@ export function updateFinale(s: S): void {
   if (!f || f.phase === 0 || f.done || s.over) return;
   f.t++;
   if (f.phase === 1) {
-    const v = firstOf(s, 'vecna5');
+    const v = firstOf(s, 'vecna');
     if (!v || (v.dead && ++f.wait >= SINK_WAIT)) begin(s, f, standing(s, 'flayer5') ? 2 : 3);
   } else if (f.phase === 2) {
     const b = firstOf(s, 'flayer5');
@@ -81,8 +83,10 @@ export function finaleBar(s: S): HudView['boss'] | undefined {
   if (!f || f.phase === 0) return undefined;
   const hp = (e: Enemy | undefined): number => (e && !e.dead ? Math.max(0, Math.ceil(e.hp)) : 0);
   if (f.phase === 1) {
-    const v = firstOf(s, 'vecna5');
-    return { name: 'VECNA', hp: hp(v), hpMax: v?.hpMax ?? 1, phase: 1 };
+    const v = firstOf(s, 'vecna');
+    // His four memory orbs as the share of HP each has left, 0 for a broken one, as 4.4's bar shows them.
+    const parts = (v?.vecna?.orbs ?? []).map((o) => (o.dead || o.hp <= 0 ? 0 : Math.min(1, o.hp / o.hpMax)));
+    return { name: 'VECNA', hp: hp(v), hpMax: v?.hpMax ?? 1, parts, phase: 1 };
   }
   if (f.phase === 2) {
     const b = firstOf(s, 'flayer5');

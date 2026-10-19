@@ -2,12 +2,11 @@
 import { cancelAttack } from '../enemies/shield.ts';
 import { advancePhase } from '../enemies/vecna_phase.ts';
 import { clearAlpha } from '../enemies/alpha_hit.ts';
-import { ENEMY_DEFS } from '../enemies/defs.ts';
+import { ENEMY_DEFS, xOf } from '../enemies/defs.ts';
 import { releaseHold } from '../enemies/hold.ts';
 import { leaveBilly } from '../enemies/billy_hit.ts';
 import { glassDeath, inGlass } from '../enemies/ghoul_hit.ts';
 import { enrageMate } from '../enemies/twin.ts';
-import { clearVecna as clearVecna5 } from '../enemies/vecna5.ts';
 import { batDeath } from '../enemies/demobat_hit.ts';
 import { clearFlayer, doomLegs, legHeld } from '../enemies/flayer_hit.ts';
 import { doomOrbs, orbHeld } from '../enemies/orb.ts';
@@ -22,8 +21,10 @@ import { slowHero } from './status.ts';
 import { awardXp } from './party.ts';
 
 const DEATH_FRAMES = 22;
-/** Frames a dead body stays on the field: Vecna's sinks for sinkT, the final boss's Mind Flayer kneels for the rest of the stage (it is drawn with pose 'down'). */
-export const deathFrames = (e: Enemy): number => (e.kind === 'vecna5' ? ENEMY_DEFS.vecna5.x.sinkT : e.kind === 'flayer5' ? Infinity : DEATH_FRAMES);
+/** Vecna as 5.3's phase one runs him: his spawn sets sinkT, and he sinks into the floor for that many frames in anim 'ko' instead of flickering out. */
+export const sinks = (e: Enemy): boolean => e.vecna !== null && xOf(e).sinkT !== undefined;
+/** Frames a dead body stays on the field: the final boss's Vecna sinks for sinkT, its Mind Flayer kneels for the rest of the stage (it is drawn with pose 'down'). */
+export const deathFrames = (e: Enemy): number => (sinks(e) ? (xOf(e).sinkT as number) : e.kind === 'flayer5' ? Infinity : DEATH_FRAMES);
 export const COMPASS_DROP = 0.1;
 /** Max's High score talent: the same bonus to quarter drops as Dustin's Compass, and the two stack. */
 export const HIGH_SCORE_DROP = 0.1;
@@ -56,7 +57,6 @@ function kill(s: S, e: Enemy): void {
   clearAlpha(s, e);
   clearFlayer(s, e);
   clearVecna(s, e);
-  clearVecna5(s, e);
   releaseHold(s, e);
   e.dead = true;
   e.deadT = 0;

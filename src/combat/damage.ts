@@ -101,8 +101,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (!vecnaReached(e, o)) { vecnaMiss(s, e); return 0; }
   // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy, the Mind Flayer and its legs, and Vecna and his orbs are never staggered, stunned
   // or broken off a wind-up by a hit.
-  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e) || e.vecna !== null || e.orb !== null
-    || e.kind === 'vecna5';
+  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e) || e.vecna !== null || e.orb !== null;
   // A pinned Demogorgon shrugs off everything but the beam, and a pinned Billy everything at all. They report the try and take nothing. So
   // does the Mind Flayer's body while a leg stands.
   const finisher = isFinisher(e, by.id, o.beam === true, o.slam === true);

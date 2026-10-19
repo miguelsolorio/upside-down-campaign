@@ -36,8 +36,8 @@ export type CharId = HeroId | 'joyce' | 'erica' | 'billy' | 'vecna';
  * trooper: an army rifleman with a riot shield that bounces frontal hits and a smash breaks for good. agent5: the Lab agent in hazmat
  * at chapter 5 numbers. commander: the 5.1 mini-boss, a trooper captain behind a full shield (docs/level-14.md). demofoe: the 1.3
  * Demogorgon's charge and swipe at a foe's size. twin: one of the two Demogorgons of the 5.2 mini-boss (docs/level-15.md).
- * vecna5: Vecna, phase one of the 5.3 final boss, fast. flayer5: the Mind Flayer with Vecna in its chest, phase two, its chest opened by hits
- * on its legs. leg5: one of its four legs (docs/level-16.md).
+ * flayer5: the Mind Flayer with Vecna in its chest, the 5.3 final boss's phase two, its chest opened by hits on its legs. leg5: one of its four legs
+ * (docs/level-16.md). Phase one is chapter 4's Vecna, run fast.
  * demobat: a flyer that circles in flocks and dives (docs/level-12.md). vecna: the chapter 4 boss, three phases; orb: one of his four
  * memory orbs, rooted, regrowing (docs/level-13.md).
  */
@@ -47,7 +47,7 @@ export type EnemyKind =
   | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul'
   | 'trooper' | 'agent5' | 'commander' | 'demofoe' | 'twin'
   | 'demobat' | 'vecna' | 'orb'
-  | 'vecna5' | 'flayer5' | 'leg5';
+  | 'flayer5' | 'leg5';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';

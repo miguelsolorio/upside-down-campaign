@@ -203,12 +203,13 @@
 //   can't be hit, confused or targeted by the bot until it is back, 180 frames after the fall began.
 //   The bot flanks them (bot.ts orbits to a shielded foe's blind side; Steve and Hopper walk straight at a riot shield), dodges the charges
 //   (bot_boss.ts), and keeps off the ring's edge while a twin winds up (bot_void.ts). Its map treats Grid.drop as wall (nav.ts).
-// - The final fight (docs/level-16.md; combat/finale.ts, channel.ts, wake.ts, enemies/vecna5.ts): SimOptions.finale and Sim.defend(), which starts it at the
+// - The final fight (docs/level-16.md; combat/finale.ts, channel.ts, wake.ts): SimOptions.finale and Sim.defend(), which starts it at the
 //   first boss still standing, so a retry that finds Vecna or the Mind Flayer in the kill list starts at the next phase. One bar, HudView.boss with `phase`
 //   1 to 3, named VECNA, THE MIND FLAYER and THE CHANNEL (whose bar is the countdown). Each phase is { t: 'bossPhase', phase } once.
-//   1: Vecna (`vecna5`, group `boss`, a stand-in kit behind vecna5.ts: a blast with a warning 'ring' and 'nova', and a fan of slow homing 'orb' fx; poise,
-//   no stagger). At 0 HP he sinks: anim 'ko' for sinkT (64) frames with t counting, no flicker, his orbs gone. SINK_WAIT frames in, everyone gets 30
-//   percent of their HP and MP back (the fallen stand up) and the next phase wakes.
+//   1: Vecna (`vecna`, group `boss`, with his four `orb`s: chapter 4's kit below, spawned with x { speedMul: 1.3, chimeEvery: 720, sinkT: 64 }, so he runs
+//   at 1.3 times his pace and the clock curses a hero every 12 s, a curse counting its four chimes 240 frames apart; Max's Walkman and the marked orb lift it
+//   as in 4.4; the bar carries his orbs as `parts`). At 0 HP he sinks: anim 'ko' for sinkT (64) frames with t counting, no flicker, his orbs and their curses
+//   gone with him. SINK_WAIT frames in, everyone gets 30 percent of their HP and MP back (the fallen stand up) and the next phase wakes.
 //   2: the Mind Flayer (`flayer5` and four `leg5`, group `flayer`) runs the 3.3 brains on its own defs. Its body takes no hit while the chest is shut (a 'BLOCK');
 //   a hit on a leg opens the chest for chestT (300) frames (ActorView.open, an OPEN floater, the `reveal` sfx), once it is shut
 //   again. With every leg cut the head comes down for downT frames (x2) and the chest is open then as well. At 0 HP the body and legs die as in 3.3

@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHAPTERS, STAGE_ORDER, closesChapter, defaultParty, needsPicks, partyFor, pickParty, requiredFor, rosterFor } from '../src/core/campaign.ts';
-import { ENEMY_DEFS } from '../src/enemies/defs.ts';
+import { ENEMY_DEFS, xOf } from '../src/enemies/defs.ts';
 import { hurtChannel } from '../src/combat/channel.ts';
 import { KNEEL_WAIT, SINK_WAIT } from '../src/combat/finale.ts';
 import { MAP_PLACE } from '../src/core/mapdata.ts';
@@ -21,7 +21,6 @@ import { playStage, stageKit, stageXp, tileOf } from './stage-helpers.ts';
 import { PARTY, S53, SPIDER_IDS, VECNA_IDS, active, fy, hero, hit, kind, legs, phasesOf, put, px, rig, steps, still, toChannel, toSpider, until } from './finale-helpers.ts';
 
 const CHEST = ENEMY_DEFS.flayer5.x.chestT as number;
-const VX = ENEMY_DEFS.vecna5.x;
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }): number => Math.hypot(a.x - b.x, a.y - b.y);
 
 // ---------------------------------------------------------------- the spine
@@ -53,9 +52,9 @@ test('Eleven and Will are required, locked in whoever was picked, and walk in at
   for (const id of ['eleven', 'will']) assert.ok((party.find((s) => s.id === id)?.level ?? 0) >= 7, `${id} caught up from Lv 4`);
 });
 
-test('the stage pays 340 XP before xpMult, which takes the lead to Lv 12 by the clear', () => {
+test('the stage pays 350 XP before xpMult, which takes the lead to Lv 12 by the clear', () => {
   const base = S53.spawns.reduce((n, e) => n + (e.kind === 'enemy' ? ENEMY_DEFS[e.type].xp : 0), 0);
-  assert.equal(base, 340, 'three Flayed, three demodogs, Vecna and the Mind Flayer; its legs pay nothing');
+  assert.equal(base, 350, 'two Flayed, three demobats, Vecna and the Mind Flayer; his orbs and its legs pay nothing');
   assert.ok(base >= 300 && base <= 360);
   assert.equal(S53.xpMult, 3.2);
   assert.ok(stageXp(S53) - 4 >= 1061 - 300, 'the lead has 300 into Lv 11 and 1061 takes him to Lv 12 (stageXp counts the four legs at 1 each: they pay 0)');
@@ -101,68 +100,94 @@ test('the route reaches the arena once the vines are burned, and every spawn sta
 });
 
 // ---------------------------------------------------------------- phase one: Vecna
-test('defend starts the fight: phase one, the bar says VECNA, and he is awake', () => {
+test('defend starts the fight: phase one, the bar says VECNA with his four orbs, and he and they are awake', () => {
   const r = rig();
-  const v = kind(r, 'vecna5');
+  const v = kind(r, 'vecna');
   assert.equal(v.dormant, true);
+  assert.equal(r.s.enemies.filter((e) => e.kind === 'orb').length, 4);
   assert.equal(r.sim.view().hud.boss, null, 'no bar before it starts');
   r.sim.defend();
   assert.deepEqual(phasesOf(steps(r, 2)), [1]);
   r.sim.defend();
   assert.deepEqual(phasesOf(steps(r, 2)), [], 'it starts once');
   assert.equal(v.dormant, false);
-  assert.deepEqual({ name: r.sim.view().hud.boss?.name, phase: r.sim.view().hud.boss?.phase }, { name: 'VECNA', phase: 1 });
+  assert.ok(r.s.enemies.filter((e) => e.kind === 'orb').every((o) => !o.dormant), 'the orbs wake with him');
+  const bar = r.sim.view().hud.boss;
+  assert.deepEqual({ name: bar?.name, phase: bar?.phase, parts: bar?.parts }, { name: 'VECNA', phase: 1, parts: [1, 1, 1, 1] });
   assert.equal(r.sim.view().hud.channel, null);
 });
 
-test('Vecna blasts a hero in his reach after a warning ring, and casts a fan of slow orbs that turn toward the hero', () => {
+test('phase one is 4.4\'s Vecna kit run at 1.3 times his pace, with the clock chiming every 12 s: the stage\'s own numbers over his def\'s', () => {
   const r = rig();
+  const v = kind(r, 'vecna'), X = xOf(v);
+  assert.deepEqual([X.speedMul, X.chimeEvery, X.sinkT], [1.3, 720, 64]);
+  assert.equal(X.whipEvery, ENEMY_DEFS.vecna.x.whipEvery, 'the rest of the kit is chapter 4\'s');
+  assert.ok(v.vecna && v.vecna.orbs.length === 4, 'he finds his four orbs');
   r.sim.defend();
-  const v = kind(r, 'vecna5'), h = active(r);
-  // The blast: the hero stands beside him; the ring grows for blastWind frames under the "!", then a nova hurts him.
-  put(r, v.x + 24, v.y);
-  v.fin!.blastCd = 0;
-  const before = h.hp;
-  let ring = false, bang = false;
-  for (let i = 0; i < 90 && !bang; i++) {
-    r.sim.step(idle());
-    const view = r.sim.view();
-    const rf = view.fx.find((f) => f.kind === 'ring' && f.life === VX.blastWind);
-    if (rf) { ring = true; assert.equal(rf.w, VX.blastR * 2); assert.equal(view.actors.find((a) => a.id === 'vecna5')?.alert, true, 'the "!" is up'); }
-    bang = view.fx.some((f) => f.kind === 'nova' && f.w === VX.blastR * 2);
-  }
-  assert.ok(ring && bang, 'a warning, then the blast');
-  assert.ok(h.hp < before, `the hero took ${before - h.hp}`);
-  // The orbs: from far off, orbN of them, fanned, each homing a little.
-  put(r, v.x, v.y + 150);
-  v.fin!.orbCd = 0; v.fin!.blastCd = 99999;
-  until(r, () => r.s.projs.filter((p) => p.kind === 'orb').length === VX.orbN, 120);
-  const orbs = r.s.projs.filter((p) => p.kind === 'orb');
-  assert.equal(r.sim.view().fx.filter((f) => f.kind === 'orb').length, VX.orbN);
-  const turn = (p: (typeof orbs)[number]): number => Math.abs(((Math.atan2(h.y - 7 - p.y, h.x - p.x) - Math.atan2(p.vy, p.vx) + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-  const off0 = orbs.map(turn);
-  steps(r, 40);
-  assert.ok(orbs.some((p, i) => r.s.projs.includes(p) && turn(p) < (off0[i] as number)), 'an orb has turned toward the hero');
-  assert.ok(orbs.every((p) => Math.hypot(p.vx, p.vy) > VX.orbSpeed - 0.01 && Math.hypot(p.vx, p.vy) < VX.orbSpeed + 0.01), 'at the same slow pace');
+  steps(r, 2);
+  assert.equal(v.vecna!.chimeCd, 718, 'the clock starts at 720 frames from the wake');
+  // He walks 1.3 times as fast as 4.4's Vecna does (0.4 px a frame), from the same spot toward a hero with a clear line.
+  put(r, v.x, v.y + 120);
+  const at = v.y;
+  steps(r, 20);
+  assert.ok(v.y - at >= 0.4 * 1.3 * 20 * 0.9 && v.y - at <= 0.4 * 1.3 * 20 * 1.05, `moved ${(v.y - at).toFixed(1)} px in 20 frames`);
+  // His whip winds up for 1/1.3 of 4.4's frames.
+  assert.equal(Math.round(ENEMY_DEFS.vecna.windup / 1.3), 11);
 });
 
-test('Vecna at 0 HP sinks: ko for sinkT frames with no flicker, his orbs gone, XP paid, and phase two begins a beat in', () => {
+test('the clock chimes at 12 s and curses a hero, who is let go when the Walkman plays or the marked orb breaks, and falls at the fourth chime', () => {
+  // The clock counts the sim's own ticks (a hit-stop frame is not one), so it chimes a few frames after 720 of them.
+  const cursed = (r: ReturnType<typeof rig>): { who: HeroId; at: number; ev: SimEvent[] } => {
+    r.sim.defend();
+    let at = 0;
+    const ev = until(r, () => { at++; return r.s.house.curses.length > 0; }, 900);
+    return { who: ofType(ev, 'cursed')[0]!.hero, at, ev };
+  };
+  // A hero cursed at the first chime, then Max swapped to with her Walkman: the curse ends 'walkman' and nobody is down.
+  let walkman = false;
+  for (let seed = 1; seed <= 12 && !walkman; seed++) {
+    const r = rig({ seed, party: [{ id: 'mike', level: 11 }, { id: 'max', level: 9 }, { id: 'dustin', level: 10 }, { id: 'eleven', level: 8 }] });
+    r.s.house.walkman = true;
+    const c = cursed(r);
+    assert.ok(c.at >= 719 && c.at <= 800, `the first chime came after ${c.at} frames`);
+    if (c.who === 'max') continue;
+    // Away from Max and back by a quick swap (the party's own swap off a cursed hero is forced, and does not play it).
+    const maxIdx = r.s.heroes.findIndex((h) => h.id === 'max');
+    const other = r.s.heroes.findIndex((h, i) => i !== maxIdx && h.id !== c.who);
+    const ev2 = [...steps(r, 1, inp({ swapTo: other })), ...steps(r, 12), ...steps(r, 1, inp({ swapTo: maxIdx })), ...steps(r, 2)];
+    assert.deepEqual(ofType(ev2, 'curseEnd').map((x) => [x.hero, x.how]), [[c.who, 'walkman']]);
+    assert.equal(hero(r, c.who).ko, false);
+    walkman = true;
+  }
+  assert.ok(walkman, 'a seed whose curse is not on Max');
+  // Left alone, the curse counts its four chimes 240 frames apart and takes the fourth hero out.
+  const r = rig({ seed: 3 });
+  cursed(r);
+  const first = r.s.house.curses[0]!;
+  assert.equal(first.gap, 240, 'a third of 12 s between chimes');
+  kind(r, 'vecna').dormant = true;
+  const ev = until(r, () => r.s.house.curses.length === 0, 900);
+  assert.deepEqual(ofType(ev, 'curseEnd').map((x) => x.how), ['ko']);
+  assert.equal(first.hero.ko, true, 'the fourth chime knocked them out');
+});
+
+test('Vecna at 0 HP sinks: ko for sinkT frames with no flicker, his orbs go with him and the curses they marked, XP paid, and phase two begins a beat in', () => {
   const r = rig();
   r.sim.defend();
-  const v = kind(r, 'vecna5'), h = active(r);
-  put(r, v.x, v.y + 150);
-  v.fin!.orbCd = 0;
-  until(r, () => r.s.projs.some((p) => p.kind === 'orb'), 120);
+  until(r, () => r.s.house.curses.length > 0, 900);
+  assert.equal(r.s.house.curses.length, 1, 'a curse is on a hero when he falls');
+  const v = kind(r, 'vecna'), h = active(r);
   const xp = r.sim.stats().xpEarned;
   v.hp = 0;
   const ev = steps(r, 1);
-  assert.equal(r.s.projs.filter((p) => p.kind === 'orb').length, 0, 'the orbs are gone');
-  assert.equal(ofType(ev, 'kill').filter((k) => k.kind === 'vecna5').length, 1);
+  assert.equal(r.s.house.curses.length, 0, 'the curse is lifted with him');
+  assert.equal(ofType(ev, 'kill').filter((k) => k.kind === 'vecna').length, 1);
+  assert.equal(ofType(ev, 'kill').filter((k) => k.kind === 'orb').length, 4, 'and the four orbs');
   assert.ok(r.sim.stats().xpEarned > xp);
   let blinked = false, last = 0;
-  for (let i = 0; i < ENEMY_DEFS.vecna5.x.sinkT - 2; i++) {
+  for (let i = 0; i < xOf(v).sinkT! - 2; i++) {
     r.sim.step(idle());
-    const a = r.sim.view().actors.find((o) => o.id === 'vecna5');
+    const a = r.sim.view().actors.find((o) => o.id === 'vecna');
     assert.ok(a, `still there ${i} frames in`);
     assert.equal(a.anim, 'ko');
     assert.ok(a.t > last, 't counts the sink');
@@ -171,7 +196,7 @@ test('Vecna at 0 HP sinks: ko for sinkT frames with no flicker, his orbs gone, X
   }
   assert.equal(blinked, false, 'he sinks, he does not flicker out');
   steps(r, 8);
-  assert.equal(r.sim.view().actors.some((o) => o.id === 'vecna5'), false, 'gone once the floor has him');
+  assert.equal(r.sim.view().actors.some((o) => o.id === 'vecna'), false, 'gone once the floor has him');
   assert.equal(h.hp > 0, true);
 });
 
@@ -182,7 +207,7 @@ test('phase two begins SINK_WAIT frames after Vecna goes down: the party is back
   steps(r, 2);
   const mike = active(r), dustin = hero(r, 'dustin');
   dustin.ko = true; dustin.hp = 0; mike.hp = 40;
-  kind(r, 'vecna5').hp = 0;
+  kind(r, 'vecna').hp = 0;
   const ev = [...steps(r, SINK_WAIT - 4)];
   assert.deepEqual(phasesOf(ev), [], 'not yet');
   assert.equal(kind(r, 'flayer5').dormant, true);
@@ -289,6 +314,8 @@ test('the channel: Eleven and Will walk to their marks, held like a ward with a 
 
 test('the waves go for the channelers and not the hero who stands away, and a channeler falling starts it all again with both at full', () => {
   const r = rig();
+  // The climb's bats wake within 160 px of the hero wherever he stands, and the party is not coming through the hall in this test: they are gone.
+  r.s.enemies = r.s.enemies.filter((e) => e.group !== 'climb');
   toSpider(r);
   toChannel(r);
   until(r, () => r.s.finale?.on === true, 400);

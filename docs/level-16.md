@@ -19,7 +19,7 @@ The last stage (`docs/chapter-5.md`). A short climb through the flesh to the hea
 
 One boss bar that names each phase in turn: VECNA, THE MIND FLAYER, THE CHANNEL.
 
-1. **Vecna, fast** (`vecna5`): 4.4's Vecna kit at a speed factor of 1.3, with the clock chiming every 12 s (the curse as chapter 4 built it, and Max's Walkman works). At 0 HP he sinks into the floor (`drawFinaleVecna`'s sink pose), and phase two starts with `phase(1)`.
+1. **Vecna, fast** (`vecna`, chapter 4's own kind, with his four memory orbs): 4.4's Vecna kit at a speed factor of 1.3, with the clock chiming every 12 s (the curse as chapter 4 built it, and Max's Walkman works). The stage's spawn sets `x: { speedMul: 1.3, chimeEvery: 720, sinkT: 64 }` over his def's, which is the seam chapter 4 left for it (`SimSpawn.x`, `xOf`). At 0 HP he sinks into the floor for 64 frames, his orbs and every curse they marked going with him, and phase two starts with `phase(1)`.
 2. **The spider** (`flayer5`, with legs): 3.3's Mind Flayer kit (leg strikes on telegraphed lines, goo pools, Flayed crowds), drawn by `drawFinaleSpider`.
    - Hitting legs, as in 3.3, opens the chest for 5 s (the `open` flag). Only hits on the open chest move the bar.
    - The clock still chimes every 16 s.
@@ -50,10 +50,10 @@ Play stops. Every hero still standing, channelers included, rolls a d20 with adv
 
 | Group | Enemies |
 |---|---|
-| `climb` | 3 Flayed, 3 demobats (3 demodogs stand in until chapter 4 builds them) |
-| `boss` | Vecna, dormant |
+| `climb` | 2 Flayed, 3 demobats |
+| `boss` | Vecna and his four orbs, dormant |
 | `flayer` | the spider and its legs, dormant until phase two |
-| `channel` | run-time waves during phase three |
+| `channel` | run-time waves during phase three: demodogs, Flayed and, twice, three demobats |
 
 Count the XP before `xpMult` between 300 and 360, with a test. `xpMult` takes the lead to Lv 12, the cap, by the clear.
 
@@ -78,38 +78,39 @@ Built in two passes. The spine and the boss sim are in; the art, the HUD and the
 
 **The beats.** `vecna` (the arena's south: `close door1`, `music abyss`, the script, then `defend`) starts the fight. `Sim.defend()` starts the finale at the first boss still standing, and the play scene carries kills across a retry, so a wipe in the spider's phase retries at the spider and one in the channel at the channel, from `lights_heart` with the party at full. `phase_spider` and `phase_channel` fire on the sim's `bossPhase` event and step the music with the new `phase` step (`audio.phase`, 1 then 2). `level_clear` fires on `finalRoll` and plays `boom`, `l16_clear`, opens the door and `finish`: the Final Roll scene, Joyce and the flash go between the event and that beat, which the ending builder wires.
 
-**The sim** (`combat/finale.ts`, `channel.ts`, `wake.ts`, `enemies/vecna5.ts`; the contract is in `combat/index.ts`):
+**The sim** (`combat/finale.ts`, `channel.ts`, `wake.ts`; Vecna is `enemies/vecna.ts`, `vecna_phase.ts` and `orb.ts`; the contract is in `combat/index.ts`):
 
-- **Vecna** is a stand-in kit behind `enemies/vecna5.ts` (`vecnaUpdate` and `clearVecna` are the whole seam; `VECNA_SPEED` is 1.3 and `VECNA_CHIME` 720): a blast with a warning ring and two slow homing orbs. No curse, so the clock's chime waits for 4.4's kit. At 0 HP he sinks for 64 frames in anim `ko`, and 44 frames in the party gets 30% of its HP and MP back and the spider rises.
+- **Vecna** is chapter 4's kit (the stand-in in `enemies/vecna5.ts`, a blast and two homing orbs, is gone): the whip in Clock and Burn, the thrown rock and the height in Float, the orbs that heal him and that a broken one pulls him down by, and the clock's curse. The stage's `x` runs it at 1.3 times his pace (his walk, whip, throw and rise) with the clock every 720 frames, so a curse counts its four chimes 240 frames apart, and the Walkman and the marked orb lift it as in 4.4. He keeps his 1000 HP and 150 XP. At 0 HP he sinks for 64 frames in anim `ko` (`combat/kills.ts`, `sinks`: a Vecna whose spawn sets `sinkT`), the orbs and the curses they marked go with him, and 44 frames in the party gets 30% of its HP and MP back and the spider rises. The bar names VECNA and carries his four orbs as `parts`, as 4.4's does.
 - **The Mind Flayer** is the 3.3 brains on `flayer5` and `leg5`. The chest is shut and the body takes no hit until a hit on a leg opens it for 300 frames (`ActorView.open`, `k` the share left); with every leg cut the head comes down for 300 frames at x2 and the chest is open too. At 0 HP it dies as 3.3's does and its body stays, kneeling (pose `down`). 60 frames later, the same breather.
-- **The channel** holds Eleven and Will on their marks like a ward, 380 HP each, for 40 s against ten demodogs and three Flayed that go for the nearest channeler. A fall starts it again (both full, the clock and waves from the start, the run-time foes gone, the party gets 20% back). At 0 the sim sends `{ t: 'finalRoll', heroes, roll }` and drops what is left of the waves.
+- **The channel** holds Eleven and Will on their marks like a ward, 380 HP each, for 40 s against eight demodogs and three Flayed that go for the nearest channeler, and two flocks of three demobats (at 16 s and 35 s) that dive at the heroes who fight. Demobats never go for a channeler, so the bot's guard (`bot_ward.ts`) does not count them as a threat to one. A fall starts it again (both full, the clock and waves from the start, the run-time foes gone, the party gets 20% back). At 0 the sim sends `{ t: 'finalRoll', heroes, roll }` and drops what is left of the waves.
 
-**The bot** fights Vecna like any foe and steps out of his blast ring and orbs (`bot_finale.ts`, `bot_threat.ts`), hits the nearest leg and then the open chest (`bot_flayer.ts`), and in the channel guards the channeler with a foe on them with a long leash, waiting between the two otherwise (`bot_ward.ts`).
+**The bot** plays Vecna as 4.4 does (`bot_vecna.ts`: the whip's line, the marked orb under a curse, an orb to pull him down), hits the nearest leg and then the open chest (`bot_flayer.ts`), and in the channel guards the channeler with a foe on them with a long leash, waiting between the two otherwise (`bot_ward.ts`).
 
-**Tuning**, on HARD (`chief`), `enemyMult` 1.8, channelers at 380 HP, `xpMult` 3.2, with the party a `?stage=5.3` jump brings (Mike Lv 11, Dustin 10, Eleven and Will 8):
+**Tuning**, on HARD (`chief`), `enemyMult` 1.45, channelers at 380 HP, `xpMult` 3.2, with the party a `?stage=5.3` jump brings (Mike Lv 11, Dustin 10, Eleven and Will 8). Re-measured after chapter 4's Vecna and the demobats went in:
 
 | Measure (chief) | Careful bot | Careless bot | Target |
 |---|---|---|---|
-| Cleared, of 20 | 14 | 14 | 14 to 19; careless at least 10 |
-| Cleared, of 100 | 85 | 62 | |
+| Cleared, of 20 | 19 | 11 | 14 to 19; careless at least 10 |
+| Cleared, of 100 | 99 | 55 | |
 | Stuck, of 100 | 0 | 0 | none |
-| Average damage taken | 411 | 769 | |
-| Average KOs | 1.4 | 2.9 | |
-| Average lowest party HP | 54% | 17% | under 45% |
-| Average time | 152 s | 127 s | |
-| Phase one, two and three | 34, 40 and 63 s | 26, 29 and 56 s | |
+| Average damage taken (of 20) | 528 | 573 | |
+| Average KOs (of 20) | 2.7 | 3.0 | |
+| Average lowest party HP (of 20) | 38% | 42% | under 45% |
+| Average time (of 100) | 132 s | 114 s | |
+| Phase one, two and three | 37, 26 and 47 s | 32, 19 and 45 s | |
 
-With a Lv 12 lead (Mike 12, Dustin 11, Eleven and Will 9) the careful bot clears 18 of 20 and the careless bot 18. Kid clears 20 of 20, NORMAL 20 (careless 18), upside none: the last boss on a mode no menu offers.
+Kid clears 20 of 20, NORMAL 20 (careless 19), upside 7: the last boss on a mode no menu offers. The Lv 12 lead run was not repeated.
 
-- **The lowest HP is outside its band** (54% against under 45%). Two of the four heroes hold their marks for the whole last phase with their HP where the breather left it, so the party's total cannot fall far however hard the two who fight are hit. Every change that took it toward 45% cost the careful bot its clears: a factor of 1.85 gives 50% and 68 clears of 100, bigger waves lose most of the fights.
-- **The factor is a cliff.** At 1.75 the careful bot clears 91 of 100 and the careless bot 80, at 1.8 85 and 62, at 1.85 68 and 51. The careless bot's losses are Vecna's blast (it takes 360 of its 770 damage in phase one): his blast is power 0.7 and each orb 0.5, down from a first 1.0 and 0.7, to keep that floor.
+- **`enemyMult` came down from 1.8 to 1.45.** Chapter 4's Vecna has 1000 HP and heals 4% of that every 2 s with his orbs up, where the stand-in had 800 and no heal, and the bats of the channel dive at the only two heroes who are free to fight. With the stand-in's factor of 1.8 the careful bot cleared 18 of 20 but the careless bot 2 to 3, whatever the waves held (without the bat flocks it cleared 12 and the careful bot 16, so Vecna alone fit). The careless bot cannot hit a bat out of reach and does not leave a dive's line, so a flock of three is 45 damage a hit on a hero with 120 HP. At 1.45 the lowest HP is back under its band (38%), where the stand-in left it at 54%.
+- **The numbers move a lot between seeds 1 to 20 and 21 to 40**: at 1.5 the careless bot cleared 3 of the first 20 and 17 of 40, and at 1.6 9 of 20, so the 20 seed bands were read at 1.3, 1.35, 1.4 and 1.45 (careless 19, 15, 13 and 11) and the 100 seed run decides the rest.
+- **The bot's guard of the channelers ignores bats** (`bot_ward.ts`): they orbit and dive at the active hero and never go for a channeler, and a bat circling the channelers had the bot standing guard over a channeler nothing was attacking.
 - **Where the waves come up decides the channel.** From the rim beside the marks (the first order of the burrows) the careful bot cleared 10 of 20: both channelers were under attack at once. From the arena's north and south tips, in line between them, 14 of 20 at the same HP, and 20 of 20 at 300.
-- **The breathers matter to the careless bot, not the careful one.** At 1.75 and 400 HP over 40 seeds, breathers of 15% leave the careless bot 38% of its clears and breathers of 45% give it 65%, where the careful bot clears 88% and 92%. They are 30% at each phase change and 20% on a channel reset.
-- **XP is 340 before `xpMult`** (three Flayed 33, three demodogs 27, Vecna 120, the Mind Flayer 160). The demodogs stand in for the three demobats. `xpMult` 3.2 pays 1088: with 300 XP into Lv 11, every careful clear ends the lead at the cap (1061 takes Lv 11 to 12). The lead's 300 is a placeholder until 5.1 and 5.2 pay their XP.
+- **The breathers matter to the careless bot, not the careful one.** They are 30% at each phase change and 20% on a channel reset.
+- **XP is 350 before `xpMult`** (two Flayed 22, three demobats 18, Vecna 150, the Mind Flayer 160; the orbs and legs pay nothing). A third Flayed came out of the climb to hold the sum under 360 with Vecna's 150 and the bats in. `xpMult` 3.2 pays 1120 (a run earns about 1133 with its run-time spawns): with 300 XP into Lv 11, every careful clear ends the lead at the cap (1061 takes Lv 11 to 12). The lead's 300 is a placeholder until 5.1 and 5.2 pay their XP.
 
 **What the art, HUD and flow builder needs:**
 
-- Art: `ActorView.open` (and `k`) on `flayer5` for `drawFinaleSpider`'s chest (it reads `petals` by default, pass `open`); `drawFinaleVecna` for `vecna5` (anim `walk`, `cast` while the "!" is up, `ko` with `t` counting the sink: 64 frames, no blink); a dead `flayer5` stays with pose `down`, anim `idle` (kneeling, no chest); the `orb` fx (a stand-in, Will's bolt, is drawn now: `fx.ts`); the channelers are hero actors in anim `cast` on the marks with the channel's bar (`drawChannelMark` at `StageData.finale.channelers` tiles, lit while `hud.channel.on`); `drawHeartGlow` over the arena; Joyce after the roll. `gfx/actors.ts` has stand-ins for `vecna5` (the Warden), `flayer5` and `leg5`.
+- Art: `ActorView.open` (and `k`) on `flayer5` for `drawFinaleSpider`'s chest (it reads `petals` by default, pass `open`); phase one's Vecna is `vecna`, drawn by chapter 4's `actor_vecna.ts` with all its poses (whip, throw, float, burn, chime) and its orbs by `actor_orb.ts`; `ko` with `t` counting the sink is 64 frames, no blink, so `drawFinaleVecna` in `gfx/ch5/` is unused until Art decides whether the finale wants a look of its own; a dead `flayer5` stays with pose `down`, anim `idle` (kneeling, no chest); the channelers are hero actors in anim `cast` on the marks with the channel's bar (`drawChannelMark` at `StageData.finale.channelers` tiles, lit while `hud.channel.on`); `drawHeartGlow` over the arena; Joyce after the roll. `gfx/actors.ts` has stand-ins for `vecna5` (the Warden), `flayer5` and `leg5`.
 - HUD: `hud.boss.phase` and the three names (the channel's bar is its countdown: `hp` is frames left); `hud.channel` ({ on, left, total, channelers[{ id, name, hp, hpMax }] }); `PartyHud.channeling` on the two held rows, which no swap reaches.
 - Flow: the sim event `finalRoll` carries the standing heroes and the roll (`rollFinal`'s result): play the Final Roll scene on it, then Joyce, then fire the `level_clear` beat (or hold the director's events until the scenes are done), then the epilogue chain as `docs/level-16.md` above says. `Sim.defend()` and the `phase` and `bossPhase` plumbing are in `world/triggers.ts` and `play.ts` already.
-- The clock curse's chimes (12 s in phase one, 16 s in phase two, `VECNA_CHIME` and `ENEMY_DEFS.flayer5.x.clock16`) are not wired: they wait for 4.4's kit.
+- The clock curse's chimes in phase one (12 s) are wired. Phase two's (16 s, `ENEMY_DEFS.flayer5.x.clock16`) are not: the spider's phase is unchanged, and nothing chimes once Vecna has sunk.

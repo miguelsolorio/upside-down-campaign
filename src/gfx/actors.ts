@@ -324,11 +324,12 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
 }
 
 /** Chapter 5's foes that wear a sprite that already exists: the Lab agent is the 1.2 agent in his hazmat suit and the foe Demogorgon is the 1.3
- *  one (docs/level-14.md, docs/level-15.md). The final boss's bodies wear the Warden and the 3.3 spider until their own art is wired. */
+ *  one (docs/level-14.md, docs/level-15.md). The final boss's spider and its legs wear the 3.3 ones until their own art is wired (phase one's Vecna is
+ *  chapter 4's, drawn as he is). */
 const CH5_LOOK: Partial<Record<string, ActorView['id']>> = {
   agent5: 'agent', demofoe: 'demogorgon',
-  // The final boss (docs/level-16.md): Vecna is the Warden, the spider and its legs the 3.3 ones, until Art wires drawFinaleVecna and drawFinaleSpider.
-  vecna5: 'warden', flayer5: 'flayer', leg5: 'flayerleg',
+  // The final boss (docs/level-16.md): the spider and its legs are the 3.3 ones, until Art wires drawFinaleSpider.
+  flayer5: 'flayer', leg5: 'flayerleg',
 };
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };

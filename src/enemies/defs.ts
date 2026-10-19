@@ -357,21 +357,6 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       enrage: 1.3, orbit: 96, band: 14, orbitSpeed: 0.9, turnWait: 360, fallT: 40, belowT: 100, climbT: 40, fallLoss: 0.15,
     },
   },
-  // The final boss (docs/level-16.md, stage 5.3), sized for a Lv 11 to 12 party on HARD. Vecna in phase one (enemies/vecna5.ts) is a stand-in
-  // until 4.4's kit is swapped in: a fast caster. windup, power and cooldown are the blast's. blastR: the blast's radius in px (centered on
-  // him), blastWind: its warning ring in frames, blastKb its shove, blastCd the frames between blasts, blastRecover the frames after.
-  // orbWind, orbCd and orbRecover are the orb's: orbN slow orbs, orbFan radians apart, each turning toward the active hero by orbTurn radians a frame at
-  // orbSpeed px a frame, for orbLife frames, size orbR, orbPower and orbKb on a hero. near and far bound the band he holds from the hero, orbMin the least distance
-  // he casts an orb from. sinkT: the frames his body stays, sinking into the floor, after 0 HP (the art's SINK_FRAMES).
-  vecna5: {
-    kind: 'vecna5', name: 'Vecna', hp: 800, atk: 30, def: 10, speed: 0.9, xp: 120, aggro: 400,
-    windup: 28, power: 0.7, cooldown: 100, drop: 1, weight: 4,
-    x: {
-      blastR: 46, blastWind: 32, blastKb: 5, blastCd: 100, blastRecover: 26,
-      orbWind: 34, orbCd: 180, orbRecover: 20, orbSpeed: 1.5, orbTurn: 0.03, orbLife: 220, orbR: 4, orbPower: 0.5, orbKb: 2, orbN: 2, orbFan: 0.4,
-      near: 36, far: 90, orbMin: 70, sinkT: 64,
-    },
-  },
   // The Mind Flayer of phase two (the 3.3 body's brain, enemies/flayer.ts), with Vecna in its chest. Its numbers are the 3.3 body's, apart from
   // these: the body takes no hit while its chest is shut. A hit on a leg opens the chest for chestT frames (once it is shut again); with every leg
   // cut the head comes down for downT frames at downMul and the chest is open then too. clock16: the frames between the clock's chimes in the
@@ -405,7 +390,8 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // throw*: Float's rock: every throwEvery frames, throwPower, throwSplash px, throwT frames in the air. hold and floatHold: px he stops short
   // of the hero on the floor and in the air. heal: the share of his max HP each standing orb gives every healEvery. floatAt and burnAt: the HP
   // shares of his phases. floatZ: his height in Float, riseT the frames to rise or land. downT: frames an orb's break pulls him down for in
-  // Float, downMul what he takes then. curseT: frames of the chime pose. splashT: frames a rock's splash is drawn.
+  // Float, downMul what he takes then. curseT: frames of the chime pose. splashT: frames a rock's splash is drawn. sinkT is a spawn's own key,
+  // never the def's: 5.3's phase one sets it (docs/level-16.md), and a Vecna that has it stays at 0 HP for that many frames, sinking (combat/kills.ts).
   vecna: {
     kind: 'vecna', name: 'Vecna', hp: 1000, atk: 32, def: 7, speed: 0.4, xp: 150, aggro: 400,
     windup: 14, power: 0.5, cooldown: 120, drop: 1, weight: 99,

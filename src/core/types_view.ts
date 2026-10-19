@@ -103,8 +103,6 @@ export type FxKind =
   | 'riff' | 'chime' | 'walkman'
   /** fall: a twin Demogorgon dropping into the void (x, y the edge it went over, w its width, life the fall) (docs/level-15.md). */
   | 'fall'
-  /** orb: Vecna's slow homing orb in flight, x, y its middle at chest height, angle its heading, w its diameter (docs/level-16.md). */
-  | 'orb'
   /** debris: a rock Vecna throws, in flight (h its height) and its splash. whip: one of his vine lashes, along `angle`, w its length.
    *  blaze: the fire over him in Burn, w its size (docs/level-13.md). */
   | 'debris' | 'whip' | 'blaze';

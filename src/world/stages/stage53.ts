@@ -132,7 +132,7 @@ export const STAGE_53: StageData = {
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
   burrows: BURROWS,
   finale: FINALE,
-  enemyMult: 1.8,
+  enemyMult: 1.45,
   xpMult: 3.2,
   waypoints: WAYPOINTS,
 };

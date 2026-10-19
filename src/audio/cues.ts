@@ -11,6 +11,8 @@ const VIB: Vib = { rate: 5.5, cents: 24, delay: 0.12 };
 const GROWL: Vib = { rate: 38, cents: 160, delay: 0 };
 /** Eddie's nervous warble: a vibrato slow enough to hear as a wobble in pitch. Its depth fades in over a quarter of a second, so an 80 ms blip reaches a third of it, about a semitone, and the setting has to be wide to be heard. */
 const WARBLE: Vib = { rate: 13, cents: 300, delay: 0 };
+/** Vecna's crackle: three short pops of white noise, at these fractions of the blip, through a band round 1.8 kHz. */
+const CRACKLE: Crackle = { at: [0.1, 0.42, 0.72], dur: 0.014, freq: 1800, vol: 0.5 };
 
 /** Plays a cue starting at context time t. */
 export function playCue(ctx: BaseAudioContext, dest: AudioNode, cue: Cue, t: number): void {
@@ -58,6 +60,17 @@ interface BlipDef {
   rough?: Vib;
   /** A musical vibrato that rides the pitch: Eddie's nerves. Billy's `rough` is the same oscillator, faster and wider, so it growls. */
   vibrato?: Vib;
+  /** Pops of noise across the blip, dry like a cinder going in a fire: Vecna's. The pitch itself stays clean. */
+  crackle?: Crackle;
+}
+
+interface Crackle {
+  /** Where each pop starts, as a fraction of the blip. */
+  at: readonly number[];
+  dur: number;
+  /** Centre of the band the noise goes through. */
+  freq: number;
+  vol: number;
 }
 
 /** One voice per speaker, from the table in the design doc. The narrator is quiet on purpose. */
@@ -91,9 +104,14 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   // F4, a major third over Steve's square and a whole tone under Mike's, and runs a little longer than theirs so the warble has
   // time to turn over. Max's pulse is a fifth higher, so the wobble in pitch is what makes it his. His level is set by ear-weighted
   // energy like the others.
-  // Stand-in until Audio writes Vecna's (docs/level-13.md): very low, slow, just above Hopper, who stays the lowest and the only saw.
-  vecna: { wave: 'p12', midi: 46, spread: 1, dur: 0.12, vol: 0.26, attack: 0.01, bend: -2 },
   eddie: { wave: 'p25', midi: 65, spread: 3, dur: 0.08, vol: 0.19, attack: 0.003, vibrato: WARBLE },
+  // Vecna is very low and slow, and dry: a thin 12.5 percent pulse on B2 (47), two semitones over Hopper's A2, who stays the lowest
+  // voice and the only saw, and a minor third under Billy's growl, which stays the only rough one. Every blip is the longest there is
+  // (0.12 s, a hesitation before each word, where Hopper's 0.085 is gruff) and sags two semitones, with a pitch spread of one so he
+  // hardly moves: slow and certain. The crackle is what makes it his: three pops of white noise through a band round 1.8 kHz
+  // land across each blip, like a vine splitting or a cinder going in a fire, where Billy's roughness is a wobble in the pitch
+  // itself. Its level is set by ear-weighted energy like the others: a low thin pulse needs a higher peak than a bright one.
+  vecna: { wave: 'p12', midi: 47, spread: 1, dur: 0.12, vol: 0.26, attack: 0.012, bend: -2, crackle: CRACKLE },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },
 };
@@ -115,4 +133,14 @@ export function playBlip(
     env: { a: b.attack, d: b.dur * 0.6, s: 0.55, r: 0.015 },
     vib: b.rough ?? b.vibrato,
   });
+  if (b.crackle) {
+    const c = b.crackle;
+    const seed = Math.floor(rand() * 65536);
+    c.at.forEach((f, i) => {
+      noise(ctx, dest, {
+        mode: 15, t: t + f * b.dur, dur: c.dur, vol: c.vol, clock: 30000, seed: seed + i * 7919,
+        filter: { type: 'bandpass', freq: c.freq, q: 1.1 },
+      });
+    });
+  }
 }

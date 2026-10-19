@@ -334,6 +334,9 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
   // Chapter 5's plates hang under their landmarks, pointing up, like the tunnels'.
   for (const [id, name, mark, at] of CH5_MARKS) plates.push({ cx: at.x, y: at.top + (mark.h as number) + 3, name, state: st[id] as NodeState, ud: true, point: 'up' });
+  // The heart has no landmark yet (Art draws it): its plate hangs just under its node, in line with the other two.
+  const heart = POS['5.3'] as { x: number; y: number };
+  plates.push({ cx: heart.x, y: 181, name: 'HEART', state: st['5.3'] as NodeState, ud: true, point: 'up' });
   return { px: P, plates, veins, inset };
 }
 

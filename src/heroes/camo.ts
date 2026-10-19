@@ -1,7 +1,7 @@
 // Lucas's Camo (Lv 6). The design's version drops aggro on a dash, and the game has no dash, so it rides on his Triple shot instead,
 // the way Nancy's Trap kit rides on her Shotgun. Each Triple shot hides him for 3 s, at most once every 8 s, so a run of shots can't
 // keep him hidden. While he is hidden and the active hero, the foes lose him: they stand and look round, start no attack, and one
-// winding up stands down. Shots already in the air still land. A boss isn't fooled, and nor is a wave going for the ward in a defense.
+// winding up stands down. Shots already in the air still land. A boss isn't fooled, and nor is a wave going for the ward in a defense or the channelers in the final fight.
 //
 // What gfx sees: Lucas's ActorView has `hidden` while it lasts, so he is drawn faint.
 import { HERO_DEFS } from './defs.ts';
@@ -9,6 +9,7 @@ import { LV6, hasTalent } from '../progression/talents.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { dust, floater } from '../combat/fx.ts';
 import { isBoss } from '../combat/confuse.ts';
+import { channelOn } from '../combat/finale_state.ts';
 
 /** Triple shot fired: hide him if the talent is his and it is ready. */
 export function camo(s: S, h: Hero): void {
@@ -31,7 +32,7 @@ export function camoHides(s: S, h: Hero): boolean {
  */
 export function lostHim(s: S, e: Enemy, hero: Hero): boolean {
   if (!camoHides(s, hero) || isBoss(e)) return false;
-  if (e.rt === 'wave' && s.defense !== null && s.defense.started) return false;
+  if (e.rt === 'wave' && ((s.defense !== null && s.defense.started) || channelOn(s))) return false;
   if (e.mode === 'windup' || e.mode === 'lunge') { e.mode = 'chase'; e.modeT = 0; }
   return true;
 }

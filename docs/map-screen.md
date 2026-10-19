@@ -6,7 +6,7 @@ A Hawkins map between stages, the design "Two Hawkins" (chosen from `map-variati
 
 - The whole 256 by 224 screen. A slim strip on top (10 px: the chapter name on the left, the selected stage's name on the right) and a party band at the bottom (28 px: a face and a level for each hero, and the hints as a short legend on the right). The map fills the 186 px between.
 - A wavy horizon splits the map. Above it is Hawkins in daylight: the woods, the Lab, the school, the pumpkin patch and arcade, and a town around them (roads, houses, Main Street shops, the water tower, fields, trees). Below it the same land hangs upside down in the Upside Down palette: dark red veins, drifting grey spores, a black sun. The tunnels and the gate are down there.
-- One node per stage (1.1 to 5.2), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked. It is empty now: 5.2, the Abyss, is the last stage built. The route drops through the hole in the patch, which sits on the horizon. Node states:
+- One node per stage (1.1 to 5.3), joined by a stitched route. `STAGES_AHEAD` lists stages past the end of the build, shown locked. It is empty now: 5.3, the heart of the Abyss, is the last stage built. The route drops through the hole in the patch, which sits on the horizon. Node states:
   - `cleared`: gold, with a check
   - `open`: the next uncleared stage, white and pulsing
   - `locked`: grey, with a padlock; its landmark is greyed too (in Hawkins)
@@ -91,7 +91,8 @@ Erica runs an ice cream cart and sells the party what it carries into a stage. I
 - **Hawkins under lockdown (5.1)** and **the Abyss (5.2)** both sit in the Upside Down half, below the horizon, since the army's town and the Abyss under it are seen from the dark side. 5.1 is in the bottom left, with a LOCKDOWN plate; 5.2 is in the bottom right, under the dark sun, with an ABYSS plate. The route comes down from the Creel House (4.2) to 5.1 and runs across the bottom to 5.2.
 - `MAP_PLACE` in `core/mapdata.ts` gains `lockdown` (5.1) and `abyss` (5.2). The nodes (`POS`, `PLACE_OF` and `BEND` in `gfx/map_geo.ts`) sit over their landmarks, which `gfx/map_ch5.ts` paints: the lockdown is a floodlight on its mast over a wall of sandbags with its cone dithered across them, and the Abyss is a floating island with a lit house, rock tapering under it and vines off its rim, hung over the dark sun. Each has its plate (`map_land.ts`) under it, pointing up like the tunnels', clear of the token and of the GATE plate. A locked one is greys, like the rest.
 - The chapter strip says Chapter five on those nodes. Entering 5.1 for the first time shows the chapter five card: CHAPTER FIVE, THE LAST CAMPAIGN.
-- 5.2 is the last stage built: it shows the feedback note under its results, and not CHAPTER FIVE CLEAR, which waits for 5.3.
+- **The heart (5.3)** is the last stop, below the horizon beside the Abyss, to its left and under the tunnels, with a HEART plate under it. It has no landmark yet (Art draws it): `MAP_PLACE` has `heart`, and the node, its plate and the route's last leg (`POS`, `PLACE_OF`, `BEND`, `map_land.ts`) are stand-ins.
+- 5.3 is the last stage of the campaign: it closes chapter five (`closesChapter`) and its results say CAMPAIGN COMPLETE with the feedback note (`endsCampaign`).
 
 ## gfx
 

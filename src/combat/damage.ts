@@ -12,7 +12,7 @@ import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
 import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
 import { flayerBlock, flayerRooted, flayerTakes } from '../enemies/flayer_hit.ts';
-import { sever } from '../enemies/flayer_legs.ts';
+import { legHit } from '../enemies/flayer_legs.ts';
 import { HOLD_BREAK_KB, isHolding, releaseHold, untouchable } from '../enemies/hold.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
@@ -94,7 +94,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.dead || e.dormant || e.hp <= 0 || untouchable(e)) return 0;
   // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy and the Mind Flayer and its legs are never staggered, stunned or broken off a
   // wind-up by a hit.
-  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e);
+  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e) || e.kind === 'vecna5';
   // A pinned Demogorgon shrugs off everything but the beam, and a pinned Billy everything at all. They report the try and take nothing. So
   // does the Mind Flayer's body while a leg stands.
   const finisher = isFinisher(e, by.id, o.beam === true, o.slam === true);
@@ -164,7 +164,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
     // A boss has poise: no stagger, no stun status, and no wind-up broken by a hit. Its floor and its pin are settled here.
     demoSettle(s, e, finisher);
     billySettle(s, e);
-    sever(s, e);
+    legHit(s, e);
   } else if (!shielded) {
     if (!(planted && !breaksHold)) {
       e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));

@@ -7,17 +7,18 @@
 // A leg at 0 HP is severed, not dead. It keeps hp 0, so every hit, shot and sweep skips it, and `legHeld` keeps the reaper off it while
 // its body lives. At the body's 0 HP the legs go to 0 with it, so the body and all four legs die in one pass: one `groupCleared`, and a
 // retry's kill list never holds a leg by itself.
-import type { ActorView } from '../core/types.ts';
+import type { ActorView, EnemyKind } from '../core/types.ts';
 import type { Enemy, FlayerState, LegState, S } from '../combat/state.ts';
 import { BODY_Y } from '../combat/space.ts';
 import { dust, floater, sfx, sparks } from '../combat/fx.ts';
 import { ENEMY_DEFS } from './defs.ts';
 
-const X = ENEMY_DEFS.flayer.x;
 /** The group the Flayed waves belong to (enemies/flayer.ts). */
 export const WAVE_GROUP = 'waves';
 
-export function newFlayer(): FlayerState {
+/** The Mind Flayer's body is the 3.3 one or the final boss's (`flayer5`): the same brain on its own numbers, so `kind` picks the def. */
+export function newFlayer(kind: EnemyKind = 'flayer'): FlayerState {
+  const X = ENEMY_DEFS[kind].x;
   return { move: 'up', t: 0, legs: [], slamCd: X.slamFirst as number, sweepCd: X.sweepFirst as number, waveCd: X.waveFirst as number, phase2: false, waves: 0 };
 }
 
@@ -39,14 +40,18 @@ export function legPose(l: LegState): ActorView['pose'] {
 /** A leg that is not cut and not dead. */
 export const legStands = (l: Enemy): boolean => !l.dead && l.hp > 0 && l.leg !== null && l.leg.move !== 'severed';
 
-/** The body is up with a leg standing: a hit does nothing. */
-export const flayerShielded = (e: Enemy): boolean => e.flayer !== null && e.flayer.move === 'up' && e.flayer.legs.some(legStands);
+/** The body is up and a hit does nothing: in 3.3 while a leg stands, for the final boss's (`flayer5`) while its chest is shut. */
+export const flayerShielded = (e: Enemy): boolean =>
+  e.flayer !== null && e.flayer.move === 'up' && (e.fin !== null ? e.fin.open <= 0 : e.flayer.legs.some(legStands));
+
+/** The final boss's chest is open, for a hit on a leg or with its head down: Vecna shows in it, and only hits there move the bar. */
+export const chestOpen = (e: Enemy): boolean => e.fin !== null && e.flayer !== null && !e.dead && (e.fin.open > 0 || e.flayer.move === 'down');
 
 /** Neither the body nor a leg can be moved, held or lured. */
 export const flayerRooted = (e: Enemy): boolean => e.flayer !== null || e.leg !== null;
 
 /** How much of a hit the body takes: half again with its head on the floor. */
-export const flayerTakes = (e: Enemy): number => (e.flayer?.move === 'down' ? (X.downMul as number) : 1);
+export const flayerTakes = (e: Enemy): number => (e.flayer?.move === 'down' ? (ENEMY_DEFS[e.kind].x.downMul as number) : 1);
 
 /** A severed leg waits on the floor while its body lives, at 0 HP and not dead: the reaper leaves it alone. */
 export const legHeld = (e: Enemy): boolean =>

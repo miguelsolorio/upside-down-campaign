@@ -13,6 +13,7 @@ import { dist } from './space.ts';
 import { resetTalentState } from './talent_state.ts';
 import { startAhoy } from '../heroes/ahoy.ts';
 import { isCursed } from './house.ts';
+import { isChanneling } from './finale_state.ts';
 import { clearCurses } from './curse.ts';
 import { hiveLink } from '../heroes/hive.ts';
 import { extraLife } from '../heroes/extralife.ts';
@@ -42,13 +43,13 @@ export function makeHero(id: HeroId, level: number, xp: number, x: number, y: nu
   };
 }
 
-/** Index of the next hero after `from` in slot order who can fight, wrapping: not knocked out and not hanging under a curse. -1 when there is none. */
+/** Index of the next hero after `from` in slot order who can fight, wrapping: not knocked out, not hanging under a curse and not on a mark in the channel. -1 when there is none. */
 export function nextLiving(s: S, from: number, step: 1 | -1): number {
   const n = s.heroes.length;
   for (let k = 1; k < n; k++) {
     const i = (from + step * k + n * 4) % n;
     const h = s.heroes[i] as Hero;
-    if (!h.ko && !isCursed(s, h)) return i;
+    if (!h.ko && !isCursed(s, h) && !isChanneling(s, h)) return i;
   }
   return -1;
 }
@@ -70,7 +71,7 @@ function shockwave(s: S, h: Hero): void {
  */
 export function trySwap(s: S, idx: number, forced = false): boolean {
   const to = s.heroes[idx];
-  if (!to || idx === s.active || to.ko || isCursed(s, to)) return false;
+  if (!to || idx === s.active || to.ko || isCursed(s, to) || isChanneling(s, to)) return false;
   if (!forced && s.swapLock > 0) return false;
   // A rolling Max lands first: tagging out mid-roll could leave the next hero standing over a gap.
   if (!forced && activeHero(s).dash) return false;
@@ -104,7 +105,7 @@ export function handleSwap(s: S): void {
   if (s.buf.swapTo >= 0) idx = s.buf.swapTo;
   else if (s.buf.swapDelta !== 0) idx = nextLiving(s, s.active, s.buf.swapDelta > 0 ? 1 : -1);
   const target = s.heroes[idx];
-  if (!target || target.ko || isCursed(s, target) || idx === s.active) { s.buf.swapT = 0; return; }
+  if (!target || target.ko || isCursed(s, target) || isChanneling(s, target) || idx === s.active) { s.buf.swapT = 0; return; }
   if (trySwap(s, idx)) s.buf.swapT = 0;
 }
 

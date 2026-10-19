@@ -150,16 +150,19 @@ test('baking a stage: 5.1 is opaque, 5.2 leaves the void clear for the backdrop 
 });
 
 // ---------------------------------------------------------------- the campaign
-test('chapter five is its own chapter: the card says Chapter five, The last campaign, and 5.1 opens it and 5.2 does not close it', () => {
+test('chapter five is its own chapter: the card says Chapter five, The last campaign, 5.1 opens it, and 5.3 closes it and 5.2 does not', () => {
   assert.deepEqual(CHAPTERS[5], { title: 'Chapter five', subtitle: 'The last campaign' });
-  assert.deepEqual(STAGE_ORDER.slice(-2), ['5.1', '5.2']);
+  assert.deepEqual(STAGE_ORDER.slice(-3), ['5.1', '5.2', '5.3']);
   assert.equal(chapterOf('5.1'), 5);
   assert.equal(opensChapter('5.1'), true);
   assert.equal(opensChapter('5.2'), false);
   assert.equal(closesChapter('5.1'), false);
   assert.equal(closesChapter('5.2'), false, '5.3 closes chapter 5');
+  assert.equal(closesChapter('5.3'), true);
+  assert.equal(nextStage('5.3'), null, '5.3 is the last stage of the campaign');
   assert.equal(nextStage('4.2'), '5.1');
   assert.equal(nextStage('5.1'), '5.2');
+  assert.equal(nextStage('5.2'), '5.3');
 });
 
 test('5.1 and 5.2 are for everyone met but Eddie, four picked, with Hopper locked in 5.1 and Will in 5.2', () => {
@@ -228,17 +231,18 @@ test('Will comes back to 5.2 the same way: a Lv 4 Will from chapter 2 walks in a
 });
 
 // ---------------------------------------------------------------- the map
-test('5.1 and 5.2 are on the map, in the Upside Down half below the horizon, with their places and a plate each', () => {
+test('5.1, 5.2 and 5.3 are on the map, in the Upside Down half below the horizon, with their places and a plate each', () => {
   assert.equal(MAP_PLACE['5.1'], 'lockdown');
   assert.equal(MAP_PLACE['5.2'], 'abyss');
-  assert.deepEqual(ORDER.slice(-2), ['5.1', '5.2']);
-  for (const id of ['5.1', '5.2']) {
+  assert.equal(MAP_PLACE['5.3'], 'heart');
+  assert.deepEqual(ORDER.slice(-3), ['5.1', '5.2', '5.3']);
+  for (const id of ['5.1', '5.2', '5.3']) {
     const p = POS[id] as { x: number; y: number };
     assert.ok(p.y > hzAt(p.x) + 20 && p.y < BAND_Y - 20 && p.y > HZ, `${id} hangs well below the horizon`);
   }
   const done = Object.fromEntries(STAGE_ORDER.map((id) => [id, 'cleared' as const]));
   const names = paintLand(done).plates.map((p) => p.name);
-  assert.ok(names.includes('LOCKDOWN') && names.includes('ABYSS'));
+  assert.ok(names.includes('LOCKDOWN') && names.includes('ABYSS') && names.includes('HEART'));
 });
 
 // ---------------------------------------------------------------- the foes and the effects

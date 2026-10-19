@@ -168,7 +168,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
     boom() { audio.sfx('boom'); boom = 0; },
     walkman() { if (!walkman) { walkman = true; sim.giveWalkman?.(); opts.onWalkman?.(); } },
-    music: (track) => audio.music(track),
+    music: (track) => audio.music(track), phase: (n) => audio.phase(n),
     // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
     light(prop) {
       const pr = view.props.find((p) => p.id === prop && p.kind === 'lights');

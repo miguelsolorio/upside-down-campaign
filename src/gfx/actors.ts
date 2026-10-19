@@ -313,7 +313,11 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
 
 /** Stand-ins: each borrows a sprite that already exists. Chapter 4's ghoul and Eddie wait for Art; chapter 5's Lab agent is the 1.2 agent in his
  *  hazmat suit and the foe Demogorgon is the 1.3 one (docs/level-14.md, docs/level-15.md). */
-const STAND_IN: Partial<Record<string, ActorView['id']>> = { ghoul: 'flayed', eddie: 'steve', agent5: 'agent', demofoe: 'demogorgon' };
+const STAND_IN: Partial<Record<string, ActorView['id']>> = {
+  ghoul: 'flayed', eddie: 'steve', agent5: 'agent', demofoe: 'demogorgon',
+  // The final boss (docs/level-16.md): Vecna is the Warden, the spider and its legs the 3.3 ones, until Art wires drawFinaleVecna and drawFinaleSpider.
+  vecna5: 'warden', flayer5: 'flayer', leg5: 'flayerleg',
+};
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
 

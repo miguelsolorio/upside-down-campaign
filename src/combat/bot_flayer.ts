@@ -68,7 +68,7 @@ interface Field { lines: Seg[]; bands: Rect[]; pools: PoolView[] }
 
 /** The sweep's band: a 'sweep' fx, x, y its top-left. */
 const isBand = (f: FxView): boolean => f.kind === 'sweep';
-const isLeg = (a: ActorView): boolean => a.kind === 'enemy' && a.id === 'flayerleg' && a.anim !== 'ko';
+const isLeg = (a: ActorView): boolean => a.kind === 'enemy' && (a.id === 'flayerleg' || a.id === 'leg5') && a.anim !== 'ko';
 
 /** The lines, bands and pools on the floor right now. */
 function read(v: SimView): Field {
@@ -212,7 +212,7 @@ export function createFlayerSense(env: FlayerEnv): FlayerSense {
   function stronger(v: SimView, level: number): number {
     let best = -1, bestLevel = level + LEVELS - 1;
     v.hud.party.forEach((p, i) => {
-      if (!p.active && !p.ko && p.hp / p.hpMax >= HEALTHY && p.level > bestLevel) { best = i; bestLevel = p.level; }
+      if (!p.active && !p.ko && !p.channeling && p.hp / p.hpMax >= HEALTHY && p.level > bestLevel) { best = i; bestLevel = p.level; }
     });
     return best;
   }
@@ -220,11 +220,12 @@ export function createFlayerSense(env: FlayerEnv): FlayerSense {
   function plan(v: SimView, hx: number, hy: number, style: Style): Finish | null {
     frame++;
     const me = v.hud.party.find((p) => p.active);
-    const body = v.actors.find((a) => a.kind === 'enemy' && a.id === 'flayer' && a.anim !== 'ko');
-    if (!me || !body || body.pose === 'rise') return null;
+    const body = v.actors.find((a) => a.kind === 'enemy' && (a.id === 'flayer' || a.id === 'flayer5') && a.anim !== 'ko');
+    // In the final fight's channel the Mind Flayer kneels (dead, pose 'down'): it is not a target any more.
+    if (!me || !body || body.pose === 'rise' || v.hud.channel) return null;
     if (v.actors.some((a) => a.kind === 'enemy' && a.id === 'flayed' && !a.puddle && a.pose !== 'rise' && a.anim !== 'ko' && dist(hx, hy, a.x, a.y) < FLAYED_NEAR)) return null;
-    // The head when it is down, else the nearest leg whose tip is free to be hit.
-    const down = body.pose === 'down';
+    // The head when it is down, or the final boss's chest when it is open, else the nearest leg whose tip is free to be hit.
+    const down = body.pose === 'down' || body.open === true;
     const open_ = v.actors.filter((a) => isLeg(a) && a.aim && a.pose !== 'severed' && a.pose !== 'warn' && a.pose !== 'slam');
     let tx = body.x, ty = body.y;
     if (!down) {

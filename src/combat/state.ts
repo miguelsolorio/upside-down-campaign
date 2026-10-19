@@ -7,10 +7,11 @@ import type { Rng, Stats } from '../progression/xp.ts';
 import type { TalentState } from './talent_state.ts';
 import type { GhoulState, HouseState } from './house.ts';
 import type { Ch5State } from '../enemies/ch5_state.ts';
+import type { FinState } from '../enemies/fin_state.ts';
+import type { Finale } from './finale_state.ts';
 import type { BondMods } from '../heroes/bonds.ts';
 
 export type { Rng, Stats };
-
 export interface Pos { x: number; y: number }
 
 /** Burn, stun, slow and confuse are live (confuse is on enemies only, combat/confuse.ts). Curse is a type only. */
@@ -277,8 +278,9 @@ export interface Enemy {
   leg: LegState | null;
   /** A Creel ghoul only (docs/level-11.md). */
   ghoul: GhoulState | null;
-  /** A trooper, the Commander or a twin only (enemies/ch5_state.ts). */
+  /** A trooper, the Commander or a twin only (enemies/ch5_state.ts), and the final boss's Vecna and Mind Flayer (enemies/fin_state.ts). */
   ch5: Ch5State | null;
+  fin: FinState | null;
 }
 
 /** A Flayed, Grigori or Billy holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */
@@ -306,7 +308,7 @@ export interface Defense {
 }
 
 export interface Proj {
-  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet' | 'bottle';
+  kind: 'rock' | 'dart' | 'candy' | 'bolt' | 'fireball' | 'scoop' | 'bullet' | 'bottle' | 'orb';
   mine: boolean;
   x: number; y: number;
   vx: number; vy: number;
@@ -464,10 +466,8 @@ export interface S {
   flow: Flow;
   /** The same BFS field, pointed at the ward: a defense enemy that has no line to her walks down it. */
   wardFlow: Flow;
-  /** Where run-time enemies come up from, the defense (null without one) and a count for the ids the sim makes up. */
-  burrows: Burrow[];
-  defense: Defense | null;
-  rtSeq: number;
+  /** Where run-time enemies come up from, the defense and the final fight (null without one) and a count for the ids the sim makes up. */
+  burrows: Burrow[]; defense: Defense | null; finale: Finale | null; rtSeq: number;
   /** The Mind Flayer's goo pools, oldest first, and the frames until the next sting from one the active hero stands in. */
   pools: Pool[];
   poolCd: number;

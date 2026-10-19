@@ -9,16 +9,21 @@
 //     confused or staggered, it lets go too (enemies/hold.ts). Then it recovers for 40 frames.
 //   rise: a dormant Flayed waits as a goo puddle (ActorView.puddle). When its group wakes it rises, pose 'rise' for 40 frames,
 //     where it can't be hit and doesn't attack, then it hunts.
+//   wave: in the final fight's channel a wave Flayed goes for the nearest channeler instead of the hero, unless the hero is near it or hit it lately
+//     (combat/defense.ts, wantsWard). Its reach hurts the channeler (power 0.8) and takes no hold; it recovers as after any reach.
 import type { ActorView } from '../core/types.ts';
 import type { Enemy, FlayedState, Hero, S } from '../combat/state.ts';
 import { dirOfVec } from '../combat/state.ts';
 import { dist, los, moveBody } from '../combat/space.ts';
 import { sfx } from '../combat/fx.ts';
 import { alertEnemy, hurtHero } from '../combat/damage.ts';
+import type { WardAim } from '../combat/defense.ts';
+import { hurtWard, wantsWard, wardFor } from '../combat/defense.ts';
 import { speedMul } from '../combat/status.ts';
 import { ENEMY_DEFS } from './defs.ts';
 import { beginHold, canGrab, isHolding, releaseHold, shove } from './hold.ts';
 import { wander } from './rat.ts';
+import type { Aim } from './steer.ts';
 import { chaseHero, faceHero, setEnemyAnim } from './steer.ts';
 
 const DEF = ENEMY_DEFS.flayed;
@@ -56,6 +61,13 @@ function toRecover(e: Enemy, f: FlayedState): void {
 /** The frames this Flayed holds for. */
 export const holdFrames = (e: Enemy): number => (e.elite ? X.eliteHold : X.hold);
 
+/** The reach touches the ward (a channeler): it hurts her and is over, with no hold. */
+function contactWard(s: S, e: Enemy, f: FlayedState, ward: WardAim): void {
+  if (Math.abs(e.x - ward.x) >= 11 || Math.abs(e.y - ward.y) >= 11) return;
+  hurtWard(s, DEF.power, e.atk, ward);
+  toRecover(e, f);
+}
+
 function contact(s: S, e: Enemy, hero: Hero): void {
   if (!canGrab(s, hero) || Math.abs(e.x - hero.x) >= 11 || Math.abs(e.y - hero.y) >= 11) return;
   // The grab hits, and it only takes hold if the hit landed: Steve's Hair of steel or the DM screen's dome change nothing here.
@@ -71,17 +83,22 @@ export function flayedUpdate(s: S, e: Enemy, hero: Hero): void {
   if (f.move === 'wind' && e.mode !== 'windup') toWalk(e, f);
   else if (f.move === 'reach' && e.mode !== 'lunge') toWalk(e, f);
   else if (f.move === 'hold' && !isHolding(s, e)) toRecover(e, f);
-  const d = dist(e.x, e.y, hero.x, hero.y);
+  // Between attacks a wave Flayed picks again who it goes for; an attack stays on the one it chose.
+  if (f.move !== 'wind' && f.move !== 'reach') e.onWard = wantsWard(s, e, hero);
+  const ward = e.onWard ? wardFor(s, e) : null;
+  if (!ward) e.onWard = false;
+  const tgt: Aim = ward ?? hero;
+  const d = dist(e.x, e.y, tgt.x, tgt.y);
   switch (f.move) {
     case 'rise':
       setEnemyAnim(e, 'idle');
       if (--f.t <= 0) toWalk(e, f);
       return;
     case 'wind':
-      faceHero(e, hero);
+      faceHero(e, tgt);
       setEnemyAnim(e, 'attack');
       if (--f.t <= 0) {
-        const a = Math.atan2(hero.y - e.y, hero.x - e.x);
+        const a = Math.atan2(tgt.y - e.y, tgt.x - e.x);
         e.ax = Math.cos(a) * X.reachSpeed;
         e.ay = Math.sin(a) * X.reachSpeed;
         e.dir = dirOfVec(e.ax, e.ay, e.dir);
@@ -90,7 +107,7 @@ export function flayedUpdate(s: S, e: Enemy, hero: Hero): void {
       return;
     case 'reach':
       moveBody(s, e, e.ax, e.ay);
-      contact(s, e, hero);
+      if (ward) contactWard(s, e, f, ward); else contact(s, e, hero);
       if (f.move === 'reach' && --f.t <= 0) toRecover(e, f);
       return;
     case 'hold':
@@ -108,19 +125,19 @@ export function flayedUpdate(s: S, e: Enemy, hero: Hero): void {
     default: {
       e.mode = 'chase';
       if (!e.aware) {
-        if (d <= DEF.aggro && los(s, e.x, e.y, hero.x, hero.y)) alertEnemy(s, e);
+        if (d <= DEF.aggro && los(s, e.x, e.y, tgt.x, tgt.y)) alertEnemy(s, e);
         else { wander(s, e); return; }
       }
       if (d > 280) { e.aware = false; e.mode = 'idle'; return; }
-      const clear = los(s, e.x, e.y, hero.x, hero.y);
+      const clear = los(s, e.x, e.y, tgt.x, tgt.y);
       if (d > 13) {
-        const moved = chaseHero(s, e, hero, DEF.speed * e.spd * speedMul(e.stat), clear);
+        const moved = chaseHero(s, e, tgt, DEF.speed * e.spd * speedMul(e.stat), clear);
         setEnemyAnim(e, moved > 0 ? 'walk' : 'idle');
       } else {
-        faceHero(e, hero);
+        faceHero(e, tgt);
         setEnemyAnim(e, 'idle');
       }
-      if (d <= X.range && e.cd <= 0 && clear && canGrab(s, hero)) {
+      if (d <= X.range && e.cd <= 0 && clear && (ward !== null || canGrab(s, hero))) {
         begin(e, f, 'wind', DEF.windup, 'windup');
         e.cd = Math.round(DEF.cooldown * e.cdMul);
         sfx(s, 'alert');

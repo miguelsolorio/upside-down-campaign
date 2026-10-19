@@ -9,11 +9,12 @@
 //   enemy still up dies for no XP, and the rift shows k = 1. If her HP hits 0 first: `wardDown` once, the clock stops, anim 'ko'.
 import type { ActorView, HudView } from '../core/types.ts';
 import { CHAR_NAMES } from '../core/config.ts';
-import type { Defense, Enemy, Hero, Npc, Pos, Prop, S } from './state.ts';
+import type { Defense, Enemy, Flow, Hero, Npc, Pos, Prop, S } from './state.ts';
 import { activeHero } from './state.ts';
 import { dust, flashScreen, floater, shake, sfx, sparks } from './fx.ts';
 import { spreadRoll } from './damage.ts';
 import { bringUp, waveSpots } from './spawns.ts';
+import { channelFor, hurtChannel, isChanneler } from './channel.ts';
 import { BODY_Y, dist } from './space.ts';
 
 /** Her DEF: an enemy's bite or lunge uses its usual numbers against it. */
@@ -24,24 +25,34 @@ export const HIT_MEMORY = 90;
 /** Frames between rumbles: about ten seconds. */
 export const RUMBLE_EVERY = 600;
 
+/** What a wave enemy goes for besides the hero: the ward's spot (enemies/steer.ts steers at `ward`, down `flow` if it has one), or a channeler's. */
+export type WardAim = Pos & { ward: true; flow?: Flow };
+
 /** The ward's position while she can still be hurt, else null. */
-export function wardPos(s: S): (Pos & { ward: true }) | null {
+export function wardPos(s: S): WardAim | null {
   const d = s.defense;
   return d && d.started && !d.down && !d.done ? d.pos : null;
 }
 
+/** The ward a wave enemy would go for: the defense's, or in the final fight's channel the nearest channeler standing (combat/channel.ts). */
+export function wardFor(s: S, e: Enemy): WardAim | null {
+  return wardPos(s) ?? channelFor(s, e);
+}
+
 /** Does this enemy go for the ward instead of the hero right now? Only wave enemies do, and the hero can pull them off. */
 export function wantsWard(s: S, e: Enemy, hero: Hero): boolean {
-  if (e.rt !== 'wave' || !wardPos(s)) return false;
+  if (e.rt !== 'wave' || !wardFor(s, e)) return false;
   if (e.taunt > 0 || s.frame - e.hitAt <= HIT_MEMORY) return false;
   return dist(e.x, e.y, hero.x, hero.y) > HERO_NEAR;
 }
 
 /**
  * An enemy hits the ward. power x atk is the enemy's attack, less her DEF, scaled by difficulty and the stage's enemyMult like
- * damage to a hero. Returns the damage taken, 0 if she is not there to be hit (not started, down, done, god mode).
+ * damage to a hero. Returns the damage taken, 0 if she is not there to be hit (not started, down, done, god mode). `at` is the target the
+ * attack was locked on (wardFor): a channeler's hit goes to her own bar (combat/channel.ts).
  */
-export function hurtWard(s: S, power: number, atk: number): number {
+export function hurtWard(s: S, power: number, atk: number, at?: WardAim | null): number {
+  if (at && isChanneler(at)) return hurtChannel(s, at, power, atk);
   const d = s.defense;
   if (!d || !d.started || d.down || d.done || s.over || s.god) return 0;
   const dmg = Math.max(1, Math.round((power * atk * spreadRoll(s.rng) - WARD_DEF * 0.5) * s.mult * s.foeMult));

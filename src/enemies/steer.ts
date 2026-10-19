@@ -1,7 +1,7 @@
 // Movement helpers shared by enemy AI: stepping toward a point with detours, and chasing the hero around walls.
 import { TILE } from '../core/config.ts';
 import type { AnimId } from '../core/types.ts';
-import type { Enemy, Pos, S } from '../combat/state.ts';
+import type { Enemy, Flow, Pos, S } from '../combat/state.ts';
 import { dirOfVec } from '../combat/state.ts';
 import { footBlocked, moveBody } from '../combat/space.ts';
 import { ensureFlow, flowStep } from '../combat/nav.ts';
@@ -10,8 +10,8 @@ export function setEnemyAnim(e: Enemy, anim: AnimId): void {
   if (e.anim !== anim) { e.anim = anim; e.animT = 0; }
 }
 
-/** What an enemy is going for: the hero, or the ward in a defense (`ward` is set on her position). */
-export type Aim = Pos & { ward?: boolean };
+/** What an enemy is going for: the hero, or the ward in a defense (`ward` is set on her position), or a channeler, whose mark has a `flow` of its own. */
+export type Aim = Pos & { ward?: boolean; flow?: Flow };
 
 export function faceHero(e: Enemy, hero: Aim): void {
   e.dir = dirOfVec(hero.x - e.x, hero.y - e.y, e.dir);
@@ -43,7 +43,7 @@ export function stepToward(s: S, e: Enemy, tx: number, ty: number, speed: number
 /** Walks toward the hero (or the ward): straight when there is a clear line, otherwise down the BFS flow field. */
 export function chaseHero(s: S, e: Enemy, hero: Aim, speed: number, clear: boolean): number {
   if (!clear) {
-    const flow = hero.ward === true ? s.wardFlow : s.flow;
+    const flow = hero.flow ?? (hero.ward === true ? s.wardFlow : s.flow);
     const nav = ensureFlow(s, hero.x, hero.y, flow);
     const dist = flow.dist;
     if (dist) {

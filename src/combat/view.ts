@@ -1,5 +1,5 @@
 // Builds the SimView the renderer draws. Pure read of the state: no randomness, no mutation.
-import type { ActorView, FxView, PartyHud, PropView, SimView } from '../core/types.ts';
+import type { ActorView, FxView, HudView, PartyHud, PropView, SimView } from '../core/types.ts';
 import { xpToNext, MAX_LEVEL } from '../progression/xp.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
@@ -15,7 +15,7 @@ import { alphaPose } from '../enemies/alpha_hit.ts';
 import { grigoriPose } from '../enemies/grigori_hit.ts';
 import { billyK, billyPose, isBillyPinned } from '../enemies/billy_hit.ts';
 import { flayedPose } from '../enemies/flayed.ts';
-import { flayerPose, legPose } from '../enemies/flayer_hit.ts';
+import { chestOpen, flayerPose, legPose } from '../enemies/flayer_hit.ts';
 import { poolViews } from './pools.ts';
 import { riftK, wardHud, wardView } from './defense.ts';
 import { coldSpot } from '../heroes/cold.ts';
@@ -28,6 +28,9 @@ import { ghoulPose, inGlass, mirrorK } from '../enemies/ghoul_hit.ts';
 import { fallK } from '../enemies/twin_fall.ts';
 import { mateOf } from '../enemies/twin.ts';
 import { chimesOn, walkmanHud } from './curse.ts';
+import { channelHud, channelView } from './channel.ts';
+import { isChanneling } from './finale_state.ts';
+import { finaleBar } from './finale.ts';
 import { onceOf } from '../heroes/talents9.ts';
 
 let shakeScale = 1;
@@ -52,14 +55,17 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
   // A cursed hero hangs where the curse found them, with the chimes sounded so far over their head.
   const chimes = chimesOn(s, h);
   if (chimes > 0) v.curse = chimes;
-  return v;
+  // A channeler stands on their mark casting, with the channel's bar and not their own.
+  return channelView(s, h, v) ?? v;
 }
 
 function enemyView(s: S, e: Enemy): ActorView {
+  // The final boss's two bodies do not flicker out: Vecna sinks and the Mind Flayer, dead, kneels (pose 'down') for the rest of the stage.
+  const kneels = e.dead && e.kind === 'flayer5';
   const v: ActorView = {
     kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir,
-    anim: e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
-    blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1, strained: false,
+    anim: kneels ? 'idle' : e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
+    blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1 && e.kind !== 'vecna5' && !kneels, strained: false,
     tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : e.stat.slow > 0 ? 'purple' : null,
     alert: !e.dead && e.mode === 'windup',
     z: e.dead ? 0 : Math.max(e.z, Math.min(5, Math.hypot(e.vx, e.vy) * 1.2)),
@@ -114,7 +120,10 @@ function enemyView(s: S, e: Enemy): ActorView {
   if (e.flayer && !e.dead) {
     const pose = flayerPose(e.flayer);
     if (pose) v.pose = pose;
+    // The chest's window: open, and while a hit on a leg holds it, k the share of it left.
+    if (chestOpen(e)) { v.open = true; if (e.fin && e.fin.open > 0) v.k = e.fin.open / (ENEMY_DEFS.flayer5.x.chestT as number); }
   }
+  if (kneels) v.pose = 'down';
   // A leg is drawn from its root to its tip: x, y is the root, aim the tip (where the enemy stands and is hit).
   if (e.leg) {
     v.x = e.leg.rx; v.y = e.leg.ry;
@@ -153,8 +162,10 @@ function twinBar(s: S, e: Enemy): { hp: number; hpMax: number } {
   return mate ? { hp: mine + Math.max(0, Math.ceil(mate.hp)), hpMax: max + mate.hpMax + (mate.ch5?.mateMax ?? 0) } : { hp: mine, hpMax: max };
 }
 
-/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy, Mind Flayer, Commander or twin that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
-function bossBar(s: S): { name: string; hp: number; hpMax: number; parts?: number[] } | null {
+/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy, Mind Flayer, Commander or twin that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. The final fight's bar is its own (combat/finale.ts). */
+function bossBar(s: S): HudView['boss'] {
+  const fin = finaleBar(s);
+  if (fin) return fin;
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
     if (!name || e.dormant || e.dead || e.hp <= 0 || isBillyPinned(e)) continue;
@@ -227,6 +238,7 @@ function partyHud(s: S): PartyHud[] {
     if (once) row.once = once;
     const chimes = chimesOn(s, h);
     if (chimes > 0) row.curse = chimes;
+    if (isChanneling(s, h)) row.channeling = true;
     return row;
   });
 }
@@ -267,6 +279,7 @@ export function buildView(s: S): SimView {
       stash: { ...s.stash },
       solo: soloHud(s),
       walkman: walkmanHud(s),
+      channel: channelHud(s),
     },
     focus: { x: a.x, y: a.y },
     shake: { x: Math.round(s.shakeX * shakeScale) || 0, y: Math.round(s.shakeY * shakeScale) || 0 },

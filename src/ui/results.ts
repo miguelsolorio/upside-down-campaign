@@ -36,7 +36,7 @@ export function createResultsScene(opts: {
   let t = 0;
   let finished = false;
   // The Mind Flayer's legs die with its body, so the foes row names the body alone.
-  const kinds = Object.entries(stats.killsByKind).filter(([k, n]) => (n ?? 0) > 0 && k !== 'flayerleg') as [string, number][];
+  const kinds = Object.entries(stats.killsByKind).filter(([k, n]) => (n ?? 0) > 0 && k !== 'flayerleg' && k !== 'leg5') as [string, number][];
   const gained = (id: string): number => stats.levelUps.filter((u) => u.hero === id).reduce((n, u) => n + (u.to - u.from), 0);
   const at = (row: number): number => ROW_AT + row * ROW_GAP;
   // A long mix of foes wraps onto more lines; everything under that row, and the panel, moves down to make room.

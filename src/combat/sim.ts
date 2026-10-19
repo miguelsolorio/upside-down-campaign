@@ -4,7 +4,6 @@ import { updateEnemies, anyAggro } from '../enemies/ai.ts';
 import type { S, Stats, Timer } from './state.ts';
 import { activeHero } from './state.ts';
 import { createState, setDifficulty } from './init.ts';
-import { alertEnemy } from './damage.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
 import { updateTalents } from '../heroes/talents6.ts';
 import { ageBodies, awardXp, awayFrom, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
@@ -14,9 +13,9 @@ import { updateAreas, updateProjectiles } from './proj.ts';
 import { updateItems, updateStash } from './pickups.ts';
 import { closePropById, openPropById, updateProps } from './props.ts';
 import { updatePowerboxes } from './powerbox.ts';
-import { wakeFlayed } from '../enemies/flayed.ts';
-import { wakeFlayer } from '../enemies/flayer.ts';
+import { wakeGroup } from './wake.ts';
 import { startDefense, updateDefense } from './defense.ts';
+import { startFinale, updateFinale } from './finale.ts';
 import { startCurse, swapped, updateCurse } from './curse.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
@@ -85,8 +84,10 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   if (s.hitstop > 0) {
     s.hitstop--;
     tickShakeFlash(s);
-    // The defense clock is the stage's own: 45 seconds are 45 seconds, hit-stop or not. Only the burst and a game over stop it.
+    // The defense clock is the stage's own: 45 seconds are 45 seconds, hit-stop or not. Only the burst and a game over stop it. The final fight's
+    // channel keeps its clock the same way.
     updateDefense(s);
+    updateFinale(s);
     return drain(s);
   }
   if (s.swapCd > 0) s.swapCd--;
@@ -109,6 +110,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
   tickHeroStatus(s);
   updateEnemies(s);
   updateDefense(s);
+  updateFinale(s);
   updateProjectiles(s);
   updateAreas(s);
   updateTraps(s);
@@ -157,22 +159,10 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
       dust(s, n.x, n.y, 4);
       s.npcs = s.npcs.filter((p) => p !== n);
     },
-    spawnGroup(group) {
-      for (const e of s.enemies) {
-        if (!e.dormant || e.dead || e.group !== group) continue;
-        // A ghoul stays in its mirror: waking it only lets it step out when a hero comes near (enemies/ghoul.ts).
-        if (e.ghoul) { e.ghoul.awake = true; continue; }
-        e.dormant = false;
-        dust(s, e.x, e.y, 4);
-        alertEnemy(s, e);
-        // A Flayed comes up out of its puddle before it hunts.
-        wakeFlayed(e);
-        wakeFlayer(s, e);
-      }
-    },
+    spawnGroup: (group) => wakeGroup(s, group),
     openProp: (id) => openPropById(s, id),
     closeProp: (id) => closePropById(s, id),
-    defend: () => startDefense(s),
+    defend() { startDefense(s); startFinale(s); },
     curse(prop) { if (startCurse(s, prop) === activeHero(s)) awayFrom(s); },
     giveWalkman() { s.house.walkman = true; },
     healParty: (frac) => healParty(s, frac),

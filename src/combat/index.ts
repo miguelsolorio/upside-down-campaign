@@ -203,6 +203,24 @@
 //   can't be hit, confused or targeted by the bot until it is back, 180 frames after the fall began.
 //   The bot flanks them (bot.ts orbits to a shielded foe's blind side; Steve and Hopper walk straight at a riot shield), dodges the charges
 //   (bot_boss.ts), and keeps off the ring's edge while a twin winds up (bot_void.ts). Its map treats Grid.drop as wall (nav.ts).
+// - The final fight (docs/level-16.md; combat/finale.ts, channel.ts, wake.ts, enemies/vecna5.ts): SimOptions.finale and Sim.defend(), which starts it at the
+//   first boss still standing, so a retry that finds Vecna or the Mind Flayer in the kill list starts at the next phase. One bar, HudView.boss with `phase`
+//   1 to 3, named VECNA, THE MIND FLAYER and THE CHANNEL (whose bar is the countdown). Each phase is { t: 'bossPhase', phase } once.
+//   1: Vecna (`vecna5`, group `boss`, a stand-in kit behind vecna5.ts: a blast with a warning 'ring' and 'nova', and a fan of slow homing 'orb' fx; poise,
+//   no stagger). At 0 HP he sinks: anim 'ko' for sinkT (64) frames with t counting, no flicker, his orbs gone. SINK_WAIT frames in, everyone gets 30
+//   percent of their HP and MP back (the fallen stand up) and the next phase wakes.
+//   2: the Mind Flayer (`flayer5` and four `leg5`, group `flayer`) runs the 3.3 brains on its own defs. Its body takes no hit while the chest is shut (a 'BLOCK');
+//   a hit on a leg opens the chest for chestT (300) frames (ActorView.open, an OPEN floater, the `reveal` sfx), once it is shut
+//   again. With every leg cut the head comes down for downT frames (x2) and the chest is open then as well. At 0 HP the body and legs die as in 3.3
+//   (one `groupCleared` `flayer`) and the body stays for the rest of the stage, kneeling: ActorView pose 'down', anim 'idle', never blinking. After KNEEL_WAIT
+//   frames, the same breather and phase three.
+//   3: the channel. The two heroes of FinaleDef.channelers walk to their marks (180 frames at most, no clock until both are there) and are held there like a
+//   ward (combat/channel.ts): PartyHud.channeling, never swapped to, no regen, the active hero swapped off them first. Their ActorViews are anim 'cast' with
+//   a bar of the channeler's own (Eleven strained); HudView.channel is { on, left, total, channelers: [{ id, name, hp, hpMax }] }. Waves (FinaleDef.waves, run-time
+//   demodogs and Flayed in group `channel`) come up at the burrows in turn and go for the nearest channeler (a Flayed hurts them and takes no hold), unless the
+//   hero is within 40 px, hit them lately or Babysit holds them. A channeler at 0 HP starts it over: both full, the clock and waves from the start, the run-time
+//   enemies gone, the party breathes in (20 percent) and { t: 'channelReset', hero }. At 0: { t: 'finalRoll', heroes, roll } (every hero not down, party order,
+//   and rollFinal's result), the run-time enemies drop and nothing else happens: the stage's beat takes it from there. The clock runs through hit-stop and stops for a burst.
 // - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;

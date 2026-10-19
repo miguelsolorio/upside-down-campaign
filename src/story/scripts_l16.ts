@@ -28,4 +28,16 @@ const L16_BASEMENT = script('l16_basement', [
   line('mike', 'Your roll, Will. Not for the game. For whatever comes next.', 'determined'),
 ]);
 
-export const L16_SCRIPTS: DialogueScript[] = [L16_BASEMENT];
+// The stage's own scripts (stage 5.3, docs/level-16.md). Stand-ins until World writes them: a line or two each, in the order the beats play them.
+const L16_STAGE: DialogueScript[] = [
+  script('l16_start', [line('narrator', 'The Abyss narrows into flesh. It is breathing.'), line('eleven', 'It is close. I can feel it.', 'determined')]),
+  script('l16_burn_hint', [line('will', 'Vines across the way. Fire would clear them.'), line('narrator', 'They shift when you come near.')]),
+  script('l16_burn_done', [line('will', 'That is the last of the vines.'), line('eleven', 'Keep going. It is waiting.')]),
+  script('l16_antechamber', [line('narrator', 'A string of lights, hung on the wall of the heart.'), line('eleven', 'Whatever happens, we do it together.')]),
+  script('l16_vecna', [line('narrator', 'Vecna stands in the middle of the arena.'), line('will', 'He is waiting for us.', 'determined')]),
+  script('l16_spider', [line('narrator', 'Vecna sinks. The Mind Flayer rises with him inside it.'), line('eleven', 'Hit its legs. Then the chest.')]),
+  script('l16_channel', [line('eleven', 'Will. Now.', 'determined'), line('will', 'Hold the line, everyone.', 'determined')]),
+  script('l16_clear', [line('narrator', 'Joyce comes out of the dark with her axe.'), line('narrator', 'The heart goes still.')]),
+];
+
+export const L16_SCRIPTS: DialogueScript[] = [L16_BASEMENT, ...L16_STAGE];

@@ -1,14 +1,15 @@
 // The young demodog (docs/level-4.md): it circles the hero about 48 px out, then winds up for 28 frames under the red "!"
 // and lunges for 14 frames at 4 px a frame, and recovers for 30. In a pack only one commits at a time (a wind-up or a lunge),
 // the one that has had the fewest turns goes first, and at least 20 frames pass between one lunge ending and the next wind-up.
-// In a defense a wave demodog goes for the ward instead of the hero (combat/defense.ts, wantsWard) and picks again after each attack.
+// In a defense a wave demodog goes for the ward instead of the hero (combat/defense.ts, wantsWard), and in the final fight's channel for the nearest
+// channeler, and picks again after each attack.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { dirOfVec } from '../combat/state.ts';
 import { dist, los, moveBody } from '../combat/space.ts';
 import { sfx } from '../combat/fx.ts';
 import { alertEnemy, hurtHero } from '../combat/damage.ts';
-import { hurtWard, wantsWard, wardPos } from '../combat/defense.ts';
+import { hurtWard, wantsWard, wardFor } from '../combat/defense.ts';
 import { speedMul } from '../combat/status.ts';
 import { wander } from './rat.ts';
 import type { Aim } from './steer.ts';
@@ -20,7 +21,7 @@ const X = DEF.x;
 const isDog = (e: Enemy): boolean => e.kind === 'demodog' && !e.dead && !e.dormant;
 
 /** What this demodog is going for: the ward while its attack is locked on her, else the hero. */
-const aimOf = (s: S, e: Enemy, hero: Hero): Aim => (e.onWard ? wardPos(s) : null) ?? hero;
+const aimOf = (s: S, e: Enemy, hero: Hero): Aim => (e.onWard ? wardFor(s, e) : null) ?? hero;
 
 /** Is this demodog the one whose turn it is? No other is winding up or lunging, the gap is over and no waiting pack-mate is owed the turn. */
 function myTurn(s: S, e: Enemy, hero: Hero): boolean {
@@ -61,7 +62,7 @@ export function demodogUpdate(s: S, e: Enemy, hero: Hero): void {
   if (e.lunging && e.mode !== 'lunge') { e.lunging = false; s.lungeEnd = s.frame; }
   // Between attacks it picks its target again. Once an attack starts, it stays on the one it chose.
   if (e.mode !== 'windup' && e.mode !== 'lunge' && e.mode !== 'recover') e.onWard = wantsWard(s, e, hero);
-  const ward = e.onWard ? wardPos(s) : null;
+  const ward = e.onWard ? wardFor(s, e) : null;
   if (!ward) e.onWard = false;
   const tgt: Aim = ward ?? hero;
   const d = dist(e.x, e.y, tgt.x, tgt.y);
@@ -96,7 +97,7 @@ export function demodogUpdate(s: S, e: Enemy, hero: Hero): void {
         if (hurtHero(s, hero, e.x - e.ax * 3, e.y - e.ay * 3, DEF.power, e.atk, X.kb) > 0) sfx(s, 'chomp');
       } else if (!e.hitDone && ward && Math.abs(e.x - ward.x) < 11 && Math.abs(e.y - ward.y) < 11) {
         e.hitDone = true;
-        if (hurtWard(s, DEF.power, e.atk) > 0) sfx(s, 'chomp');
+        if (hurtWard(s, DEF.power, e.atk, ward) > 0) sfx(s, 'chomp');
       }
       if (--e.modeT <= 0) {
         e.mode = 'recover';

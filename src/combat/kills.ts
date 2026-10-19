@@ -6,6 +6,7 @@ import { releaseHold } from '../enemies/hold.ts';
 import { leaveBilly } from '../enemies/billy_hit.ts';
 import { glassDeath, inGlass } from '../enemies/ghoul_hit.ts';
 import { enrageMate } from '../enemies/twin.ts';
+import { clearVecna } from '../enemies/vecna5.ts';
 import { clearFlayer, doomLegs, legHeld } from '../enemies/flayer_hit.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
@@ -17,6 +18,8 @@ import { slowHero } from './status.ts';
 import { awardXp } from './party.ts';
 
 const DEATH_FRAMES = 22;
+/** Frames a dead body stays on the field: Vecna's sinks for sinkT, the final boss's Mind Flayer kneels for the rest of the stage (it is drawn with pose 'down'). */
+export const deathFrames = (e: Enemy): number => (e.kind === 'vecna5' ? ENEMY_DEFS.vecna5.x.sinkT : e.kind === 'flayer5' ? Infinity : DEATH_FRAMES);
 export const COMPASS_DROP = 0.1;
 /** Max's High score talent: the same bonus to quarter drops as Dustin's Compass, and the two stack. */
 export const HIGH_SCORE_DROP = 0.1;
@@ -48,6 +51,7 @@ function kill(s: S, e: Enemy): void {
   cancelAttack(s, e);
   clearAlpha(s, e);
   clearFlayer(s, e);
+  clearVecna(s, e);
   releaseHold(s, e);
   e.dead = true;
   e.deadT = 0;
@@ -91,8 +95,8 @@ export function reapEnemies(s: S): void {
     if (!e.dead && !e.dormant && e.hp <= 0 && !legHeld(e)) kill(s, e);
     if (e.dead) {
       e.deadT++;
-      if (e.deadT > DEATH_FRAMES) remove = true;
+      if (e.deadT > deathFrames(e)) remove = true;
     }
   }
-  if (remove) s.enemies = s.enemies.filter((e) => !(e.dead && e.deadT > DEATH_FRAMES));
+  if (remove) s.enemies = s.enemies.filter((e) => !(e.dead && e.deadT > deathFrames(e)));
 }

@@ -329,6 +329,8 @@ export function drawFx(ctx: Ctx, f: FxView): void {
     case 'acid': acid(ctx, f, ang); break;
     case 'mark': mark(ctx, f, p); break;
     case 'bolt': bolt(ctx, f, ang); break;
+    // Vecna's homing orb wears Will's bolt until Art draws it (docs/level-16.md).
+    case 'orb': bolt(ctx, f, ang); break;
     case 'reveal': reveal(ctx, f, p); break;
     case 'trail': trail(ctx, f, ang); break;
     case 'howl': howl(ctx, f, p); break;

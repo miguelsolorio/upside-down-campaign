@@ -1,7 +1,8 @@
 // Enemy AI driver: shared per-tick upkeep (cooldowns, knockback, stagger, stun, the candy lure), then the
 // kind-specific brain (the bosses skip the stun and the lure: the Demogorgon and the Alpha the stagger too), then a soft push so enemies do not stack on one pixel.
 // A soldier's brain runs the Kamchatka guard too, the riot guard's the camp guard, the Demogorgon's the pit one, the foe Demogorgon and the
-// twins, the agent's the Lab agent of chapter 5, each on its own def. The trooper and the Commander have brains of their own.
+// twins, the agent's the Lab agent of chapter 5, each on its own def. The trooper and the Commander have brains of their own, and so has Vecna
+// of the final boss (vecna5.ts); the Mind Flayer of the final boss (`flayer5`) and its legs (`leg5`) run the 3.3 brains on their own defs.
 // A pinned Billy is the exception to the order: his reach runs before everything that could skip his turn (a stagger, a hero down).
 // Holds (hold.ts) are checked first every tick, because a confused, stunned or staggered holder never reaches its own brain.
 import { ENEMY_DEFS } from './defs.ts';
@@ -29,6 +30,7 @@ import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
 import { ghoulUpdate, glassUpdate } from './ghoul.ts';
 import { commanderUpdate } from './commander.ts';
+import { vecnaUpdate } from './vecna5.ts';
 import { trooperUpdate } from './trooper.ts';
 import { isShielded } from './shield.ts';
 import { isAway } from './twin_fall.ts';
@@ -61,6 +63,7 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.stat.confuse > 0) { confusedUpdate(s, e); return; }
   // The bosses ignore the candy bar, and no hit staggers them. They run their own moves.
   if (e.kind === 'commander') { commanderUpdate(s, e, hero); return; }
+  if (e.kind === 'vecna5') { vecnaUpdate(s, e, hero); return; }
   if (e.demo) { demogorgonUpdate(s, e, hero); return; }
   if (e.alpha) { alphaUpdate(s, e, hero); return; }
   if (e.grigori) { grigoriUpdate(s, e, hero); return; }

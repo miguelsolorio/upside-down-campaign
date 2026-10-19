@@ -28,6 +28,13 @@ export interface EnemyDef {
   x: Record<string, number>;
 }
 
+/** A Mind Flayer leg's numbers, shared by the 3.3 leg and the final boss's (leg5): the geometry and the beats are the same, the HP and ATK are not. */
+const LEG_X = {
+  warn: 40, warnLow: 28, slamT: 12, rest: 30, len: 150, halfW: 12, kb: 5, restLen: 56, daze: 30,
+  sweepWarn: 40, sweepPower: 0.5, sweepKb: 4, bandH: 24,
+  poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.07, poolEvery: 30, poolSlow: 20,
+};
+
 export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   rat: {
     kind: 'rat', name: 'Rat', hp: 10, atk: 6, def: 0, speed: 1.3, xp: 4, aggro: 72,
@@ -240,11 +247,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   flayerleg: {
     kind: 'flayerleg', name: 'Mind Flayer leg', hp: 90, atk: 22, def: 4, speed: 0, xp: 0, aggro: 400,
     windup: 40, power: 0.8, cooldown: 70, drop: 0, weight: 99,
-    x: {
-      warn: 40, warnLow: 28, slamT: 12, rest: 30, len: 150, halfW: 12, kb: 5, restLen: 56, daze: 30,
-      sweepWarn: 40, sweepPower: 0.5, sweepKb: 4, bandH: 24,
-      poolR: 20, poolLife: 480, poolMax: 4, poolPower: 0.07, poolEvery: 30, poolSlow: 20,
-    },
+    x: LEG_X,
   },
   // Chapter 4 (docs/level-10.md, docs/level-11.md). Starting numbers: Sim tunes them inside the stages' targets. The Kamchatka guard
   // is the soldier in winter (enemies/soldier.ts reads these x), the camp guard the riot guard with a baton (enemies/guard.ts), and the
@@ -353,6 +356,38 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
       crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
       enrage: 1.3, orbit: 96, band: 14, orbitSpeed: 0.9, turnWait: 360, fallT: 40, belowT: 100, climbT: 40, fallLoss: 0.15,
     },
+  },
+  // The final boss (docs/level-16.md, stage 5.3), sized for a Lv 11 to 12 party on HARD. Vecna in phase one (enemies/vecna5.ts) is a stand-in
+  // until 4.4's kit is swapped in: a fast caster. windup, power and cooldown are the blast's. blastR: the blast's radius in px (centered on
+  // him), blastWind: its warning ring in frames, blastKb its shove, blastCd the frames between blasts, blastRecover the frames after.
+  // orbWind, orbCd and orbRecover are the orb's: orbN slow orbs, orbFan radians apart, each turning toward the active hero by orbTurn radians a frame at
+  // orbSpeed px a frame, for orbLife frames, size orbR, orbPower and orbKb on a hero. near and far bound the band he holds from the hero, orbMin the least distance
+  // he casts an orb from. sinkT: the frames his body stays, sinking into the floor, after 0 HP (the art's SINK_FRAMES).
+  vecna5: {
+    kind: 'vecna5', name: 'Vecna', hp: 800, atk: 30, def: 10, speed: 0.9, xp: 120, aggro: 400,
+    windup: 28, power: 0.7, cooldown: 100, drop: 1, weight: 4,
+    x: {
+      blastR: 46, blastWind: 32, blastKb: 5, blastCd: 100, blastRecover: 26,
+      orbWind: 34, orbCd: 180, orbRecover: 20, orbSpeed: 1.5, orbTurn: 0.03, orbLife: 220, orbR: 4, orbPower: 0.5, orbKb: 2, orbN: 2, orbFan: 0.4,
+      near: 36, far: 90, orbMin: 70, sinkT: 64,
+    },
+  },
+  // The Mind Flayer of phase two (the 3.3 body's brain, enemies/flayer.ts), with Vecna in its chest. Its numbers are the 3.3 body's, apart from
+  // these: the body takes no hit while its chest is shut. A hit on a leg opens the chest for chestT frames (once it is shut again); with every leg
+  // cut the head comes down for downT frames at downMul and the chest is open then too. clock16: the frames between the clock's chimes in the
+  // lead's 4.4 kit (16 s), unused until it is wired.
+  flayer5: {
+    kind: 'flayer5', name: 'Mind Flayer', hp: 1000, atk: 22, def: 6, speed: 0, xp: 160, aggro: 400,
+    windup: 40, power: 1.2, cooldown: 70, drop: 1, weight: 99,
+    x: {
+      riseT: 40, downT: 300, downMul: 2, slamFirst: 90, slamEvery: 110, slamRegrow: 90, phaseAt: 0.5, sweepFirst: 240, sweepEvery: 480,
+      waveFirst: 300, waveEvery: 600, waveN: 1, waveMax: 2, chestT: 300, clock16: 960,
+    },
+  },
+  leg5: {
+    kind: 'leg5', name: 'Mind Flayer leg', hp: 120, atk: 22, def: 4, speed: 0, xp: 0, aggro: 400,
+    windup: 40, power: 0.8, cooldown: 70, drop: 0, weight: 99,
+    x: LEG_X,
   },
 };
 

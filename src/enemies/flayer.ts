@@ -10,6 +10,8 @@
 //   phase two: under half HP the legs' warning drops to 28 frames, two legs go at once, and about every 480 frames a leg sweeps: a band 24 px
 //     tall, wall to wall, along the row the hero stands on.
 // Word vomit does nothing to the body, and a trap doesn't hold it (combat/confuse.ts).
+// The final boss's Mind Flayer (`flayer5`, docs/level-16.md) is this brain on its own def, with one change in what a hit does (flayer_hit.ts): it is
+// shielded while its chest is shut, not while a leg stands, and a hit on a leg opens the chest for chestT frames (flayer_legs.ts, legHit).
 import type { Enemy, FlayerState, Hero, LegState, Pos, S } from '../combat/state.ts';
 import { TILE } from '../core/config.ts';
 import { addFx, floater, flashScreen, sfx, shake } from '../combat/fx.ts';
@@ -19,8 +21,8 @@ import { WAVE_GROUP, legStands } from './flayer_hit.ts';
 import { regrow, startLine, startSweep } from './flayer_legs.ts';
 import { setEnemyAnim } from './steer.ts';
 
-const DEF = ENEMY_DEFS.flayer;
-const X = DEF.x;
+/** The numbers of this body: the 3.3 Mind Flayer's or the final boss's (`flayer5`). */
+const xOf = (e: Enemy): Record<string, number> => ENEMY_DEFS[e.kind].x;
 const LEG = ENEMY_DEFS.flayerleg.x;
 /** Frames a leg's turn is put off when no leg is free to take it. */
 const RETRY = 20;
@@ -32,6 +34,7 @@ const jitter = (s: S, n: number): number => Math.round(n * (0.9 + s.rng() * 0.2)
 export function wakeFlayer(s: S, e: Enemy): void {
   const f = e.flayer;
   if (!f) return;
+  const X = xOf(e);
   f.move = 'rise';
   f.t = X.riseT as number;
   setEnemyAnim(e, 'idle');
@@ -65,7 +68,8 @@ function waveSpots(s: S, hero: Hero): Pos[] {
   return [feet[0] as Pos, feet[feet.length - 1] as Pos];
 }
 
-function callWave(s: S, f: FlayerState, hero: Hero): void {
+function callWave(s: S, e: Enemy, f: FlayerState, hero: Hero): void {
+  const X = xOf(e);
   const alive = s.enemies.filter((o) => o.group === WAVE_GROUP && !o.dead).length;
   const n = Math.min(X.waveN as number, (X.waveMax as number) - alive);
   if (n <= 0) { f.waveCd = RETRY * 3; return; }
@@ -76,7 +80,7 @@ function callWave(s: S, f: FlayerState, hero: Hero): void {
 
 function phaseTwo(s: S, e: Enemy, f: FlayerState): void {
   f.phase2 = true;
-  f.sweepCd = Math.min(f.sweepCd, X.sweepFirst as number);
+  f.sweepCd = Math.min(f.sweepCd, xOf(e).sweepFirst as number);
   floater(s, 'ENRAGED', e.x, e.y - 40, 'hot', true, 70);
   sfx(s, 'roar');
   shake(s, 5);
@@ -86,7 +90,7 @@ function phaseTwo(s: S, e: Enemy, f: FlayerState): void {
 /** Every leg is cut: the head comes down. */
 function headDown(s: S, e: Enemy, f: FlayerState): void {
   f.move = 'down';
-  f.t = X.downT as number;
+  f.t = xOf(e).downT as number;
   floater(s, 'HEAD DOWN', e.x, e.y - 40, 'yellow', true, 70);
   sfx(s, 'thud');
   shake(s, 6);
@@ -97,8 +101,9 @@ function headDown(s: S, e: Enemy, f: FlayerState): void {
 function headUp(s: S, e: Enemy, f: FlayerState): void {
   f.move = 'up';
   f.t = 0;
+  if (e.fin) e.fin.open = 0;
   for (const l of f.legs) if (!l.dead) regrow(s, l);
-  f.slamCd = X.slamRegrow as number;
+  f.slamCd = xOf(e).slamRegrow as number;
   f.sweepCd = Math.max(f.sweepCd, 120);
   floater(s, 'REGROWN', e.x, e.y - 40, 'hot', true, 60);
   sfx(s, 'roar');
@@ -107,6 +112,7 @@ function headUp(s: S, e: Enemy, f: FlayerState): void {
 
 export function flayerUpdate(s: S, e: Enemy, hero: Hero): void {
   const f = e.flayer as FlayerState;
+  const X = xOf(e);
   e.mode = 'chase';
   setEnemyAnim(e, 'idle');
   switch (f.move) {
@@ -117,6 +123,8 @@ export function flayerUpdate(s: S, e: Enemy, hero: Hero): void {
       if (--f.t <= 0) headUp(s, e, f);
       return;
     case 'up':
+      // The final boss's chest closes again when its time is up.
+      if (e.fin && e.fin.open > 0) e.fin.open--;
       break;
   }
   if (!f.phase2 && e.hp <= e.hpMax * (X.phaseAt as number)) phaseTwo(s, e, f);
@@ -125,7 +133,7 @@ export function flayerUpdate(s: S, e: Enemy, hero: Hero): void {
   f.slamCd--;
   f.waveCd--;
   if (f.phase2) f.sweepCd--;
-  if (f.waveCd <= 0) callWave(s, f, hero);
+  if (f.waveCd <= 0) callWave(s, e, f, hero);
   // Slams and sweeps wait until no leg is on a line or a band: a sweep first when both are due.
   if (f.legs.some(busy)) return;
   if (f.phase2 && f.sweepCd <= 0) {

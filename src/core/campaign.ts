@@ -4,7 +4,7 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2', '5.3'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
 export const STAGES_AHEAD: readonly string[] = [];
@@ -83,12 +83,13 @@ const ROSTER: Record<string, HeroId[]> = {
   // Chapter 5: everyone met but Eddie, who fell in 4.3, with Hopper back (docs/chapter-5.md, "Stages").
   '5.1': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'hopper'],
   '5.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'hopper'],
+  '5.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'hopper'],
 };
 
 /** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. Eleven
  *  holds 3.3's route crate and is the only one who can reach Billy (docs/level-9.md). Eddie's riff opens 4.2's first mirror, and he
  *  joins there (docs/level-11.md). Hopper's slam opens 5.1's only gate, the boom gate, and the stage is his (docs/level-14.md); Will's hidden
- *  path is on 5.2's route (docs/level-15.md). */
+ *  path is on 5.2's route (docs/level-15.md). Eleven and Will channel in 5.3's last phase, held on their marks (docs/level-16.md). */
 const REQUIRED: Record<string, HeroId[]> = {
   '2.2': ['max'],
   '2.3': ['steve'],
@@ -97,6 +98,7 @@ const REQUIRED: Record<string, HeroId[]> = {
   '4.2': ['eddie'],
   '5.1': ['hopper'],
   '5.2': ['will'],
+  '5.3': ['eleven', 'will'],
 };
 
 /**
@@ -123,6 +125,9 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   // party's average less one.
   '5.1': [{ id: 'mike', level: 10 }, { id: 'dustin', level: 9 }, { id: 'robin', level: 7 }, { id: 'hopper', level: 7 }],
   '5.2': [{ id: 'mike', level: 10 }, { id: 'dustin', level: 9 }, { id: 'robin', level: 7 }, { id: 'will', level: 7 }],
+  // The lead walks into the last stage at Lv 11 (and the cap, Lv 12, is the clear's to give). Eleven and Will are locked in and catch up to the party
+  // they join (CATCH_UP), so their levels are the other two's average less one.
+  '5.3': [{ id: 'mike', level: 11, xp: 300 }, { id: 'dustin', level: 10 }, { id: 'eleven', level: 8 }, { id: 'will', level: 8 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */
@@ -237,6 +242,8 @@ const CATCH_UP: Record<string, HeroId[]> = {
   // walks in at the party's average less one if he is behind, with his level and XP from before if he is not (docs/chapter-5.md, "Stages").
   '5.1': ['hopper'],
   '5.2': ['will'],
+  // Eleven and Will both come back to the last stage, each at the party's average less one if behind.
+  '5.3': ['eleven', 'will'],
 };
 
 /** `party` with the stage's returning heroes brought up to the rest of it (CATCH_UP). */

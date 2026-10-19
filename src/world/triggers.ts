@@ -1,6 +1,6 @@
 // The beat director. Runs a stage's beats: rect triggers fire once, cleared groups and sim events fire others
 // (a lit target, a cleared prop, a camera sighting, a pinned boss), and each beat is a queue of steps (dialogue, scare,
-// wake, recruit, open, music, boom, leave, curse, walkman, finish). Pure logic with no DOM and no audio, so Node can run it. The play scene supplies the env.
+// wake, recruit, open, music, phase, boom, leave, curse, walkman, finish). Pure logic with no DOM and no audio, so Node can run it. The play scene supplies the env.
 import type { JingleId, Sim, SimEvent, TrackId } from '../core/types.ts';
 import type { Beat, BeatStep, TileRect } from './types.ts';
 
@@ -16,6 +16,8 @@ export interface DirectorEnv {
   alarm?(): void;
   /** Switches the stage music, such as to `clock` when a boss wakes. Optional so a stand-in env can leave it out. */
   music?(track: TrackId): void;
+  /** Sets the music's tempo phase (audio.phase), as the final boss steps `abyss` up. Optional like music. */
+  phase?(n: number): void;
   /** Lights a lights prop the way the player does: the save point and the heal. Optional like music. */
   light?(prop: string): void;
   /** The Key's machine blowing up under the mall: the sound, the shake and the lights going dark. Optional like music. */
@@ -115,6 +117,7 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
       case 'scare': wait((done) => env.scare(done)); break;
       case 'alarm': env.alarm?.(); break;
       case 'music': env.music?.(s.track); break;
+      case 'phase': env.phase?.(s.n); break;
       case 'wake': wake(s.group); break;
       case 'waves': { const first = waves[0]; if (first !== undefined) wake(first); break; }
       case 'recruit': {
@@ -156,8 +159,10 @@ export function createDirector(beats: Beat[], waves: string[], env: DirectorEnv)
           for (const b of beats) if ('event' in b.when && b.when.event === e.t && b.when.prop === e.propId) fire(b);
         } else if (e.t === 'pinned') {
           for (const b of beats) if ('event' in b.when && b.when.event === 'pinned' && b.when.spawn === e.spawnId) fire(b);
-        } else if (e.t === 'defended' || e.t === 'curseEnd') {
+        } else if (e.t === 'defended' || e.t === 'curseEnd' || e.t === 'finalRoll') {
           for (const b of beats) if ('event' in b.when && b.when.event === e.t) fire(b);
+        } else if (e.t === 'bossPhase') {
+          for (const b of beats) if ('event' in b.when && b.when.event === 'bossPhase' && b.when.phase === e.phase) fire(b);
         }
       }
     },

@@ -3,6 +3,7 @@
 import type { ColorName } from '../gfx/palette.ts';
 import type { SfxId } from './types_audio.ts';
 import type { ActorView, FxView } from './types_view.ts';
+import type { FinalRoll } from '../ui/finalroll_logic.ts';
 
 export type { ColorName };
 
@@ -35,12 +36,15 @@ export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
  * trooper: an army rifleman with a riot shield that bounces frontal hits and a smash breaks for good. agent5: the Lab agent in hazmat
  * at chapter 5 numbers. commander: the 5.1 mini-boss, a trooper captain behind a full shield (docs/level-14.md). demofoe: the 1.3
  * Demogorgon's charge and swipe at a foe's size. twin: one of the two Demogorgons of the 5.2 mini-boss (docs/level-15.md).
+ * vecna5: Vecna, phase one of the 5.3 final boss, fast. flayer5: the Mind Flayer with Vecna in its chest, phase two, its chest opened by hits
+ * on its legs. leg5: one of its four legs (docs/level-16.md).
  */
 export type EnemyKind =
   | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
   | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg'
   | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul'
-  | 'trooper' | 'agent5' | 'commander' | 'demofoe' | 'twin';
+  | 'trooper' | 'agent5' | 'commander' | 'demofoe' | 'twin'
+  | 'vecna5' | 'flayer5' | 'leg5';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -153,6 +157,8 @@ export interface PartyHud {
   curse?: number;
   /** A Lv 9 talent that works once a stage (Mike's Oath, Dustin's Cerebro, Max's Extra life): ready, or spent. Absent for anyone without one. */
   once?: 'ready' | 'spent';
+  /** On a mark in the final fight's channel (docs/level-16.md): held out of play, so no swap goes to them. Their bar is HudView.channel's. Absent otherwise. */
+  channeling?: boolean;
 }
 export interface HudView {
   party: PartyHud[];
@@ -163,8 +169,9 @@ export interface HudView {
   inspiration: number;
   /** How recharged the hero swap is: 0 just swapped, 1 ready. */
   swapReady: number;
-  /** parts: the share of HP each part has left, for a boss hit in parts (the Mind Flayer's four legs, 0 when severed). */
-  boss: { name: string; hp: number; hpMax: number; parts?: number[] } | null;
+  /** parts: the share of HP each part has left, for a boss hit in parts (the Mind Flayer's four legs, 0 when severed). phase: 1 to 3 in the
+   *  final fight, whose one bar is named VECNA, THE MIND FLAYER and THE CHANNEL in turn (docs/level-16.md); the channel's bar is its countdown. */
+  boss: { name: string; hp: number; hpMax: number; parts?: number[]; phase?: 1 | 2 | 3 } | null;
   /**
    * The defense (docs/level-6.md): who the party guards, their health, and the clock in frames. left counts down from
    * total to 0. The HUD draws it where the boss bar goes. Null outside a defense.
@@ -178,6 +185,9 @@ export interface HudView {
   /** Max's Walkman, when the party has it and Max is in the party: ready 0..1 as it recharges (1 is ready), on the frames of
    *  protection from the curse left. Null otherwise. */
   walkman: { ready: number; on: number } | null;
+  /** The final fight's channel (docs/level-16.md): null before phase three. `on` is true once both stand on their marks and the clock runs;
+   *  `left` counts frames down from `total`. Each channeler has an HP bar of their own (a fall starts the channel again). */
+  channel: { on: boolean; left: number; total: number; channelers: { id: HeroId; name: string; hp: number; hpMax: number }[] } | null;
 }
 export interface SimView {
   /** Y-sorted, painter's order: heroes, followers, enemies, npcs. */
@@ -261,6 +271,13 @@ export type SimEvent =
   /** Max played her Walkman. */
   | { t: 'walkman' }
   | { t: 'burst' }
+  /** The final fight began a phase (docs/level-16.md): 1 Vecna, 2 the spider, 3 the channel. Once each, in order; a retry that finds a boss
+   *  already down starts at the next one. */
+  | { t: 'bossPhase'; phase: 1 | 2 | 3 }
+  /** A channeler fell: the countdown and both channelers are back at full, and the waves start again. */
+  | { t: 'channelReset'; hero: HeroId }
+  /** The channel ran out. `heroes` are the ones still standing (channelers included, party order) and `roll` is their Final Roll. Once. */
+  | { t: 'finalRoll'; heroes: HeroId[]; roll: FinalRoll }
   | { t: 'natTwenty'; hero: HeroId; source: 'crit' | 'levelUp' };
 
 export type SimSpawn =
@@ -295,6 +312,19 @@ export interface DefenseDef {
   waves: DefenseWave[];
 }
 
+/**
+ * The final fight (docs/level-16.md): Vecna (group `boss`), the Mind Flayer with its legs (group `flayer`) and the channel. `Sim.defend()`
+ * starts it at the first boss still standing. In the channel the two `channelers` walk to their marks (tiles) and hold them like a ward
+ * for `frames`, with `hp` each before difficulty; `waves` come from the burrows `at` frames after the clock starts. A channeler falling
+ * starts the clock and both of them again.
+ */
+export interface FinaleDef {
+  channelers: { hero: HeroId; tx: number; ty: number }[];
+  hp: number;
+  frames: number;
+  waves: DefenseWave[];
+}
+
 /** What Erica sells and the sim spends by itself (docs/level-7.md, "Erica and the stash"). */
 export type StashItem = 'eggo' | 'coke';
 export type Stash = Record<StashItem, number>;
@@ -323,6 +353,8 @@ export interface SimOptions {
   burrows?: Burrow[];
   /** The stage's defense, started by Sim.defend(). */
   defense?: DefenseDef;
+  /** The final fight, started by Sim.defend() on a stage without a defense. */
+  finale?: FinaleDef;
   /** Quarters the party walked in with. The HUD's coins show this plus what the run picks up. 0 if left out. */
   purse?: number;
   /** Items bought from Erica, spent by the sim on its own. Empty if left out. */
@@ -380,7 +412,7 @@ export interface Sim {
   /** Shuts a prop that is open, such as a vine seal across the Alpha's den: closed and solid again. A hero standing in it
    *  is moved out to the nearest open tile, so nobody is ever stuck inside one. */
   closeProp(id: string): void;
-  /** Starts the stage's defense (SimOptions.defense). Does nothing without one, or once it has started. */
+  /** Starts the stage's defense (SimOptions.defense) or its final fight (SimOptions.finale). Does nothing without one, or once it has started. */
   defend(): void;
   /** The clock prop chimes and curses a hero (docs/level-11.md, "The curse"). Optional so a stand-in sim can leave it out. */
   curse?(prop: string): void;

@@ -26,10 +26,12 @@ test('chapter three ends on Hopper\'s letter, chapter five on the basement, and 
 
 test('the epilogue is for the chapter the last stage closes, and plays only with words in its script', () => {
   const last = [...STAGE_ORDER].reverse().find(closesChapter) as string;
-  assert.equal(last, '3.3', 'the last chapter end built is the food court: 4.2 is the middle of chapter 4');
-  assert.equal(EPILOGUES[chapterOf(last)], 'l9_letter');
+  assert.equal(last, '5.3', 'the last chapter end built is the heart: the campaign closes on it');
+  assert.equal(EPILOGUES[chapterOf(last)], 'l16_basement');
+  assert.equal(EPILOGUES[3], 'l9_letter');
   // World fills the letter in. Until then the chapter goes straight to its results, as flow.ts expects.
   assert.equal(hasEpilogue(3), (SCRIPTS['l9_letter']?.lines.length ?? 0) > 0);
+  assert.equal(hasEpilogue(5), (SCRIPTS['l16_basement']?.lines.length ?? 0) > 0);
 });
 
 test('when the letter is written, it fits the dialogue box and has no em dash', () => {
@@ -147,7 +149,7 @@ test('every chapter\'s last stage says CHAPTER n CLEAR, and the others say LEVEL
     if (closes) said.push(title);
     else assert.equal(title, nextStage(id) === null ? `END OF LEVEL ${levelNumber(id)}` : `LEVEL ${levelNumber(id)} CLEAR`);
   }
-  assert.deepEqual(said, ['CHAPTER ONE CLEAR', 'CHAPTER TWO CLEAR', 'CHAPTER THREE CLEAR']);
+  assert.deepEqual(said, ['CHAPTER ONE CLEAR', 'CHAPTER TWO CLEAR', 'CHAPTER THREE CLEAR', 'CHAPTER FIVE CLEAR']);
 });
 
 test('the last stage of the whole campaign says CAMPAIGN COMPLETE, and no other stage reads differently for it', () => {
@@ -156,7 +158,7 @@ test('the last stage of the whole campaign says CAMPAIGN COMPLETE, and no other 
   assert.equal(resultsTitle({ chapter: 3, final: true, level: 9 }), 'CHAPTER THREE CLEAR', 'the build\'s last stage still reads as before');
   assert.equal(resultsTitle({ level: 4, campaignEnd: false }), 'LEVEL 4 CLEAR');
   assert.equal(endsCampaign('5.3'), true);
-  for (const id of STAGE_ORDER) assert.equal(endsCampaign(id), false, `${id} is not the campaign's end`);
+  for (const id of STAGE_ORDER) assert.equal(endsCampaign(id), id === '5.3', `${id} ${id === '5.3' ? 'is' : 'is not'} the campaign's end`);
   const [left, right] = titleSpan('CAMPAIGN COMPLETE', 256);
   assert.ok(left >= 8 && 256 - right >= 8, `CAMPAIGN COMPLETE spans ${left} to ${right}, with a margin of 8 px or more`);
   assert.ok(Math.abs(left - (256 - right)) <= 2, 'and is centered');

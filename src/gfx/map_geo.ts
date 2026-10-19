@@ -17,7 +17,7 @@ for (let x = 0; x < SCREEN_W; x++) WAVE.push(HZ + Math.round(2.4 * Math.sin(x * 
 export const hzAt = (x: number): number => WAVE[Math.max(0, Math.min(SCREEN_W - 1, Math.round(x)))] as number;
 
 /** Every stage on the map, in play order. */
-export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2'] as const;
+export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2', '5.3'] as const;
 
 export interface Pt { x: number; y: number }
 
@@ -48,12 +48,14 @@ export const POS: Record<string, Pt> = {
   // sun. Each node sits over its landmark (map_ch5.ts) like the tunnels' node, with room under it for the landmark and its plate.
   '5.1': { x: 44, y: 139 },
   '5.2': { x: 230, y: 137 },
+  // The heart (5.3) is the last stop, in the Upside Down half beside the Abyss, left of it and under the tunnels: a node and a plate until Art draws it.
+  '5.3': { x: 176, y: 170 },
 };
 
 /** The place each stage sits in. */
 export const PLACE_OF: Record<string, Place> = {
   '1.1': 'woods', '1.2': 'lab', '1.3': 'school', '2.1': 'patch', '2.2': 'tunnels', '2.3': 'gate', '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt',
-  '4.1': 'kamchatka', '4.2': 'creel', '5.1': 'lockdown', '5.2': 'abyss',
+  '4.1': 'kamchatka', '4.2': 'creel', '5.1': 'lockdown', '5.2': 'abyss', '5.3': 'heart',
 };
 
 /** The landmarks: Hawkins ones stand on `base` (their bottom row), the ones below hang from `top`. */
@@ -71,8 +73,8 @@ export const LAND = {
   bunker: { x: 96, y: HZ },
 };
 
-/** How far each leg of the route bows, in px: the sign picks the side. The last four are the flights to Kamchatka and back to the Creel House, and down into the Upside Down to the lockdown and the Abyss. */
-const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 14, -10];
+/** How far each leg of the route bows, in px: the sign picks the side. The last five are the flights to Kamchatka and back to the Creel House, and down into the Upside Down to the lockdown, the Abyss and the heart. */
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 14, -10, -12];
 
 export interface Leg {
   pts: [number, number][];

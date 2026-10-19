@@ -45,7 +45,7 @@ export interface ActorView {
   /** A Mind Flayer leg's tip in world px: the end of the line it strikes down. x, y is its root. Absent on everything else. */
   aim?: Vec2;
   /** 0..1 how far Eleven has reached a pinned Billy, or how far a twin Demogorgon has fallen (pose fall) or has left to climb (pose
-   *  climb). Absent means 0. */
+   *  climb), or the share of its chest's window the final boss's Mind Flayer has left (`open`, 1 as a leg's hit opens it). Absent means 0. */
   k?: number;
   /** The Demogorgon's head petals are open (below 60% HP). */
   petals?: boolean;
@@ -69,6 +69,9 @@ export interface ActorView {
   cracked?: boolean;
   /** The second twin Demogorgon (5.2): gfx tints it, red or pale, so the pair read apart (docs/level-15.md). Absent on the first. */
   second?: boolean;
+  /** The Mind Flayer of the final boss (`flayer5`) with its chest open, for 300 frames after a hit on a leg: Vecna shows in it, and only
+   *  hits there move the bar (docs/level-16.md). Absent when it is shut. */
+  open?: boolean;
 }
 
 export type FxKind =
@@ -96,7 +99,9 @@ export type FxKind =
    *  w the spread (docs/level-11.md). */
   | 'riff' | 'chime' | 'walkman'
   /** fall: a twin Demogorgon dropping into the void (x, y the edge it went over, w its width, life the fall) (docs/level-15.md). */
-  | 'fall';
+  | 'fall'
+  /** orb: Vecna's slow homing orb in flight, x, y its middle at chest height, angle its heading, w its diameter (docs/level-16.md). */
+  | 'orb';
 
 export interface FxView {
   kind: FxKind;

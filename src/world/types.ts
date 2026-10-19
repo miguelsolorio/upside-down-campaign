@@ -1,5 +1,5 @@
 // World types: the options for the play scene and the shape of stage data. Pure types, no DOM.
-import type { Burrow, CharId, DefenseDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, Stash, StashItem, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
+import type { Burrow, CharId, DefenseDef, FinaleDef, HazardDef, HeroId, HeroSnapshot, LightSource, PartySeed, RunStats, SimSpawn, Stash, StashItem, TimeOfDay, TrackId, Vec2 } from '../core/types.ts';
 import type { BotWaypoint } from '../combat/bot.ts';
 import type { SaveData } from '../core/save.ts';
 
@@ -47,7 +47,7 @@ export type BeatStep =
   | { t: 'open'; prop: string }
   /** Shuts an open prop again (Sim.closeProp), such as the vine seals across the Alpha's den. It does not wait. */
   | { t: 'close'; prop: string }
-  /** Starts the stage's defense (Sim.defend). It does not wait: a `defended` beat follows when the clock runs out. */
+  /** Starts the stage's defense (Sim.defend), or the final fight. It does not wait: a `defended` beat follows when the clock runs out. */
   | { t: 'defend' }
   /** Lights a lights prop as if the party had: a save point and the heal (Hopper strung the lights at the Gate). It does
    *  not wait, and does nothing if it is already lit. */
@@ -64,6 +64,8 @@ export type BeatStep =
   | { t: 'curse'; prop: string }
   /** Max gets her Walkman back, a story item (Sim.giveWalkman): the save keeps it at once. It does not wait. */
   | { t: 'walkman' }
+  /** Sets the tempo phase of the playing music (audio.phase), as the final boss's phases step `abyss` from 160 to 164 to 168 bpm. It does not wait. */
+  | { t: 'phase'; n: number }
   | { t: 'finish' };
 
 /** What fires a beat. Rect beats fire once, the first time the hero's tile enters the rectangle. `needs` holds a
@@ -78,7 +80,11 @@ export type BeatWhen =
   /** The defense clock ran out with the ward standing (the sim's `defended` event). */
   | { event: 'defended' }
   /** A curse ended, however it ended (the sim's `curseEnd` event). */
-  | { event: 'curseEnd' };
+  | { event: 'curseEnd' }
+  /** The final fight reached this phase (the sim's `bossPhase` event, docs/level-16.md). */
+  | { event: 'bossPhase'; phase: 1 | 2 | 3 }
+  /** The channel ran out (the sim's `finalRoll` event): the Final Roll is next. */
+  | { event: 'finalRoll' };
 
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
@@ -144,6 +150,8 @@ export interface StageData {
   burrows?: Burrow[];
   /** The stage's defense, started by a `defend` beat step (docs/level-6.md, "The defense"). */
   defense?: DefenseDef;
+  /** The final fight, started by a `defend` beat step on a stage without a defense (docs/level-16.md). The art also reads it for the channel marks. */
+  finale?: FinaleDef;
   /** The room drawn in the memory skin (the Creel House in Blood red) while a curse counts: 4.2's parlor (docs/level-11.md). */
   memory?: TileRect;
   waypoints: BotWaypoint[];

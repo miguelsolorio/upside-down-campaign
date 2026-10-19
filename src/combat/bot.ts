@@ -13,7 +13,9 @@
 // and Eleven is walked up to him once he kneels (bot_billy.ts). Against the Mind Flayer it steps off a warned line, band or pool and hits the
 // nearest leg, then the head when it is down (bot_flayer.ts). It steps out of a ghoul's lunge line during the wind-up (bot_ghoul.ts), slams
 // the pinned pit Demogorgon with Hopper (bot_boss.ts), and under a curse swaps to Max if her Walkman is ready, else to Eddie, and attacks the
-// clock (bot_curse.ts), careless or not. It ignores hazards and cameras.
+// clock (bot_curse.ts), careless or not. In the final fight it steps out of Vecna's blast and his orbs (bot_finale.ts, bot_threat.ts), hits the Mind
+// Flayer's legs and then its open chest (bot_flayer.ts), and in the channel guards the channeler with a foe on them like the Gate's ward (bot_ward.ts).
+// It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -31,6 +33,7 @@ import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 import { createGrigoriSense } from './bot_grigori.ts';
 import { createBillySense } from './bot_billy.ts';
 import { createFlayerSense } from './bot_flayer.ts';
+import { createFinaleSense } from './bot_finale.ts';
 import { createVoidSense } from './bot_void.ts';
 import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
@@ -167,7 +170,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
       // The Mind Flayer's body and legs are the plan's (bot_flayer.ts), not the nearest foe.
       // A twin Demogorgon in the void (pose fall or climb) is out of reach, and so is the Mind Flayer's body and legs.
-      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.pose === 'fall' || a.pose === 'climb' || a.id === 'flayer' || a.id === 'flayerleg') continue;
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.pose === 'fall' || a.pose === 'climb' || a.id === 'flayer' || a.id === 'flayerleg' || a.id === 'flayer5' || a.id === 'leg5') continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -257,6 +260,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
   const edge = createVoidSense(opts.grid, walkable);
+  const vecna = createFinaleSense({ walkable });
   const ghoul = createGhoulSense();
   const curse = createCurseSense();
   const cross = createDashCross();
@@ -323,7 +327,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's. A twin winding up beside the
     // void comes first (bot_void.ts): the lane has no room there.
     const bossStep = boss.dodge(v, hx, hy);
-    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
+    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? vecna.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
     const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
@@ -354,7 +358,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     if (hpFrac < 0.35 && frame - lastSwap > 100 && !pin) {
       let best = -1, bestFrac = hpFrac + 0.3;
       v.hud.party.forEach((p, i) => {
-        if (!p.ko && !p.active && (p.curse ?? 0) === 0 && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
+        if (!p.ko && !p.active && (p.curse ?? 0) === 0 && !p.channeling && p.hp / p.hpMax > bestFrac) { best = i; bestFrac = p.hp / p.hpMax; }
       });
       if (best >= 0) { out.swapTo = best; lastSwap = frame; }
     }

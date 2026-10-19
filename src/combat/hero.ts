@@ -17,6 +17,7 @@ import { holdsSpecial, readHold, useVariant, variantMp, variantReady } from '../
 import { readWind, windsUp } from '../heroes/hopper.ts';
 import { standOn } from '../heroes/eddie_solo.ts';
 import { CHIME_LIFT, cursedBy, isCursed } from './house.ts';
+import { isChanneling } from './finale_state.ts';
 
 export const DEADZONE = 0.15;
 const INPUT_BUFFER = 8;
@@ -163,11 +164,11 @@ export function updateActive(s: S, input: SimInput): void {
   setAnim(h, anim);
 }
 
-/** MP and HP regeneration: 4 percent MP a second for the active hero, 6 and 2 percent for the bench. None for a hero at 0 HP, who is about to be knocked out, or one hanging under a curse. */
+/** MP and HP regeneration: 4 percent MP a second for the active hero, 6 and 2 percent for the bench. None for a hero at 0 HP, who is about to be knocked out, or one hanging under a curse or channeling. */
 export function regen(s: S): void {
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
-    if (h.ko || h.hp <= 0 || isCursed(s, h)) continue;
+    if (h.ko || h.hp <= 0 || isCursed(s, h) || isChanneling(s, h)) continue;
     if (i === s.active) {
       h.mp = Math.min(h.st.mp, h.mp + (h.st.mp * 0.04) / 60);
     } else {
@@ -234,7 +235,7 @@ export function updateFollowers(s: S): void {
   let k = 0;
   for (let i = 0; i < s.heroes.length; i++) {
     const h = s.heroes[i] as Hero;
-    if (i === s.active || h.ko) continue;
+    if (i === s.active || h.ko || isChanneling(s, h)) continue;
     // A cursed hero hangs where the curse found them, a little higher with each chime, and leaves the followers' places to the rest.
     const curse = cursedBy(s, h);
     if (curse) {

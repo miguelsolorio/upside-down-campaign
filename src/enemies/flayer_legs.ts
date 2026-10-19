@@ -167,6 +167,20 @@ function dropBand(s: S, l: LegState): void {
   l.sweep = null;
 }
 
+/**
+ * A hit landed on a leg. The final boss's chest opens for chestT frames if it is up and shut (the party then has that long to hit it), and
+ * the leg is cut if the hit took it to 0 HP. Called after every hit on a leg (combat/damage.ts).
+ */
+export function legHit(s: S, e: Enemy): void {
+  const body = e.leg?.body;
+  if (e.kind === 'leg5' && body && body.fin && body.flayer && body.flayer.move === 'up' && body.fin.open <= 0) {
+    body.fin.open = ENEMY_DEFS.flayer5.x.chestT as number;
+    floater(s, 'OPEN', body.x, body.y - 40, 'yellow', true, 60);
+    sfx(s, 'reveal');
+  }
+  sever(s, e);
+}
+
 /** The hit that took a leg to 0 HP: it is cut, and stays on the floor. Called after every hit and burn tick. */
 export function sever(s: S, e: Enemy): void {
   const l = e.leg;

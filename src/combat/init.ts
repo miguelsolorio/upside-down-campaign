@@ -11,6 +11,8 @@ import { hazardAt } from './hazards.ts';
 import { newTalentState } from './talent_state.ts';
 import { newDemo } from '../enemies/demo_hit.ts';
 import { newCh5 } from '../enemies/ch5_state.ts';
+import { newFin } from '../enemies/fin_state.ts';
+import { newFinale } from './finale_state.ts';
 import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
 import { newSoldier } from '../enemies/soldier.ts';
@@ -75,7 +77,8 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
     flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' || sp.type === 'kguard' ? newSoldier() : null,
     grigori: sp.type === 'grigori' ? newGrigori() : null, billy: sp.type === 'billy' ? newBilly() : null,
-    flayer: sp.type === 'flayer' ? newFlayer() : null, leg: sp.type === 'flayerleg' ? newLeg(f.x, f.y) : null,
+    flayer: sp.type === 'flayer' || sp.type === 'flayer5' ? newFlayer(sp.type) : null,
+    leg: sp.type === 'flayerleg' || sp.type === 'leg5' ? newLeg(f.x, f.y) : null, fin: newFin(sp.type),
     ghoul: sp.type === 'ghoul' ? newGhoul(s, sp.mirror ?? '', sp.dormant !== true) : null,
     ch5: newCh5(sp.type, s.enemies.some((o) => o.kind === 'twin'), ENEMY_DEFS.commander.x.whistleFirst as number),
   };
@@ -138,7 +141,8 @@ export function createState(opts: SimOptions): S {
     buf: { attack: 0, special: 0, burst: 0, swapT: 0, swapDelta: 0, swapTo: -1 },
     flow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     wardFlow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
-    burrows: (opts.burrows ?? []).map((b) => ({ ...b })), defense: opts.defense ? newDefense(opts.defense) : null, rtSeq: 0,
+    burrows: (opts.burrows ?? []).map((b) => ({ ...b })), defense: opts.defense ? newDefense(opts.defense) : null,
+    finale: opts.finale ? newFinale(opts.finale) : null, rtSeq: 0,
     pools: [], poolCd: 0, house: newHouse(opts.walkman === true), cleared: new Set(), god: opts.god === true, boxes: false,
   };
   for (const sp of opts.spawns) {

@@ -15,7 +15,7 @@ import { audio } from '../audio/index.ts';
 import { drawPortrait, drawText, drawTinyText, tinyWidth } from '../gfx/index.ts';
 import { box, brackets, outline, plate, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
-import { blockedBy, cardRect, cellRect, createPicks, heroAt, legend, makeLead, markRect, moveTo, onStart, picksLayout, ready, result, rowOf, step, toggle } from './picks_logic.ts';
+import { blockedBy, bondLine, cardRect, cellRect, createPicks, heroAt, legend, makeLead, markRect, moveTo, onStart, picksLayout, ready, result, rowOf, step, toggle } from './picks_logic.ts';
 import type { PickRow, PicksLayout, PicksState } from './picks_logic.ts';
 
 export interface PicksOpts {
@@ -130,6 +130,8 @@ export function createPicksPanel(opts: PicksOpts): PicksPanel {
       drawStart(ctx, START, ready(s), onStart(s));
       const line = legend(getPromptDevice(), labelOf('attack'), labelOf('special')).join('  ');
       drawTinyText(ctx, line, px + pw - 8 - tinyWidth(line), L.legendY, 'mist');
+      const bond = bondLine(s);
+      if (bond) drawTinyText(ctx, bond.text, px + pw - 8 - tinyWidth(bond.text), L.bondY, bond.preview ? 'yellow' : 'leaf');
     },
   };
 }
@@ -150,6 +152,7 @@ function drawCard(ctx: Ctx, L: PicksLayout, r: PickRow, x: number, y: number, re
   drawText(ctx, `LV${r.level}`, x + 34, y + L.top + 11, l.level);
   if (r.gate) drawTinyText(ctx, r.gate, x + 34, y + L.gateY, 'mist');
   drawMark(ctx, r, x + 5, y + L.markY);
+  if (r.bond) drawTinyText(ctx, r.bond, x + L.cw - 3 - tinyWidth(r.bond), y + L.markY, 'leaf');
 }
 
 /** A padlock, 5 by 6, drawn for this size. It sits on the baseline of the 3 by 5 font, one px taller. */

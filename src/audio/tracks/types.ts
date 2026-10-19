@@ -49,6 +49,13 @@ export interface Track {
   id: TrackId;
   title: string;
   bpm: number;
+  /**
+   * Tempo of each phase in bpm, from phase 0, for a track a boss speeds up. The first entry must equal bpm. The
+   * sequencer plays whichever phase the game sets, from the next bar line on. Leave it out and the track has one phase.
+   */
+  phases?: readonly number[];
+  /** The track plays through its bars once and stops. A scene can ask the audio whether it has ended. */
+  once?: boolean;
   /** Tonic name, for example 'D'. */
   tonic: string;
   mode: ModeName;

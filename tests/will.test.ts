@@ -41,7 +41,7 @@ const cast = (seed: number) => watch(fireRig(seed));
 
 test('will: the kit numbers', () => {
   assert.deepEqual([WILL.utilities, WILL.basic.power, WILL.basic.x.speed, WILL.special.mp, WILL.special.x.base], [['sense'], 1.3, 2.2, 10, 16]);
-  assert.deepEqual(WILL.talents.map((t) => t.name), ['Cold spot', 'Cleric']);
+  assert.deepEqual(WILL.talents.map((t) => t.name), ['Cold spot', 'Cleric', 'Hive link']);
 });
 
 test('sketch bolt: a slow bolt in the eight directions, power 1.3, drawn as a bolt', () => {

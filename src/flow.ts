@@ -11,6 +11,7 @@ import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
 import { skipsDialogue } from './core/settings.ts';
 import { createChapterCard, createMapScene, createResultsScene, createTitleScene } from './ui/index.ts';
+import { endsCampaign } from './ui/format.ts';
 import { createEpilogueScene, createPrologueScene, hasEpilogue } from './story/index.ts';
 import { createPlayScene, stageName, stageStart } from './world/index.ts';
 
@@ -114,7 +115,7 @@ export function startGame(g: Game): void {
         // (docs/level-9.md, "The chapter end"). The epilogue skips itself when the story is off, like the prologue.
         const chapter = closesChapter(id) ? chapterOf(id) : undefined;
         const results = (): void => g.scenes.go(createResultsScene({
-          stats, party: after, level: levelNumber(id), chapter, final: nextStage(id) === null,
+          stats, party: after, level: levelNumber(id), chapter, final: nextStage(id) === null, campaignEnd: endsCampaign(id),
           onContinue: toMap,
         }));
         if (chapter !== undefined && firstClear && hasEpilogue(chapter)) g.scenes.go(createEpilogueScene({ chapter, onDone: results }));

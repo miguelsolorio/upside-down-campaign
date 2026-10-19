@@ -211,6 +211,8 @@ export interface PartyHud {
   /** What the hero's special costs, so the MP bar can show casts. */
   mpCost: number;
   xp: number; xpNext: number; ko: boolean; active: boolean;
+  /** A Lv 9 talent that works once a stage (Mike's Oath, Dustin's Cerebro, Max's Extra life): ready, or spent. Absent for anyone without one. */
+  once?: 'ready' | 'spent';
 }
 export interface HudView {
   party: PartyHud[];
@@ -286,6 +288,8 @@ export type SfxId =
   /** legslam: a Mind Flayer leg striking. sever: a leg cut. shatter: the skylight breaking. boom: the Key's machine blowing
    *  up under the mall. reach: Eleven reaching Billy. */
   | 'legslam' | 'sever' | 'shatter' | 'boom' | 'reach'
+  /** squeal: the feedback that cuts the Hellfire solo short after three misses in a row (src/solo). */
+  | 'squeal'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 export interface LevelUpInfo {

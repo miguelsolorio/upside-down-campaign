@@ -232,8 +232,8 @@ test('crit: a 90-frame freeze, then every hero sweeps everything within 200 px f
   const hits = ofType(all, 'hit').filter((h) => h.onEnemy);
   assert.ok(hits.length >= 3, `${hits.length} hits`);
   const first = hits[0]!;
-  // Mike goes first: 3 x 9 ATK, minus half the agent's DEF, with spread and maybe a crit.
-  assert.ok((first.dmg >= 23 && first.dmg <= 28) || (first.dmg >= 46 && first.dmg <= 56), `first sweep ${first.dmg}`);
+  // Mike goes first: 3 x 9 ATK, which is 9.9 with Friends don't lie (Mike and Eleven), minus half the agent's DEF, with spread and maybe a crit.
+  assert.ok((first.dmg >= 25 && first.dmg <= 31) || (first.dmg >= 50 && first.dmg <= 62), `first sweep ${first.dmg}`);
   assert.equal(ofType(all, 'kill').length, 3, 'the three in range fell');
   assert.equal(s.enemies.find((e) => e.id === 'far')?.hp, 24, 'out of range');
   assert.equal(sim.view().hud.burst, 0);

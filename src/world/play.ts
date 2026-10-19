@@ -31,6 +31,7 @@ import { nearUsable } from './interact.ts';
 import { TITLES, arcadeBoard, createArcadeScene, gameFor, postScore } from '../arcade/index.ts';
 import type { ArcadeVisit } from '../arcade/index.ts';
 import { createLevelFx, hudPulse } from './levelfx.ts';
+import { createBondBanner } from './bondbanner.ts';
 import { boomView, deadBilly, leavers } from './aftermath.ts';
 import { devHooks } from './devhooks.ts';
 import { createKlaxon } from './klaxon.ts';
@@ -72,6 +73,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   const deferred: (() => void)[] = [];
   /** Level-up effects playing around the heroes. They never stop the game. */
   const levelFx = createLevelFx();
+  /** Names the bonds the party starts with, or a recruit completes, for a few seconds under the HUD (bondbanner.ts). */
+  const bonds = createBondBanner();
   /** The red glow along the screen's edge while the klaxon is up. */
   const klaxon = createKlaxon();
   /** Counts the time spent near each unsolved puzzle, to know when to point at it. */
@@ -469,6 +472,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (speech && ++speech.t > SPEECH_FRAMES) speech = null;
       if (speechCd > 0) speechCd--;
       levelFx.tick();
+      bonds.sync(view.hud.party.map((m) => m.id));
+      bonds.tick();
       if (swapAge !== null) swapAge++;
       if (saved && ++saved.t > SAVED_FRAMES) saved = null;
       if (maxLine >= 0 && ++maxLine > MAX_LINE_TO) maxLine = -1;
@@ -522,6 +527,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       // The subtitle sits where the corner controls do, so it replaces them while it shows.
       if (hint) drawSubtitle(ctx, hint.text);
       else drawControlsCorner(ctx, hintFade);
+      bonds.draw(ctx);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);
     },

@@ -12,13 +12,14 @@ import type { HeroId } from '../core/types.ts';
 import { drawPanel, drawPortrait, drawText, drawTinyText, textWidth } from '../gfx/index.ts';
 import { HERO_DEFS, HERO_IDS } from '../heroes/defs.ts';
 import { damageLabel, heroSheet } from '../heroes/charsheet.ts';
+import { bondRows } from '../heroes/bonds.ts';
 import type { HeroSheet, SheetMove } from '../heroes/charsheet.ts';
 import { MAX_LEVEL } from '../progression/xp.ts';
 import type { Stats } from '../progression/xp.ts';
 import { bigText, box, clipped, inFrame, outline, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import {
-  FOOT_Y, LEFT, MOVES_Y, MOVE_PITCH, NAME_Y, NOTE_DY, PANEL, PORTRAIT_Y, RIGHT, ROLE_Y, RULE_Y, STAT_COLS, STAT_ROWS,
+  BOND_LABEL_Y, BOND_MAX, BOND_PITCH, BOND_Y, FOOT_Y, LEFT, MOVES_Y, MOVE_PITCH, NAME_Y, NOTE_DY, PANEL, PORTRAIT_Y, RIGHT, ROLE_Y, RULE_Y, STAT_COLS, STAT_ROWS,
   STAT_VALUE_DX, TAB_FACE_DX, TAB_NAME_DX, TAB_NAMES, TEXT_X, backRect, tabAt, tabRect,
 } from './charsheetlayout.ts';
 
@@ -57,6 +58,14 @@ function drawHeader(ctx: Ctx, h: CharSheetHero, s: HeroSheet): void {
   drawText(ctx, s.role, TEXT_X, ROLE_Y, 'amber');
   if (!h.joined) drawText(ctx, 'NOT IN THE PARTY', RIGHT, ROLE_Y, 'mist', { align: 'right' });
   else drawText(ctx, h.level >= MAX_LEVEL ? 'XP MAX' : `XP ${h.xp}/${h.xpNext}`, RIGHT, NAME_Y, 'mist', { align: 'right' });
+}
+
+/** The hero's bonds under the role: BONDS at the left, then a line each, green when the party has the bond and slate when it is waiting. */
+function drawBonds(ctx: Ctx, h: CharSheetHero, party: HeroId[]): void {
+  const rows = bondRows(h.id, party).slice(0, BOND_MAX);
+  if (rows.length === 0) return;
+  drawTinyText(ctx, 'BONDS', LEFT, BOND_LABEL_Y, 'mist');
+  rows.forEach((r, i) => drawTinyText(ctx, r.text, TEXT_X, BOND_Y + i * BOND_PITCH, r.active ? 'leaf' : 'slate'));
 }
 
 /** HP, MP, ATK on top and DEF, SPD, CRIT under them. A stat the d20 has raised shows the bonus in green. */
@@ -161,6 +170,7 @@ export function createCharSheetScene(opts: { heroes: () => CharSheetHero[]; star
         const s = heroSheet(h.id, h.level, h.bonus);
         drawPanel(ctx, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 'menu');
         drawHeader(ctx, h, s);
+        if (h.joined) drawBonds(ctx, h, heroes.filter((m) => m.joined).map((m) => m.id));
         drawStats(ctx, s);
         s.moves.forEach((m, i) => drawMove(ctx, m, MOVES_Y + i * MOVE_PITCH));
 

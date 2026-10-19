@@ -7,6 +7,7 @@ import type { Graph } from './engine.ts';
 import { createRig } from './rig.ts';
 import { scheduleOffline } from './sequencer.ts';
 import { TRACKS } from './tracks/index.ts';
+import { phaseBpm } from './tracks/compile.ts';
 import { encodeWav } from './wav.ts';
 
 export const RENDER_RATE = 44100;
@@ -39,8 +40,13 @@ export async function renderWith(
   return { metrics: measure(post, pre, RENDER_RATE), samples: post, pre };
 }
 
-/** Renders a track from bar one. With combat, the full combat mix. Without it, the base layer alone. */
-export function renderOffline(id: TrackId, seconds: number, opts: { combat?: boolean } = {}): Promise<AudioMetrics> {
+/**
+ * Renders a track from bar one. With combat, the full combat mix. Without it, the base layer alone. `phase` plays the
+ * whole render at that tempo phase. A track that plays once stops after its last bar and the rest of `seconds` is its tail.
+ */
+export function renderOffline(
+  id: TrackId, seconds: number, opts: { combat?: boolean; phase?: number } = {},
+): Promise<AudioMetrics> {
   const track = TRACKS[id];
   if (!track) return Promise.reject(new Error(`unknown track ${id}`));
   const combat = !!opts.combat && track.layers.includes('combat');
@@ -49,7 +55,8 @@ export function renderOffline(id: TrackId, seconds: number, opts: { combat?: boo
     rig.setIntensity(combat ? 1 : 0, true);
     const { routes } = rig;
     const layers = combat ? routes : { base: routes.base, sendBase: routes.sendBase };
-    scheduleOffline(ctx, rig.out, track, seconds, layers, t0);
+    rig.setBpm(phaseBpm(track, opts.phase ?? 0), true);
+    scheduleOffline(ctx, rig.out, track, seconds, layers, t0, opts.phase ?? 0);
   }).then((r) => r.metrics);
 }
 

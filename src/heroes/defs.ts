@@ -47,7 +47,7 @@ export interface HeroDef {
   utilities: Utility[];
   basic: AbilityDef;
   special: AbilityDef;
-  /** Lv 3 then Lv 6. */
+  /** Lv 3, Lv 6 and Lv 9. */
   talents: Talent[];
 }
 
@@ -69,7 +69,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'DM screen', mp: 6, cd: 30, power: 0, dur: 18, at: 8, lock: 0.2, reach: 20, kb: 0, sfx: 'shield',
       // life: frames the screen stands. half: radius in px of the dome the art draws and the sim blocks with.
       // Rally (Lv 6): the cast lifts the party's ATK by rallyAtk for rally frames.
-      x: { life: 300, half: 15, rally: 600, rallyAtk: 0.2 },
+      // Oath (Lv 9): the first ally to fall in a stage gets up oathWait frames later with oathHp of their max HP, while he stands.
+      x: { life: 300, half: 15, rally: 600, rallyAtk: 0.2, oathWait: 90, oathHp: 0.5 },
     },
     talents: TALENTS.mike,
   },
@@ -89,9 +90,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // burnAtk: each burn tick deals this much of Dustin's ATK, ignoring DEF.
       // Dart (Lv 6): the spray calls Dart for dart frames, then he rests dartRest frames from the call. He runs dartSpeed px a
       // frame at the nearest foe within dartSeek px and bites one in dartReach px every dartBite frames for dartPower.
+      // Cerebro (Lv 9, a held Special): once a stage, Suzie fills every living hero's MP by suzieMp of their max.
       x: {
         half: 32, life: 36, tick: 6, burn: 180, burnTick: 30, burnAtk: 0.22,
-        dart: 720, dartRest: 1800, dartSpeed: 1.5, dartSeek: 110, dartReach: 10, dartBite: 40, dartPower: 0.5,
+        dart: 720, dartRest: 1800, dartSpeed: 1.5, dartSeek: 110, dartReach: 10, dartBite: 40, dartPower: 0.5, suzieMp: 0.3,
       },
     },
     talents: TALENTS.dustin,
@@ -108,7 +110,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'Triple shot', mp: 5, cd: 28, power: 0.85, dur: 16, at: 8, lock: 0.45, reach: 130, kb: 2, sfx: 'rock',
       // fan: degrees between shots. n: shots. Camo (Lv 6): the shot hides him for camo frames, at most once every camoCd frames.
-      x: { speed: 3.8, r: 5, fan: 18, n: 3, camo: 180, camoCd: 480 },
+      // Volley (Lv 9): volley shots, volleyFan degrees apart, each as strong as a Triple shot's.
+      x: { speed: 3.8, r: 5, fan: 18, n: 3, camo: 180, camoCd: 480, volley: 5, volleyFan: 14 },
     },
     talents: TALENTS.lucas,
   },
@@ -125,7 +128,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'Mind Blast', mp: 8, cd: 40, power: 2.4, dur: 26, at: 10, lock: 0.15, reach: 132, kb: 3.2, sfx: 'beam',
       // width: beam half width px. life: frames the beam is drawn.
       // Sensory tank (Lv 6, a held Special): senseMp MP, sense frames, hidden foes and paths within senseR px of her.
-      x: { width: 8, life: 12, senseMp: 6, sense: 480, senseR: 160 },
+      // Overload (Lv 9): the beam's half width is overWidth, and every foe it crosses is stunned overStun frames (a boss is not).
+      x: { width: 8, life: 12, senseMp: 6, sense: 480, senseR: 160, overWidth: 14, overStun: 60 },
     },
     talents: TALENTS.eleven,
   },
@@ -143,7 +147,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       name: 'Fireball', mp: 10, cd: 50, power: 2, dur: 24, at: 10, lock: 0.2, reach: 96, kb: 3, sfx: 'flame',
       // speed: px per frame. r: the ball's size. base: the burst's radius in px before the d20 is added.
       // Cleric (Lv 6, a held Special): healMp MP heals every living hero heal of their max HP, then waits healCd frames.
-      x: { speed: 2.6, r: 4, base: 16, healMp: 12, heal: 0.3, healCd: 600 },
+      // Hive link (Lv 9): a charged swap to him senses hidden paths within hiveR px of him for hive frames.
+      x: { speed: 2.6, r: 4, base: 16, healMp: 12, heal: 0.3, healCd: 600, hive: 480, hiveR: 320 },
     },
     talents: TALENTS.will,
   },
@@ -162,7 +167,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // speed: px per frame. frames: the roll's length in frames (speed x frames is the reach). r: how close an enemy's center
       // is to her path for her to hit it. after: frames of invulnerability once it ends. extra: the most px it carries on to
       // clear a gap it would end over. Kickflip (Lv 6): where the roll ends, a shockwave of kickR px, kickPower and kickKb.
-      x: { speed: 4.5, frames: 16, r: 10, after: 6, extra: 16, kickR: 24, kickPower: 0.7, kickKb: 2.5 },
+      // Extra life (Lv 9): once a stage a KO leaves her at lifeHp HP and lifeSafe frames of invulnerability.
+      x: { speed: 4.5, frames: 16, r: 10, after: 6, extra: 16, kickR: 24, kickPower: 0.7, kickKb: 2.5, lifeHp: 1, lifeSafe: 120 },
     },
     talents: TALENTS.max,
   },
@@ -182,7 +188,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // party's DEF bonus. taunt: frames an enemy in reach stays taunted onto him.
       // Ahoy (Lv 6): a charged swap to him leaps leap frames onto the nearest foe within leapR px. The landing hits everything in
       // leapHit px for leapPower and stuns it leapStun frames.
-      x: { life: 300, guard: 0.4, partyDef: 0.15, taunt: 180, leap: 14, leapR: 80, leapHit: 16, leapPower: 1.2, leapStun: 30 },
+      // King Steve (Lv 9): under kingHp of his max HP his ATK is up kingAtk.
+      x: { life: 300, guard: 0.4, partyDef: 0.15, taunt: 180, leap: 14, leapR: 80, leapHit: 16, leapPower: 1.2, leapStun: 30, kingHp: 0.3, kingAtk: 0.3 },
     },
     talents: TALENTS.steve,
   },
@@ -202,7 +209,8 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
     special: {
       name: 'Word vomit', mp: 5, cd: 40, power: 0, dur: 20, at: 6, lock: 0.3, reach: 56, kb: 0, sfx: 'babble',
       // half: cone half angle in degrees. confuse: frames of confusion, linguist: the same from Lv 3. life: frames the fx is drawn.
-      x: { half: 40, confuse: 180, linguist: 240, life: 20 },
+      // Dry wit (Lv 9): while she stands in the party, a confused foe takes wit more from every hero.
+      x: { half: 40, confuse: 180, linguist: 240, life: 20, wit: 0.25 },
     },
     talents: TALENTS.robin,
   },
@@ -224,9 +232,10 @@ export const HERO_DEFS: Record<HeroId, HeroDef> = {
       // Molotov (Lv 6, a held Special): molMp MP lobs a bottle molLand frames to a spot up to molReach px out. It leaves a pool of
       // poolR px for poolLife frames that hits each foe in it every poolTick frames for poolPower and sets it burning (poolBurn frames,
       // each tick poolBurnAtk of her ATK).
+      // Final girl (Lv 9): with girlDown allies down, her ATK is up girlAtk.
       x: {
         speed: 5, r: 4, fan: 12.5, n: 5, kbCap: 5.2, trapLife: 600, traps: 2, trapR: 9, hold: 120, trapPower: 0.8,
-        molMp: 8, molReach: 64, molLand: 22, poolR: 24, poolLife: 240, poolTick: 20, poolPower: 0.25, poolBurn: 120, poolBurnAtk: 0.22,
+        molMp: 8, molReach: 64, molLand: 22, poolR: 24, poolLife: 240, poolTick: 20, poolPower: 0.25, poolBurn: 120, poolBurnAtk: 0.22, girlDown: 2, girlAtk: 0.4,
       },
     },
     talents: TALENTS.nancy,

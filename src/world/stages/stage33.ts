@@ -153,9 +153,11 @@ export const STAGE_33: StageData = {
   // Measured with node scripts/measure-stage.ts 3.3 chief 20 [--careless] on HARD, with the party a real run brings (Mike 7, Dustin 6,
   // Robin 4, Eleven 3), after the lead's boss pass (docs/level-9.md, "Result"): chief clears 19 of 20 for about 259 damage, 1.15 KOs,
   // 40% lowest HP and 118 s, the fight 62% of it; careless 13, kid 20, upside 5. NORMAL clears 20, careless 18.
-  enemyMult: 1.6,
+  // The bonds (docs/bonds.md) made it a little easier (Mike and Eleven's +10% ATK): chief cleared every one of 200 runs for 0.34 KOs, so 1.65
+  // puts it back: 196 of 200, 303 damage, 0.41 KOs, 48% lowest HP, 117 s; careless 145 of 200, upside 66.
+  enemyMult: 1.65,
   // Pays the lead the rest of the way to Lv 8 at the end of chapter 3 (docs/pace.md): Lv 8 in nine runs of ten, the tenth a kill short.
-  xpMult: 2,
+  xpMult: 2.25,
   // The Flayed that Billy and the Mind Flayer call come up here, one at each side of the court.
   burrows: BURROWS,
   waypoints: WAYPOINTS,

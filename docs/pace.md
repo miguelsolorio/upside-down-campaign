@@ -136,3 +136,27 @@ The carried run (`node scripts/measure-campaign.ts chief 20`, the bot keeping th
 - **`ARRIVAL` stays.** Every median is within 26 XP of `ARRIVAL` (the most is Mike into 3.1: 224 against 198), under the test's 40, so nothing is pasted. `tests/pace.test.ts` is green.
 - **A carried run on NORMAL** (`measure-campaign.ts normal 10`) clears every stage with no wipes, with the same lead: 4, 6 and 7.
 - **Chapter 3 still ends a level short of 8:** the lead is Lv 7 after 3.2.
+
+## After the bonds
+
+Bonds (`docs/bonds.md`) change what a party does inside a stage, so every stage and the carried run were measured again. The pace itself did not move: over 40 seeds the lead ends chapter 3 with 1642 XP on average without bonds and 1641 with them, and 5 of 40 land under Lv 8's line either way. What bonds shuffle is which seeds land short. `tests/pace.test.ts` reads ten of them, allows one under the line and none more than 30 XP short, and with bonds the bottom seed read 1482.
+
+- **3.3 pays more.** `xpMult` 2 to 2.25, so the stage pays 626 XP, not 556. Over 40 seeds the lead now ends chapter 3 with 1708 XP on average (minimum 1521, a tenth of the runs under 1578), where Lv 9 is 2149. The same ten seeds clear the test on their own.
+- **`ARRIVAL`: four Dustin entries.** Into 2.2 he is Lv 5 with 22 XP (365 XP before, 405 now: a run's median is 387 over 40 seeds and 440 over the test's ten); into 2.3, 3.2 and 3.3 he has 159, 112 and 258 XP in his level, from 123, 82 and 220. Every other entry stays, and the test's median check is within 40 for all of them.
+- **The carried run** (`node scripts/measure-campaign.ts chief 20`): the lead is Lv 4, 6 and 8 (7 to 8) after the chapters, the party 3.66, 4.86 and 6.29 on average.
+
+| Stage | XP earned | Wipes | Mike | Dustin | Party average |
+|---|---|---|---|---|---|
+| 1.1 | 144 | 0.0 | 3 | 2 | 2.25 |
+| 1.2 | 126 | 0.1 | 4 | 3.1 | 3.29 |
+| 1.3 | 101 | 0.0 | 4 | 3.9 | 3.66 |
+| 2.1 | 248 | 0.0 | 5 | 4.6 | 4.25 |
+| 2.2 | 238 | 0.0 | 5.4 | 5 | 4.60 |
+| 2.3 | 222 | 0.0 | 6 | 5.5 | 4.86 |
+| 3.1 | 207 | 0.0 | 6.4 | 6 | 4.69 |
+| 3.2 | 238 | 0.0 | 7 | 6 | 5.26 |
+| 3.3 | 630 | 0.0 | 8 | 7 | 6.29 |
+
+## Lv 9 talents
+
+The Lv 9 talents (`docs/game-design.md`, "The Lv 9 talents as built") only matter to a hero at Lv 9 or more, and none gets there in the nine stages built: the carried run's lead ends 3.3 at Lv 8 (8.0, 7 to 8 over 20 seeds). So `node scripts/measure-campaign.ts chief 20` and `measure-stage.ts` 3.1, 3.2 and 3.3 on chief came back to the digit, every band as it was and no `enemyMult` touched. Chapters 4 and 5 are where Lv 9 to 12 heroes play, and their stages are measured with the talents on. Forcing a party to Lv 9 (`--party=mike:9,...`) makes 3.1 to 3.3 a little easier and clears all 20 runs (`TODO.md`, "Lv 9 talents").

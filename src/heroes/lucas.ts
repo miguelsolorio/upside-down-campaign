@@ -1,11 +1,12 @@
-// Lucas, the Ranger. Basic: the wrist rocket, eight-way. Special: triple shot, which hides him from Lv 6 (camo.ts). His `shoot`
-// utility lights targets.
+// Lucas, the Ranger. Basic: the wrist rocket, eight-way. Special: triple shot, which hides him from Lv 6 (camo.ts) and from Lv 9 fires
+// five shots, a Volley, in a tighter fan. His `shoot` utility lights targets.
 import { HERO_DEFS } from './defs.ts';
 import type { Hero, S } from '../combat/state.ts';
 import { BODY_Y } from '../combat/space.ts';
 import { sfx } from '../combat/fx.ts';
 import { newProj } from '../combat/proj.ts';
 import { beginAct, later, rad } from './common.ts';
+import { LV9, hasTalent } from '../progression/talents.ts';
 import { camo } from './camo.ts';
 
 function fire(s: S, h: Hero, angle: number, power: number, kb: number, speed: number, range: number, r: number): void {
@@ -30,10 +31,12 @@ export function lucasSpecial(s: S, h: Hero): void {
   const aim = h.aim;
   beginAct(h, d, 'special');
   sfx(s, 'rock');
+  const volley = hasTalent('lucas', h.level, LV9);
   later(s, h, d.at, () => {
-    const n = d.x.n;
+    const n = volley ? d.x.volley : d.x.n;
+    const fan = rad(volley ? d.x.volleyFan : d.x.fan);
     for (let i = 0; i < n; i++) {
-      fire(s, h, aim + rad(d.x.fan) * (i - (n - 1) / 2), d.power, d.kb, d.x.speed, d.reach, d.x.r);
+      fire(s, h, aim + fan * (i - (n - 1) / 2), d.power, d.kb, d.x.speed, d.reach, d.x.r);
     }
     camo(s, h);
   });

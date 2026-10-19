@@ -86,7 +86,8 @@ test('bot: with no shooter in the party it never goes for the breaker, even with
 });
 
 test('bot: it backs off the haymaker, then goes round to his side and lands full hits before he turns', () => {
-  // Five fights of 1800 frames each, a dozen haymakers apiece.
+  // Five fights of 1500 frames each, ten haymakers apiece: all phase one. Mike and Eleven's bond (+10% ATK) brings his second phase
+  // (under half HP, where the bot takes a few hits) to about frame 1690, so the window stops short of it.
   const recoveries: { full: number; blocked: number; off: number }[] = [];
   const taken: number[] = [];
   for (const seed of seeds(5)) {
@@ -95,7 +96,7 @@ test('bot: it backs off the haymaker, then goes round to his side and lands full
     const b = bot();
     let cur: { full: number; blocked: number; off: number } | null = null;
     let wasHay = false;
-    for (let f = 0; f < 1800; f++) {
+    for (let f = 0; f < 1500; f++) {
       const ev = r.sim.step(b.next(r.sim));
       const v = bossView(r)!;
       const hay = v.alert && v.pose === undefined;

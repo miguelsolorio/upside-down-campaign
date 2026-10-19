@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 5 Art</title>
+<meta name="description" content="The art for stages 5.2 and 5.3 ahead of their build: the Abyss, the heart, the final boss and the ending, every tile and pose at 3x and three mock scenes.">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0a0a14; --night: #10142a; --shadow: #1c2340; --dusk: #2c3a63; --slate: #4a5a85;
+    --mist: #8190b8; --bone: #d8dce8; --cream: #fff0b0; --amber: #ffb830; --hot: #ff4a4a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--bone); font: 15px/1.5 var(--font); }
+  canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; height: auto; background: #000; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
+  .hero { padding: 32px 0 18px; }
+  .kicker { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); margin: 0 0 12px; }
+  h1 { margin: 0 0 10px; font-size: 30px; line-height: 1.1; }
+  .hero p { margin: 0 0 8px; max-width: 80ch; }
+  .muted { color: var(--mist); }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--night); border-block: 2px solid var(--shadow); }
+  .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; padding-block: 10px; font: 600 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mist); }
+  .bar a { color: var(--amber); text-decoration: none; }
+  .bar a:hover { text-decoration: underline; }
+  .chk { display: inline-flex; align-items: center; gap: 6px; }
+  h2.sec { margin: 34px 0 4px; font-size: 22px; }
+  .sub { margin: 0 0 14px; color: var(--mist); max-width: 90ch; }
+  .scenes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .card { border: 2px solid var(--shadow); padding: 14px; background: var(--night); display: flex; flex-direction: column; gap: 10px; }
+  .card h3 { margin: 0; font-size: 17px; }
+  .card p { margin: 0; color: var(--mist); font-size: 14px; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .btn { padding: 6px 10px; border: 2px solid var(--dusk); background: var(--ink); font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mist); }
+  .btn[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--ink); }
+  .list { display: grid; gap: 18px; }
+  table { border-collapse: collapse; width: 100%; font: 12px/1.45 var(--mono); }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--shadow); vertical-align: top; }
+  th { color: var(--amber); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  td code { color: var(--cream); }
+  footer { padding: 28px 0 48px; color: var(--slate); font: 12px/1.4 var(--mono); }
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Chapter 5 art, ahead of the build</p>
+  <h1>The Abyss, the heart and the ending</h1>
+  <p>Stage 5.2 floats broken pieces of Hawkins over a red void under a black sun. Stage 5.3 climbs through the flesh into the heart, where Vecna sits in the Mind Flayer's chest, and ends on the basement in 1987 and a die on the table. All of it is drawn by the game's own pixel tools in the game's palette, in <code>src/gfx/ch5/</code>.</p>
+  <p class="muted">The three scenes are real 256 by 224 frames at 3x, drawn as the stage will draw them: backdrop, tiles, props, sprites. Under them is every tile, mark and pose, each in the neighbors that change it. Nothing here is registered with the game yet.</p>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <a href="#scenes">Scenes</a><a href="#abyss">The Abyss</a><a href="#heart">The heart</a><a href="#boss">The final boss</a><a href="#painters">Painters</a>
+  <label class="chk"><input id="anim" type="checkbox" checked> Animate</label>
+</div></div>
+
+<main class="wrap">
+  <h2 class="sec" id="scenes">Three mock scenes</h2>
+  <p class="sub">The Abyss with islands, a vine bridge over the void and a hole in the lawn. The heart arena with the spider, Vecna in its chest, a hero on each channel mark and the pulsing glow. The ending, the basement with the party round the table, then THE END over it.</p>
+  <div class="scenes">
+    <article class="card"><h3>5.2, the Abyss</h3><canvas id="sceneAbyss" width="256" height="224" aria-label="The Abyss: islands, a vine bridge and a black sun over a red void"></canvas><p>Backdrop behind the tiles, so it shows through every gap. Heroes on a bridge and an island, a Demogorgon on the porch.</p></article>
+    <article class="card"><h3>5.3, the heart</h3><canvas id="sceneHeart" width="256" height="224" aria-label="The heart arena with the Mind Flayer and Vecna in its chest"></canvas><div class="row"><button class="btn" id="chest" type="button" aria-pressed="true">Chest open</button></div><p>Eleven's mark is dim, Will's is lit. Hitting a leg opens the chest and Vecna takes the damage.</p></article>
+    <article class="card"><h3>The ending</h3><canvas id="sceneEnd" width="256" height="224" aria-label="The basement in 1987, then THE END"></canvas><div class="row"><button class="btn" id="endCard" type="button" aria-pressed="true">THE END card</button></div><p>The epilogue's last beat is the die. Then the card: the room dimmed, the table still lit.</p></article>
+  </div>
+
+  <h2 class="sec" id="abyss">The Abyss tiles</h2>
+  <p class="sub">Five island floors (lawn, road, road with its line, porch, classroom), each with its edges, corners and its rim over a cliff. The cliff is the rock face under an island's south edge, the under tile tapers into the void, a gap is the drop itself, and the vine bridge runs both ways. The tiles that hang over the void are clear where the void shows, here on a dark red ground.</p>
+  <div class="list" id="abyssCards"></div>
+
+  <h2 class="sec" id="heart">The heart</h2>
+  <p class="sub">Red black flesh floor with veins that beat, rib and vein walls, the arena's ribbed edge that rounds off where the floor turns, the two channel marks (Eleven's hot red triangle over three bars, Will's cool blue diamond round an eye) and the four steps of the glow.</p>
+  <div class="list" id="heartCards"></div>
+
+  <h2 class="sec" id="boss">The final boss</h2>
+  <p class="sub">The Mind Flayer spider with the chest shut and open, Vecna's fast phase (idle, walk, the curse cast, the sink into the floor), the chest close up, and Joyce with her axe in four directions and five poses.</p>
+  <div class="list" id="bossCards"></div>
+
+  <h2 class="sec" id="painters">What the build registers</h2>
+  <p class="sub">One line each. Every painter is a function of the same shape as the one it was modelled on.</p>
+  <div class="card"><table>
+    <thead><tr><th>File</th><th>Painter</th><th>Modelled on</th></tr></thead>
+    <tbody>
+      <tr><td>abyss_tiles.ts</td><td><code>abyssTile(name, ctx, phase) : Px | null</code>, <code>ABYSS_TILES</code></td><td>fleshTile</td></tr>
+      <tr><td>abyss_bg.ts</td><td><code>drawAbyssBg(ctx, t, camX, camY)</code></td><td>title_art's sky and spores</td></tr>
+      <tr><td>heart_tiles.ts</td><td><code>heartTile(name, ctx, phase) : Px | null</code>, <code>HEART_TILES</code></td><td>fleshTile</td></tr>
+      <tr><td>heart_tiles.ts</td><td><code>drawChannelMark(ctx, who, cx, cy, t, lit)</code>, <code>channelMark(who, phase, lit) : Px</code></td><td>curseMark, drawActor</td></tr>
+      <tr><td>heart_tiles.ts</td><td><code>drawHeartGlow(ctx, t, cx, cy, level)</code></td><td>paintGlow</td></tr>
+      <tr><td>finale_boss.ts</td><td><code>drawFinaleSpider(ctx, view, open)</code>, <code>drawVecnaChest(ctx, view, open)</code>, <code>drawFinaleLeg</code> (the 3.3 leg)</td><td>drawFlayer, drawFlayerLeg</td></tr>
+      <tr><td>finale_boss.ts</td><td><code>drawFinaleVecna(ctx, view)</code>, <code>vecnaFastPx(pose, phase, k) : Px</code></td><td>drawFlayer, the Rooted pick</td></tr>
+      <tr><td>finale_boss.ts</td><td><code>drawJoyce(ctx, view)</code>, <code>joycePx(pose, dir, f) : Px</code>, <code>JOYCE_AXE : CharSpec</code></td><td>drawFlayer, JOYCE</td></tr>
+      <tr><td>finale_end.ts</td><td><code>drawEndingRoom(ctx, screenW, frameX)</code>, <code>endingStill(screenW, frameX)</code>, <code>drawTheEnd(ctx, screenW, frameX, t, level)</code></td><td>drawEpilogueRoom, epilogueStill</td></tr>
+    </tbody>
+  </table></div>
+</main>
+<footer><div class="wrap">Drawn by gfx/ch5/abyss_sheet.ts and abyss_scenes.ts. The page plays no sound.</div></footer>
+
+<script type="module">
+import { initGfx } from '/src/gfx/index.ts';
+import { abyssCard, bossCard, heartCard } from '/src/gfx/ch5/abyss_sheet.ts';
+import { abyssScene, demoPx, endScene, heartScene, heroPx } from '/src/gfx/ch5/abyss_scenes.ts';
+import { PARTY } from '/src/gfx/ch5/finale_party.ts';
+
+initGfx();
+
+for (const [id, make] of [['abyssCards', abyssCard], ['heartCards', heartCard], ['bossCards', bossCard]]) {
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.append(make());
+  document.getElementById(id).append(card);
+}
+
+const ctx = (id) => { const c = document.getElementById(id).getContext('2d'); c.imageSmoothingEnabled = false; return c; };
+const abyss = ctx('sceneAbyss'), heart = ctx('sceneHeart'), end = ctx('sceneEnd');
+const heroes = [heroPx(PARTY.will, 'right'), heroPx(PARTY.eleven, 'down'), heroPx(PARTY.mike, 'left'), heroPx(PARTY.dustin, 'right')];
+const foe = demoPx();
+const eleven = heroPx(PARTY.eleven, 'up'), will = heroPx(PARTY.will, 'up'), mike = heroPx(PARTY.mike, 'up'), lucas = heroPx(PARTY.lucas, 'up');
+let open = true, card = true, t = 0;
+
+function draw() {
+  abyssScene(abyss, t, heroes, foe);
+  heartScene(heart, t, open, [eleven, will, mike, lucas]);
+  endScene(end, t, card);
+}
+draw();
+
+const anim = document.getElementById('anim');
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) anim.checked = false;
+setInterval(() => { if (!anim.checked || document.hidden) return; t += 2; draw(); }, 33);
+
+const toggle = (id, on, off, get, set) => {
+  const b = document.getElementById(id);
+  b.onclick = () => { set(!get()); b.setAttribute('aria-pressed', String(get())); b.textContent = get() ? on : off; draw(); };
+};
+toggle('chest', 'Chest open', 'Chest shut', () => open, (v) => { open = v; });
+toggle('endCard', 'THE END card', 'The basement', () => card, (v) => { card = v; });
+</script>
+</body>
+</html>

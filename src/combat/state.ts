@@ -5,6 +5,7 @@ import type {
 } from '../core/types.ts';
 import type { Rng, Stats } from '../progression/xp.ts';
 import type { TalentState } from './talent_state.ts';
+import type { BondMods } from '../heroes/bonds.ts';
 
 export type { Rng, Stats };
 
@@ -65,6 +66,8 @@ export interface Hero {
   unhurt: number;
   /** Frames Special has been held toward a Lv 6 variant (heroes/hold.ts), 0 when it isn't. -1 after the variant fired, until the key comes up. */
   holdT: number;
+  /** What the party's bonds change for this hero (combat/bonds.ts writes it every tick). */
+  bond: BondMods;
 }
 
 export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'recover' | 'lured';

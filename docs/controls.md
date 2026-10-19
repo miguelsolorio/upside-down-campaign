@@ -8,7 +8,7 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | --- | --- |
 | `W` `A` `S` `D` or arrows | Move |
 | `Z` or `J` | Attack. Melee heroes chain three hits |
-| `X` or `K` | Special. Costs MP. From Lv 6, Will, Nancy and Eleven hold it for a second move: a tap casts the Special when the key comes up, and holding it 0.4 s, while a ring fills round the hero, casts the other one |
+| `X` or `K` | Special. Costs MP. From Lv 6, Will, Nancy and Eleven hold it for a second move: a tap casts the Special when the key comes up, and holding it 0.4 s, while a ring fills round the hero, casts the other one. Dustin does too from Lv 9, until he has called Suzie that stage |
 | `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
 | `1` to `4`, or click a portrait | Pick a hero |
 | `Space` or `Enter` | Light Joyce's Christmas lights or play an arcade cabinet when one is in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
@@ -77,7 +77,7 @@ Every menu works with a mouse. The row under the pointer takes the selection, an
 
 ## Character sheet
 
-Click or tap the active hero's name and level in the HUD, or pick CHARACTERS in the pause menu. Each hero gets a page with their class, level, XP, HP, MP, ATK, DEF, SPD and crit chance, and a line for every move: the basic, the special and its MP cost, their hit in a Crit, and the Lv 3 talent. A stat the d20 has raised shows the bonus in green. Damage is one hit against a foe with no armor, before crits and Inspiration, and `x3` means the move lands up to three hits. The heroes are tabs across the top. The arrows, `C` and `V`, a controller's LB and RB, or a click on a face switch between them, and `1` to `4` pick a hero by party slot, the same as in the HUD. `Esc`, a controller's B or BACK closes it, back to the level from the HUD and back to the menu from the pause menu. The level stays frozen while it's open. A hero who isn't in the party shows in grey, at Lv 1.
+Click or tap the active hero's name and level in the HUD, or pick CHARACTERS in the pause menu. Each hero gets a page with their class, level, XP, HP, MP, ATK, DEF, SPD and crit chance, and a line for every move: the basic, the special and its MP cost, their hit in a Crit, and the Lv 3 talent. A hero in the party also gets their bonds under the role: green with what they give when the party has the bond, slate with who they still need when it doesn't. A stat the d20 has raised shows the bonus in green. Damage is one hit against a foe with no armor, before crits and Inspiration, and `x3` means the move lands up to three hits. The heroes are tabs across the top. The arrows, `C` and `V`, a controller's LB and RB, or a click on a face switch between them, and `1` to `4` pick a hero by party slot, the same as in the HUD. `Esc`, a controller's B or BACK closes it, back to the level from the HUD and back to the menu from the pause menu. The level stays frozen while it's open. A hero who isn't in the party shows in grey, at Lv 1.
 
 ## Difficulty
 
@@ -127,16 +127,16 @@ The Lab is the hard level. Riot guards stop hits from the front, so go around th
 
 ## Level-ups
 
-Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full heal and a team buff, and a 1 gives the next roll advantage. Nothing can make a hero worse. The active hero earns full XP and the bench earns half, so rotating gets everyone to Lv 3. Talents come at Lv 3 and Lv 6, each with a NEW TALENT callout, and the character sheet lists both.
+Every level-up rolls a d20. The roll sets the bonus stat points, a 20 is a full heal and a team buff, and a 1 gives the next roll advantage. Nothing can make a hero worse. The active hero earns full XP and the bench earns half, so rotating gets everyone to Lv 3. Talents come at Lv 3, Lv 6 and Lv 9, each with a NEW TALENT callout, and the character sheet lists all three.
 
-| Hero | Basic | Special | Level 3 talent | Level 6 talent |
-| --- | --- | --- | --- | --- |
-| Mike | Bat, three-hit arc | DM screen: blocks shots, halves damage behind it | DM fiat: the first hit of a fight crits | Rally: the DM screen gives the party +20% ATK for 10 s |
-| Dustin | Candy lure: enemies chase it, then it pops | Farrah spray: a burning cone | Compass: more quarters drop | Dart: the spray calls Dart to bite for 12 s, once every 30 s |
-| Lucas | Wrist rocket, eight ways | Triple shot | Sharp eye: more crits | Camo: Triple shot hides him for 3 s, once every 8 s |
-| Eleven | Push: a shove that clears logs | Mind Blast: a piercing beam | Flip: Push hits harder | Sensory tank: hold Special, hidden foes and paths near her show for 8 s |
-| Will | Sketch bolt | Fireball, sized by a d20 | Cold spot: hidden foes near him show | Cleric: hold Special, the whole party heals 30% |
-| Max | Board, two hits | Skate dash: a roll that crosses gaps | High score: more quarters and crits | Kickflip: the dash ends in a shockwave |
-| Steve | Nail bat, three hits | Babysit: taunts and guards the party | Hair of steel: shrugs off a hit after 5 s unhurt | Ahoy: a charged swap to him leaps onto a foe |
-| Robin | Scoop toss: a slowing splash | Word vomit: foes fight each other | Linguist: Word vomit lasts longer | Triple scoop: three scoops a toss |
-| Nancy | Pistol | Shotgun | Trap kit: the Shotgun drops a bear trap | Molotov: hold Special, a fire pool that also burns vines |
+| Hero | Basic | Special | Level 3 talent | Level 6 talent | Level 9 talent |
+| --- | --- | --- | --- | --- | --- |
+| Mike | Bat, three-hit arc | DM screen: blocks shots, halves damage behind it | DM fiat: the first hit of a fight crits | Rally: the DM screen gives the party +20% ATK for 10 s | Oath: the first ally to fall each stage gets up 1.5 s later at half HP, while Mike stands |
+| Dustin | Candy lure: enemies chase it, then it pops | Farrah spray: a burning cone | Compass: more quarters drop | Dart: the spray calls Dart to bite for 12 s, once every 30 s | Cerebro: hold Special to call Suzie, who fills the party's MP by 30%, once a stage |
+| Lucas | Wrist rocket, eight ways | Triple shot | Sharp eye: more crits | Camo: Triple shot hides him for 3 s, once every 8 s | Volley: Triple shot fires five rocks |
+| Eleven | Push: a shove that clears logs | Mind Blast: a piercing beam | Flip: Push hits harder | Sensory tank: hold Special, hidden foes and paths near her show for 8 s | Overload: Mind Blast is wider and stuns every foe it crosses |
+| Will | Sketch bolt | Fireball, sized by a d20 | Cold spot: hidden foes near him show | Cleric: hold Special, the whole party heals 30% | Hive link: a charged swap to him shows hidden paths within 320 px for 8 s |
+| Max | Board, two hits | Skate dash: a roll that crosses gaps | High score: more quarters and crits | Kickflip: the dash ends in a shockwave | Extra life: once a stage a KO leaves her at 1 HP, with 2 s of invulnerability |
+| Steve | Nail bat, three hits | Babysit: taunts and guards the party | Hair of steel: shrugs off a hit after 5 s unhurt | Ahoy: a charged swap to him leaps onto a foe | King Steve: under 30% HP, +30% ATK |
+| Robin | Scoop toss: a slowing splash | Word vomit: foes fight each other | Linguist: Word vomit lasts longer | Triple scoop: three scoops a toss | Dry wit: confused foes take 25% more from the party |
+| Nancy | Pistol | Shotgun | Trap kit: the Shotgun drops a bear trap | Molotov: hold Special, a fire pool that also burns vines | Final girl: +40% ATK once two allies are down |

@@ -1,20 +1,25 @@
 # TODO
 
-Scope for this pass: the first half of chapter 4. Level 10 (stage 4.1, Kamchatka: Hopper alone, the guards, the Demogorgon pit) and Level 11 (stage 4.2, the Hellfire Club and the Creel House: Eddie joins, Creel ghouls and haunted mirrors, the clock curse taught, Max's Walkman). The pass before it built Level 9, the end of chapter 3.
+Scope for this pass: chapter 4. Level 10 (stage 4.1, Kamchatka: Hopper alone, the guards, the Demogorgon pit), Level 11 (stage 4.2, the Hellfire Club and the Creel House: Eddie joins, Creel ghouls and haunted mirrors, the clock curse taught, Max's Walkman), Level 12 (stage 4.3, Upside Down Hawkins: demobats, the clocks, the rooftop's song and Eddie's fall) and Level 13 (stage 4.4, Vecna's lair). The pass before it built Level 9, the end of chapter 3.
 
-## This pass (levels 10 and 11)
+## This pass (levels 10 to 13)
 
 - [x] Lead's calls (2026-10-18), under the owner's standing instruction to go with the lead's recommendations, each in `docs/level-10.md`, `docs/level-11.md` and `docs/chapter-4.md`: Hopper joins at the best four heroes' average less one (Lv 5 in a real run); 4.1 replays for XP; Hopper stays in Kamchatka (no 4.2 pool) and Erica's cart stays open through the split; a camp guard with a baton who blocks; the pit Demogorgon is finished by Hopper's slam; Eddie is locked in 4.2 and catches up to the party he joins; the solo is a stand-in with a seam for the note-highway module the parent session builds (`src/solo/`); the Hellfire bond is built; the curse takes the active hero unless that is Eddie or Max; the two ways out taught are the Walkman and breaking the clock; 4.2 is called The Creel House
 - [x] Spine: `docs/level-10.md`, `docs/level-11.md`, "Chapter four on the map" in `docs/map-screen.md`; the contracts in `core/types.ts` (Hopper and Eddie heroes, four foes, the curse, the solo and Walkman on the HUD, mirrors and clocks; the sound vocabulary moved to `core/types_audio.ts` and the dialogue and gfx vocabulary to `core/types_ui.ts` to stay under 500 lines) and `world/types.ts` (the `curse` and `walkman` steps, the `curseEnd` beat, the `memory` room); 33 tiles; 4.1 and 4.2 in the campaign with the chapter four card, `closesChapter` by chapter length (4.2 is not a chapter end), Eddie locked, the joins and `ARRIVAL` from the run (Hopper 5; Mike 8, Dustin 7, Robin 5, Eddie 5); the Walkman in progress and flow; `setLookStage`; the memory skin's bake and fade; stand-ins; stub stages
-- [ ] Sim A: Hopper (haymaker, ground slam, Coffee, Wind-up), Eddie (Flying V and its ring, the solo's stand-in, Metalhead, Hellfire DM, the Hellfire bond, the riff), one hero in a party, the bot for both
-- [ ] Sim B: the Kamchatka guard, the camp guard, the pit Demogorgon and its slam finisher, the ghoul, mirrors, the clock, the curse, the Walkman, the bot against all of it
-- [ ] Art A: Hopper in the Telogreika, the guards, the Blizzard camp, the Mine shaft pit, KAMCHATKA on the map
-- [ ] Art B: Eddie, the ghoul, the Hellfire Club in Storm, the Creel House in Abandoned and Blood red, the mirror, the clock, the fx, the curse mark, CREEL HOUSE on the map
-- [ ] Audio: `kamchatka`, eight effects, Eddie's blip, Hopper's and Eddie's stingers
-- [ ] UI: picks with ten, the HUD with one hero, the curse pips, the Walkman
-- [ ] World 4.1 and 4.2: the maps, beats, scripts and words, the waypoints
-- [ ] Tuned on HARD (`chief`) and paced (`docs/pace.md`)
-- [ ] Verified in the browser (muted), docs and TODO updated, merged into main
+- [x] Sim A: Hopper (haymaker, ground slam, Coffee, Wind-up), Eddie (Flying V and its ring, the solo's stand-in with a seam for `createSolo`, Metalhead, Hellfire DM, the riff), one hero in a party, the bot for both
+- [x] Sim B: the Kamchatka guard, the camp guard, the pit Demogorgon and its slam finisher, the ghoul, mirrors, the clock, the curse, the Walkman, the bot against all of it
+- [x] Art A and B: Hopper in the Telogreika, the guards, the Blizzard camp, the Mine shaft pit, Eddie, the ghoul, the Hellfire Club in Storm, the Creel House in Abandoned and Blood red, the mirror, the clock, the fx, the curse mark, KAMCHATKA and CREEL HOUSE on the map
+- [x] Audio: `kamchatka`, eight effects, Eddie's blip, Hopper's and Eddie's stingers
+- [x] UI: picks for ten to twelve, the HUD with one hero, the curse pips, the Walkman
+- [x] World 4.1 and 4.2, then tuned by the lead on HARD: 4.1 at 1.4 (chief 16 of 20, 84 of 100, careless 19), 4.2 at 1.5 (chief 18, 86 of 100, careless 17). See `docs/level-10.md` and `docs/level-11.md`, "Result"
+- [x] Merged main in (bonds, the note-highway solo, the Lv 9 talents): Hopper's Berserk and Eddie's Encore built, the curse's KO goes through `reapHeroes` so Max's Extra life catches it
+- [x] Levels 12 and 13 (the parent's follow-on): specs `docs/level-12.md` and `docs/level-13.md`, the spine (demobat, Vecna and his orbs, the song and fall steps, the storm's flash, the Upside Down skin, per-spawn tuning), Sim C (the demobat, the rooftop, Eddie's fall), Sim D (Vecna, the orbs, the phases), Art C (Blue storm, the demobat), Art D (the Creel House in the Upside Down, the attic, Vecna), World 4.3 and 4.4
+- [x] Tuned on HARD: 4.3 at 1.5 (chief 98 of 100, careless 19 of 20), 4.4 at 1.7 (chief 100 of 100, careless 15 of 20: the careful bot steps out of every telegraphed attack, so its numbers sit above the band to keep the careless floor). Pace: 4.3 pays 2.8 and 4.4 pays 2.9, the lead ends chapter 4 at Lv 10 in eight runs of ten, never under Lv 9 (`tests/pace.test.ts`)
+- [x] Merged into main at the owner's word (2026-10-18). Not pushed
+- [ ] Audio for 4.3 and 4.4: the seven effects and Vecna's blip are stand-ins (`audio/sfx_level1213.ts`)
+- [ ] The docs' "Result" sections for 4.3 and 4.4, and `docs/pace.md` for chapter 4
+- [ ] A muted browser pass over the map from 3.3 to 4.4 with the bot
+- [ ] Follow-ups: Eddie's special through `createSolo` (the seam is `heroes/eddie_solo.ts`); split `world/play.ts` (538 lines, over 500 since before this pass); the touch overlay's SWAP button for a lone hero; a chapter four epilogue
 
 ## This pass (bonds)
 

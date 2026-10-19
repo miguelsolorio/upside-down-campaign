@@ -132,7 +132,12 @@ export const STAGE_53: StageData = {
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
   burrows: BURROWS,
   finale: FINALE,
-  enemyMult: 1.45,
-  xpMult: 3.2,
+  // Measured with node scripts/measure-stage.ts 5.3 chief 100 [--careless] with the party a real run brings (Mike 11, Dustin 10, Eleven 8, Will 8: ARRIVAL in
+  // core/campaign.ts): at 1.55 the bot clears 93 of 100 (18 of 20) for 38% lowest HP, the careless bot 53 (11 of 20), and nothing is stuck (docs/level-16.md,
+  // "Result"). At 1.45 the same party cleared every run (the careless bot 57), which is over the band's top, so it came up to 1.55.
+  enemyMult: 1.55,
+  // The roster is worth 350, so the stage pays about 1760, the most of any: the lead comes in at Lv 11 with 130 to 950 XP still to find for the
+  // cap, and the bot that keeps the lead is at Lv 12 in every one of 40 seeds, Dustin at Lv 11 beside him (docs/pace.md, "Chapter 5").
+  xpMult: 5,
   waypoints: WAYPOINTS,
 };

@@ -34,7 +34,8 @@ test('stage 5.2: the bot clears the stage on chief, through every beat in order,
       // The gap's hint plays if a fight with the deck's bats walks the party past the gap on the road island; it is a courtesy, not a step.
       assert.deepEqual(run.said.filter((id) => id !== 'l15_gap_hint'), ORDER, `seed ${seed}: every beat, in order, and not the cache's`);
       assert.deepEqual(run.steps, ['open door1'], 'the bot opens its gates by flag, not by the director, and the clear lifts the rock fall');
-      assert.ok(run.xp >= stageXp(PLAYED) - 6 && run.xp <= stageXp(PLAYED), `seed ${seed}: ${run.xp} XP, everything but a burst pod`);
+      // A burst pod pays 3 XP before xpMult, and a run can lose two of them.
+      assert.ok(run.xp >= stageXp(PLAYED) - Math.ceil(6 * (PLAYED.xpMult ?? 1)) && run.xp <= stageXp(PLAYED), `seed ${seed}: ${run.xp} XP, everything but a burst pod`);
       assert.ok(run.frames > 60 * 60 && run.frames < 60 * 300, `seed ${seed}: ${(run.frames / 60).toFixed(0)} s`);
     }
   }

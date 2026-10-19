@@ -1,4 +1,4 @@
-// A whole run, 1.1 to 3.2, played headlessly by the bot and carried between stages the way flow.ts carries it:
+// A whole run, 1.1 to 5.3, played headlessly by the bot and carried between stages the way flow.ts carries it:
 // partyFor and the map's picks build each party, recordClear keeps every hero at their best. Inside a stage it does
 // what the play scene does for a person: lights each string of lights it walks past (half heal, new checkpoint) and,
 // on a wipe, rebuilds at the last lights with levels, XP and kills kept. scripts/measure-campaign.ts prints it, and
@@ -12,7 +12,7 @@ import type { Difficulty, HeroId, HeroSnapshot, PartySeed, Sim, SimInput } from 
 import { xpForLevel } from '../src/progression/xp.ts';
 import { nearUsable } from '../src/world/interact.ts';
 import { isLoss } from '../src/world/loss.ts';
-import { routeFrom, simOptions, stageGrid } from '../src/world/options.ts';
+import { KEPT_PROPS, routeFrom, simOptions, stageGrid } from '../src/world/options.ts';
 import { SONG_BOT, SONG_CARELESS } from '../src/world/rooftop.ts';
 import { headlessSongs } from '../src/world/songs.ts';
 import { createDirector } from '../src/world/triggers.ts';
@@ -37,8 +37,6 @@ import { STAGE_53 } from '../src/world/stages/stage53.ts';
 
 export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42, '4.3': STAGE_43, '4.4': STAGE_44, '5.1': STAGE_51, '5.2': STAGE_52, '5.3': STAGE_53 };
 
-/** Props a retry leaves open, as the play scene's KEPT_PROPS. */
-const KEPT = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap']);
 /** Frames one attempt at a stage may take, and attempts before a stage counts as stuck. */
 const MAX_FRAMES = 30000;
 const MAX_TRIES = 6;
@@ -50,7 +48,7 @@ export interface RunOpts {
   careless?: boolean;
   /** Seconds between swaps to the next hero, for a player who shares the lead around. 0 leaves swapping to the bot. */
   rotate?: number;
-  /** The party picked on the map for 2.2 and 2.3, lead first. Default: confirm whatever the panel shows. */
+  /** The party picked on the map for the stages that have picks, lead first, fixed up for each stage's locked heroes. Default: confirm whatever the panel shows. */
   picks?: HeroId[];
   /** Skip the lights, as the ?bot=1 run in the browser does. */
   noLights?: boolean;
@@ -136,7 +134,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
     // A wipe: back to the last lights with the same party, levels and XP, the dead left dead and the open left open.
     wipes++;
     const live = sim.party().map((h) => ({ id: h.id, level: h.level, xp: h.xp, bonus: h.bonus }));
-    const open = sim.view().props.filter((q) => KEPT.has(q.kind) && (q.state === 'open' || q.state === 'lit')).map((q) => q.id);
+    const open = sim.view().props.filter((q) => KEPT_PROPS.has(q.kind) && (q.state === 'open' || q.state === 'lit')).map((q) => q.id);
     const skip = live.some((h) => h.id === 'eleven') ? [...killed, 'eleven'] : [...killed];
     sim = createSim(simOptions(S, grid, { party: live, start: { x: checkpoint.x, y: checkpoint.y }, seed: seed + 1000 * wipes, difficulty: o.difficulty ?? 'chief', skipSpawns: skip, openProps: open, walkman }));
     dir.restore(checkpoint.state);
@@ -146,7 +144,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
   return { stage: id, cleared: dir.finished(), wipes, frames, xp: sim.stats().xpEarned, entered: party, party: sim.party() };
 }
 
-/** 1.1 to 2.3 in order, each party built from the last clear as flow.ts builds it. A stuck stage still carries on. */
+/** 1.1 to 5.3 in order, each party built from the last clear as flow.ts builds it (picks, locked heroes and the returning heroes' catch-up). A stuck stage still carries on. */
 export function runCampaign(seed: number, o: RunOpts = {}, stages: readonly string[] = STAGE_ORDER): CampaignRun {
   let progress: Progress | null = null;
   const out: CampaignRun = { stages: [], after: {} };

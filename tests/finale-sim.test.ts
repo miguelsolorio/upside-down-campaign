@@ -56,8 +56,8 @@ test('the stage pays 350 XP before xpMult, which takes the lead to Lv 12 by the 
   const base = S53.spawns.reduce((n, e) => n + (e.kind === 'enemy' ? ENEMY_DEFS[e.type].xp : 0), 0);
   assert.equal(base, 350, 'two Flayed, three demobats, Vecna and the Mind Flayer; his orbs and its legs pay nothing');
   assert.ok(base >= 300 && base <= 360);
-  assert.equal(S53.xpMult, 3.2);
-  assert.ok(stageXp(S53) - 4 >= 1061 - 300, 'the lead has 300 into Lv 11 and 1061 takes him to Lv 12 (stageXp counts the four legs at 1 each: they pay 0)');
+  assert.equal(S53.xpMult, 5, 'set by the pace pass (docs/pace.md, "Chapter 5")');
+  assert.ok(stageXp(S53) - 4 >= 1061, 'the stage pays more than the 1061 that carry a lead from the start of Lv 11 to the cap (stageXp counts the four legs at 1 each: they pay 0)');
 });
 
 test('the map: 36 by 44 tiles, a round arena of 22 with the rim all round it, and the marks left and right of its centre', () => {

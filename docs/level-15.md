@@ -123,3 +123,21 @@ Kid clears 20 of 20 (272 damage), upside 7 of 20. The deck's bats moved nothing 
 - **The bot got stuck on a one-tile bridge** (one seed of 20 at 2.7): the stuck check had learned the tile at the bridge's mouth as a wall and the one route to the deck was gone. On a stage with a void it now forgets what it learned when A* finds no route and plans again (`combat/bot.ts`); other stages behave as before.
 - The twins go over the rim about eight times in a careful run, each a 15% HP loss for the twin that falls, and the bot is never on the void.
 - `sense1` opens by flag in the bot's route, as 2.1's hidden path does, with Will in the party; `tests/stage52-gates.test.ts` has Will reveal it by walking up to its foot.
+
+## After the pace pass
+
+`docs/pace.md` ("Chapter 5") pays the stage and replaces the placeholder arrival with what a run brings. `xpMult` is 2.4, so the stage pays 836 XP (348 before it). `ARRIVAL` for 5.2 is Mike Lv 10 with 817 XP, Dustin Lv 10 with 47, Robin Lv 8 with 458 and Will Lv 8, a level more for Dustin, Robin and Will than the party the stage was tuned with (Mike 10, Dustin 9, Robin 7, Will 7), and Mike a long way into Lv 11.
+
+At `enemyMult` 2.72 that party cleared 20 of 20 on the careful bot (91 of 100) and 20 of 20 on the careless one (99 of 100; it was 74), the top of the band. The factor came up to 2.78:
+
+| | Careful bot, 20 seeds | Careful, 100 seeds | Careless bot, 20 seeds | Careless, 100 seeds |
+|---|---|---|---|---|
+| Cleared | 18 | 84 | 19 | 95 |
+| Wiped / stuck | 2 / 0 | 16 / 0 | 1 / 0 | 5 / 0 |
+| Average damage taken | 467 | 487 | 620 | 612 |
+| Average KOs | 1.15 | 1.52 | 1.10 | 0.99 |
+| Average lowest party HP | 27% | 25% | 36% | 35% |
+| Average time | 140 s | 138 s | 136 s | 131 s |
+| The twins' fight | 50 s (35%) | 48 s (34%) | 43 s (32%) | 43 s (32%) |
+
+Clears, the careless floor, the lowest HP and "nothing stuck" are in the bands; damage is still over (487 against 150 to 320, as before at 563). It is a cliff, over 100 seeds: the careful bot clears 91 at 2.72, 86 at 2.78, 82 at 2.84 and 75 at 2.9, the careless bot 99, 94, 89 and 81 (readings a little earlier in the pass, with Mike 20 XP lower).

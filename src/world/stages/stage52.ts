@@ -150,9 +150,13 @@ export const STAGE_52: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
-  // Tuned with node scripts/measure-stage.ts 5.2 chief 20 [--careless] (docs/level-15.md, "Result"): the bot clears 16 of 20 (89 of 100, none stuck), the
-  // one that never dodges 13. The party is Lv 7 to 10 with 66 to 111 HP each, so the stage needs a big factor, and the Demogorgons' swipe and charge are
-  // down in enemies/defs.ts so that the factor does not make them a wall for a player who does not dodge. It is a cliff: over 100 seeds 2.6 clears 99, 3 only 65, and the bot that never dodges 77 and 23.
-  enemyMult: 2.72,
+  // Tuned with node scripts/measure-stage.ts 5.2 chief 100 [--careless] (docs/level-15.md, "Result"), with the party a real run brings (Mike 10, Dustin 10,
+  // Robin 8, Will 8: ARRIVAL in core/campaign.ts): the bot clears 18 of 20 (84 of 100, none stuck), the one that never dodges 19 (95). The party is Lv 8 to 10,
+  // so the stage needs a big factor, and the Demogorgons' swipe and charge are down in enemies/defs.ts so that the factor does not make them a wall for a player
+  // who does not dodge. It is a cliff: over 100 seeds 2.72 clears 91 and 99, 2.84 clears 82 and 89, and 2.9 only 75 and 81.
+  enemyMult: 2.78,
+  // The roster is worth 348, so the stage pays about 835: 5.1 and 5.2 together bring the lead to Lv 11 and no further, in every one of 20 seeds
+  // (docs/pace.md, "Chapter 5").
+  xpMult: 2.4,
   waypoints: WAYPOINTS,
 };

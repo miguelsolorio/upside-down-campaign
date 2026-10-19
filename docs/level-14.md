@@ -109,3 +109,21 @@ Built in `src/world/stages/stage51.ts` (the map, beats, puzzles, bot route) and 
 | The Commander's fight | 34 s (24%) | 35 s (24%) | 30 s | 29 s |
 
 Clears, the careless floor, the lowest HP and "nothing stuck" are in the bands. **Damage is not**: 623 against 150 to 320, as before the demobats (583). The two cannot both hold with this party. The bench heals 2% of its max HP a second (`regen` in `combat/hero.ts`), about 5.5 HP a second for these four over a 150 s run, so a run that dips under 45% has taken 500 damage and more. At `enemyMult` 1.0 the damage was 296 but the careful bot cleared every run with a lowest HP of 66% on average; at 1.4 it is 576 with every run cleared and 44%, and the careless bot clears 17. About a third of the damage is the Commander's fight (a run without him takes 200 less) and the rest the troopers on the street, at the checkpoint and in the square; the Lab agents add almost none. The factor is a cliff: with the bats at 1.6 the careful bot clears 19 of 20 and the careless bot 9 to 10, at 1.5 19 and 15, at 1.4 20 and 17.
+
+## After the pace pass
+
+`docs/pace.md` ("Chapter 5") pays the stage and replaces the placeholder arrival with what a run brings. `xpMult` is 2.2, so the stage pays 684 XP (308 before it, and a run earns 672 on average). `ARRIVAL` for 5.1 is Mike Lv 10 with 317 XP, Dustin Lv 9 with 346, Robin Lv 8 with 28 and Hopper Lv 8, a level more for Robin and Hopper than the party the stage was tuned with (Mike 10, Dustin 9, Robin 7, Hopper 7).
+
+At `enemyMult` 1.5 that party took the stage out of its bands: the careful bot cleared 20 of 20 (99 of 100), its lowest HP read 46% (the band is under 45%) and the careless bot cleared 93 of 100 (it was 71). The factor came up to 1.58:
+
+| | Careful bot, 20 seeds | Careful, 100 seeds | Careless bot, 20 seeds | Careless, 100 seeds |
+|---|---|---|---|---|
+| Cleared | 19 | 97 | 19 | 80 |
+| Wiped / stuck | 1 / 0 | 3 / 0 | 1 / 0 | 20 / 0 |
+| Average damage taken | 668 | 656 | 867 | 881 |
+| Average KOs | 0.8 | 0.65 | 1.85 | 2.4 |
+| Average lowest party HP | 37% | 41% | 20% | 17% |
+| Average time | 143 s | 145 s | 127 s | 127 s |
+| The Commander's fight | 36 s (25%) | 35 s (24%) | 29 s (23%) | 29 s (23%) |
+
+Clears, the careless floor, the lowest HP and "nothing stuck" are in the bands, and damage is the same miss as before (656 against 150 to 320, for the same reason). It is a cliff, over 100 seeds: at 1.5 the careful bot clears 99 and the careless bot 93 (lowest HP 46%), at 1.55 99 and 81 (44%), at 1.58 97 and 80 (41%), at 1.6 96 and 73 (40%), at 1.65 93 and 60 (35%). 1.6 was the first pick, but in the carried run it left one seed of 40 stuck (seed 16 stands 500 s in the south corridor with every foe dead; `docs/pace.md`, "Gaps in chapter 5"), and so did 1.62 and 1.65. 1.58 clears all 40.

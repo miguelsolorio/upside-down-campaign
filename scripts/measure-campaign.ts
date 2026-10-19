@@ -1,6 +1,6 @@
-// How fast does the party level over a real run? Plays 1.1 to 2.3 with the bot, carrying the party between stages the
+// How fast does the party level over a real run? Plays 1.1 to 5.3 with the bot, carrying the party between stages the
 // way the game does (scripts/campaign-run.ts), and prints each hero's level and XP after each stage over N seeds, next
-// to what a ?stage= jump starts the next stage with. Run from the project root:
+// to what a ?stage= jump starts the next stage with, and the lead's XP against the pace's targets. Run from the project root:
 //
 //   node scripts/measure-campaign.ts [difficulty] [seeds] [--careless] [--rotate=20] [--picks=mike,dustin,max,steve] [--no-lights] [--seeds]
 //   node scripts/measure-campaign.ts chief 20
@@ -8,7 +8,9 @@
 //
 // The bot keeps the lead unless a hero is hurt or a gate needs someone else, so the lead takes most of the XP. --rotate
 // swaps to the next hero every so many seconds, for a player who shares it around. --seeds prints one line per seed.
-import { STAGE_ORDER, chapterOf, defaultParty, nextStage } from '../src/core/campaign.ts';
+// --picks sets the party for the stages with picks (lead first); it is fixed up for each stage's locked heroes the way the picks panel is
+// (Hopper in 5.1, Will in 5.2, Eleven and Will in 5.3).
+import { STAGE_ORDER, chapterOf, defaultParty } from '../src/core/campaign.ts';
 import type { Difficulty, HeroId, PartySeed } from '../src/core/types.ts';
 import { xpForLevel } from '../src/progression/xp.ts';
 import { runCampaign, totalXp } from './campaign-run.ts';
@@ -34,6 +36,7 @@ for (let seed = 1; seed <= N; seed++) {
 }
 
 const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+const levelOf = (xp: number): number => { let l = 1; while (xpForLevel(l + 1) <= xp) l++; return l; };
 const lv = (xs: number[]): string => {
   const lo = Math.min(...xs), hi = Math.max(...xs), m = mean(xs);
   return `${m.toFixed(1)}${lo === hi ? '' : ` (${lo}-${hi})`}`.padEnd(12);
@@ -95,14 +98,18 @@ for (const id of STAGE_ORDER) {
   console.log(`  '${id}': [${seeds.join(', ')}],`);
 }
 
-// The pace in docs/game-design.md: Lv 4 after chapter 1 and 6 after chapter 2.
-console.log('\nPace at each chapter end');
+// The pace in docs/game-design.md: Lv 4 after chapter 1, 6 after 2, 8 after 3, 10 after 4, and chapter 5's 11 after 5.2 and 12 (the cap) after 5.3
+// (docs/pace.md). The lead is whoever has the most XP, and the XP columns are the lead's total since Lv 1, so each target's own line shows.
+const MARKS: Record<string, number> = { '1.3': 4, '2.3': 6, '3.3': 8, '4.4': 10, '5.2': 11, '5.3': 12 };
+console.log('\nPace at each chapter end (and 5.2), the lead against the target');
 for (const id of STAGE_ORDER) {
-  const next = nextStage(id);
-  if (next && chapterOf(next) === chapterOf(id)) continue;
+  const target = MARKS[id];
+  if (target === undefined) continue;
   const st = runs.map((r) => r.stages.find((s) => s.stage === id));
   // The lead is whoever has the most XP: Mike for the bot, anyone when the lead is shared.
-  const lead = st.map((s) => Math.max(...(s?.party ?? []).map((p) => p.level)));
+  const xp = st.map((s) => Math.max(...(s?.party ?? []).map(totalXp)));
+  const lead = xp.map(levelOf);
   const avg = st.map((s) => mean((s?.party ?? []).map((p) => p.level)));
-  console.log(`chapter ${chapterOf(id)} (${id}): lead ${lv(lead)} party average ${mean(avg).toFixed(2)} (${Math.min(...avg).toFixed(2)}-${Math.max(...avg).toFixed(2)})`);
+  const at = lead.filter((l) => l === target).length, under = lead.filter((l) => l < target).length;
+  console.log(`chapter ${chapterOf(id)} (${id}): lead ${lv(lead)} Lv ${target} in ${at} of ${N}${under ? `, under in ${under} (${xpForLevel(target) - Math.min(...xp)} XP short at worst)` : ''}${lead.some((l) => l > target) ? `, over in ${lead.filter((l) => l > target).length}` : ''}; XP ${Math.min(...xp)} to ${Math.max(...xp)}, party average ${mean(avg).toFixed(2)} (${Math.min(...avg).toFixed(2)}-${Math.max(...avg).toFixed(2)})`);
 }

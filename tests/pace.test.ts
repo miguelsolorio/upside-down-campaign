@@ -1,10 +1,11 @@
-// The campaign's pace (docs/pace.md): a whole run, 1.1 to 3.3, played by the bot on chief with the party
+// The campaign's pace (docs/pace.md): a whole run, 1.1 to 5.3, played by the bot on chief with the party
 // carried between stages the way the game carries it (scripts/campaign-run.ts). The lead ends chapter 1 at Lv 4, chapter 2
-// at Lv 6 and chapter 3 at Lv 8, nobody who played the chapter is left far behind, and a ?stage= jump walks in with what a real run brings.
+// at Lv 6, chapter 3 at Lv 8 and chapter 4 at Lv 10, then takes Lv 11 in 5.2 and the cap, Lv 12, in 5.3. Nobody who played the chapter is left far
+// behind, and a ?stage= jump walks in with what a real run brings.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { STAGE_ORDER, chapterOf, defaultParty } from '../src/core/campaign.ts';
-import type { HeroId, HeroSnapshot } from '../src/core/types.ts';
+import type { HeroId, HeroSnapshot, PartySeed } from '../src/core/types.ts';
 import { xpForLevel } from '../src/progression/xp.ts';
 import { runCampaign, totalXp } from '../scripts/campaign-run.ts';
 import type { CampaignRun } from '../scripts/campaign-run.ts';
@@ -85,16 +86,17 @@ test('pace: sharing the lead lands the same, with chapter 2 at Lv 6 in most runs
 });
 
 test('pace: a ?stage= jump walks in with the party a real run brings, within a few kills of XP', () => {
-  // Chapter 5's ARRIVAL rows are placeholders, the lead at Lv 10, and its two stages are stubs that pay no XP: they join this check once
-  // 4.3 and 4.4 are in and the stages are measured (docs/chapter-5.md, "The pace").
-  for (const id of STAGE_ORDER.filter((s) => chapterOf(s) < 5)) {
+  for (const id of STAGE_ORDER) {
     const runs = kept.map((r) => r.stages.find((s) => s.stage === id)?.entered ?? []);
     const jump = defaultParty(id);
     assert.deepEqual(jump.map((s) => s.id), runs[0]?.map((s) => s.id), `${id}: the same heroes, lead first`);
+    // A few kills: 40 XP up to chapter 4, where a kill pays 10 to 20. Chapter 5's pay is two to five times that (xpMult 2.2, 2.4 and 5), and the lead's XP into
+    // 5.3 runs from 3900 to 4700 across seeds, so its medians over ten seeds and over forty sit as much as 220 XP apart: 120 holds the jump between them.
+    const tolerance = chapterOf(id) === 5 ? 120 : 40;
     for (const seed of jump) {
       const xp = runs.map((e) => totalXp(e.find((s) => s.id === seed.id) ?? {})).sort((a, b) => a - b);
       const median = xp[Math.floor(xp.length / 2)] as number;
-      assert.ok(Math.abs(totalXp(seed) - median) <= 40, `${id}: ${seed.id} jumps in with ${totalXp(seed)} XP, a run brings ${median}`);
+      assert.ok(Math.abs(totalXp(seed) - median) <= tolerance, `${id}: ${seed.id} jumps in with ${totalXp(seed)} XP, a run brings ${median}`);
     }
   }
 });
@@ -108,4 +110,48 @@ test('pace: chapter 4 ends with the lead at Lv 10 in most runs, and never under 
     if (levelOf(best(party)) >= 10) ten++;
   }
   assert.ok(ten >= 7, `Lv 10 after chapter 4 in ${ten} of ${kept.length} runs`);
+});
+
+/** The level a hero who comes back to a stage walks in at, if he was behind: the rest of the party averaged, less one (CATCH_UP in core/campaign.ts). */
+function caughtUp(entered: PartySeed[], id: HeroId): number {
+  const rest = entered.filter((p) => p.id !== id);
+  return Math.max(1, Math.floor(rest.reduce((n, p) => n + (p.level ?? 1), 0) / rest.length) - 1);
+}
+
+test('pace: chapter 5 takes the lead to Lv 11 after 5.2 and the cap, Lv 12, after 5.3, with Dustin at most a level under', () => {
+  for (const [i, r] of kept.entries()) {
+    const one = after(r, '5.1'), two = after(r, '5.2'), three = after(r, '5.3');
+    // The lead walks into 5.1 at Lv 10 (chapter 4's result), comes out of 5.1 at Lv 10 or 11, is Lv 11 after 5.2 and no more, and is at the cap after 5.3.
+    assert.ok(best(one) >= xpForLevel(10) && best(one) < xpForLevel(12), `seed ${i + 1}: the lead has ${best(one)} XP after 5.1`);
+    assert.equal(levelOf(best(two)), 11, `seed ${i + 1}: the lead has ${best(two)} XP after 5.2`);
+    assert.equal(levelOf(best(three)), 12, `seed ${i + 1}: the lead has ${best(three)} XP after 5.3`);
+    // Mike and Dustin play all of it. Dustin ends 5.2 at Lv 10 or 11 and 5.3 at Lv 11 or 12, at most a level under the lead.
+    assert.deepEqual(stayed(r, 5), ['mike', 'dustin'], 'the default picks keep Mike and Dustin through chapter 5');
+    const dustin = (party: HeroSnapshot[]): number => party.find((p) => p.id === 'dustin')?.level ?? 0;
+    assert.ok(dustin(two) >= 10 && dustin(two) <= 11, `seed ${i + 1}: Dustin is Lv ${dustin(two)} after 5.2`);
+    assert.ok(dustin(three) >= 11, `seed ${i + 1}: Dustin is Lv ${dustin(three)} after 5.3`);
+    // Hopper (5.1), Will (5.2) and Eleven and Will (5.3) come back at the party's level less one and are never worse for the stage. They are the stage's
+    // catch-up heroes, so they end a few levels under the lead by design: the pace holds the lead and whoever played the whole chapter.
+    for (const [stage, id] of [['5.1', 'hopper'], ['5.2', 'will'], ['5.3', 'eleven'], ['5.3', 'will']] as const) {
+      const entered = r.stages.find((s) => s.stage === stage)?.entered ?? [];
+      const at = entered.find((p) => p.id === id)?.level ?? 0;
+      assert.ok(at >= caughtUp(entered, id), `seed ${i + 1}: ${id} walks into ${stage} at Lv ${at}`);
+      const out = after(r, stage).find((p) => p.id === id)?.level ?? 0;
+      assert.ok(out >= at, `seed ${i + 1}: ${id} leaves ${stage} at Lv ${out}, from Lv ${at}`);
+    }
+  }
+});
+
+test('pace: sharing the lead, chapter 5 lands Lv 11 after 5.2 in most runs and the cap after 5.3, never far short', () => {
+  let eleven = 0, twelve = 0;
+  for (const [i, r] of shared.entries()) {
+    const two = after(r, '5.2'), three = after(r, '5.3');
+    // The best hero comes into chapter 5 from chapter 4 a level under in some runs, since a shared lead spreads the XP, so 5.2 can end just short.
+    assert.ok(best(two) >= xpForLevel(11) - 160 && best(two) < xpForLevel(12), `seed ${i + 1}: the best hero has ${best(two)} XP after 5.2`);
+    assert.ok(best(three) >= xpForLevel(12) - 100, `seed ${i + 1}: the best hero has ${best(three)} XP after 5.3`);
+    if (levelOf(best(two)) === 11) eleven++;
+    if (levelOf(best(three)) === 12) twelve++;
+  }
+  assert.ok(eleven >= 8, `Lv 11 after 5.2 in ${eleven} of ${shared.length} runs`);
+  assert.ok(twelve >= 9, `Lv 12 after 5.3 in ${twelve} of ${shared.length} runs`);
 });

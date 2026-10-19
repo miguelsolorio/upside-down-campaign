@@ -128,3 +128,21 @@ The second pass. 5.3 plays from the climb to the map, and every contract above i
 - **Tests.** `tests/flow-end.test.ts`, `finale-hud.test.ts`, `ending.test.ts`, `finale-clock.test.ts`, `finale-dev.test.ts` and the scene test in `finale-play.test.ts`.
 
 Left open: Vecna's sink is chapter 4's thinning KO and not the finale's own `drawFinaleVecna`, and the heart has no landmark of its own on the map yet, only its node and the HEART plate.
+
+## After the pace pass
+
+`docs/pace.md` ("Chapter 5") pays the stage and replaces the placeholder arrival with what a run brings. `xpMult` is 5, so the stage pays 1758 XP (350 before it, and a run earns 1764), the most of any: the lead comes in at Lv 11 with 131 to 950 XP still to find for the cap, and ends 5.3 at Lv 12 in every one of 40 seeds. `ARRIVAL` for 5.3 is Mike Lv 11 with 585 XP, Dustin Lv 10 with 547, Eleven Lv 8 and Will Lv 8 with 463 (it was Mike 11 with 300, Dustin 10 with none and Will with none).
+
+At `enemyMult` 1.45 that party cleared every careful run (20 of 20, 100 of 100), over the band's top of 19, with the careless bot at 11 of 20 (57 of 100). Raising the factor costs the careless floor slowly (1.5 clears 56 of 100, 1.55 55, 1.6 44), so it came up to 1.55:
+
+| | Careful bot, 20 seeds | Careful, 100 seeds | Careless bot, 20 seeds | Careless, 100 seeds |
+|---|---|---|---|---|
+| Cleared | 18 | 93 | 11 | 53 |
+| Wiped / stuck | 2 / 0 | 7 / 0 | 9 / 0 | 47 / 0 |
+| Average damage taken | 523 | 513 | 617 | 625 |
+| Average KOs | 2.85 | 2.68 | 2.80 | 2.96 |
+| Average lowest party HP | 38% | 38% | 42% | 41% |
+| Average time | 131 s | 130 s | 116 s | 117 s |
+| The boss fight | 109 s (83%) | 109 s (83%) | 94 s (81%) | 96 s (82%) |
+
+Clears (14 to 19), the careless floor (10), the lowest HP (under 45%) and "nothing stuck" are all in the bands.

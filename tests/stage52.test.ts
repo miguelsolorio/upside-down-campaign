@@ -35,7 +35,7 @@ test('stage 5.2: the map is 52 by 44, uses all ten Abyss tiles and nothing else,
   assert.deepEqual(S.waves, []);
   assert.deepEqual(S.lights, [], 'a day stage whose strings make their own glow');
   assert.ok((S.enemyMult ?? 1) >= 1 && (S.enemyMult ?? 1) <= 4, `enemyMult ${S.enemyMult}`);
-  assert.equal(S.xpMult, undefined, 'the lead sets xpMult');
+  assert.ok((S.xpMult ?? 1) >= 1 && (S.xpMult ?? 1) <= 4, `xpMult ${S.xpMult}`);
   assert.ok(grid.drop && grid.drop.length === grid.solid.length, 'the stage has a void');
 });
 

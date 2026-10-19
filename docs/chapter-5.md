@@ -16,7 +16,7 @@ The last chapter. Hawkins is under the army's lockdown after the gates opened in
 
 ## The pace
 
-The lead walks into 5.1 at Lv 10 (chapter 4's target). Lv 11 after 5.2, and the cap, Lv 12, after 5.3, as `docs/game-design.md` says ("12 only if you clear most of chapter 5"). Each stage's `xpMult` is set by `scripts/measure-campaign.ts`, and `tests/pace.test.ts` grows to cover chapter 5.
+The lead walks into 5.1 at Lv 10 (chapter 4's target). Lv 11 after 5.2, and the cap, Lv 12, after 5.3, as `docs/game-design.md` says ("12 only if you clear most of chapter 5"). Each stage's `xpMult` is set by `scripts/measure-campaign.ts` (2.2, 2.4 and 5, in `docs/pace.md`, "Chapter 5"), and `tests/pace.test.ts` covers chapter 5.
 
 ## Lv 9 talents
 

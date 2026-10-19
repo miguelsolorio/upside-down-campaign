@@ -134,10 +134,13 @@ export const STAGE_51: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
-  // Measured with node scripts/measure-stage.ts 5.1 chief 100 [--careless] on HARD, with the party a real run brings (Mike 10, Dustin 9, Robin 7,
-  // Hopper 7): at 1.6 the bot clears 94 of 100 for 1.1 KOs, 39% lowest HP and 149 s (the fight 25% of it), the careless bot 61, and nothing is
-  // stuck (docs/level-14.md, "Result"). It is a cliff: 1.5 clears every run and 1.65 loses 14 (the careless bot 47). xpMult stays 1 until the
-  // lead sets it with chapter 4 in (docs/pace.md).
-  enemyMult: 1.5,
+  // Measured with node scripts/measure-stage.ts 5.1 chief 100 [--careless] on HARD, with the party a real run brings (Mike 10, Dustin 9, Robin 8,
+  // Hopper 8: ARRIVAL in core/campaign.ts, docs/pace.md): at 1.58 the bot clears 97 of 100 (19 of 20) for 0.65 KOs, 41% lowest HP and 145 s (the
+  // fight 24% of it), the careless bot 80 (19 of 20), and nothing is stuck (docs/level-14.md, "Result"). It is a cliff: 1.5 clears 99 of 100 with the
+  // lowest HP at 46%, and 1.65 clears 93 (the careless bot 60). The carried run's Hopper and Robin are a level over the party it was first tuned with.
+  enemyMult: 1.58,
+  // The roster is worth 308, so the stage pays about 680: with 5.2's 835 it takes the lead from Lv 10 to Lv 11 by the end of 5.2, in every
+  // one of 20 seeds, and a lead who shares the role lands at Lv 11 or just short (docs/pace.md, "Chapter 5").
+  xpMult: 2.2,
   waypoints: WAYPOINTS,
 };

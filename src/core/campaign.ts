@@ -128,14 +128,15 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   // (docs/level-12.md, docs/level-13.md).
   '4.3': [{ id: 'mike', level: 8, xp: 590 }, { id: 'dustin', level: 7, xp: 485 }, { id: 'robin', level: 6, xp: 180 }, { id: 'eddie', level: 5, xp: 225 }],
   '4.4': [{ id: 'mike', level: 9, xp: 340 }, { id: 'dustin', level: 8, xp: 485 }, { id: 'robin', level: 7, xp: 125 }, { id: 'eleven', level: 5, xp: 189 }],
-  // Chapter 5 placeholders until the stages pay their XP and 4.3 and 4.4 are in (docs/chapter-5.md, "The pace"): the lead walks into 5.1
-  // at Lv 10. Hopper is locked in 5.1 and Will in 5.2, and each catches up to the party he joins (CATCH_UP), so their levels here are the
-  // party's average less one.
-  '5.1': [{ id: 'mike', level: 10 }, { id: 'dustin', level: 9 }, { id: 'robin', level: 7 }, { id: 'hopper', level: 7 }],
-  '5.2': [{ id: 'mike', level: 10 }, { id: 'dustin', level: 9 }, { id: 'robin', level: 7 }, { id: 'will', level: 7 }],
-  // The lead walks into the last stage at Lv 11 (and the cap, Lv 12, is the clear's to give). Eleven and Will are locked in and catch up to the party
-  // they join (CATCH_UP), so their levels are the other two's average less one.
-  '5.3': [{ id: 'mike', level: 11, xp: 300 }, { id: 'dustin', level: 10 }, { id: 'eleven', level: 8 }, { id: 'will', level: 8 }],
+  // Chapter 5 from the run through the built stages, 5.1 to 5.3 paying 684, 835 and 1764 XP at xpMult 2.2, 2.4 and 5 (docs/level-14.md to docs/level-16.md,
+  // docs/pace.md, "Chapter 5"). Hopper is locked in 5.1 and Will in 5.2, and each catches up to the party he joins (CATCH_UP): the average of the other three
+  // less one, with no XP toward the next. Mike's XP into 5.2 and 5.3 is set between the 40-seed and the test's 10-seed medians, which sit
+  // 100 to 220 XP apart (the lead's XP into 5.3 runs from 3900 to 4700 across seeds, since the Commander's and the twins' fights spread the XP by who stands).
+  '5.1': [{ id: 'mike', level: 10, xp: 317 }, { id: 'dustin', level: 9, xp: 346 }, { id: 'robin', level: 8, xp: 28 }, { id: 'hopper', level: 8 }],
+  '5.2': [{ id: 'mike', level: 10, xp: 817 }, { id: 'dustin', level: 10, xp: 47 }, { id: 'robin', level: 8, xp: 458 }, { id: 'will', level: 8 }],
+  // The lead walks into the last stage at Lv 11 with about 500 XP still to find for the cap, Lv 12: 5.3 pays the most. Eleven and Will are locked
+  // in and catch up to the party they join (CATCH_UP), so Eleven's level is the other three's average less one; Will played 5.2 and keeps what he earned there.
+  '5.3': [{ id: 'mike', level: 11, xp: 585 }, { id: 'dustin', level: 10, xp: 547 }, { id: 'eleven', level: 8 }, { id: 'will', level: 8, xp: 463 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

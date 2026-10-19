@@ -106,7 +106,7 @@ The scene after the clear, before the results (`story/epilogue.ts`, `EPILOGUES[4
 | max | He bought us the stairs. Every one of us is sitting here because of that. |
 | robin | Army trucks on the Lab road, and no sirens. That is a lot of army for a gas leak. |
 | will | The crack is not closing. There is somewhere else on the other side, and it is calling. |
-| eleven | I saw it when Vecna went down. Hawkins in pieces, over a red void, under a black sun. |
+| eleven | I saw it when Vecna fell. Hawkins in pieces. A red void. A black sun. |
 | mike | Then that is where we go. All of us, this time. |
 
   The table is the final text (`l13_hill` in `src/story/scripts_l13.ts`): every line fits the box in three rows of 32 characters, with no em dash and no key token, so it reads the same on every device.

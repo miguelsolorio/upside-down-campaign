@@ -182,8 +182,9 @@ test('each script is voiced by the people who should be in it', () => {
 
 test('Eleven speaks one or two words in every script before 2.3, and in short sentences from there', () => {
   // She has grown by the Gate (docs/level-6.md): the l6 scripts are held to short sentences in stage23.test.ts, the l7 ones in
-  // stage31.test.ts, the l8 ones in stage32.test.ts, the l9 ones in stage33-story.test.ts and the l16 ones in epilogue-end.test.ts.
-  for (const l of allLines) if (l.who === 'eleven' && !/^l([6789]|16)_/.test(l.id)) assert.ok(words(l.text) <= 2, `${l.id}[${l.i}]: ${l.text}`);
+  // stage31.test.ts, the l8 ones in stage32.test.ts, the l9 ones in stage33-story.test.ts, the l16 ones in epilogue-end.test.ts and chapter four's
+  // epilogue, l13_hill, in epilogue-hill.test.ts.
+  for (const l of allLines) if (l.who === 'eleven' && !/^(l([6789]|16)_|l13_hill$)/.test(l.id)) assert.ok(words(l.text) <= 2, `${l.id}[${l.i}]: ${l.text}`);
   assert.ok(SCRIPT_LINES_L2.filter((l) => l.who === 'eleven').length >= 8, 'Eleven has lines in level 2');
 });
 

@@ -37,7 +37,10 @@ test('the lines fit the box, have no em dash, and are the narrator\'s and the pa
   const all = lines.map((l) => l.text).join(' ');
   assert.match(all, /Eddie/, 'his seat is kept');
   assert.match(all, /army/i, 'the lockdown: the army on the Lab road');
-  assert.match(all, /void|black sun/i, 'and the Abyss, as Eleven saw it');
+  assert.match(all, /black sun/i, 'and the Abyss, as Eleven saw it');
+  for (const l of lines.filter((x) => x.who === 'eleven')) {
+    assert.ok(l.text.split(/[.!?]/).filter(Boolean).every((sentence) => sentence.trim().split(' ').length <= 6), `Eleven speaks in short sentences: ${l.text}`);
+  }
   assert.ok(lines.some((l) => l.who === 'eleven') && lines.some((l) => l.who === 'will'), 'Eleven and Will, who sense the other side, say what is there');
   assert.ok(!/running up that hill|friends don't lie|master control|number one/i.test(all), 'nothing quotes the show');
   assert.ok(!/seamless|robust|leverage|unlock|delve/i.test(all), 'no banned words');

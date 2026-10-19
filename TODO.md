@@ -35,7 +35,7 @@ Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Ha
 - [ ] A muted browser pass over the map from 3.3 to 4.4 with the bot
 - [x] Eddie's special through the note highway (`createSolo` with the `riff` chart, `world/songs.ts` and `riff.ts`; the headless runs play it with the solo's bot), and `world/play.ts` split under 500 (the arcade visit moved to `world/arcadevisit.ts`)
 - [x] Follow-up: the touch overlay's SWAP button is faint while one hero stands (`swapDims` in `touchkeys.ts`, the socket and word in `touchdraw.ts`, the party size from `input.party` in `play.ts`), and the overlay redraws when a second hero joins. Verified: typecheck clean, 2522 tests pass (main brought in first), the production build passes. In the browser at `?mute=1&stage=4.1` with the mobile preset, SWAP is faint with Hopper alone, lit again once Eddie joined, and lit on the title; no console errors
-- [ ] Follow-up: a chapter four epilogue
+- [x] Follow-up: a chapter four epilogue. After 4.4's clear and before CHAPTER FOUR CLEAR, the party sits on a guardrail on the hill road over Hawkins, Eddie's seat kept with his d20 on the rail, the army on the Lab road and Eleven's glimpse of the Abyss (`l13_hill` in `src/story/scripts_l13.ts`, the still in `src/gfx/epilogue_hill.ts` and `epilogue_hill_party.ts`, `hawkins` for the music, the night changing on the scene's clock). `story/epilogue.ts` keeps a look per chapter. Spec in `docs/level-13.md`, "The chapter end"; pictures in `docs/screenshots/ch4-epilogue-hill.png` and `ch4-epilogue-hill-stages.png`. Verified: played muted in the browser from 4.4's clear through the epilogue to CHAPTER FOUR CLEAR and the map, no console errors
 
 ## This pass (polish and proof)
 

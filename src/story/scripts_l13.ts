@@ -86,7 +86,7 @@ const L13_HILL = script('l13_hill', [
   line('max', 'He bought us the stairs. Every one of us is sitting here because of that.'),
   line('robin', 'Army trucks on the Lab road, and no sirens. That is a lot of army for a gas leak.'),
   line('will', 'The crack is not closing. There is somewhere else on the other side, and it is calling.', 'worried'),
-  line('eleven', 'I saw it when Vecna went down. Hawkins in pieces, over a red void, under a black sun.'),
+  line('eleven', 'I saw it when Vecna fell. Hawkins in pieces. A red void. A black sun.'),
   line('mike', 'Then that is where we go. All of us, this time.', 'determined'),
 ]);
 

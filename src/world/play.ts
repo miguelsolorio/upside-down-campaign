@@ -409,8 +409,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (!scare && !ending.holds()) forward(sim.step(input));
       songs.step(g.input, view.hud.solo);
       view = sim.view(); memory.step(view);
-      // Lights the burst button on a touch screen.
+      // Lights the burst button on a touch screen, and tells it the party size, so SWAP dims for a hero alone.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
+      g.input.party(view.hud.party.length);
       // A benched hero's face under the mouse is a button, and so is the active hero's name and level.
       const ptr = g.input.hover();
       if (ptr && !bot && (slotAt(view.hud.party, ptr.x, ptr.y) >= 0 || onLevel(view.hud.party, ptr.x, ptr.y))) g.input.point();

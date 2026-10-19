@@ -6,8 +6,11 @@ import { DIE_HEX, DIE_TRIS } from './die.ts';
 import type { TouchView } from './touchdraw.ts';
 import { PILL_TILT, capsule, center, circle, roundRect, roundRectPath } from './touchshapes.ts';
 import type { C2D } from './touchshapes.ts';
-import { DIE_READY, alpha } from './touchtheme.ts';
+import { DIE_READY, UNAVAILABLE, alpha } from './touchtheme.ts';
 import type { DieColors, ShellTheme } from './touchtheme.ts';
+
+/** SWAP has nobody to swap to while one hero stands alone (Hopper in 4.1). A screen that says no party size keeps it lit. */
+export const swapDims = (party: number | null | undefined): boolean => typeof party === 'number' && party < 2;
 
 /** The arms a push presses: a diagonal presses two. Right, down, left, up. */
 export function pressedArms(v: Vec2 | null): [boolean, boolean, boolean, boolean] {
@@ -292,8 +295,11 @@ export function drawKeys(ctx: C2D, v: TouchView, T: ShellTheme): void {
   for (const id of ['a', 'b'] as const) roundButton(ctx, b[id], v.held.has(id), T, T.ab, T.abHi, T.abLo, T.abDown);
 
   const swapDown = v.held.has('swap');
+  // Faint while one hero stands alone: the key stays put, and a press still shows, but there is nobody to swap to.
+  ctx.globalAlpha = swapDims(v.party) ? UNAVAILABLE : 1;
   const s = roundButton(ctx, b.swap, swapDown, T, T.rubber, T.rubberHi, T.rubberLo, T.rubberDown);
   cycleIcon(ctx, s.x, s.y, b.swap.w / 2 - 2, swapDown ? T.iconDown : T.icon);
+  ctx.globalAlpha = 1;
 
   const burstDown = v.held.has('burst');
   if (v.burstReady) {

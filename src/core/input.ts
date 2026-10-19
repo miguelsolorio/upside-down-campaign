@@ -69,6 +69,10 @@ export interface InputState {
   /** A scene says an action would do something this tick, so the touch screen can show its button. Cleared by poll. */
   offer(a: Action): void;
   offered(a: Action): boolean;
+  /** A scene says how many heroes are in the party this tick, so the touch screen can dim SWAP for a hero alone. Cleared by poll. */
+  party(size: number): void;
+  /** The party size a scene gave this tick, or null where none did (a menu, the title), so SWAP stays lit there. */
+  partySize(): number | null;
 }
 
 export function createInput(opts: InputOptions = {}): InputState {
@@ -90,6 +94,7 @@ export function createInput(opts: InputOptions = {}): InputState {
   let touchPrev = new Set<Action>();
   let touchStickWas = false;
   let offers = new Set<Action>();
+  let partyNow: number | null = null;
   let message: string | null = null;
   let breakLatch = false;
   let breakNow = false;
@@ -243,6 +248,7 @@ export function createInput(opts: InputOptions = {}): InputState {
       for (const a of padActions()) now.add(a);
       for (const a of touchActions()) now.add(a);
       offers = new Set<Action>();
+      partyNow = null;
       pressedNow = new Set<Action>();
       releasedNow = new Set<Action>();
       for (const a of now) if (!prev.has(a)) pressedNow.add(a);
@@ -302,6 +308,8 @@ export function createInput(opts: InputOptions = {}): InputState {
     interrupted: () => breakNow,
     offer(a) { offers.add(a); },
     offered: (a) => offers.has(a),
+    party(size) { partyNow = size; },
+    partySize: () => partyNow,
   };
   return self;
 }

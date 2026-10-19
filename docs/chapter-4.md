@@ -1,6 +1,6 @@
-# Chapter 4: Hellfire, 1986 (DRAFT)
+# Chapter 4: Hellfire, 1986
 
-**Draft.** This is pre-production: the stages, who plays them, the bosses, the hooks and the looks the owner picked. Nothing here is built. Every number is a placeholder until chapter 3 lands, because its results set them: the party's levels coming out of 3.3, Erica's shop and its prices, and how the purse and stash carry. Each stage gets its own spec (`docs/level-10.md` to `docs/level-13.md`) when the build starts.
+**Built** (2026-10-18), in `docs/level-10.md` to `docs/level-13.md`, with "The build's calls" below for where the build settled what this draft left open. What follows was the pre-production: the stages, who plays them, the bosses, the hooks and the looks the owner picked. Every number is a placeholder until chapter 3 lands, because its results set them: the party's levels coming out of 3.3, Erica's shop and its prices, and how the purse and stash carry. Each stage gets its own spec (`docs/level-10.md` to `docs/level-13.md`) when the build starts.
 
 Chapter 4 is spring 1986. Hopper is alive in a Soviet prison in Kamchatka. In Hawkins, Eddie Munson runs the Hellfire Club, a curse is killing kids one chime at a time, and the way to stop it runs through the Creel House and the Upside Down. The chapter opens with Hopper alone, gives the party Eddie for two stages, takes him away on a rooftop, and ends in Vecna's lair.
 
@@ -154,8 +154,7 @@ The first half of the chapter is being built (`docs/level-10.md`, `docs/level-11
 
 ## Still open
 
-- **Numbers.** Party levels into 4.1 to 4.4, `enemyMult` and `xpMult` per stage, Eddie's stats, Vecna's and the pit Demogorgon's HP. All wait on chapter 3's measured run (`docs/pace.md`). The pace target is Lv 10 for the lead after chapter 4.
-- **The shop.** What Erica sells in chapter 4, and whether she is reachable while the party is split between Kamchatka and Hawkins.
-- **Hopper in 4.1.** His level and gear when he comes back, and whether 4.1 is replayable for XP like any stage.
-- **The solo.** Notes per solo and the bot's play.
-- **Chapter 5.** No Eddie there, so no mirrors and no riff gates.
+Settled by the build ("The build's calls" and each level's spec): the numbers, Hopper's return and the split, the solo's notes (the `riff` and `rooftop` charts in `src/solo`) and the bot's play, the shop through the split, chapter 5's riff gates (none). Left:
+
+- **A chapter four epilogue.** 4.4 ends on CHAPTER FOUR CLEAR with no epilogue still.
+- **Vecna for the careful player.** Every attack of his is telegraphed, and a player who steps out of all of them takes little: the fight is the careless player's test (`docs/level-13.md`, "Result").

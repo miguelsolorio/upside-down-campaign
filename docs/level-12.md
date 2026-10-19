@@ -14,7 +14,7 @@ One stage, five to eight minutes. Spring 1986, the night the gates open. The par
 ## Lead's calls (2026-10-18)
 
 - **The song is played by the player.** `createSolo` from `src/solo` with the `rooftop` chart and `maxMisses: Infinity` (a miss is only a miss on a long song). The play scene runs it over the stage while the sim keeps going.
-- **Eddie stands on the roof and is the one the bats dive at.** While the song plays he is the active hero, planted, and nobody can swap. A miss sends one bat of the circling flock down at him (power 0.6). A hit pulses his ring, which kills or stuns the bats inside it. If he falls before the song ends, the party has lost the roof: a wipe, and the retry is from `lights_roof`.
+- **Eddie stands on the roof and is the one the bats dive at.** While the song plays he is the active hero, planted, and nobody can swap. A miss sends one bat of the circling flock down at him (power 0.35, see "Result"). A hit pulses his ring, which kills or stuns the bats inside it. If he falls before the song ends, the party has lost the roof: a wipe, and the retry is from `lights_roof`.
 - **After the song, the fall.** The `fall` step plays: the flock takes him, the party is pulled back, and the stage finishes. He leaves the party at once (`Sim.dismissHero`), and progress keeps his level for replays.
 - **The clocks are beats.** Each clock curses when the party reaches it (a rect beat with the `curse` step), so the hazard is placed and readable, not random. The curse picks as in 4.2: the active hero, or the next who is neither Eddie nor Max. Three clocks on the route.
 - **The storm's flash is a second bake.** `bakeStage(rows, night, 'flash')` paints the lit edges red; the play scene fades it in for a bolt every 6 to 10 s (`stormFlash(frame)` in `world/storm.ts`, pure, seeded by the frame) on a stage with `storm: true`.
@@ -120,4 +120,20 @@ The same bands as `docs/level-3.md`, "Targets", measured on HARD with `node scri
 
 ## Result
 
-To be measured.
+Measured with `node scripts/measure-stage.ts 4.3` on HARD (`chief`) at `enemyMult` 1.5, with the party a real run brings (Mike 8, Dustin 7, Robin 6, Eddie 5). "Boss" runs from the `solo` beat to the finish: the song, about a minute. The headless runs play the song with the solo's bot, accuracy 0.9 for the careful bot and 0.7 for the careless one (`world/rooftop.ts`).
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside | NORMAL |
+|---|---|---|---|---|---|---|
+| Cleared | 19 | 98, none stuck | 19 | 20 | 17 | 20 |
+| Damage taken | 317 | 298 | 335 | 247 | 532 | 292 |
+| KOs | 1.60 | 1.46 | 1.70 | 0 | 2.40 | 0.30 |
+| Lowest party HP | 39% | 40% | 42% | 64% | 22% | 52% |
+| Time | 126 s | 124 s | 122 s | 120 s | 127 s | 122 s |
+| Boss time | 64 s (51%) | 64 s (52%) | 64 s | 64 s | 61 s | 64 s |
+
+Stage XP is 245 before `xpMult` 2.8, so it pays about 690.
+
+- **The roof was the whole difficulty for a careless player.** At the first numbers every careless loss was in the song: Eddie reached the roof hurt, and each of the misses a 70% player makes sent a bat down at 0.6 of its ATK. The ladder's string now lights in a beat of its own (`ladder`) before the roof, the save point and the heal, and a dive on the roof is 0.35. The careless bot went from 5 of 20 to 19.
+- **The ladder beat is its own** so a retry from its string walks into the `roof` beat again and the song after it: a light lit inside the roof beat left the song's `after` trigger behind for good.
+- **The ground has more foes than the spec's table** so the stage's XP clears its 240 floor (World's call), and an Eggo waits at the ladder's foot.
+- **The fall:** after the song Eddie leaves the party (`Sim.dismissHero`); progress keeps his level, and the 4.4 pool has no Eddie.

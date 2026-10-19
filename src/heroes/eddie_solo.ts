@@ -1,7 +1,7 @@
 // Eddie's Hellfire solo (docs/level-11.md, "The Hellfire solo"). The play scene plays it on the note highway (src/solo/, the `riff` chart): when
 // the stand begins the view says so (HudView.solo goes from null to set), the scene starts the highway, and it tells the sim what the player does.
 // The seam is a few plain functions:
-//   startStand(s, h)       plants Eddie for the stand: 360 frames, 480 with Dustin in the party. Anim 'cast' the whole time, walking and
+//   startStand(s, h)       plants Eddie for the stand: 360 frames, 480 with the Hellfire bond (Dustin in the party). Anim 'cast' the whole time, walking and
 //                          Special do nothing. The caller has spent the MP.
 //   pulse(s, h, crit)      one pulse of the ring round him: fx 'riff', sfx 'riff', power 0.4 and knockback 1.5 to every foe within the
 //                          ring (a 40 frame stun to a flyer), and any mirror or clock it reaches shatters. `crit` makes every hit a crit.
@@ -39,16 +39,15 @@ export function standOn(s: S, h: Hero): boolean {
   return s.t6.stand !== null && s.t6.stand.hero === h;
 }
 
-/** The stand's length: 360 frames, 480 with Dustin in the party (the Hellfire bond). */
-export function standLife(s: S): number {
-  const d = HERO_DEFS.eddie.special;
-  return s.heroes.some((p) => p.id === 'dustin') ? d.x.bond : d.dur;
+/** The stand's length: 360 frames, and the Hellfire bond adds its 120 when Dustin is in the party (480). The bond is the one source of that: `h.bond.solo`. */
+export function standLife(h: Hero): number {
+  return HERO_DEFS.eddie.special.dur + h.bond.solo;
 }
 
 /** The Special: he plants his feet. Called after the MP is spent. */
 export function startStand(s: S, h: Hero): void {
   const d = HERO_DEFS.eddie.special;
-  const life = standLife(s);
+  const life = standLife(h);
   // The cooldown starts counting when the stand ends, so Special does nothing meanwhile.
   beginAct(h, d, 'special', { dur: life, cd: life + d.cd });
   s.t6.stand = { hero: h, t: 0, life, ring: d.reach, born: s.frame, streak: 0, driven: false };

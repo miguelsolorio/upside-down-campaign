@@ -4,12 +4,12 @@
 // callout read the same list, so what they say is what combat does.
 //
 // A bond counts while all its members are in the party, whoever leads and whoever is down. A bond with `on: false` is in the data
-// but never counts and never shows: Hopper and Eddie are not playable yet, so Chief and kid and Hellfire wait for chapter 4 to
-// flip them on.
+// but never counts and never shows. All seven are on now: chapter 4 made Hopper and Eddie playable and switched Chief and kid and
+// Hellfire on.
 import type { HeroId } from '../core/types.ts';
 
-/** Hopper and Eddie join the roster in chapter 4. Until HeroId has them, the two bonds that name them use these ids. */
-export type BondHero = HeroId | 'hopper' | 'eddie';
+/** A hero a bond can name. Every HeroId, now that Hopper and Eddie are on the roster. */
+export type BondHero = HeroId;
 
 export type BondId = 'friends' | 'party-of-four' | 'chief-and-kid' | 'mad-max' | 'babysitters-club' | 'scoops-troop' | 'hellfire';
 
@@ -59,7 +59,7 @@ function each(heroes: readonly BondHero[], mods: Partial<BondMods>): Partial<Rec
 export const SCREEN_COVER = 32;
 /** The share of Dustin's max HP that Babysit heals when Steve is bonded to him. */
 export const BABYSIT_HEAL = 0.2;
-/** Frames Hellfire adds to the solo. */
+/** Frames Hellfire adds to the solo (360 to 480): heroes/eddie_solo.ts reads them off `hero.bond.solo`, nowhere else. */
 export const SOLO_EXTRA = 120;
 
 const FOUR: readonly BondHero[] = ['mike', 'dustin', 'lucas', 'will'];
@@ -77,7 +77,7 @@ export const BONDS: readonly BondDef[] = [
     heroes: FOUR, gives: each(FOUR, { def: 0.08 }),
   },
   {
-    id: 'chief-and-kid', name: 'Chief and kid', tag: 'CHIEF', perk: '+10% DEF', on: false,
+    id: 'chief-and-kid', name: 'Chief and kid', tag: 'CHIEF', perk: '+10% DEF', on: true,
     text: 'Hopper keeps one eye on Eleven, and she keeps one on him. Both take hits 10% better.',
     heroes: ['hopper', 'eleven'], gives: each(['hopper', 'eleven'], { def: 0.1 }),
   },
@@ -97,7 +97,7 @@ export const BONDS: readonly BondDef[] = [
     heroes: ['steve', 'robin'], gives: each(['steve', 'robin'], { crit: 0.1 }),
   },
   {
-    id: 'hellfire', name: 'Hellfire', tag: 'HELLFIRE', perk: 'SOLO LASTS 2S MORE', on: false,
+    id: 'hellfire', name: 'Hellfire', tag: 'HELLFIRE', perk: 'SOLO LASTS 2S MORE', on: true,
     text: 'Eddie plays for Dustin like it is a full house. The solo lasts 2 seconds longer.',
     heroes: ['eddie', 'dustin'], gives: { eddie: { solo: SOLO_EXTRA } },
   },

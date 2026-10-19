@@ -3,7 +3,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { HeroId } from '../src/core/types.ts';
-import { NO_MODS } from '../src/heroes/bonds.ts';
+import { BONDS, NO_MODS, SOLO_EXTRA } from '../src/heroes/bonds.ts';
+import type { BondDef } from '../src/heroes/bonds.ts';
+import { HERO_DEFS } from '../src/heroes/index.ts';
+import { standLife } from '../src/heroes/eddie_solo.ts';
 import { speedFactor } from '../src/heroes/common.ts';
 import { heroDef } from '../src/heroes/steve_guard.ts';
 import { heroAtk, hitEnemy, hurtHero } from '../src/combat/damage.ts';
@@ -222,4 +225,57 @@ test('a lone Eleven, or Eleven beside someone other than Mike, has no cover', ()
   const w = makeWhite({ party: party('eleven', 'lucas'), seed: 7 });
   w.sim.step(inp());
   assert.equal(hero(w.s, 'eleven').bond.cover, 0);
+});
+
+test('Chief and kid: Hopper and Eleven take hits 10% better, bench or not, and nobody else does', () => {
+  const { s } = sim('hopper', 'mike', 'eleven');
+  for (const id of ['hopper', 'eleven'] as const) {
+    const h = hero(s, id);
+    assert.equal(h.bond.def, 0.1, id);
+    assert.ok(Math.abs(heroDef(s, h) / h.st.def - 1.1) < 1e-9, `${id}'s DEF reads the bond`);
+  }
+  assert.equal(hero(s, 'mike').bond.def, 0, 'Mike is only beside them');
+  const bench = sim('mike', 'hopper', 'eleven');
+  assert.equal(hero(bench.s, 'eleven').bond.def, 0.1, 'Eleven leads and Hopper waits');
+  const alone = sim('hopper', 'mike', 'lucas');
+  assert.equal(hero(alone.s, 'hopper').bond.def, 0, 'Hopper without Eleven');
+  const dmg = (...ids: HeroId[]): number => {
+    const w = makeWhite({ party: party(...ids), seed: 7 });
+    w.sim.step(inp());
+    for (const h of w.s.heroes) { h.st.def = 100; h.hp = h.st.hp = 9999; }
+    return hurtHero(w.s, hero(w.s, 'hopper'), 0, 0, 1, 200);
+  };
+  const plain = dmg('hopper', 'mike', 'lucas'), chief = dmg('hopper', 'eleven', 'lucas');
+  // DEF 100 is 110: five more off the hit, before the difficulty factor.
+  assert.ok(plain - chief >= 4 && plain - chief <= 6, `${plain} becomes ${chief}`);
+});
+
+test('Hellfire: the stand lasts 480 frames with Dustin in the party and 360 without, and the bond is the only thing that says so', () => {
+  const life = (...ids: HeroId[]): number | undefined => {
+    const w = makeWhite({ party: party(...ids), seed: 7 });
+    hero(w.s, 'eddie').mp = 18;
+    press(w.sim, { specialPressed: true });
+    return w.sim.view().hud.solo?.life;
+  };
+  assert.equal(life('eddie', 'dustin'), 480);
+  assert.equal(life('eddie', 'mike', 'dustin'), 480, 'Dustin waits on the bench');
+  assert.equal(life('eddie', 'mike', 'lucas'), 360);
+  assert.equal(life('eddie'), 360);
+  const { s } = sim('eddie', 'dustin');
+  assert.equal(hero(s, 'eddie').bond.solo, SOLO_EXTRA);
+  assert.equal(hero(s, 'dustin').bond.solo, 0);
+  assert.equal(standLife(hero(s, 'eddie')), HERO_DEFS.eddie.special.dur + SOLO_EXTRA);
+  const hellfire = BONDS.find((b) => b.id === 'hellfire') as BondDef;
+  hellfire.on = false;
+  try {
+    assert.equal(life('eddie', 'dustin'), 360, 'switch the bond off and Dustin buys nothing: one source, no double count');
+  } finally {
+    hellfire.on = true;
+  }
+  const down = sim('eddie', 'mike', 'dustin');
+  hero(down.s, 'dustin').ko = true;
+  hero(down.s, 'dustin').hp = 0;
+  hero(down.s, 'eddie').mp = 18;
+  press(down.sim, { specialPressed: true });
+  assert.equal(down.sim.view().hud.solo?.life, 480, 'a bond follows the roster, and a KO\'d Dustin is still in it');
 });

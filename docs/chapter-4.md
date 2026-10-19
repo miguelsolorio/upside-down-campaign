@@ -154,7 +154,6 @@ The first half of the chapter is being built (`docs/level-10.md`, `docs/level-11
 
 ## Still open
 
-Settled by the build ("The build's calls" and each level's spec): the numbers, Hopper's return and the split, the solo's notes (the `riff` and `rooftop` charts in `src/solo`) and the bot's play, the shop through the split, chapter 5's riff gates (none). Left:
+Settled by the build ("The build's calls" and each level's spec): the numbers, Hopper's return and the split, the solo's notes (the `riff` and `rooftop` charts in `src/solo`) and the bot's play, the shop through the split, chapter 5's riff gates (none), and the chapter four epilogue (the party on the guardrail over Hawkins with Eddie's seat kept, the army on the Lab road and the Abyss in Eleven's words, then CHAPTER FOUR CLEAR: `docs/level-13.md`, "The chapter end"). Left:
 
-- **A chapter four epilogue.** 4.4 ends on CHAPTER FOUR CLEAR with no epilogue still.
 - **Vecna for the careful player.** Every attack of his is telegraphed, and a player who steps out of all of them takes little: the fight is the careless player's test (`docs/level-13.md`, "Result").

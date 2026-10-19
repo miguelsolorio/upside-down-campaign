@@ -25,7 +25,7 @@ export const when = (id: string): unknown => S.beats.find((b) => b.id === id)?.w
 export const rectOf = (id: string): TileRect => (when(id) as { rect: TileRect }).rect;
 export const inRect = (r: TileRect, x: number, y: number): boolean => x >= r.tx && y >= r.ty && x < r.tx + r.w && y < r.ty + r.h;
 export const BEAT_IDS = ['start', 'house', 'stairs', 'vecna', 'float', 'burn', 'level_clear'];
-export const SCRIPT_IDS = ['l13_start', 'l13_house', 'l13_stairs', 'l13_vecna', 'l13_float', 'l13_burn', 'l13_clear'];
+export const SCRIPT_IDS = ['l13_start', 'l13_house', 'l13_stairs', 'l13_vecna', 'l13_float', 'l13_burn', 'l13_clear', 'l13_hill'];
 /** The rug in tiles: the box of the attic's rug letters. */
 export const RUG = (() => {
   const t = rectTiles({ tx: 0, ty: 0, w: grid.w, h: grid.h }).filter(([x, y]) => ch(x, y) === 'ĉ');

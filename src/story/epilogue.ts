@@ -3,21 +3,25 @@
 // gfx/epilogue_room.ts: it fades in slowly, the night in its window paling toward sunrise while the letter plays line by line
 // through the shared dialogue box, then fades out slowly. Like the prologue, the skip-story setting, the skip key and a click on
 // the box's skip label skip it. No music. Opaque.
+// Chapter four's is the party on a guardrail over Hawkins the night after the attic (gfx/epilogue_hill.ts): the same timeline, a night
+// that goes from lights on to the army arriving, and the map's track, `hawkins`, for the length of it (docs/level-13.md).
 // Chapter five's is the basement in 1987, with its own room, its music and a last die (epilogue_end.ts).
 import type { Scene } from '../core/scene.ts';
+import type { TrackId } from '../core/types.ts';
 import { skipsDialogue } from '../core/settings.ts';
 import { FRAME_X, SCREEN_H, SCREEN_W } from '../core/config.ts';
 import { PAL } from '../gfx/palette.ts';
 import { drawSideFade } from '../gfx/index.ts';
 import { epilogueStill } from '../gfx/epilogue_room.ts';
 import type { Sky } from '../gfx/epilogue_room.ts';
+import { hillStill } from '../gfx/epilogue_hill.ts';
 import { audio } from '../audio/index.ts';
 import { createDialogueBox } from '../ui/index.ts';
 import { SCRIPTS } from './scripts.ts';
 import { createBasementEpilogue } from './epilogue_end.ts';
 
 /** The script each chapter's epilogue plays. A chapter without one goes straight to its results. */
-export const EPILOGUES: Record<number, string> = { 3: 'l9_letter', 5: 'l16_basement' };
+export const EPILOGUES: Record<number, string> = { 3: 'l9_letter', 4: 'l13_hill', 5: 'l16_basement' };
 
 /** True when the chapter has an epilogue with words in it. */
 export const hasEpilogue = (chapter: number): boolean => (SCRIPTS[EPILOGUES[chapter] ?? '']?.lines.length ?? 0) > 0;
@@ -46,14 +50,25 @@ export function blackAt(id: StepId, t: number, len: number): number {
 /** The night in the window, by frames since the scene began: dark with its last stars, then grey, then the first color. It never
  * goes back, and a reader who takes their time sees the sun come up. */
 export const SKY_AT: readonly [number, number, number] = [0, 600, 1500];
-export function skyAt(clock: number): Sky {
-  return clock >= SKY_AT[2] ? 2 : clock >= SKY_AT[1] ? 1 : 0;
+export function skyAt(clock: number, at: readonly [number, number, number] = SKY_AT): Sky {
+  return clock >= at[2] ? 2 : clock >= at[1] ? 1 : 0;
 }
+
+/** The hill road's night, on the same clock: lights on, then the lights going out, then the army at the Lab. */
+export const HILL_AT: readonly [number, number, number] = [0, 420, 900];
+
+/** What a chapter's scene is drawn over, when its stages change, and the track under it (none for the letter). */
+interface Look { still(screenW: number, frameX: number, stage: Sky): HTMLCanvasElement; at: readonly [number, number, number]; music: TrackId | null }
+const LOOKS: Record<number, Look> = {
+  3: { still: epilogueStill, at: SKY_AT, music: null },
+  4: { still: hillStill, at: HILL_AT, music: 'hawkins' },
+};
 
 export function createEpilogueScene(opts: { chapter: number; onDone(): void }): Scene {
   if (opts.chapter === 5) return createBasementEpilogue({ onDone: opts.onDone });
   const box = createDialogueBox();
   const script = SCRIPTS[EPILOGUES[opts.chapter] ?? ''];
+  const look = LOOKS[opts.chapter] ?? (LOOKS[3] as Look);
   let idx = 0;
   /** Frames into the current step, and since the scene began. */
   let t = 0;
@@ -75,10 +90,13 @@ export function createEpilogueScene(opts: { chapter: number; onDone(): void }): 
   return {
     opaque: true,
     enter() {
-      audio.music(null);
-      if (!script || skipsDialogue()) return;
+      if (!script || skipsDialogue()) { audio.music(null); return; }
+      audio.music(look.music);
       // Every sky is drawn once now, under the black, so the dawn never hitches.
-      for (const sky of [0, 1, 2] as const) epilogueStill(SCREEN_W, FRAME_X, sky);
+      for (const sky of [0, 1, 2] as const) look.still(SCREEN_W, FRAME_X, sky);
+    },
+    exit() {
+      if (look.music) audio.music(null);
     },
     update(g) {
       if (finished) return;
@@ -98,7 +116,7 @@ export function createEpilogueScene(opts: { chapter: number; onDone(): void }): 
     draw(ctx) {
       const s: Step | undefined = STEPS[idx];
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(epilogueStill(SCREEN_W, FRAME_X, skyAt(clock)), 0, 0);
+      ctx.drawImage(look.still(SCREEN_W, FRAME_X, skyAt(clock, look.at)), 0, 0);
       // On a wider screen, the room past the set falls away into the dark.
       drawSideFade(ctx, FRAME_X, FRAME_X + 256, 0, SCREEN_H);
       box.draw(ctx);

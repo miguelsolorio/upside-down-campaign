@@ -15,12 +15,12 @@ import { SCRIPTS } from '../src/story/scripts.ts';
 import { TITLE_SCALE, endsCampaign, resultsTitle, titleSpan } from '../src/ui/format.ts';
 
 // ---------------------------------------------------------------- wiring
-test('chapter three ends on Hopper\'s letter, chapter five on the basement, and no other chapter has an epilogue', () => {
-  assert.deepEqual(EPILOGUES, { 3: 'l9_letter', 5: 'l16_basement' });
+test('chapter three ends on Hopper\'s letter, chapter four on the hill road, chapter five on the basement, and chapters one and two have none', () => {
+  assert.deepEqual(EPILOGUES, { 3: 'l9_letter', 4: 'l13_hill', 5: 'l16_basement' });
   assert.equal(hasEpilogue(1), false);
   assert.equal(hasEpilogue(2), false);
   assert.equal(hasEpilogue(3), true);
-  assert.equal(hasEpilogue(4), false);
+  assert.equal(hasEpilogue(4), true);
   assert.equal(hasEpilogue(5), true);
 });
 
@@ -30,8 +30,7 @@ test('the epilogue is for the chapter the last stage closes, and plays only with
   assert.deepEqual(STAGE_ORDER.filter(closesChapter), ['1.3', '2.3', '3.3', '4.4', '5.3']);
   assert.equal(EPILOGUES[chapterOf(last)], 'l16_basement');
   assert.equal(EPILOGUES[chapterOf('3.3')], 'l9_letter');
-  // Chapter four ends on its results: it has no epilogue of its own (docs/level-13.md).
-  assert.equal(hasEpilogue(4), false);
+  assert.equal(EPILOGUES[chapterOf('4.4')], 'l13_hill', 'chapter four closes on the hill road (tests/epilogue-hill.test.ts)');
   // World fills the letter in. Until then the chapter goes straight to its results, as flow.ts expects.
   assert.equal(hasEpilogue(3), (SCRIPTS['l9_letter']?.lines.length ?? 0) > 0);
   assert.equal(hasEpilogue(5), (SCRIPTS['l16_basement']?.lines.length ?? 0) > 0);

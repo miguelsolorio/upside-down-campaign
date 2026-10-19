@@ -46,7 +46,7 @@ test('stage 4.4: every beat has a trigger and a real script, and the steps act o
     if ('event' in w && w.event === 'phase') assert.ok(enemies.some((e) => e.id === w.spawn && e.type === 'vecna') && (w.phase === 2 || w.phase === 3), `${b.id} watches Vecna's phases`);
   }
   const said = new Set(S.beats.flatMap((b) => b.steps.flatMap((st) => (st.t === 'say' ? [st.script] : []))));
-  assert.deepEqual([...said].sort(), [...SCRIPT_IDS].sort(), 'every script is played by some beat, and no other is');
+  assert.deepEqual([...said].sort(), SCRIPT_IDS.filter((s) => s !== 'l13_hill').sort(), 'every script but the epilogue\'s is played by some beat, and no other is');
   assert.equal(musicAfter(S.beats, ['start', 'house', 'stairs'], S.music), 'upside', 'the route keeps the Upside Down track');
   assert.equal(musicAfter(S.beats, ['start', 'house', 'stairs', 'vecna'], S.music), 'clock', 'and a retry or a load after the attic beat keeps the clock');
 });
@@ -94,7 +94,7 @@ test('director: a retry from a string reaches the attic whatever the beats befor
 });
 
 // ---------------------------------------------------------------- the scripts
-test('stage 4.4: the 7 scripts exist, fit the box on a keyboard and a pad, and are the party\'s, the narrator\'s and Vecna\'s', () => {
+test('stage 4.4: the 8 scripts exist (the seven beats\' and the epilogue\'s), fit the box on a keyboard and a pad, and are the party\'s, the narrator\'s and Vecna\'s', () => {
   assert.deepEqual(L13_SCRIPTS.map((s) => s.id), SCRIPT_IDS, 'in the doc\'s order');
   assert.deepEqual(Object.keys(SCRIPTS).filter((k) => k.startsWith('l13_')).sort(), [...SCRIPT_IDS].sort(), 'no stray l13 scripts');
   assert.deepEqual(S.beats.map((b) => b.id), BEAT_IDS);

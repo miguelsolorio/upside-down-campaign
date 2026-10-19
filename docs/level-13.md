@@ -17,7 +17,7 @@ One stage, five to eight minutes, and the end of chapter 4. The party goes into 
 - **Vecna's kit takes a speed factor and a chime interval** from his spawn (`x` on an enemy spawn overrides his def's numbers for that spawn), because 5.3's first phase is "4.4's Vecna, faster, chiming every 12 s".
 - **The curse in the fight** takes a random standing hero who isn't cursed, never the last one standing. The orb that lights up red when it chimes is the marked one: breaking it lifts that curse.
 - **The orbs grow back.** A broken orb regrows after 20 s, so a party with no ranged hero can always pull him down again in Float.
-- **The chapter's end:** CHAPTER FOUR CLEAR. No epilogue in this pass (a follow-up, with its own still).
+- **The chapter's end:** a short epilogue on the hill road over Hawkins ("The chapter end" below, added after the build), then CHAPTER FOUR CLEAR.
 
 ## Shape
 
@@ -86,6 +86,35 @@ The same bands as `docs/level-3.md`, "Targets", measured on HARD. "Boss" runs fr
 ## What UI builds for this level
 
 - The boss bar with four orb pips (`parts`), the marked one red.
+
+## The chapter end
+
+The scene after the clear, before the results (`story/epilogue.ts`, `EPILOGUES[4]`, the script `l13_hill`). It closes chapter 4 the way Hopper's letter closes chapter 3 (`docs/level-9.md`, "The chapter end"): a still, a slow fade up, a few lines through the shared dialogue box, a slow fade down, then CHAPTER FOUR CLEAR. `l13_clear` already ends the stage on the narrator's "the gates are open", so this scene doesn't say it again. It shows the night after, and what chapter 5 will be.
+
+- **Where.** The turnout on the hill road above Hawkins, a few hours after the attic. The party sits in a row on the guardrail with its backs to us, looking down at the town. Six of them (Robin, Dustin, Lucas, Max, Will, Mike) and Eleven, with a gap in the row between Dustin and Lucas and a d20 on the rail in it: Eddie's seat, kept. Nobody here is the "picked four": the epilogue is the story's party, as `l13_start` to `l13_burn` are.
+- **The sky.** A night with a red crack in it over the town, the Upside Down's gate, with the cloud dragging into it. The crack grows a branch in each later state and its glow widens; what really changes is below it. Three states, advancing on the scene's own clock (frames since it began, `HILL_AT` = 0, 420, 900, which brings the army in about when Robin speaks), never going back:
+  - **0, the town at night.** Windows lit in the valley, the Lab's tower dark on the far ridge, the road empty.
+  - **1, the lights going out.** The streets lose power in blocks, the Lab's windows light up, the crack's glow spreads wider and puts out a branch, and a first pair of headlights comes up the Lab road.
+  - **2, the lockdown arriving.** A convoy's headlights climb the Lab road, floodlights come on at the Lab and a helicopter's beam lights the roofs, a second branch opens in the crack. The town below is nearly dark.
+  The lines never point at the lights going on. They can stay true at any pace of reading: the army is "on the Lab road" from the start, and the state only says how near.
+- **The lines.** Seven, one narrator and six of the party, in this order. The lockdown is Robin's wry line, the Abyss is Eleven's and Will's, and the closing line is Mike's. Eddie is named by the others and never speaks (he fell in 4.3), and Hopper isn't here (he is in Kamchatka until chapter 5).
+
+| Who | Line |
+|---|---|
+| narrator | The hill road over Hawkins, hours after the attic. Nobody wanted to go home yet. |
+| dustin | Saved Eddie a seat on the rail. He would say the view needs a guitar solo. |
+| max | He bought us the stairs. Every one of us is sitting here because of that. |
+| robin | Army trucks on the Lab road, and no sirens. That is a lot of army for a gas leak. |
+| will | The crack is not closing. There is somewhere else on the other side, and it is calling. |
+| eleven | I saw it when Vecna went down. Hawkins in pieces, over a red void, under a black sun. |
+| mike | Then that is where we go. All of us, this time. |
+
+  The table is the final text (`l13_hill` in `src/story/scripts_l13.ts`): every line fits the box in three rows of 32 characters, with no em dash and no key token, so it reads the same on every device.
+- **The still** (`gfx/epilogue_hill.ts`, drawn in code at 256 by 224 with the game's palette, no sprites): rectangles and Bayer dithers, built for the frame like the bedroom's, with the sky, the hills and the guardrail running out to the edges of a wider screen. Everything that matters is above y 169, where the dialogue box starts. From the top: the sky (ink to night to a blood-red band at the ridge), clouds as dithered bands, the crack as a jagged line of red, hot and orange with a dithered halo; the far ridge with the Lab's tower and its dark floodlights; the valley, a few dozen windows and street lines in amber, the water tower; the Lab road winding down the right-hand side for the headlights; a dark slope of grass and pines; the guardrail, and the party on it, each from behind and about 16 px tall, in a hair color and a jacket that tell them apart (Dustin's cap, Max's red hair and the Walkman's headband round her neck, Eleven's pink dress and brown bob as in the bedroom). The d20 on the rail is bone with one red face.
+- **Music.** `hawkins`, the map's track, warm and a little wistful and already known as the way home: base layer only, starting when the scene does and stopping when it ends (the results are silent, as after the letter). Nothing new is written. `story/epilogue.ts` keeps a look per chapter (the still, the clock and the track), so chapter 3's room and chapter 4's hill share the scene's timeline.
+- **Tests.** `tests/epilogue-hill.test.ts`: `hasEpilogue(4)` and the script's lines, the words, the seats, the clock, and the still painted in the palette in whole pixels with no alpha, the night changing only above the rail, the town's lights going out as the Lab's and the army's come on, Eddie's d20, and the centered layout on a wider screen. A picture of it is `docs/screenshots/ch4-epilogue-hill.png`.
+- **Skipping** is chapter 3's: the story setting, the skip key and a click on the box's skip label. With the story off the scene is over at once and `flow.ts` silences the stage's music.
+- **Replays.** As for chapter 3, it plays the first time 4.4 is cleared only.
 
 ## Result
 

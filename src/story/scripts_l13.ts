@@ -1,4 +1,4 @@
-// Every dialogue script for Level 13, stage 4.4 Vecna's lair, by id (ids and triggers are in docs/level-13.md). Pure data: no DOM, so Node can test it.
+// Every dialogue script for Level 13, stage 4.4 Vecna's lair, by id (ids and triggers are in docs/level-13.md), and the epilogue, `l13_hill`. Pure data: no DOM, so Node can test it.
 // Each line fits the dialogue box: three rows of 32 characters.
 // Spring 1986. The party goes into the Creel House in the Upside Down and up to the attic, where Vecna floats bound in his vines. Eddie fell in 4.3
 // and Hopper is still in Kamchatka, so neither speaks; the story assumes everyone else, as in 4.2: any hero may speak, whoever was picked. Vecna is
@@ -77,4 +77,17 @@ const L13_CLEAR = script('l13_clear', [
   line('narrator', 'Hawkins, spring of 1986. The gates are open, and the town does not know it yet.'),
 ]);
 
-export const L13_SCRIPTS: DialogueScript[] = [L13_START, L13_HOUSE, L13_STAIRS, L13_VECNA, L13_FLOAT, L13_BURN, L13_CLEAR];
+/** The epilogue (docs/level-13.md, "The chapter end"): the party on the guardrail of the hill road above Hawkins, hours after the attic. Eddie's seat is
+ * kept, the army is on the Lab road, and Eleven and Will have seen the Abyss, which is where chapter five goes. Eddie is named and never speaks, and
+ * Hopper is in Kamchatka. Mike has the last line. */
+const L13_HILL = script('l13_hill', [
+  line('narrator', 'The hill road over Hawkins, hours after the attic. Nobody wanted to go home yet.'),
+  line('dustin', 'Saved Eddie a seat on the rail. He would say the view needs a guitar solo.'),
+  line('max', 'He bought us the stairs. Every one of us is sitting here because of that.'),
+  line('robin', 'Army trucks on the Lab road, and no sirens. That is a lot of army for a gas leak.'),
+  line('will', 'The crack is not closing. There is somewhere else on the other side, and it is calling.', 'worried'),
+  line('eleven', 'I saw it when Vecna went down. Hawkins in pieces, over a red void, under a black sun.'),
+  line('mike', 'Then that is where we go. All of us, this time.', 'determined'),
+]);
+
+export const L13_SCRIPTS: DialogueScript[] = [L13_START, L13_HOUSE, L13_STAIRS, L13_VECNA, L13_FLOAT, L13_BURN, L13_CLEAR, L13_HILL];

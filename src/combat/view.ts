@@ -70,10 +70,11 @@ function heroView(s: S, h: Hero, active: boolean): ActorView {
 
 function enemyView(s: S, e: Enemy): ActorView {
   // The final boss's two bodies do not flicker out: Vecna sinks (kills.ts) and the Mind Flayer, dead, kneels (pose 'down') for the rest of the stage.
+  // The killing blow's hit flash does not decay on a body that stays (nothing ticks it once dead), so it is not shown: they are not white.
   const kneels = e.dead && e.kind === 'flayer5';
   const v: ActorView = {
     kind: 'enemy', id: e.kind, x: e.x, y: e.y, dir: e.dir,
-    anim: kneels ? 'idle' : e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: e.flash,
+    anim: kneels ? 'idle' : e.dead ? 'ko' : e.anim, t: e.dead ? e.deadT : e.animT, flash: kneels || (e.dead && sinks(e)) ? 0 : e.flash,
     blink: e.dead && e.deadT > 12 && (e.deadT & 1) === 1 && !sinks(e) && !kneels, strained: false,
     tint: e.dead ? null : e.stat.burn > 0 ? 'orange' : e.stat.stun > 0 ? 'yellow' : e.stat.slow > 0 ? 'purple' : null,
     alert: !e.dead && e.mode === 'windup',
@@ -81,8 +82,8 @@ function enemyView(s: S, e: Enemy): ActorView {
     bar: e.hurtSeen && !e.dead ? { hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax } : null,
   };
   if (e.elite) v.elite = true;
-  // A foe Eddie's Hellfire DM marked. A memory orb is marked by the clock instead: the orb whose break lifts a curse.
-  if (!e.dead && (e.orb ? markedOrb(s, e.id) : isMarked(s, e))) v.marked = true;
+  // A foe Eddie's Hellfire DM marked. A memory orb (and the final boss's leg) is marked by the clock instead: the one whose break lifts a curse.
+  if (!e.dead && (e.orb ? markedOrb(s, e.id) : isMarked(s, e) || (e.leg !== null && markedOrb(s, e.id)))) v.marked = true;
   if (e.stat.confuse > 0 && !e.dead) v.confused = true;
   if (isShielded(e)) v.guarding = guarding(e);
   // A hidden enemy is faint until Cold spot has it or it strikes. Revealed, it says so, so gfx can tell the two apart.

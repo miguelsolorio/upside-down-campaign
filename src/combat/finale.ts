@@ -11,6 +11,7 @@
 //     legs with it) and its body stays, kneeling (pose 'down'), for the rest of the stage. KNEEL_WAIT frames later, a breather and phase three.
 //   3 THE CHANNEL: Eleven and Will walk to their marks and channel (combat/channel.ts) for the stage's `frames` while the party holds the line.
 //     When the clock runs out: { t: 'finalRoll', heroes, roll }, the run-time enemies drop, and the stage's beat takes it from there.
+//     The clock still chimes every 16 s (combat/finale_clock.ts): a curse and a marked leg, which cutting lifts.
 //   The bar names each phase: VECNA, THE MIND FLAYER, THE CHANNEL, whose bar is its countdown. Each phase is announced once: { t: 'bossPhase', phase }.
 import type { HudView } from '../core/types.ts';
 import { rollFinal } from '../ui/finalroll_logic.ts';
@@ -20,6 +21,7 @@ import { flashScreen, shake, sfx } from './fx.ts';
 import { healParty } from './party.ts';
 import { dropRuntime, startChannel, stepChannel } from './channel.ts';
 import { wakeGroup } from './wake.ts';
+import { spiderClock, stepSpiderClock } from './finale_clock.ts';
 
 /** Frames into Vecna's sink before the Mind Flayer rises, and into the Mind Flayer's kneel before the channel starts. */
 export const SINK_WAIT = 44;
@@ -38,7 +40,7 @@ function begin(s: S, f: Finale, phase: 1 | 2 | 3): void {
   s.events.push({ t: 'bossPhase', phase });
   if (phase > 1) healParty(s, BREATHER);
   if (phase === 1) wakeGroup(s, (standing(s, 'vecna') as Enemy).group);
-  else if (phase === 2) wakeGroup(s, (standing(s, 'flayer5') as Enemy).group);
+  else if (phase === 2) { wakeGroup(s, (standing(s, 'flayer5') as Enemy).group); f.clockCd = spiderClock(); }
   else startChannel(s, f);
 }
 
@@ -71,6 +73,7 @@ export function updateFinale(s: S): void {
     if (!v || (v.dead && ++f.wait >= SINK_WAIT)) begin(s, f, standing(s, 'flayer5') ? 2 : 3);
   } else if (f.phase === 2) {
     const b = firstOf(s, 'flayer5');
+    if (b && !b.dead) stepSpiderClock(s, f, b);
     if (!b || (b.dead && ++f.wait >= KNEEL_WAIT)) begin(s, f, 3);
   } else if (stepChannel(s, f)) {
     finalRoll(s, f);

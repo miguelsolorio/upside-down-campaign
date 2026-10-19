@@ -96,8 +96,21 @@ test('scene: the arena door shuts behind the party, `abyss` comes in and the fig
     s.draw();
     assert.equal(view().hud.boss?.name, 'THE CHANNEL');
     assert.deepEqual(phases, [2], 'the channel steps the music to its third tempo, the spider being down already');
-    // God mode holds them: the clock runs out and the stage reaches its results once, the beat having played boom and opened the door.
-    s.tick(2400 + 200);
+    // God mode holds them: the clock runs out and play stops for the Final Roll. The sim stands still under it, the roll is the event's own, and the stage
+    // has not cleared. Joyce runs in, then the beat plays boom and opens the door, and the stage reaches its results once (world/ending.ts).
+    for (let i = 0; i < 2400 + 200 && stack.length === 0; i++) s.tick();
+    assert.equal(stack.length, 1, 'the Final Roll is pushed over the fight');
+    assert.equal(s.cleared(), 0);
+    const frozen = view().hud.channel?.left;
+    s.tick(30);
+    assert.equal(view().hud.channel?.left, frozen, 'the sim is not stepped under the roll');
+    for (let i = 0; i < 1200 && stack.length > 0; i++) s.tick();
+    assert.equal(stack.length, 0, 'the roll ends itself and comes off');
+    assert.equal(s.cleared(), 0, 'Joyce comes first');
+    assert.equal(view().props.find((p) => p.id === 'door1')?.state, 'closed');
+    s.draw();
+    s.tick(400);
+    s.draw();
     assert.equal(s.cleared(), 1, 'the stage reaches its results once');
     assert.equal(view().props.find((p) => p.id === 'door1')?.state, 'open');
   } finally {

@@ -10,9 +10,11 @@ import type { Progress } from './core/progress.ts';
 import { clearSave, loadSave, savingAllowed, writeSave } from './core/save.ts';
 import type { SaveData } from './core/save.ts';
 import { skipsDialogue } from './core/settings.ts';
-import { createChapterCard, createMapScene, createResultsScene, createTitleScene } from './ui/index.ts';
+import { createChapterCard, createMapScene, createResultsScene, createTheEndScene, createTitleScene } from './ui/index.ts';
 import { endsCampaign } from './ui/format.ts';
 import { createEpilogueScene, createPrologueScene, hasEpilogue } from './story/index.ts';
+import { audio } from './audio/index.ts';
+import { endChain, runChain, skippedEpilogue } from './flow_end.ts';
 import { createPlayScene, stageName, stageStart } from './world/index.ts';
 
 const FIRST = STAGE_ORDER[0] as string;
@@ -114,15 +116,18 @@ export function startGame(g: Game): void {
         progress = recordClear(progress, id, after, quarters ?? stats.quarters);
         writeProgress(progress);
         clearSave();
-        // The last stage of a chapter says so on its results, and the first time it is cleared, its epilogue comes first
-        // (docs/level-9.md, "The chapter end"). The epilogue skips itself when the story is off, like the prologue.
+        // The last stage of a chapter says so on its results, and the first time it is cleared, its epilogue comes first (docs/level-9.md, "The chapter end").
+        // The campaign's last stage (5.3) adds THE END after the epilogue, and with the story off skips the epilogue and keeps THE END (flow_end.ts).
         const chapter = closesChapter(id) ? chapterOf(id) : undefined;
-        const results = (): void => g.scenes.go(createResultsScene({
-          stats, party: after, level: levelNumber(id), chapter, final: nextStage(id) === null, campaignEnd: endsCampaign(id),
-          onContinue: toMap,
-        }));
-        if (chapter !== undefined && firstClear && hasEpilogue(chapter)) g.scenes.go(createEpilogueScene({ chapter, onDone: results }));
-        else results();
+        const end = { stage: id, firstClear, chapter, hasEpilogue: chapter !== undefined && hasEpilogue(chapter), story: !skipsDialogue() };
+        if (skippedEpilogue(end)) audio.music(null);
+        runChain(endChain(end), {
+          epilogue: (next) => g.scenes.go(createEpilogueScene({ chapter: chapter as number, onDone: next })),
+          theEnd: (next) => g.scenes.go(createTheEndScene({ onDone: next })),
+          results: () => g.scenes.go(createResultsScene({
+            stats, party: after, level: levelNumber(id), chapter, final: nextStage(id) === null, campaignEnd: endsCampaign(id), onContinue: toMap,
+          })),
+        });
       },
       onQuit: toTitle,
       onStartOver: () => {

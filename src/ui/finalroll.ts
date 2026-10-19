@@ -12,6 +12,7 @@ import { audio } from '../audio/index.ts';
 import { drawPanel, drawPortrait, drawText } from '../gfx/index.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import type { Rng } from '../progression/xp.ts';
+import { createRng } from '../core/rng.ts';
 import { DIE_BONE, DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import { drawFinish } from './finalroll_finish.ts';
 import {
@@ -24,14 +25,18 @@ import type { Ctx } from './kit.ts';
 export interface FinalRollOpts {
   /** The heroes still standing, in the order they roll. */
   heroes: readonly HeroId[];
-  /** The random source: the same seed gives the same roll. */
-  rng: Rng;
+  /** The roll to play, as the sim's `finalRoll` event carries it: the scene shows it as it is and rolls nothing. */
+  roll?: FinalRoll;
+  /** The random source for a roll of the scene's own: the same seed gives the same roll. Used when no `roll` is given. */
+  rng?: Rng;
   /** Called once, when the roll is over, with every die and the finish. */
   onDone(result: FinalRoll): void;
   /** True on a screen of its own, with nothing under it to dim. */
   opaque?: boolean;
 }
 
+/** The seed of a roll asked for with neither a roll nor a random source: the same as ?seed's default. */
+const DEFAULT_SEED = 1983;
 /** The dice stage. */
 const DIE_R = 17;
 const DIE_CY = 136;
@@ -77,7 +82,7 @@ function drawDice(ctx: Ctx, roll: FinalRoll, b: Beat): void {
 }
 
 export function createFinalRollScene(opts: FinalRollOpts): Scene {
-  const roll = rollFinal(opts.heroes, opts.rng);
+  const roll = opts.roll ?? rollFinal(opts.heroes, opts.rng ?? createRng(DEFAULT_SEED));
   const n = roll.rolls.length;
   let clock = 0;
   /** The clock the sounds have been played up to. */

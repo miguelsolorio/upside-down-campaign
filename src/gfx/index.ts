@@ -14,7 +14,7 @@ import { warmUi } from './ui.ts';
 export type { BakedStage, Spot } from './tiles.ts';
 export { drawText, textWidth, drawTinyText, tinyWidth, TINY_H } from './font.ts';
 export { bakeStage, drawStage } from './tiles.ts';
-export { drawActor, drawHeroBar } from './actors.ts';
+export { drawActor, drawAxeJoyce, drawHeroBar } from './actors.ts';
 export { drawFx } from './fx.ts';
 export { drawPool } from './fx_l9.ts';
 export { drawItem, drawProp } from './props.ts';
@@ -27,6 +27,7 @@ export { drawLogo, drawAlphabetWall, LOGO_SIZE, WALL_SIZE } from './logo.ts';
 export { drawMapScreen, hopLength } from './map.ts';
 export { setLookStage } from './looks.ts';
 export { drawAbyssBg } from './ch5/abyss_bg.ts';
+export { drawChannelMark, drawHeartGlow } from './ch5/heart_marks.ts';
 export { drawTowerCone, towerPool } from './props_army.ts';
 
 /** Build atlases and fonts once at boot. Synchronous, under 200 ms. */

@@ -10,6 +10,7 @@
 import type { ActorView, EnemyKind } from '../core/types.ts';
 import type { Enemy, FlayerState, LegState, S } from '../combat/state.ts';
 import { BODY_Y } from '../combat/space.ts';
+import { liftOrbCurse } from '../combat/curse.ts';
 import { dust, floater, sfx, sparks } from '../combat/fx.ts';
 import { ENEMY_DEFS } from './defs.ts';
 
@@ -77,6 +78,8 @@ export function doomLegs(s: S): void {
 /** The body died: the pools dry up, a band in the air goes, and the Flayed it sent fall with it for no XP and no kill. */
 export function clearFlayer(s: S, e: Enemy): void {
   if (!e.flayer) return;
+  // The final boss's clock marks its legs, and they die with it: every curse they held is lifted (combat/finale_clock.ts).
+  for (const l of e.flayer.legs) liftOrbCurse(s, l.id);
   s.pools = [];
   s.fx = s.fx.filter((f) => f.kind !== 'sweep');
   for (const o of s.enemies) {

@@ -6,6 +6,8 @@ export type { DialogueBox } from './dialogue.ts';
 export { createTitleScene } from './title.ts';
 export { createChapterCard, createGameOverScene } from './cards.ts';
 export { createResultsScene } from './results.ts';
+export { createFinalRollScene } from './finalroll.ts';
+export { createTheEndScene } from './theend.ts';
 export { createMapScene } from './map.ts';
 export type { MapOpts } from './map.ts';
 export { createPauseScene } from './pause.ts';

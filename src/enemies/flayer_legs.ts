@@ -20,6 +20,7 @@ import { dirOfVec } from '../combat/state.ts';
 import { distToSegment, footBlocked, BODY_Y } from '../combat/space.ts';
 import { addFx, dust, floater, sfx, shake, sparks } from '../combat/fx.ts';
 import { hurtHero } from '../combat/damage.ts';
+import { liftOrbCurse } from '../combat/curse.ts';
 import { addPool } from '../combat/pools.ts';
 import { ENEMY_DEFS } from './defs.ts';
 import { setEnemyAnim } from './steer.ts';
@@ -188,6 +189,8 @@ export function sever(s: S, e: Enemy): void {
   dropBand(s, l);
   l.move = 'severed';
   l.t = 0;
+  // The final boss's clock marks a leg, and cutting it lifts the curse it held (combat/finale_clock.ts).
+  liftOrbCurse(s, e.id);
   e.hp = 0;
   e.stagger = 0;
   e.mode = 'idle';

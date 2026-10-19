@@ -360,7 +360,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // The Mind Flayer of phase two (the 3.3 body's brain, enemies/flayer.ts), with Vecna in its chest. Its numbers are the 3.3 body's, apart from
   // these: the body takes no hit while its chest is shut. A hit on a leg opens the chest for chestT frames (once it is shut again); with every leg
   // cut the head comes down for downT frames at downMul and the chest is open then too. clock16: the frames between the clock's chimes in the
-  // lead's 4.4 kit (16 s), unused until it is wired.
+  // lead's 4.4 kit (16 s), run by combat/finale_clock.ts.
   flayer5: {
     kind: 'flayer5', name: 'Mind Flayer', hp: 1000, atk: 22, def: 6, speed: 0, xp: 160, aggro: 400,
     windup: 40, power: 1.2, cooldown: 70, drop: 1, weight: 99,

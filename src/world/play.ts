@@ -17,7 +17,7 @@ import { HERO_IDS } from '../heroes/index.ts';
 import { setLookStage } from '../gfx/index.ts';
 import { audio } from '../audio/index.ts';
 import { SCRIPTS, bark } from '../story/index.ts';
-import { createCharSheetScene, createDialogueBox, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
+import { createCharSheetScene, createDialogueBox, createFinalRollScene, createGameOverScene, createPauseScene, drawHud, mountDevPanel } from '../ui/index.ts';
 import type { CharSheetHero } from '../ui/index.ts';
 import { onLevel, slotAt } from '../ui/hudlayout.ts';
 import { getStage } from './stage.ts';
@@ -25,7 +25,7 @@ import { KEPT_PROPS, routeFrom } from './options.ts';
 import { isLoss, lossReason } from './loss.ts';
 import { createDirector, musicAfter } from './triggers.ts';
 import type { Director, DirectorEnv, DirectorState } from './triggers.ts';
-import { createPuzzleTracker, foeKinds, isNear, puzzleProps } from './puzzles.ts';
+import { createPuzzleTracker, foeKinds, puzzleProps } from './puzzles.ts';
 import { takenItems } from './taken.ts';
 import { nearUsable } from './interact.ts';
 import { createArcade } from './arcadevisit.ts';
@@ -35,11 +35,12 @@ import { boomView, deadBilly, leavers } from './aftermath.ts';
 import { devHooks } from './devhooks.ts';
 import { sheetHeroes } from './sheet_party.ts';
 import { createMemoryFade } from './memory.ts';
+import { calm, createEnding } from './ending.ts';
 import { SONG_BOT } from './rooftop.ts';
 import { liveSongs } from './songs.ts';
 import { stormFlash } from './storm.ts';
 import { createKlaxon } from './klaxon.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, inView, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
+import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld, puzzleHint } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -122,6 +123,11 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** The note highway's songs (songs.ts): the rooftop's, which takes the whole keyboard, and Eddie's riff, which takes the action keys. */
   const songs = liveSongs(() => sim, () => (bot ? SONG_BOT : undefined));
   const arcade = createArcade({ sim: () => sim, view: () => view, show, close: closeOverlay });
+  /** The final fight's finish (ending.ts): the Final Roll, Joyce and her axe, then the stage's clear beat. */
+  const ending = createEnding({
+    roll: (e, done) => { const sc = createFinalRollScene({ heroes: e.heroes, roll: e.roll, onDone: () => { closeOverlay(sc); done(); } }); show(sc); },
+    fire: (e) => director.events([e]), body: () => view.actors.find((a) => a.id === 'flayer5') ?? null,
+  });
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -162,7 +168,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       sim.openProp(prop);
     },
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
-    boom() { audio.sfx('boom'); boom = 0; },
+    boom() { audio.sfx('boom'); boom = 0; if (stage.finale) ending.boomed(); },
     walkman() { if (!walkman) { walkman = true; sim.giveWalkman?.(); opts.onWalkman?.(); } },
     solo(chart, done) { songs.play(chart, () => deferred.push(done)); },
     music: (track) => audio.music(track), phase: (n) => audio.phase(n),
@@ -178,9 +184,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** window.__ud is created after the first scene starts, so this runs again on every tick until it sticks. */
   const play = {
     get sim() { return sim; }, get stage() { return stage; }, get director() { return director; },
-    /** The puzzle hint the party would see now, as the puzzle, the hero it names and its line, or null. For tests and the console. */
+    /** For tests and the console: the puzzle hint the party would see now (the puzzle, the hero it names and its line, or null), and a retry from the last lit string. */
     get hint() { const h = puzzles.highlight(); return h ? { puzzle: h.id, hero: h.hero, text: h.hint } : null; },
-    /** Rebuilds the sim at the last lit string with the party's progress, as RETRY on the game over card does. For tests and the console. */
     retry(): void { retry(); },
     /** Dev only: finishes a run at a cabinet with this score, as if it had been played, to check the board and the prize. */
     arcade(cabinet: string, score: number): void { if (game.flags.dev) arcade.finish(cabinet, score); },
@@ -228,6 +233,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     levelFx.clear();
     klaxon.clear();
     boom = -1;
+    ending.clear();
     memory.reset();
     songs.clear();
     swapAge = null;
@@ -312,11 +318,12 @@ export function createPlayScene(opts: PlayOptions): Scene {
         // The whole party down, or the one it guards in a defense: either loses the stage (world/loss.ts).
         case 'allDown': case 'wardDown': if (wipeT < 0 && isLoss(e)) { wipeT = 0; wipeReason = lossReason(e); } break;
         case 'poked': puzzles.poke(e.propId, e.hero); break;
+        case 'finalRoll': ending.start(e); break; // play stops for the Final Roll and Joyce; the director gets it after (ending.ts)
         case 'stashUsed': opts.onStashUsed?.(e.item); break;
         default: break;
       }
     }
-    director.events(ev);
+    director.events(ev.filter((e) => e.t !== 'finalRoll'));
   }
 
   function lightUp(pr: PropView): void {
@@ -386,19 +393,20 @@ export function createPlayScene(opts: PlayOptions): Scene {
       expose();
       klaxon.tick();
       if (boom >= 0) boom++;
+      ending.tick();
       if (deferred.length > 0) for (const fn of deferred.splice(0)) fn();
       // Esc or Start pause over a dialogue box too, so START OVER and QUIT stay in reach. The window or the controller going away holds a level only while something moves.
       if (!bot && wipeT < 0 && clearT < 0 && (g.input.pressed('pause') || (!dialog.active && g.input.interrupted()))) { pause(); return; }
       if (dialog.active) { prompt = null; burstCall = false; dialog.update(g); return; }
 
-      const frozen = scare !== null || wipeT >= 0 || clearT >= 0;
+      const frozen = scare !== null || wipeT >= 0 || clearT >= 0 || ending.holds();
       // A click on the active hero's name and level opens their character sheet. The view is last tick's, the one on screen.
       const click = g.input.clicked();
       const lead = view.hud.party.find((m) => m.active);
       if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
       const input = frozen || songs.holds ? IDLE : songs.keys(bot ? bot.next(sim) : playerInput(g));
       // The scare holds the whole level still, as dialogue does, so nothing lands a hit on a party that can't move.
-      if (!scare) forward(sim.step(input));
+      if (!scare && !ending.holds()) forward(sim.step(input));
       songs.step(g.input, view.hud.solo);
       view = sim.view(); memory.step(view);
       // Lights the burst button on a touch screen.
@@ -427,7 +435,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (clearT >= 0 && ++clearT === CLEAR_FRAMES) opts.onClear({ stats: sim.stats(), party: sim.party(), quarters: runQuarters() });
 
       audio.intensity(sim.aggro() ? 1 : 0);
-      cameraFollow(cam, view.focus.x, view.focus.y, stage.wPx, stage.hPx);
+      const look = ending.focus() ?? view.focus;
+      cameraFollow(cam, look.x, look.y, stage.wPx, stage.hPx);
       if (!scare) glowLevel = 1;
       if (leftHome) hintFade = Math.min(1, hintFade + 1 / HINT_FADE_FRAMES);
       if (speech && ++speech.t > SPEECH_FRAMES) speech = null;
@@ -449,23 +458,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
         camW = SCREEN_W;
       }
       const fig = figure();
-      drawWorld(ctx, stage, boom >= 0 ? boomView(view, boom, g.settings.shake) : view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 }, memory: memory.k(), flash: stage.storm ? stormFlash(g.frame, g.settings.reduceFlashing) : 0 });
-      drawFlash(ctx, view);
+      // The finale holds the sim still for the Final Roll and Joyce, and its own flash and shake with it, so they are taken out of the picture.
+      const shown = ending.on() ? calm(view) : view;
+      drawWorld(ctx, stage, boom >= 0 ? boomView(shown, boom, g.settings.shake) : shown, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 }, memory: memory.k(), flash: stage.storm ? stormFlash(g.frame, g.settings.reduceFlashing) : 0, joyce: ending.joyce() });
+      drawFlash(ctx, Math.max(shown.flash, ending.flash(g.settings.reduceFlashing)));
       drawLevelFx(ctx, levelFx.list(), view, cam);
       drawKlaxon(ctx, klaxon.level(g.settings.reduceFlashing));
       // While the party is at a puzzle it's stuck on, the caret points at the prop and a subtitle says who to try.
       const stuck = puzzles.highlight();
-      const watched = stuck ? puzzleProps(stage.puzzles, view.props, view.actors, foes) : view.props;
-      const stuckProp = stuck && watched.find((p) => p.id === stuck.prop);
-      // A hint from trying a gate or door is shown where the party stands, which can be far from the puzzle's own prop
-      // (the sensor, the lantern): the subtitle shows near either one, and the caret goes on the puzzle's prop when it
-      // is in view, else on the gate or door that was tried.
-      const triedId = stuck ? puzzles.triedProp(stuck) : null;
-      const triedProp = triedId ? watched.find((p) => p.id === triedId) : undefined;
-      const hero = sim.heroPos();
-      const atHint = stuckProp && (isNear(stuckProp, hero) || (triedProp && isNear(triedProp, hero)));
-      const caretOn = stuckProp && (triedProp && !inView(stuckProp, cam) ? triedProp : stuckProp);
-      const hint = stuck && caretOn && atHint ? { prop: caretOn, text: stuck.hint } : null;
+      const hint = puzzleHint(stuck, stuck ? puzzleProps(stage.puzzles, view.props, view.actors, foes) : view.props, stuck ? puzzles.triedProp(stuck) : null, sim.heroPos(), cam);
       if (hint) drawPuzzleCaret(ctx, hint.prop, cam, g.frame);
       const lit = new Set<HeroId>();
       for (const f of levelFx.list()) if (hudPulse(levelFx.since(f.hero), g.settings.reduceFlashing)) lit.add(f.hero);
@@ -484,7 +485,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       }
       arcade.draw(ctx, cam);
       // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
-      if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
+      if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss, !!view.hud.channel);
       // The subtitle sits where the corner controls do, so it replaces them while it shows. A dialogue box does too, or they peek out round it.
       if (hint) drawSubtitle(ctx, hint.text);
       else if (!dialog.active) drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);

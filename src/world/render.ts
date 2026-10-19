@@ -9,16 +9,20 @@ import { controlRows } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
+import { NEXT_DY } from '../ui/hudlayout.ts';
 import { clamp01, hpBarColor } from '../ui/format.ts';
-import { drawAbyssBg, drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, drawTowerCone, paintStageGlow, towerPool, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawAbyssBg, drawActor, drawAxeJoyce, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, drawTowerCone, paintStageGlow, towerPool, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { outlinedText } from '../gfx/outline.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
 import type { Stage } from './stage.ts';
+import type { PuzzleDef } from './types.ts';
+import { isNear } from './puzzles.ts';
 import { SPARKLES, TALENT_TO, ringRadius, sparkle, talentShowing } from './levelfx.ts';
 import type { LevelFx } from './levelfx.ts';
 import { BANDS } from './klaxon.ts';
+import { drawHeart } from './heart.ts';
 
 type Ctx = CanvasRenderingContext2D;
 
@@ -48,6 +52,8 @@ export interface WorldOpts {
   memory?: number;
   /** 0..1, how strong the storm's bolt is over a stage with `storm` (docs/level-12.md, world/storm.ts). */
   flash?: number;
+  /** Joyce with her axe, running in at the end of the final fight (world/ending.ts): drawn in the painter's order with the rest. */
+  joyce?: ActorView | null;
 }
 
 // ---------------------------------------------------------------- the scare figure
@@ -152,6 +158,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
     drawStage(ctx, stage.flashBaked, camX, camY, t);
     ctx.restore();
   }
+  // The heart (5.3): its marks on the floor and its glow over the tiles.
+  if (stage.finale) drawHeart(ctx, stage.finale, view, camX, camY, t);
   const night = stage.time === 'night';
   // The pools go on the ground, under everything that moves, so the party is never tinted by them.
   if (night) paintStageGlow(ctx, stage.baked, camX, camY, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);
@@ -168,13 +176,15 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   // The Mind Flayer's goo lies on the floor with them.
   for (const p of view.pools) drawPool(ctx, p);
   for (const it of view.items) drawItem(ctx, it);
-  const order: { y: number; actor?: ActorView; prop?: PropView }[] = [];
+  const order: { y: number; actor?: ActorView; prop?: PropView; joyce?: ActorView }[] = [];
   for (const p of view.props) order.push({ y: p.y + p.h, prop: p });
   for (const a of view.actors) order.push({ y: a.y, actor: a });
+  if (o.joyce) order.push({ y: o.joyce.y, joyce: o.joyce });
   order.sort((l, r) => l.y - r.y);
   for (const e of order) {
     if (e.prop) drawProp(ctx, e.prop, night);
     else if (e.actor) drawActor(ctx, e.actor);
+    else if (e.joyce) drawAxeJoyce(ctx, e.joyce);
   }
   // The heroes' HP bars go over everything that stands, so an enemy in front of a hero never hides his.
   for (const a of view.actors) {
@@ -233,6 +243,19 @@ function glowLights(stage: Stage, view: SimView, cam: Camera, flicker: number): 
 export const inView = (p: PropView, cam: { x: number; y: number }): boolean =>
   p.x + p.w > cam.x + VIEW_X && p.x < cam.x + VIEW_X + VIEW_W && p.y + p.h > cam.y && p.y < cam.y + SCREEN_H - VIEW_TOP;
 
+/**
+ * The hint the party sees: the prop its caret points at and the words under the screen, or null. A hint from trying a gate or door is shown where
+ * the party stands, which can be far from the puzzle's own prop (the sensor, the lantern): it shows near either one, and the caret goes on the
+ * puzzle's prop when it is in view, else on the gate or door that was tried. `watched` are the props the puzzle reads, `tried` the id of that gate.
+ */
+export function puzzleHint(stuck: PuzzleDef | null, watched: readonly PropView[], tried: string | null, hero: Vec2, cam: Camera): { prop: PropView; text: string } | null {
+  const stuckProp = stuck && watched.find((p) => p.id === stuck.prop);
+  const triedProp = tried ? watched.find((p) => p.id === tried) : undefined;
+  const atHint = stuckProp && (isNear(stuckProp, hero) || (triedProp && isNear(triedProp, hero)));
+  const caretOn = stuckProp && (triedProp && !inView(stuckProp, cam) ? triedProp : stuckProp);
+  return stuck && caretOn && atHint ? { prop: caretOn, text: stuck.hint } : null;
+}
+
 /** The klaxon's glow: bands of red stepping in from the edge of the world view, each one fainter than the one before. `level`
  * is Klaxon.level(), 0 to 1. Nothing here blinks, so a steady level (Reduce flashing) is a steady picture. */
 export function drawKlaxon(ctx: Ctx, level: number): void {
@@ -250,9 +273,9 @@ export function drawKlaxon(ctx: Ctx, level: number): void {
 }
 
 /** The white flash over the world, for a big hit or a crit. */
-export function drawFlash(ctx: Ctx, view: SimView): void {
-  if (view.flash <= 0.01) return;
-  ctx.globalAlpha = Math.min(1, view.flash);
+export function drawFlash(ctx: Ctx, flash: number): void {
+  if (flash <= 0.01) return;
+  ctx.globalAlpha = Math.min(1, flash);
   ctx.fillStyle = PAL.white;
   ctx.fillRect(0, VIEW_TOP, SCREEN_W, SCREEN_H - VIEW_TOP);
   ctx.globalAlpha = 1;
@@ -297,9 +320,9 @@ export function drawSubtitle(ctx: Ctx, text: string): void {
 
 /** One line in the 3x5 font centered just under the HUD strip, with a 1 px ink outline and no strip behind it, so it
  * reads on the dark yard and the white Lab walls alike without covering the world. It stays put while the camera moves,
- * and drops under the boss bar while one shows. */
-export function drawTopLine(ctx: Ctx, text: string, color: ColorName, underBoss = false): void {
-  const x = Math.round((SCREEN_W - tinyWidth(text)) / 2), y = VIEW_TOP + (underBoss ? TOP_LINE_BOSS_DY : TOP_LINE_DY);
+ * and drops under the boss bar while one shows, and a row more under the channelers' bars (hudlayout.ts). */
+export function drawTopLine(ctx: Ctx, text: string, color: ColorName, underBoss = false, channel = false): void {
+  const x = Math.round((SCREEN_W - tinyWidth(text)) / 2), y = VIEW_TOP + (underBoss ? TOP_LINE_BOSS_DY : TOP_LINE_DY) + (channel ? NEXT_DY : 0);
   for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]] as const) drawTinyText(ctx, text, x + dx, y + dy, 'ink');
   drawTinyText(ctx, text, x, y, color);
 }

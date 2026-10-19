@@ -5,22 +5,25 @@
 // the face. The strip is quiet, with no frames. MP is one blue segment per cast. Erica's stash, when the party carries any,
 // is a mini Eggo and Coke with a count each on the MP caption's row (hudstash.ts). A boss hit in parts has a pip for each under its
 // bar (bossLayout in hudlayout.ts). A hero alone (4.1) has no bench and no swap key. A cursed hero's slot shows the chimes sounded
-// where the key is, and Max's slot carries her Walkman (hudcurse.ts).
+// where the key is, and Max's slot carries her Walkman (hudcurse.ts). The final fight's boss bar names its phase, and in the channel it
+// counts the seconds down with a bar for each channeler under it; a channeler's slot is framed in their color with a held mark where
+// the key is (hudchannel.ts).
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
 import type { PromptDevice } from '../core/bindings.ts';
 import { settings } from '../core/settings.ts';
 import { drawBar, drawIcon, drawPanel, drawPortrait, drawText, drawTinyText, tinyWidth, TINY_H } from '../gfx/index.ts';
-import { XP_NOTCHES, clamp01, isLowHp, mpBar, notchFill, notchSpans } from './format.ts';
+import { XP_NOTCHES, bossTitle, clamp01, isLowHp, mpBar, notchFill, notchSpans } from './format.ts';
 import { blinkOn, box, clipped, outline } from './kit.ts';
 import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
 import { drawStash } from './hudstash.ts';
-import { ACTIVE_KEY_X, BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, FACE_Y, INSPIRE_X, KEY_DX, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, cursePipsDx, hudBand, leftShift, levelDx, showsKeys, slotRects, tapeSpot } from './hudlayout.ts';
+import { ACTIVE_KEY_X, BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, FACE_Y, INSPIRE_X, KEY_DX, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, cursePipsDx, heldDx, hudBand, leftShift, levelDx, showsKeys, slotRects, tapeSpot } from './hudlayout.ts';
 import type { BossLayout, SlotRect } from './hudlayout.ts';
 import { CURSE_FRAME, drawCurse, drawTape } from './hudcurse.ts';
+import { COUNT_BACK, COUNT_FILL, drawChannelers, drawCountdown, drawHeld, toneOf } from './hudchannel.ts';
 
 /** Shortcut keys are drawn a step under the names, so the names stay what you read first. Mist on the HUD's ink reads at 6:1; slate did not (2.9:1). */
 const KEY_COLOR = 'mist';
@@ -53,15 +56,16 @@ export interface HudOpts {
 const SWAP_FLASH = 20;
 
 /** `keys`: this strip prints the shortcut keys. `walk`: Max's Walkman, passed only to her slot. */
-function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, o: HudOpts, keys: boolean, walk: Walkman): void {
+function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, o: HudOpts, keys: boolean, walk: Walkman, lit: boolean): void {
   const low = isLowHp(p.hp, p.hpMax);
   const up = o.levelUp?.has(p.id) ?? false;
   const swapped = o.swapAge != null && o.swapAge < SWAP_FLASH && (settings.reduceFlashing || ((o.swapAge >> 2) & 1) === 0);
-  outline(ctx, 1, 0, 16, 16, r.cursed ? CURSE_FRAME : up || swapped ? 'yellow' : 'amber');
+  outline(ctx, 1, 0, 16, 16, r.cursed ? CURSE_FRAME : r.held ? toneOf(p.id).frame : up || swapped ? 'yellow' : 'amber');
   clipped(ctx, 2, 1, 14, 14, () => drawPortrait(ctx, p.id, p.ko ? 'hurt' : low ? 'worried' : 'neutral', -3, -2));
   // The key that picks this hero sits just left of the name, quietly, like the ones on the bench. A cursed hero has the chimes there
   // instead, and a hero alone has no key at all: there is nobody to swap to.
   if (r.cursed) drawCurse(ctx, cursePipsDx(true), FACE_Y, p.curse);
+  else if (r.held) drawHeld(ctx, heldDx(true), FACE_Y + 3, p.id, lit);
   else if (keys) drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
   if (walk) { const at = tapeSpot(true); drawTape(ctx, at.dx, at.y, walk, p.ko); }
   drawText(ctx, p.name, LEFT_X, 1, 'white');
@@ -98,18 +102,19 @@ function drawCoins(ctx: Ctx, hud: HudView, t: number): void {
 /** One benched hero: the shortcut key and a small face, left to right.
  * The key fills from the bottom as the swap recharges, so it reads as ready once it is fully lit. A cursed hero is framed in red, with the
  * chimes sounded where the key is: they can't be swapped to, so nothing hints at it. */
-function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, o: HudOpts, keys: boolean, walk: Walkman): void {
+function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, o: HudOpts, keys: boolean, walk: Walkman, lit: boolean): void {
   const x = r.px, y = FACE_Y;
   const dead = p.ko;
-  const hot = o.hover === r.index && !dead && !r.cursed;
+  const hot = o.hover === r.index && !dead && !r.cursed && !r.held;
   const pulse = p.id === o.focus && blinkOn(t, 40, 28); // a puzzle hint names this hero
   const mark = pulse || (o.levelUp?.has(p.id) ?? false) ? 'yellow' : hot ? (ready >= 1 ? 'yellow' : 'cream') : null;
   if (mark) outline(ctx, r.x, 0, r.w - 1, 15, mark);
-  outline(ctx, x, y, 11, 11, dead ? 'dusk' : r.cursed ? CURSE_FRAME : 'slate');
+  outline(ctx, x, y, 11, 11, dead ? 'dusk' : r.cursed ? CURSE_FRAME : r.held ? toneOf(p.id).frame : 'slate');
   // A hero who is down keeps the neutral face, in greys.
   clipped(ctx, x + 1, y + 1, 9, 9, () => drawPortrait(ctx, p.id, 'neutral', x - 7, y - 5, dead));
   if (walk) { const at = tapeSpot(false); drawTape(ctx, r.x + at.dx, at.y, walk, dead); }
   if (r.cursed) { drawCurse(ctx, r.x + cursePipsDx(false), y, p.curse); return; }
+  if (r.held) { drawHeld(ctx, r.x + heldDx(false), y + 3, p.id, lit); return; }
   if (!keys) return;
   const key = slotKeyLabel(r.n);
   const kx = r.x + KEY_DX, ky = y + 3;
@@ -138,11 +143,13 @@ function drawMeter(ctx: Ctx, hud: HudView, t: number): void {
   }
 }
 
-function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>, lay: BossLayout): void {
+function drawBoss(ctx: Ctx, boss: NonNullable<HudView['boss']>, lay: BossLayout, counting: boolean): void {
   const { x, y } = lay;
   outline(ctx, x - 1, y - 1, BOSS_BAR_W + 2, BOSS_BAR_H + 2, 'ink');
-  drawBar(ctx, x, y, BOSS_BAR_W, BOSS_BAR_H, boss.hpMax > 0 ? boss.hp / boss.hpMax : 0, 'red', 'blood0');
-  drawText(ctx, boss.name, SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
+  // The channel's bar is a clock and not health: amber, with the seconds left at its right end like the ward's.
+  drawBar(ctx, x, y, BOSS_BAR_W, BOSS_BAR_H, boss.hpMax > 0 ? boss.hp / boss.hpMax : 0, counting ? COUNT_FILL : 'red', counting ? COUNT_BACK : 'blood0');
+  drawText(ctx, bossTitle(boss), SCREEN_W / 2, y + 1, 'white', { align: 'center', shadow: true });
+  if (counting) drawCountdown(ctx, x, y, BOSS_BAR_W, boss.hp);
   // A boss hit in parts has a pip under the bar for each: the part's share of HP, or empty and dim once it is severed.
   for (const p of lay.pips) {
     box(ctx, p.x - 1, p.y - 1, p.w + 2, p.h + 2, 'ink');
@@ -171,6 +178,8 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   const lx = leftShift(band);
   const rects = slotRects(hud.party, band);
   const keys = showsKeys(hud.party, o.device);
+  /** The channel is running: the channelers' held marks light. */
+  const lit = hud.channel?.on === true;
   // On a wider screen the strip is taller, and everything in it moves down to sit centered.
   ctx.save();
   ctx.translate(0, band.top);
@@ -183,9 +192,9 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
     if (r.active) {
       ctx.save();
       ctx.translate(lx, 0);
-      drawActive(ctx, p, r, o, keys, walk);
+      drawActive(ctx, p, r, o, keys, walk, lit);
       ctx.restore();
-    } else drawSlot(ctx, p, r, t, hud.swapReady, o, keys, walk);
+    } else drawSlot(ctx, p, r, t, hud.swapReady, o, keys, walk, lit);
   }
   ctx.save();
   ctx.translate(lx, 0);
@@ -195,6 +204,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   ctx.restore();
   ctx.restore();
   const lay = bossLayout(SCREEN_W, VIEW_TOP, hud.boss?.parts);
-  if (hud.boss) drawBoss(ctx, hud.boss, lay);
+  if (hud.boss) drawBoss(ctx, hud.boss, lay, !!hud.channel && hud.boss.phase === 3);
+  if (hud.channel) drawChannelers(ctx, hud.channel, hud.boss ? lay.nextY : lay.y, SCREEN_W);
   if (hud.ward) drawWard(ctx, hud.ward, hud.boss ? lay.nextY : lay.y);
 }

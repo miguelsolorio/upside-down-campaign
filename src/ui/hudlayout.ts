@@ -94,6 +94,8 @@ export interface SlotRect {
   ko: boolean;
   /** Under the clock curse (docs/level-11.md): the slot shows the chimes where the key is, and it is no swap target. */
   cursed: boolean;
+  /** On a mark in the final fight's channel (docs/level-16.md): the slot shows the held mark where the key is, and it is no swap target. */
+  held: boolean;
   /** The click cell. It covers the portrait and its key label. */
   x: number; y: number; w: number; h: number;
   /** Left edge of the face frame: 11 px wide for a bench slot, 16 px for the active hero. */
@@ -124,6 +126,7 @@ export function benchX(k: number, count: number, band: HudBand = hudBand()): num
 }
 
 const isCursed = (p: PartyHud): boolean => (p.curse ?? 0) > 0;
+const isHeld = (p: PartyHud): boolean => p.channeling === true;
 
 /** The shortcut keys are printed on a keyboard, and only where a swap can happen: a party of one has nobody to swap to, and its
  * one portrait is no button (4.1 is Hopper alone, docs/level-10.md). */
@@ -136,20 +139,20 @@ export function slotRects(party: readonly PartyHud[], band: HudBand = hudBand())
   const lx = leftShift(band);
   party.forEach((p, i) => {
     if (!p.active) return;
-    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, cursed: isCursed(p), ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, h: band.h, px: 1 + lx });
+    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, cursed: isCursed(p), held: isHeld(p), ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, h: band.h, px: 1 + lx });
   });
   const pitch = benchPitch(bench.length);
   bench.forEach((b, k) => {
     const x = benchX(k, bench.length, band);
-    out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, cursed: isCursed(b.p), x, y: 0, w: pitch, h: band.h, px: x + BENCH_FACE_DX });
+    out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, cursed: isCursed(b.p), held: isHeld(b.p), x, y: 0, w: pitch, h: band.h, px: x + BENCH_FACE_DX });
   });
   return out;
 }
 
-/** Party index under a point in game px, or -1. The active hero, a KO'd hero and a cursed one are not swap targets. */
+/** Party index under a point in game px, or -1. The active hero, a KO'd hero, a cursed one and a channeler are not swap targets. */
 export function slotAt(party: readonly PartyHud[], x: number, y: number, band: HudBand = hudBand()): number {
   for (const r of slotRects(party, band)) {
-    if (r.active || r.ko || r.cursed) continue;
+    if (r.active || r.ko || r.cursed || r.held) continue;
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return r.index;
   }
   return -1;
@@ -220,6 +223,24 @@ export function bossLayout(screenW: number, viewTop: number, parts?: readonly nu
   });
   return { x, y, pips, nextY: y + NEXT_DY_PIPS };
 }
+
+// ---------------------------------------------------------------- the channel's bars
+// Phase three of the final fight (docs/level-16.md) keeps the boss bar, which reads THE CHANNEL with the seconds left, and puts the two
+// channelers' bars under it, side by side across the same width, one row down. The party band marks a held hero where the key would be.
+/** The gap between two channeler bars. */
+export const CHANNEL_GAP = 4;
+export interface ChannelBar { x: number; y: number; w: number; h: number }
+/** `n` bars side by side across the boss bar's width, centered on a screen `screenW` wide, their tops at `y` (the boss bar's `nextY`). */
+export function channelBars(screenW: number, y: number, n: number): ChannelBar[] {
+  const count = Math.max(1, n);
+  const w = Math.floor((BOSS_BAR_W - (count - 1) * CHANNEL_GAP) / count);
+  const x0 = Math.floor((screenW - (count * w + (count - 1) * CHANNEL_GAP)) / 2);
+  return Array.from({ length: n }, (_, i): ChannelBar => ({ x: x0 + i * (w + CHANNEL_GAP), y, w, h: BOSS_BAR_H }));
+}
+/** The held mark is a 3 by 5 ring, where a cursed hero's pips and a hero's key are. */
+export const HELD_W = 3;
+export const HELD_H = 5;
+export const heldDx = (active: boolean): number => (active ? ACTIVE_KEY_X : KEY_DX);
 
 // ---------------------------------------------------------------- the curse and the Walkman
 // Both are drawn from a slot's own left edge: a bench slot's x, and for the active hero the strip's origin once it is shifted to the

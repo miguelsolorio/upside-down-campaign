@@ -33,8 +33,9 @@ import { BAT_H, BAT_W, batFrameFor } from './actor_demobat.ts';
 import { VECNA_H, VECNA_W, vecnaFrameOf } from './actor_vecna.ts';
 import { ORB_H, ORB_W, orbFrameOf } from './actor_orb.ts';
 import { whipWarn } from './fx_vecna.ts';
-import { drawMarks } from './actor_mark.ts';
+import { drawLegMark, drawMarks } from './actor_mark.ts';
 import { drawFlayer, drawFlayerLeg } from './actor_flayer.ts';
+import { drawFinaleSpider, drawJoyce } from './ch5/finale_boss.ts';
 import type { Frame } from './actor_kit.ts';
 import { flashOf, ghostKeep } from './actor_kit.ts';
 import { chargeRing } from './fx_l6.ts';
@@ -323,16 +324,21 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
   ctx.drawImage(pud, 0, PUDDLE_H - 4, PUDDLE_W, 4, px, py + PUDDLE_H - 4, PUDDLE_W, 4);
 }
 
-/** Chapter 5's foes that wear a sprite that already exists: the Lab agent is the 1.2 agent in his hazmat suit and the foe Demogorgon is the 1.3
- *  one (docs/level-14.md, docs/level-15.md). The final boss's spider and its legs wear the 3.3 ones until their own art is wired (phase one's Vecna is
- *  chapter 4's, drawn as he is). */
+/** Chapter 5's foes that wear a sprite that already exists: the Lab agent is the 1.2 agent in his hazmat suit, the foe Demogorgon is the 1.3
+ *  one (docs/level-14.md, docs/level-15.md) and the final boss's legs are the 3.3 Mind Flayer's (docs/level-16.md). Its body is drawn by
+ *  drawFinaleSpider, and phase one's Vecna is chapter 4's, drawn as he is. */
 const CH5_LOOK: Partial<Record<string, ActorView['id']>> = {
-  agent5: 'agent', demofoe: 'demogorgon',
-  // The final boss (docs/level-16.md): the spider and its legs are the 3.3 ones, until Art wires drawFinaleSpider.
-  flayer5: 'flayer', leg5: 'flayerleg',
+  agent5: 'agent', demofoe: 'demogorgon', leg5: 'flayerleg',
 };
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
+/** Joyce with her axe, who runs in at the end of the final boss (docs/level-16.md): her shadow and drawJoyce's frames, feet at v.x, v.y. anim 'walk'
+ *  runs her, anim 'attack' chops (raise, swing, follow through by `t`). She is not an actor of the sim, so the play scene draws her itself. */
+export function drawAxeJoyce(ctx: Ctx, v: ActorView): void {
+  if (!v.blink) drawShadow(ctx, Math.round(v.x), Math.round(v.y), 0, 0);
+  drawJoyce(ctx, v);
+}
+
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. A hero under the curse and a foe Eddie has marked wear their marks over it; a memory orb the clock marked is lit red instead (actor_orb.ts), so it has no d20. */
 export function drawActor(ctx: Ctx, w: ActorView): void {
   const head = drawBody(ctx, w);
@@ -354,7 +360,9 @@ function drawBody(ctx: Ctx, w: ActorView): number | null {
     case 'vecna': if (v.pose === 'whip' && v.aim && !v.blink) whipWarn(ctx, Math.round(v.x), Math.round(v.y), v.aim.x, v.aim.y, v.t); return drawFramed(ctx, v, vecnaFrameOf(v), VECNA_W, VECNA_H, 'big');
     case 'orb': return drawFramed(ctx, v, orbFrameOf(v), ORB_W, ORB_H, 'none');
     case 'flayer': drawFlayer(ctx, v); return null;
-    case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); return null;
+    // The final boss's Mind Flayer: the 3.3 body with Vecna's chest in it, shut, or open for the frames a hit on a leg holds it (`open`).
+    case 'flayer5': drawFinaleSpider(ctx, v, v.open === true); return null;
+    case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); if (v.marked) drawLegMark(ctx, v); return null;
     case 'vine': { const head = drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return head; }
     case 'pod': return drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none');
     case 'trooper': return drawFramed(ctx, v, trooperFrame(v), TROOPER_CELL, TROOPER_CELL, 'small');

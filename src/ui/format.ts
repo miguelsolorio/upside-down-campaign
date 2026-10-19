@@ -228,6 +228,15 @@ export function shakeLabel(v: number): string {
   return v <= 0 ? 'OFF' : v < 1 ? 'HALF' : 'FULL';
 }
 
+// ---------------------------------------------------------------- the final fight's bar
+/** What the one boss bar of the final fight says in each phase (docs/level-16.md), phase 1 to 3. The sim names its bar the same way
+ * (combat/finale.ts), and a test holds the two together. */
+export const FINALE_PHASES: readonly string[] = ['VECNA', 'THE MIND FLAYER', 'THE CHANNEL'];
+/** The words on a boss bar: the phase's name in the final fight, else the boss's own. */
+export const bossTitle = (b: { name: string; phase?: 1 | 2 | 3 }): string => (b.phase ? FINALE_PHASES[b.phase - 1] ?? b.name : b.name);
+/** Whole seconds left of a count in frames, rounded up and never below 0, as the ward's and the channel's clocks print them. */
+export const secondsLeft = (frames: number): number => Math.max(0, Math.ceil(frames / 60));
+
 // ---------------------------------------------------------------- the results title
 const CHAPTER_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
 /** The results screen's title is drawn at this whole-number scale, centered on the 256 px frame's middle, top at y 12. */

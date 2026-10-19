@@ -26,6 +26,13 @@ let d20: HTMLCanvasElement | null = null;
 /** The d20 of the Hellfire DM, 8 by 8. */
 export function markPx(): Px { return new Px(8, 8).art(D20, D20_PAL); }
 
+/** The final boss's clock marked this leg (ActorView.marked on a leg, docs/level-16.md): cutting it lifts the curse. The clock's face hangs over its tip, bobbing a pixel. */
+export function drawLegMark(ctx: CanvasRenderingContext2D, v: ActorView): void {
+  if (!v.aim || v.blink) return;
+  const bob = ((v.t >> 4) & 1) ? 1 : 0;
+  ctx.drawImage(clockCanvas(0), Math.round(v.aim.x) - (CLOCK_W >> 1), Math.round(v.aim.y) - 22 - CLOCK_H + bob);
+}
+
 /**
  * Draws the marks of an actor whose head is on row `head`, feet at v.x. A hero's bar is 4 rows tall with its top 5 above the head, so the
  * clock stands on the row over it; a foe's bar is drawn only once it has been hit, but its d20 keeps the same room either way.

@@ -229,7 +229,10 @@ export function createFlayerSense(env: FlayerEnv): FlayerSense {
     const open_ = v.actors.filter((a) => isLeg(a) && a.aim && a.pose !== 'severed' && a.pose !== 'warn' && a.pose !== 'slam');
     let tx = body.x, ty = body.y;
     if (!down) {
-      const tip = open_.map((a) => a.aim as Vec2).sort((p, q) => dist(hx, hy, p.x, p.y) - dist(hx, hy, q.x, q.y))[0];
+      // Under the final boss's clock curse the marked leg comes first: cutting it lifts the curse. Else the nearest.
+      const cursed = v.hud.party.some((p) => (p.curse ?? 0) > 0);
+      const pool = cursed && open_.some((a) => a.marked) ? open_.filter((a) => a.marked) : open_;
+      const tip = pool.map((a) => a.aim as Vec2).sort((p, q) => dist(hx, hy, p.x, p.y) - dist(hx, hy, q.x, q.y))[0];
       if (!tip) return null;
       tx = tip.x; ty = tip.y;
     }

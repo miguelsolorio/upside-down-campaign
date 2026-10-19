@@ -32,11 +32,13 @@ export interface Finale {
   left: number; total: number;
   next: number; cursor: number;
   resets: number;
+  /** Phase two: frames to the clock's next chime (combat/finale_clock.ts). */
+  clockCd: number;
   done: boolean;
 }
 
 export function newFinale(def: FinaleDef): Finale {
-  return { def, phase: 0, t: 0, wait: 0, chans: [], on: false, left: def.frames, total: def.frames, next: 0, cursor: 0, resets: 0, done: false };
+  return { def, phase: 0, t: 0, wait: 0, chans: [], on: false, left: def.frames, total: def.frames, next: 0, cursor: 0, resets: 0, clockCd: 0, done: false };
 }
 
 /** This hero is channeling: on a mark (or walking to one) and out of the party's play. Never swapped to, never trailing the leader. */

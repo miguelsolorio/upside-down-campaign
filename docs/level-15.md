@@ -35,7 +35,7 @@ One stage, five to eight minutes, under Hawkins (`docs/chapter-5.md`). Through t
 - **Bridges** are one lane wide and run: east from the lawn to the road (5 tiles), north from the road to the deck at x 24 (4 tiles, `burn1` across the middle), north from the deck to the classroom at x 14 (4 tiles, all of it `sense1`), and east from the classroom's neck to the ring along y 10 (7 tiles).
 - `crack1` fills the classroom's neck (x 22, y 9 to 10). `door1` is 16 by 48 px across the ring's west tip (x 31, y 10 to 12), spawned open and shut by the `twins` beat.
 - Everything but the twins is awake. The party starts ten tiles from the nearest foe.
-- Demobats are left out of `bridge`: chapter 4 has not built them, and when it does they join that group and the XP budget with them.
+- Three demobats are in `bridge`, hovering over the deck's west and north (`bridge_bat1` to `3`), clear of the road island so they wake when the party is on the deck and not during the Demogorgon's fight below it.
 
 ## Puzzles
 
@@ -60,7 +60,7 @@ One stage, five to eight minutes, under Hawkins (`docs/chapter-5.md`). Through t
 
 - **Demogorgon as a foe** (`demofoe`): the 1.3 Demogorgon's charge, wall stun and swipe, at a foe's size in HP and damage. No petals, no leap. One or two at a time.
 - Demodogs, vines and pods at chapter 5 numbers (their own kinds where chapter 2's numbers would be wrong, as the TODO advises).
-- Demobats once chapter 4 has them.
+- Demobats (chapter 4's), three in `bridge`.
 - **Twin Demogorgons** (`twin`, two of them), the mini-boss, with one boss bar for both:
   - They take turns: while one charges, the other circles at range.
   - When one falls, the other enrages: 30% faster, and acid arcs every 5 s, as in 1.3's petals phase.
@@ -73,7 +73,7 @@ One stage, five to eight minutes, under Hawkins (`docs/chapter-5.md`). Through t
 |---|---|
 | `landing` | 3 demodogs |
 | `road` | a Demogorgon foe, 2 pods |
-| `bridge` | vines on the burn wall, 3 demodogs (and demobats when they exist) |
+| `bridge` | vines on the burn wall, 3 demodogs, 3 demobats |
 | `classroom` | 2 Demogorgon foes |
 | `boss` | the twins, dormant |
 
@@ -102,20 +102,20 @@ A `fall` sfx (a twin dropping into the void). The tracks are the existing `upsid
 
 ## Result
 
-Measured with `node scripts/measure-stage.ts 5.2 chief 20` (and `--careless`; 100 seeds for the stuck check), with the party a `?stage=5.2` jump brings: Mike Lv 10, Dustin Lv 9, Robin Lv 7 and Will Lv 7, 328 HP between them. `enemyMult` is 2.72, `xpMult` is left at 1, and the stage pays 330 XP before it (six demodogs 54, two vines 10, two pods 6, three Demogorgons 120, the twins 140).
+Measured with `node scripts/measure-stage.ts 5.2 chief 20` (and `--careless`; 100 seeds for the stuck check), with the party a `?stage=5.2` jump brings: Mike Lv 10, Dustin Lv 9, Robin Lv 7 and Will Lv 7, 328 HP between them. `enemyMult` is 2.72 (the three demobats of the deck did not move the stage out of its Targets), `xpMult` is left at 1, and the stage pays 348 XP before it (six demodogs 54, three demobats 18, two vines 10, two pods 6, three Demogorgons 120, the twins 140). Re-measured after chapter 4 merged.
 
 | Measure (chief) | Careful bot | Careless bot | Target |
 |---|---|---|---|
-| Cleared, of 20 | 16 | 13 | 15 to 19; careless at least 12 |
-| Cleared, of 100 | 89 | 55 | |
+| Cleared, of 20 | 19 | 14 | 15 to 19; careless at least 12 |
+| Cleared, of 100 | 87 | 74 | |
 | Stuck, of 100 | 0 | 0 | none |
-| Average damage taken | 497 | 728 | 150 to 320 |
+| Average damage taken | 563 | 646 | 150 to 320 |
 | Average KOs | 1.6 | 2.4 | |
-| Average lowest party HP | 28% | 20% | under 45% |
-| Average time | 133 s | 124 s | |
-| The twins' fight | 49 s | 35 s | |
+| Average lowest party HP | 25% | 23% | under 45% |
+| Average time | 152 s | 114 s | |
+| The twins' fight | 50 s | 41 s | |
 
-Kid clears 20 of 20 (277 damage), upside 4 of 20.
+Kid clears 20 of 20 (272 damage), upside 7 of 20. The deck's bats moved nothing at 2.72 (16 and 13 of 20 before them, 19 and 14 after), but where they hover does: with one at (22, 27), by the bridge's mouth, they woke while the party was still fighting on the road island, and the careful bot's dives-dodging walked it into the gap hint's rectangle and the careless bot cleared 8 to 9 of 20, so they hang over the deck's west and north now (the gap's hint still plays now and then, and the play tests treat it as a courtesy).
 
 - **The damage target is not met.** Every other target is. Over a run of 130 s the benched heroes heal 2% of their max HP a second and the bot picks up an Eggo or two, so the party takes about half as much again as its HP before it is beaten: at 1.25 the bot cleared 20 of 20 for 331 damage, and the first factor that cost it a clear was 1.75, at 586 damage. No factor puts 15 to 19 clears under 320.
 - **The factor is a cliff, and big.** Careful clears 99 of 100 at 2.6 and 65 at 3.0, the careless bot 77 and 23. The party's 66 to 111 HP each is what makes the factor big: a demodog bites for about 70 at 2.72.

@@ -138,6 +138,6 @@ export const STAGE_51: StageData = {
   // Hopper 7): at 1.6 the bot clears 94 of 100 for 1.1 KOs, 39% lowest HP and 149 s (the fight 25% of it), the careless bot 61, and nothing is
   // stuck (docs/level-14.md, "Result"). It is a cliff: 1.5 clears every run and 1.65 loses 14 (the careless bot 47). xpMult stays 1 until the
   // lead sets it with chapter 4 in (docs/pace.md).
-  enemyMult: 1.6,
+  enemyMult: 1.5,
   waypoints: WAYPOINTS,
 };

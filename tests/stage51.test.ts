@@ -163,21 +163,22 @@ test('stage 5.1: the start and every spawn, item and patrol point is on open gro
   for (const e of enemies) for (const q of e.patrol ?? []) assert.ok(!covered.has(`${q.tx},${q.ty}`), `${e.id}'s patrol point is off the props`);
 });
 
-test('stage 5.1: the roster is worth 300 to 360 XP before xpMult, in the groups the spec lists, and demobats wait for chapter 4', () => {
+test('stage 5.1: the roster is worth 300 to 360 XP before xpMult, in the groups the spec lists, with the three demobats in the square', () => {
   const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
   assert.ok(xp >= 300 && xp <= 360, `stage XP ${xp}`);
   assert.equal(xp, 308);
   const kind = (k: string): number => enemies.filter((e) => e.type === k).length;
-  assert.deepEqual([kind('trooper'), kind('agent5'), kind('commander')], [8, 6, 1]);
-  assert.equal(enemies.length, 15);
-  assert.ok(!enemies.some((e) => (e.type as string) === 'demobat'), 'no demobats yet: chapter 4 has not built them');
+  assert.deepEqual([kind('trooper'), kind('agent5'), kind('demobat'), kind('commander')], [7, 6, 3, 1]);
+  assert.equal(enemies.length, 17);
   assert.ok(enemies.every((e) => e.tier === undefined), 'no elites');
   const groups = (g: string): typeof enemies => enemies.filter((e) => e.group === g);
   assert.deepEqual([...new Set(enemies.map((e) => e.group))].sort(), ['boss', 'checkpoint', 'lab', 'square', 'street']);
   const types = (g: string): string => groups(g).map((e) => e.type).sort().join(',');
   assert.equal(types('street'), 'trooper,trooper');
   assert.equal(types('checkpoint'), 'trooper,trooper,trooper');
-  assert.equal(types('square'), 'agent5,agent5,trooper,trooper,trooper', 'two troopers and two agents, and a third trooper until the demobats come');
+  assert.equal(types('square'), 'agent5,agent5,demobat,demobat,demobat,trooper,trooper', 'two troopers and two agents, and the three demobats of the rift that took the third trooper\'s place');
+  const bats = groups('square').filter((e) => e.type === 'demobat');
+  assert.ok(bats.every((e) => !e.dormant && inRoom('forecourt', e.tx, e.ty) && ['rift0', 'rift1', 'rift2'].includes(TILES[ROWS[e.ty]?.[e.tx] ?? '']?.name ?? '')), 'the bats hover over the rift in the asphalt, awake');
   assert.equal(types('lab'), 'agent5,agent5,agent5,agent5');
   assert.equal(types('boss'), 'commander');
   assert.ok(groups('street').every((e) => !e.dormant && e.patrol?.length === 2 && inRoom('street', e.tx, e.ty)), 'two troopers on patrol on Main Street, awake');

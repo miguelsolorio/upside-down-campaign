@@ -28,10 +28,9 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, w: number, h: 
 export const CHIP_HITS = 12;
 
 // ---------------------------------------------------------------- enemies
-// 330 XP before xpMult (docs/level-15.md, "Spawns and the XP budget"): six demodogs (54), two vines (10), two pods (6), three Demogorgon foes
-// (120) and the twins (140). Demobats are left out of the bridge's group: chapter 4 has not built them yet (docs/chapter-5.md), and when they
-// land they join `bridge` and the budget with them. Everything but the twins is awake and waits where it stands; the twins sleep on the ring
-// until the `twins` beat wakes them.
+// 348 XP before xpMult (docs/level-15.md, "Spawns and the XP budget"): six demodogs (54), three demobats (18), two vines (10), two pods (6), three
+// Demogorgon foes (120) and the twins (140). The demobats are the deck's, in `bridge` with its vines and its pack. Everything but the twins is awake
+// and waits where it stands; the twins sleep on the ring until the `twins` beat wakes them.
 const ENEMIES: SimSpawn[] = [
   // The lawn island: the pack at the east end, by the bridge. The party starts ten tiles from the nearest of them.
   foe('landing_dog1', 'demodog', 'landing', 14, 33), foe('landing_dog2', 'demodog', 'landing', 15, 36), foe('landing_dog3', 'demodog', 'landing', 13, 38),
@@ -40,6 +39,7 @@ const ENEMIES: SimSpawn[] = [
   // The deck past the burn wall: two vines either side of the bridge's mouth, a pack of three in the middle of the island.
   foe('bridge_vine1', 'vine', 'bridge', 21, 25), foe('bridge_vine2', 'vine', 'bridge', 26, 24),
   foe('bridge_dog1', 'demodog', 'bridge', 16, 23), foe('bridge_dog2', 'demodog', 'bridge', 18, 26), foe('bridge_dog3', 'demodog', 'bridge', 13, 25),
+  foe('bridge_bat1', 'demobat', 'bridge', 12, 26), foe('bridge_bat2', 'demobat', 'bridge', 17, 22), foe('bridge_bat3', 'demobat', 'bridge', 21, 23),
   // The classroom island: a Demogorgon in the north-west corner and one in the north, either side of the way to the neck.
   foe('class_demo1', 'demofoe', 'classroom', 7, 8, { dir: 'down' }), foe('class_demo2', 'demofoe', 'classroom', 16, 6, { dir: 'down' }),
   // The ring: the twins, one at the north-east and one at the south-east, asleep.

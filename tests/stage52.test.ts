@@ -131,10 +131,9 @@ test('stage 5.2: the start and every spawn, item and prop is on open ground, ids
 test('stage 5.2: the roster is worth 320 to 380 XP before xpMult, in the spec\'s groups: the lawn pack, the road, the deck, the classroom and the sleeping twins', () => {
   const xp = enemies.reduce((sum, e) => sum + xpOf(e), 0);
   assert.ok(xp >= 320 && xp <= 380, `stage XP ${xp}`);
-  assert.equal(xp, 330);
+  assert.equal(xp, 348);
   const kind = (k: string): number => enemies.filter((e) => e.type === k).length;
-  assert.deepEqual([kind('demodog'), kind('demofoe'), kind('pod'), kind('vine'), kind('twin')], [6, 3, 2, 2, 2]);
-  assert.equal(kind('demobat'), 0, 'no demobats: chapter 4 has not built them');
+  assert.deepEqual([kind('demodog'), kind('demobat'), kind('demofoe'), kind('pod'), kind('vine'), kind('twin')], [6, 3, 3, 2, 2, 2]);
   assert.ok(enemies.every((e) => e.tier === undefined), 'no elites');
   const groups = (g: string): typeof enemies => enemies.filter((e) => e.group === g);
   assert.deepEqual([...new Set(enemies.map((e) => e.group))].sort(), ['boss', 'bridge', 'classroom', 'landing', 'road']);
@@ -144,7 +143,7 @@ test('stage 5.2: the roster is worth 320 to 380 XP before xpMult, in the spec\'s
   assert.deepEqual(road.map((e) => e.type).sort(), ['demofoe', 'pod', 'pod'], 'a Demogorgon and two pods');
   assert.ok(road.every((e) => !e.dormant && inIsland('road', e.tx, e.ty)));
   const bridge = groups('bridge');
-  assert.deepEqual(bridge.map((e) => e.type).sort(), ['demodog', 'demodog', 'demodog', 'vine', 'vine'], 'vines by the burn wall and three demodogs');
+  assert.deepEqual(bridge.map((e) => e.type).sort(), ['demobat', 'demobat', 'demobat', 'demodog', 'demodog', 'demodog', 'vine', 'vine'], 'vines by the burn wall, three demodogs and three demobats');
   assert.ok(bridge.every((e) => !e.dormant && inIsland('deck', e.tx, e.ty)), 'on the deck past the burn wall');
   const wall = prop('burn1');
   for (const v of bridge.filter((e) => e.type === 'vine')) assert.ok(Math.hypot(v.tx - wall.tx, v.ty - wall.ty) < 8, `${v.id} is near the wall`);

@@ -8,7 +8,7 @@ One stage, five to eight minutes, the start of chapter 5 (`docs/chapter-5.md`). 
 - Route, one main path with side pockets for items:
   - Main Street at curfew (start, south-west): sandbag walls, a parked truck, a curfew sign
   - the checkpoint, going east: a booth, a boom gate (`boom1`, Steve smashes it), floodlight towers
-  - the town square, going north, with red rifts in the asphalt where demobats come out (once chapter 4's demobat is in; troopers until then)
+  - the town square, going north, with red rifts in the asphalt where demobats come out
   - the Lab's front gate, then its army-held halls (the 1.2 Lab tiles, army-dressed)
   - the loading bay (end, north-east), an arena about 20 by 14, with `door1` across its doorway
 - Light: `time: 'night'` (dusk going to night): pools under the floodlight cones (`floodlightConeArt`) and the lights props, and the rifts' red glow.
@@ -23,7 +23,7 @@ One stage, five to eight minutes, the start of chapter 5 (`docs/chapter-5.md`). 
 |---|---|
 | Main Street | Start, `lights_street`, a short Hopper line. Two troopers on patrol |
 | Checkpoint | `boom1` (smash). A trooper squad behind the sandbags, and the floodlight on a timer that lights the party up and calls them |
-| Town square | Rifts. Troopers and Lab agents, plus demobats once chapter 4 has them. `lights_square` |
+| Town square | Rifts. Troopers and Lab agents, plus three demobats over the north rift. `lights_square` |
 | Lab halls | Lab agents in hazmat at chapter 5 numbers. `crate1` (Eleven pushes) blocks a cache. `lights_lab`, the save point for the fight |
 | Loading bay | `door1` closes behind the party. The Commander |
 
@@ -51,7 +51,7 @@ One stage, five to eight minutes, the start of chapter 5 (`docs/chapter-5.md`). 
 |---|---|
 | `street` | 2 troopers |
 | `checkpoint` | 3 troopers, dormant until `checkpoint` |
-| `square` | 2 troopers, 2 Lab agents (and 3 demobats when they exist) |
+| `square` | 2 troopers, 2 Lab agents and 3 demobats |
 | `lab` | 4 Lab agents |
 | `boss` | the Commander, dormant |
 | `squad` | run-time troopers, called by the Commander |
@@ -94,19 +94,18 @@ Built in `src/world/stages/stage51.ts` (the map, beats, puzzles, bot route) and 
 
 **Puzzles:** `boom1` is Steve's (`MAYBE STEVE SHOULD TRY HIS NAIL BAT`), with Hopper's fist as the other way (`MAYBE HOPPER SHOULD THROW A PUNCH`), so the gate is always live; `crate1` is Eleven's (`MAYBE ELEVEN SHOULD TRY HER SHOVE`) and is only ever the cache.
 
-**Roster:** 308 XP before `xpMult` (eight troopers, six Lab agents and the Commander; the squad he calls is run-time, worth 1 XP each). Chapter 4 has not built demobats, so none are in `square` yet: a third trooper stands in for them (with three demobats in the count the budget still has room under 360). When they land, add them to `square` and drop that trooper (`sq_d`) if the sum passes 360. The floodlight on a timer that calls the party at the checkpoint is not built: the towers and their cones are dressing, and the squad wakes on the `checkpoint` beat.
+**Roster:** 308 XP before `xpMult` (seven troopers, six Lab agents, three demobats and the Commander; the squad he calls is run-time, worth 1 XP each). The three demobats of `square` hover over the north rift on the forecourt side (`sq_m1` to `sq_m3`, at the rift's three tiles) and fly out as one flock when the party comes within 160 px; they took the place of the third trooper (`sq_d`) that stood in for them, so the sum is where it was. The floodlight on a timer that calls the party at the checkpoint is not built: the towers and their cones are dressing, and the squad wakes on the `checkpoint` beat.
 
-**Tuning**, on HARD (`chief`), with the party a real run brings (Mike 10, Dustin 9, Robin 7, Hopper 7), `enemyMult` 1.6 and `xpMult` 1 (the lead sets it once chapter 4 lands):
+**Tuning**, on HARD (`chief`), with the party a real run brings (Mike 10, Dustin 9, Robin 7, Hopper 7), `enemyMult` 1.5 and `xpMult` 1 (the lead sets it once chapter 4 lands). Re-measured after chapter 4 merged and the square got its three demobats: the factor came down from 1.6, where the careless bot cleared 9 to 10 of 20 with the flock out (it cannot hit a bat out of reach and does not step out of a dive line).
 
 | | Careful bot, 20 seeds | Careful, 100 seeds | Careless bot, 20 seeds | Careless, 100 seeds |
 |---|---|---|---|---|
-| Cleared | 18 | 94 | 12 | 61 |
-| Wiped / stuck | 2 / 0 | 6 / 0 | 8 / 0 | 39 / 0 |
-| Average damage taken | 583 | 621 | 880 | 879 |
-| Average KOs | 1.2 | 1.1 | 2.7 | 3.0 |
-| Average lowest party HP | 39% | 39% | 12% | 11% |
-| Average time | 150 s | 149 s | 127 s | 127 s |
-| The Commander's fight | 38 s (26%) | 37 s (25%) | 29 s | 28 s |
+| Cleared | 19 | 97 | 15 | 71 |
+| Wiped / stuck | 1 / 0 | 3 / 0 | 5 / 0 | 29 / 0 |
+| Average damage taken | 623 | 618 | 860 | 838 |
+| Average KOs | 0.3 | 0.5 | 2.5 | 2.6 |
+| Average lowest party HP | 40% | 41% | 14% | 16% |
+| Average time | 141 s | 144 s | 129 s | 126 s |
+| The Commander's fight | 34 s (24%) | 35 s (24%) | 30 s | 29 s |
 
-Clears, the careless floor, the lowest HP and "nothing stuck" are in the bands. **Damage is not**: 583 against 150 to 320. The two cannot both hold with this party. The bench heals 2% of its max HP a second (`regen` in `combat/hero.ts`), about 5.5 HP a second for these four over a 150 s run, so a run that dips under 45% has taken 500 damage and more. At `enemyMult` 1.0 the damage is 296 but the careful bot clears every run with a lowest HP of 66% on average; at 1.4 it is 466 with every run cleared and 55%. About a third of the damage is the Commander's fight (a run without him takes 200 less) and the rest the troopers on the street, at the checkpoint and in the square; the Lab agents add almost none. The factor is a cliff: 1.5 clears 100 of 100 (the careless bot 78), 1.55 clears 97 (68), 1.6 clears 94 (61) and 1.65 clears 86 (47).
-
+Clears, the careless floor, the lowest HP and "nothing stuck" are in the bands. **Damage is not**: 623 against 150 to 320, as before the demobats (583). The two cannot both hold with this party. The bench heals 2% of its max HP a second (`regen` in `combat/hero.ts`), about 5.5 HP a second for these four over a 150 s run, so a run that dips under 45% has taken 500 damage and more. At `enemyMult` 1.0 the damage was 296 but the careful bot cleared every run with a lowest HP of 66% on average; at 1.4 it is 576 with every run cleared and 44%, and the careless bot clears 17. About a third of the damage is the Commander's fight (a run without him takes 200 less) and the rest the troopers on the street, at the checkpoint and in the square; the Lab agents add almost none. The factor is a cliff: with the bats at 1.6 the careful bot clears 19 of 20 and the careless bot 9 to 10, at 1.5 19 and 15, at 1.4 20 and 17.

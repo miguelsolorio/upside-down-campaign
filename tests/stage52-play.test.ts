@@ -31,7 +31,8 @@ test('stage 5.2: the bot clears the stage on chief, through every beat in order,
     for (const seed of [1, 2, 3, 4]) {
       const run = playStage(PLAYED, seed, party, 30000, 'chief', careless);
       assert.ok(run.done && !run.allDown, `seed ${seed}${careless ? ' careless' : ''} clears`);
-      assert.deepEqual(run.said, ORDER, `seed ${seed}: every beat, in order, and not the cache's`);
+      // The gap's hint plays if a fight with the deck's bats walks the party past the gap on the road island; it is a courtesy, not a step.
+      assert.deepEqual(run.said.filter((id) => id !== 'l15_gap_hint'), ORDER, `seed ${seed}: every beat, in order, and not the cache's`);
       assert.deepEqual(run.steps, ['open door1'], 'the bot opens its gates by flag, not by the director, and the clear lifts the rock fall');
       assert.ok(run.xp >= stageXp(PLAYED) - 6 && run.xp <= stageXp(PLAYED), `seed ${seed}: ${run.xp} XP, everything but a burst pod`);
       assert.ok(run.frames > 60 * 60 && run.frames < 60 * 300, `seed ${seed}: ${(run.frames / 60).toFixed(0)} s`);
@@ -157,6 +158,6 @@ for (const light of ['lights_landing', 'lights_bridge', 'lights_ring']) {
       dir.tick(Math.floor(p.x / 16), Math.floor((p.y - 4) / 16));
     }
     assert.ok(dir.finished(), 'the stage is cleared');
-    assert.deepEqual(said, LEFT[light], 'the beats that were left play, and the ones before the string do not play again');
+    assert.deepEqual(said.filter((id) => id !== 'l15_gap_hint'), LEFT[light], 'the beats that were left play, and the ones before the string do not play again');
   });
 }

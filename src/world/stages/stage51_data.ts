@@ -28,14 +28,13 @@ const prop = (id: string, kind: PropKind, tx: number, ty: number, w: number, h: 
 const wall = (id: string, kind: PropKind, tx: number, ty: number, w: number, h: number): SimSpawn => prop(id, kind, tx, ty, w, h, { solid: true });
 
 // ---------------------------------------------------------------- enemies
-// 308 XP before xpMult (docs/level-14.md, "Spawns and the XP budget"): eight troopers (18), six Lab agents (14) and the Commander (80). The
-// squad he whistles up is run-time (1 XP each) and is not in the count. Demobats are left out: chapter 4 has not built them, and the spec
-// puts three of them in `square`. A third trooper stands in `square` for the rifts until they do, and with the demobats in the budget
-// still has room under 360 (tests/stage51.test.ts holds the band).
+// 308 XP before xpMult (docs/level-14.md, "Spawns and the XP budget"): seven troopers (18), six Lab agents (14), the three demobats of `square`
+// (6) and the Commander (80). The third trooper that stood in `square` for the rifts is gone now that the demobats are. The squad he whistles up is run-time (1 XP each) and is not in the count (tests/stage51.test.ts holds the band).
 //   street      two troopers on patrol in the road, awake.
 //   checkpoint  three troopers behind the sandbags east of the boom gate, asleep until the checkpoint beat.
 //   square      a trooper and an agent in the west of the plaza, a trooper by the gap in the east, and a trooper and an agent on the
-//               forecourt: the three clusters are more than a trooper's alert range (140 px) apart, so they are never one fight.
+//               forecourt: the three clusters are more than a trooper's alert range (140 px) apart, so they are never one fight. Three demobats
+//               hover over the north rift, on the forecourt's side, and fly out as a flock when the party is within 160 px of them.
 //   lab         two pairs of agents, one in the south corridor, one in the north corridor.
 //   boss        the Commander, asleep in the bay until the commander beat.
 const ENEMIES: SimSpawn[] = [
@@ -47,8 +46,8 @@ const ENEMIES: SimSpawn[] = [
   foe('sq_a', 'trooper', 'square', 33, 31, { dir: 'left' }),
   foe('sq_b', 'agent5', 'square', 35, 34, { dir: 'left' }),
   foe('sq_c', 'trooper', 'square', 45, 31, { dir: 'down' }),
-  foe('sq_d', 'trooper', 'square', 34, 21, { dir: 'left' }),
   foe('sq_e', 'agent5', 'square', 28, 23, { dir: 'right' }),
+  foe('sq_m1', 'demobat', 'square', 33, 20), foe('sq_m2', 'demobat', 'square', 34, 20), foe('sq_m3', 'demobat', 'square', 35, 20),
   foe('lab_a', 'agent5', 'lab', 11, 14, { dir: 'right' }),
   foe('lab_b', 'agent5', 'lab', 15, 15, { dir: 'right' }),
   foe('lab_c', 'agent5', 'lab', 12, 3, { dir: 'right' }),

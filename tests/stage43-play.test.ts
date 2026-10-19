@@ -83,7 +83,7 @@ test('stage 4.3: the bot clears the stage on chief, through every beat in order,
     const tag = `seed ${seed}`;
     assert.ok(run.done && !run.allDown, `${tag} clears`);
     assert.deepEqual(run.said, ORDER, `${tag}: every beat, in order`);
-    assert.deepEqual(run.steps, ['music clock'], `${tag}: the bot opens mirror1 itself, and the roof beat changes the music`);
+    assert.deepEqual(run.steps, ['light lights_roof', 'music clock'], `${tag}: the ladder lights its string, the bot opens mirror1 itself, and the roof beat changes the music`);
     assert.equal(run.events.filter((e) => e.t === 'cursed').length, 3, `${tag}: three curses, one for each clock`);
     assert.ok(run.events.filter((e) => e.t === 'cursed').every((e) => e.t === 'cursed' && e.hero !== 'eddie' && e.hero !== 'max'), `${tag}: they take a hero who is neither Eddie nor Max`);
     const ended = run.events.filter((e) => e.t === 'curseEnd');

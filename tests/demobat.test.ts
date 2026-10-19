@@ -42,7 +42,7 @@ const flock = (group = 'sky', tx = 17): SimSpawn[] => [0, 1, 2, 3, 4].map((i) =>
 
 test('numbers: 40 HP, 30 ATK, 2 DEF, walk 1.4, 6 XP, and a flock circles at 56 px, 10 to 14 px up', () => {
   assert.deepEqual([DEF.hp, DEF.atk, DEF.def, DEF.speed, DEF.xp], [40, 30, 2, 1.4, 6]);
-  assert.deepEqual([X.orbit, X.diveEvery, X.diveWindup, X.diveT, X.diveSpeed, X.climb, X.low, X.stunT, X.roofPower], [56, 150, 20, 12, 4, 30, 6, 40, 0.6]);
+  assert.deepEqual([X.orbit, X.diveEvery, X.diveWindup, X.diveT, X.diveSpeed, X.climb, X.low, X.stunT, X.roofPower], [56, 150, 20, 12, 4, 30, 6, 40, 0.35]);
   const r = rig(flock());
   r.sim.dev.god = true;
   run(r.sim, 150);

@@ -135,6 +135,6 @@ export const STAGE_44: StageData = {
   // Tuned by the lead on HARD (docs/level-13.md, "Result"), with Vecna at 1000 HP and 32 ATK and his lash and throw quick and soft:
   // chief clears 100 of 100, careless 86. The careful bot steps out of nearly every lash and throw, so its lowest HP stays high.
   enemyMult: 1.7,
-  xpMult: 1.8,
+  xpMult: 2.9,
   waypoints: WAYPOINTS,
 };

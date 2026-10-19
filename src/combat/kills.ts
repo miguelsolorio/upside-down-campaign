@@ -1,5 +1,6 @@
 // Deaths: kill events, XP, quarter drops, group-cleared, and removing bodies after their death animation.
 import { cancelAttack } from '../enemies/shield.ts';
+import { advancePhase } from '../enemies/vecna_phase.ts';
 import { clearAlpha } from '../enemies/alpha_hit.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { releaseHold } from '../enemies/hold.ts';
@@ -94,6 +95,8 @@ export function reapEnemies(s: S): void {
   doomLegs(s);
   doomOrbs(s);
   for (const e of s.enemies) {
+    // A blow that takes Vecna from above a phase line straight to 0 still plays the phases it crossed, in order, before he falls.
+    if (!e.dead && !e.dormant && e.hp <= 0 && e.vecna) advancePhase(s, e);
     if (!e.dead && !e.dormant && e.hp <= 0 && !legHeld(e) && !orbHeld(e)) kill(s, e);
     if (e.dead) {
       e.deadT++;

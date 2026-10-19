@@ -25,7 +25,7 @@ export const placeOf = (x: number, y: number): string | null => Object.keys(PLAC
 export const when = (id: string): unknown => S.beats.find((b) => b.id === id)?.when;
 export const rectOf = (id: string): TileRect => (when(id) as { rect: TileRect }).rect;
 export const inRect = (r: TileRect, x: number, y: number): boolean => x >= r.tx && y >= r.ty && x < r.tx + r.w && y < r.ty + r.h;
-export const BEAT_IDS = ['start', 'street', 'clock1', 'mirror_hint', 'clock2', 'park', 'clock3', 'roof', 'solo', 'level_clear'];
+export const BEAT_IDS = ['start', 'street', 'clock1', 'mirror_hint', 'clock2', 'park', 'clock3', 'ladder', 'roof', 'solo', 'level_clear'];
 export const SCRIPT_IDS = ['l12_start', 'l12_street', 'l12_clock1', 'l12_mirror_hint', 'l12_clock2', 'l12_park', 'l12_clock3', 'l12_roof', 'l12_solo', 'l12_fall'];
 /** The gate the party opens on the way: mirror1, by Eddie's riff or the bot's flag. The clocks block nothing, and door_roof is open until the roof beat. */
 export const GATES = ['mirror1'];

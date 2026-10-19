@@ -289,7 +289,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   demobat: {
     kind: 'demobat', name: 'Demobat', hp: 40, atk: 30, def: 2, speed: 1.4, xp: 6, aggro: 160,
     windup: 20, power: 0.8, cooldown: 150, drop: 0.15, weight: 0.8,
-    x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, kb: 2, roofPower: 0.6, roofN: 5, roofGap: 45 },
+    x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, kb: 2, roofPower: 0.35, roofN: 5, roofGap: 45 },
   },
   // Vecna (enemies/vecna.ts, vecna_phase.ts): speedMul scales his walk and the timings of his whip, throw and rise, chimeEvery the clock's
   // curse (a spawn's x can override both, as 5.3 does). Windup and power are the whip's and the rock's wind-up. whip*: the vine lash: every

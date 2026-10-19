@@ -83,6 +83,10 @@ const BEATS: Beat[] = [
   { id: 'clock2', when: { rect: rect(17, 23, 3, 2) }, steps: [{ t: 'curse', prop: 'clock2' }, say('l12_clock2')] },
   { id: 'park', when: { rect: rect(28, 21, 3, 3) }, steps: [say('l12_park'), { t: 'wake', group: 'bats2' }] },
   { id: 'clock3', when: { rect: rect(32, 21, 4, 3) }, steps: [{ t: 'curse', prop: 'clock3' }, say('l12_clock3')] },
+  // The string at the ladder's foot lights as the party reaches it: the save point and the heal before the song, as the shaft's did in
+  // 4.1, since Eddie stands the song alone and arrives with whatever the park left him. It is a beat of its own, finished before the roof
+  // beat starts, so a retry from it walks into the roof beat again and the song after it.
+  { id: 'ladder', when: { rect: rect(31, 15, 12, 3), needs: 'park' }, steps: [{ t: 'light', prop: 'lights_roof' }] },
   {
     id: 'roof', when: { rect: rect(34, 6, 8, 3), needs: 'park' },
     steps: [{ t: 'close', prop: 'door_roof' }, { t: 'music', track: 'clock' }, say('l12_roof')],
@@ -141,7 +145,7 @@ export const STAGE_43: StageData = {
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
   // Starting numbers: the lead tunes them on HARD (docs/level-12.md, "Result").
   enemyMult: 1.5,
-  xpMult: 1.8,
+  xpMult: 2.8,
   // The deck's edge: where the flock that circles Eddie comes up from while the song plays.
   burrows: BURROWS,
   waypoints: WAYPOINTS,

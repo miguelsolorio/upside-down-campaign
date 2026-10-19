@@ -4,7 +4,8 @@
 // There is no HP here: every hero's health is the bar over their head in the world, so a bench slot is just the key and
 // the face. The strip is quiet, with no frames. MP is one blue segment per cast. Erica's stash, when the party carries any,
 // is a mini Eggo and Coke with a count each on the MP caption's row (hudstash.ts). A boss hit in parts has a pip for each under its
-// bar (bossLayout in hudlayout.ts).
+// bar (bossLayout in hudlayout.ts). A hero alone (4.1) has no bench and no swap key. A cursed hero's slot shows the chimes sounded
+// where the key is, and Max's slot carries her Walkman (hudcurse.ts).
 import type { HeroId, HudView, PartyHud } from '../core/types.ts';
 import { SCREEN_W, VIEW_TOP } from '../core/config.ts';
 import { slotKeyLabel } from '../core/bindings.ts';
@@ -17,17 +18,13 @@ import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
 import { drawStash } from './hudstash.ts';
-import { BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, hudBand, leftShift, levelDx, slotRects } from './hudlayout.ts';
+import { ACTIVE_KEY_X, BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, FACE_Y, INSPIRE_X, KEY_DX, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, cursePipsDx, hudBand, leftShift, levelDx, showsKeys, slotRects, tapeSpot } from './hudlayout.ts';
 import type { BossLayout, SlotRect } from './hudlayout.ts';
+import { CURSE_FRAME, drawCurse, drawTape } from './hudcurse.ts';
 
 /** Shortcut keys are drawn in this low-contrast color, so the names stay what you read first. */
 const KEY_COLOR = 'slate';
-/** The active hero's shortcut key sits this far left of the name. */
-const ACTIVE_KEY_X = LEFT_X - 7;
-/** On a bench slot the face sits a little below the top, so the slot is centered in the strip like the active portrait.
- * The key is 2 px in from the slot's left edge. */
-const FACE_Y = 2;
-const KEY_DX = 2;
+type Walkman = HudView['walkman'];
 /** A caption is tiny and quiet, so the value under it is what you read first. */
 const CAPTION_COLOR = 'mist';
 /** The Crit die: a d20 of this radius, 7 px wide and 8 tall, centered on the value row, under the caption's left end. */
@@ -54,14 +51,18 @@ export interface HudOpts {
 /** How long the new active hero's portrait flashes after a swap, in frames. */
 const SWAP_FLASH = 20;
 
-function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, o: HudOpts): void {
+/** `keys`: this strip prints the shortcut keys. `walk`: Max's Walkman, passed only to her slot. */
+function drawActive(ctx: Ctx, p: PartyHud, r: SlotRect, o: HudOpts, keys: boolean, walk: Walkman): void {
   const low = isLowHp(p.hp, p.hpMax);
   const up = o.levelUp?.has(p.id) ?? false;
   const swapped = o.swapAge != null && o.swapAge < SWAP_FLASH && (settings.reduceFlashing || ((o.swapAge >> 2) & 1) === 0);
-  outline(ctx, 1, 0, 16, 16, up || swapped ? 'yellow' : 'amber');
+  outline(ctx, 1, 0, 16, 16, r.cursed ? CURSE_FRAME : up || swapped ? 'yellow' : 'amber');
   clipped(ctx, 2, 1, 14, 14, () => drawPortrait(ctx, p.id, p.ko ? 'hurt' : low ? 'worried' : 'neutral', -3, -2));
-  // The key that picks this hero sits just left of the name, quietly, like the ones on the bench.
-  if ((o.device ?? 'keyboard') === 'keyboard') drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
+  // The key that picks this hero sits just left of the name, quietly, like the ones on the bench. A cursed hero has the chimes there
+  // instead, and a hero alone has no key at all: there is nobody to swap to.
+  if (r.cursed) drawCurse(ctx, cursePipsDx(true), FACE_Y, p.curse);
+  else if (keys) drawText(ctx, slotKeyLabel(r.n), ACTIVE_KEY_X, 1, KEY_COLOR);
+  if (walk) { const at = tapeSpot(true); drawTape(ctx, at.dx, at.y, walk, p.ko); }
   drawText(ctx, p.name, LEFT_X, 1, 'white');
   const lv = `LV${p.level}`;
   drawText(ctx, lv, LEFT_X + levelDx(p.name), 1, up || o.levelHot ? 'white' : 'yellow');
@@ -94,19 +95,21 @@ function drawCoins(ctx: Ctx, hud: HudView, t: number): void {
 }
 
 /** One benched hero: the shortcut key and a small face, left to right.
- * The key fills from the bottom as the swap recharges, so it reads as ready once it is fully lit. */
-function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, o: HudOpts): void {
+ * The key fills from the bottom as the swap recharges, so it reads as ready once it is fully lit. A cursed hero is framed in red, with the
+ * chimes sounded where the key is: they can't be swapped to, so nothing hints at it. */
+function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, o: HudOpts, keys: boolean, walk: Walkman): void {
   const x = r.px, y = FACE_Y;
   const dead = p.ko;
-  const hot = o.hover === r.index && !dead;
+  const hot = o.hover === r.index && !dead && !r.cursed;
   const pulse = p.id === o.focus && blinkOn(t, 40, 28); // a puzzle hint names this hero
   const mark = pulse || (o.levelUp?.has(p.id) ?? false) ? 'yellow' : hot ? (ready >= 1 ? 'yellow' : 'cream') : null;
   if (mark) outline(ctx, r.x, 0, r.w - 1, 15, mark);
-  outline(ctx, x, y, 11, 11, dead ? 'dusk' : 'slate');
+  outline(ctx, x, y, 11, 11, dead ? 'dusk' : r.cursed ? CURSE_FRAME : 'slate');
   // A hero who is down keeps the neutral face, in greys.
   clipped(ctx, x + 1, y + 1, 9, 9, () => drawPortrait(ctx, p.id, 'neutral', x - 7, y - 5, dead));
-
-  if ((o.device ?? 'keyboard') !== 'keyboard') return;
+  if (walk) { const at = tapeSpot(false); drawTape(ctx, r.x + at.dx, at.y, walk, dead); }
+  if (r.cursed) { drawCurse(ctx, r.x + cursePipsDx(false), y, p.curse); return; }
+  if (!keys) return;
   const key = slotKeyLabel(r.n);
   const kx = r.x + KEY_DX, ky = y + 3;
   if (dead) { drawTinyText(ctx, key, kx, ky, 'dusk'); return; }
@@ -166,19 +169,22 @@ export function drawHud(ctx: CanvasRenderingContext2D, hud: HudView, t: number, 
   const band = hudBand();
   const lx = leftShift(band);
   const rects = slotRects(hud.party, band);
+  const keys = showsKeys(hud.party, o.device);
   // On a wider screen the strip is taller, and everything in it moves down to sit centered.
   ctx.save();
   ctx.translate(0, band.top);
   for (const r of rects) {
     const p = hud.party[r.index];
     if (!p) continue;
+    // Max's slot carries the Walkman, when the party has it.
+    const walk = p.id === 'max' ? hud.walkman : null;
     // The active hero and the middle are drawn from the constants, so they move with the band's left edge.
     if (r.active) {
       ctx.save();
       ctx.translate(lx, 0);
-      drawActive(ctx, p, r, o);
+      drawActive(ctx, p, r, o, keys, walk);
       ctx.restore();
-    } else drawSlot(ctx, p, r, t, hud.swapReady, o);
+    } else drawSlot(ctx, p, r, t, hud.swapReady, o, keys, walk);
   }
   ctx.save();
   ctx.translate(lx, 0);

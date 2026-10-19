@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import type { HeroId } from '../src/core/types.ts';
 import { PARTY_SIZE, pickParty, poolFor, requiredFor } from '../src/core/campaign.ts';
 import {
-  COLS, blockedBy, createPicks, heroAt, legend, makeLead, moveTo, onStart, ready, result, rowOf, rowsOf, step, toggle,
+  blockedBy, createPicks, heroAt, legend, makeLead, moveTo, onStart, ready, result, rowOf, rowsOf, step, toggle,
 } from '../src/ui/picks_logic.ts';
 import type { PicksState } from '../src/ui/picks_logic.ts';
-import { cardRect, cellRect, markRect, picksLayout } from '../src/ui/picks_logic.ts';
+import { COLS, COLS_WIDE, MAX_POOL, bondTag, cardRect, cellRect, colsFor, markRect, picksLayout } from '../src/ui/picks_layout.ts';
 import { hitIndex } from '../src/core/pointer.ts';
 import type { Rect } from '../src/core/pointer.ts';
 import { BAND_Y, TOP_H } from '../src/gfx/map_geo.ts';
@@ -273,9 +273,10 @@ test('six stay three cards by two, as the owner picked them', () => {
   assert.equal(l.bondY, 160, 'the bond line sits under the legend, inside START\'s row');
 });
 
-test('nine are three cards by three, on shorter cards, and the panel fits between the map\'s strip and its party band', () => {
-  for (const n of [4, 5, 6, 7, 8, 9]) {
+test('nine are three cards by three, ten to twelve four across, and the panel fits between the map\'s strip and its party band', () => {
+  for (const n of [4, 5, 6, 7, 8, 9, 10, 11, 12]) {
     const l = picksLayout(n);
+    assert.equal(l.cols, n > 9 ? COLS_WIDE : COLS, `${n} heroes`);
     assert.equal(l.rows, n > 6 ? 3 : 2, `${n} heroes`);
     assert.equal(l.compact, n > 6);
     assert.ok(l.panel.y >= TOP_H && l.panel.y + l.panel.h <= BAND_Y, `${n}: the panel runs ${l.panel.y} to ${l.panel.y + l.panel.h}, past the strip or the band`);
@@ -286,18 +287,21 @@ test('nine are three cards by three, on shorter cards, and the panel fits betwee
     for (let i = 0; i < n; i++) {
       const c = cardRect(l, i);
       assert.ok(rectIn(c, l.panel), `card ${i} is inside the panel`);
+      assert.ok(c.x - 3 >= l.panel.x + 1 && c.x + c.w + 3 <= l.panel.x + l.panel.w - 1, `card ${i} (with its cursor corners) is inside the panel's edge`);
       assert.ok(c.y + c.h + 3 <= l.start.y, `card ${i} (with its cursor corners) clears START`);
       assert.ok(c.y - 3 >= l.panel.y + 12, `card ${i} (with its cursor corners) clears the PARTY heading`);
       for (let j = i + 1; j < n; j++) assert.ok(!touches(c, cardRect(l, j)), `cards ${i} and ${j} do not overlap`);
       // The face, the gate word and the mark all sit inside the card.
-      assert.ok(l.top + 24 <= l.ch && l.gateY + 5 <= l.ch && l.markY + 6 <= l.ch - 1, 'the contents fit the card');
+      const k = l.card;
+      assert.ok(k.face.x + 24 <= l.cw && k.face.y + 24 <= l.ch, 'the face fits the card');
+      assert.ok(k.gate.y + 5 <= l.ch - 1 && k.mark.y + 6 <= l.ch - 1 && k.name.y + 7 <= l.ch - 1 && k.level.y + 7 <= l.ch - 1, 'the contents fit the card');
       assert.ok(rectIn(markRect(l, i), { x: c.x, y: c.y, w: c.w, h: c.h }), 'the mark cell is inside the card');
     }
   }
 });
 
 test('a click lands on the card it is over, the cells meet, and START is below them all', () => {
-  for (const n of [6, 9]) {
+  for (const n of [6, 9, 10, 11]) {
     const l = picksLayout(n);
     const cells = Array.from({ length: n }, (_, i) => cellRect(l, i));
     for (let i = 0; i < n; i++) {
@@ -348,4 +352,112 @@ test('blockedBy names cards exactly when toggle refuses, over every state of the
       assert.equal(blockedBy(s, i).length > 0, toggle(s, i) === s, `seed ${seed.join()}, card ${i}`);
     }
   }
+});
+
+// ---------------------------------------------------------------- chapter 4 and 5: ten and eleven heroes, four across
+/** Stage 4.2: the nine and Eddie, with Eddie locked in. The last party was Mike, Dustin, Robin and Nancy. */
+const TEN = [...NINE, 'eddie'] as const;
+const pool10 = poolFor('4.2', TEN.map((id, i) => ({ id, level: 4 + (i % 4) })));
+const open10 = (seed: HeroId[] = ['mike', 'dustin', 'robin', 'nancy']): PicksState => createPicks(pool10, requiredFor('4.2'), seed);
+/** Chapter 5 adds Hopper to the pool: eleven. The panel takes any pool, so this one is built by hand. */
+const pool11 = [...pool10, { id: 'hopper' as HeroId, level: 6 }];
+const open11 = (seed: HeroId[] = ['mike', 'dustin', 'robin', 'eddie']): PicksState => createPicks(pool11, ['eddie'], seed);
+const at10 = (s: PicksState, id: HeroId): number => s.pool.findIndex((p) => p.id === id);
+
+test('ten heroes: the pool is the nine and Eddie, in order, with Eddie locked in whatever the last party was', () => {
+  const s = open10();
+  assert.deepEqual(s.pool.map((p) => p.id), [...TEN]);
+  assert.deepEqual(s.locked, ['eddie']);
+  assert.deepEqual(s.picked, ['mike', 'dustin', 'robin', 'eddie'], 'Eddie takes the last place, as a locked hero does');
+  assert.deepEqual(open10(['eddie', 'mike', 'dustin', 'robin']).picked, ['eddie', 'mike', 'dustin', 'robin'], 'and keeps his own place when he already has one');
+  assert.equal(rowsOf(s).length, 10);
+  assert.equal(colsFor(10), 4);
+  assert.equal(colsFor(9), 3, 'nine stay three across');
+});
+
+test('the gate words: RIFF for Eddie and SMASH for Hopper, beside the others', () => {
+  const s = open11();
+  assert.equal(rowOf(s, at10(s, 'eddie')).gate, 'RIFF');
+  assert.equal(rowOf(s, at10(s, 'hopper')).gate, 'SMASH');
+  assert.equal(rowOf(s, at10(s, 'steve')).gate, 'SMASH', 'Steve still smashes too');
+  assert.equal(rowOf(s, at10(s, 'mike')).gate, '');
+  assert.deepEqual(rowOf(s, at10(s, 'eddie')), { id: 'eddie', name: 'Eddie', level: s.pool[at10(s, 'eddie')]?.level, gate: 'RIFF', slot: 4, locked: true, bond: '' });
+});
+
+test('ten heroes: left and right wrap inside their row of four, and the short last row of two', () => {
+  let s = open10();
+  s = step(s, 'left');
+  assert.equal(s.cursor, 3);
+  s = step(s, 'right');
+  assert.equal(s.cursor, 0);
+  s = step(moveTo(s, 7), 'right');
+  assert.equal(s.cursor, 4, 'the second row wraps at its fourth card');
+  s = moveTo(s, 8);
+  assert.equal(step(s, 'right').cursor, 9);
+  assert.equal(step(step(s, 'right'), 'right').cursor, 8, 'the last row holds two cards and wraps inside them');
+  assert.equal(step(s, 'left').cursor, 9);
+  const go = moveTo(s, 10);
+  assert.ok(onStart(go));
+  assert.equal(step(go, 'left'), go);
+});
+
+test('ten heroes: up and down walk three rows and the START row, in the column the cursor left, and the short row ends at its last card', () => {
+  let s = moveTo(open10(), 3);
+  s = step(s, 'down');
+  assert.equal(s.cursor, 7);
+  s = step(s, 'down');
+  assert.equal(s.cursor, 9, 'the last row has two cards, so column 3 lands on the second');
+  s = step(s, 'down');
+  assert.ok(onStart(s));
+  assert.equal(step(s, 'up').cursor, 9, 'up from START returns to the last row');
+  assert.equal(step(s, 'down').cursor, 1, 'down from START wraps to the first row, in the column it left (the short row\'s last card)');
+  assert.ok(onStart(step(moveTo(open10(), 2), 'up')), 'up from the first row lands on START');
+});
+
+test('eleven heroes: the last row holds three, and every card is reachable by the arrows', () => {
+  const s = open11();
+  assert.equal(rowsOf(s).length, 11);
+  let c = moveTo(s, 8);
+  assert.equal(step(step(step(c, 'right'), 'right'), 'right').cursor, 8, 'three cards wrap');
+  assert.equal(step(moveTo(s, 3), 'down').cursor, 7);
+  assert.equal(step(step(moveTo(s, 3), 'down'), 'down').cursor, 10, 'column 3 of the short row lands on its last card');
+  // Walk the whole grid: right along every row, down to the next, and every card is seen once.
+  const seen = new Set<number>();
+  c = moveTo(s, 0);
+  for (let r = 0; r < 3; r++) {
+    for (let k = 0; k < (r < 2 ? 4 : 3); k++) { seen.add(c.cursor); c = step(c, 'right'); }
+    c = step(c, 'down');
+  }
+  assert.equal(seen.size, 11);
+});
+
+test('ten heroes: Eddie can not come out, a fifth can not go in, and START is live only at four', () => {
+  let s = open10();
+  assert.ok(ready(s));
+  const onEddie = moveTo(s, at10(s, 'eddie'));
+  assert.equal(toggle(onEddie), onEddie);
+  const onLucas = moveTo(s, at10(s, 'lucas'));
+  assert.equal(toggle(onLucas), onLucas, 'a fifth is refused');
+  assert.deepEqual(blockedBy(s, at10(s, 'eddie')), [at10(s, 'eddie')], 'Eddie is blocked by his own card');
+  assert.equal(blockedBy(s, at10(s, 'lucas')).length, 4, 'a fifth by the whole party');
+  s = toggle(moveTo(s, at10(s, 'dustin')));
+  assert.ok(!ready(s));
+  assert.equal(result(s), null);
+  s = toggle(moveTo(s, at10(s, 'lucas')));
+  assert.deepEqual(result(makeLead(moveTo(s, at10(s, 'eddie')))), ['eddie', 'mike', 'robin', 'lucas']);
+});
+
+test('the bond tag shares the gate word\'s row four across, and gives way to BOND, then to nothing, when the gate word is long', () => {
+  const l = picksLayout(10);
+  const word = (gate: string, bond: string) => ({ gate, slot: 2, locked: false, bond });
+  assert.equal(bondTag(l, word('RIFF', 'HELLFIRE')), 'HELLFIRE');
+  assert.equal(bondTag(l, word('BURN', 'MAD MAX')), 'MAD MAX');
+  assert.equal(bondTag(l, word('SHOOT', 'HELLFIRE')), 'BOND', 'SHOOT and HELLFIRE would meet');
+  assert.equal(bondTag(l, word('SHOOT BURN', 'MAD MAX')), '', 'SHOOT BURN leaves no room');
+  assert.equal(bondTag(l, word('', 'FRIENDS')), 'FRIENDS');
+  assert.equal(bondTag(l, word('RIFF', '')), '');
+  // Three across the tag sits on the mark's row and always fits, as it always did.
+  const roomy = picksLayout(9);
+  assert.equal(bondTag(roomy, { gate: 'SHOOT BURN', slot: 1, locked: true, bond: 'HELLFIRE' }), 'HELLFIRE');
+  assert.ok(MAX_POOL >= 11, 'the panel lays out chapter 5\'s eleven');
 });

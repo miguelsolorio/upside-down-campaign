@@ -17,7 +17,7 @@ for (let x = 0; x < SCREEN_W; x++) WAVE.push(HZ + Math.round(2.4 * Math.sin(x * 
 export const hzAt = (x: number): number => WAVE[Math.max(0, Math.min(SCREEN_W - 1, Math.round(x)))] as number;
 
 /** Every stage on the map, in play order. */
-export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2'] as const;
+export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '4.3', '4.4'] as const;
 
 export interface Pt { x: number; y: number }
 
@@ -44,12 +44,16 @@ export const POS: Record<string, Pt> = {
   // the town (map_house.ts), 4.2 in front of it on the road.
   '4.1': { x: 57, y: 30 },
   '4.2': { x: 188, y: 57 },
+  // Stand-in spots until Art places them (docs/level-12.md, docs/level-13.md): Upside Down Hawkins under the town, and Vecna's lair
+  // under the Creel House.
+  '4.3': { x: 150, y: 132 },
+  '4.4': { x: 230, y: 152 },
 };
 
 /** The place each stage sits in. */
 export const PLACE_OF: Record<string, Place> = {
   '1.1': 'woods', '1.2': 'lab', '1.3': 'school', '2.1': 'patch', '2.2': 'tunnels', '2.3': 'gate', '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt',
-  '4.1': 'kamchatka', '4.2': 'creel',
+  '4.1': 'kamchatka', '4.2': 'creel', '4.3': 'udtown', '4.4': 'lair',
 };
 
 /** The landmarks: Hawkins ones stand on `base` (their bottom row), the ones below hang from `top`. */
@@ -67,7 +71,7 @@ export const LAND = {
 };
 
 /** How far each leg of the route bows, in px: the sign picks the side. The last two are the flights to Kamchatka and back to the Creel House. */
-const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12];
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 8, -6];
 
 export interface Leg {
   pts: [number, number][];

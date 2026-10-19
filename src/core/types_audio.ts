@@ -31,6 +31,9 @@ export type SfxId =
    *  cuts a solo short. chime: a grandfather clock's chime, the curse counting. curse: a hero lifted by the curse. walkman: Max
    *  playing her Walkman. ghoul: a Creel ghoul stepping out of a mirror (docs/level-11.md). */
   | 'haymaker' | 'vswing' | 'riff' | 'feedback' | 'chime' | 'curse' | 'walkman' | 'ghoul'
+  /** screech: a demobat's dive. flap: a flock passing. bolt: the storm's thunder (docs/level-12.md). whip: Vecna's vine lash. orb: a
+   *  memory orb breaking. debris: a throw landing. vecna: his call as a phase turns (docs/level-13.md). */
+  | 'screech' | 'flap' | 'bolt' | 'whip' | 'orb' | 'debris' | 'vecna'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 /** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen, 2.1 and 4.2. starcourt: 3.1 to 3.3. sour:

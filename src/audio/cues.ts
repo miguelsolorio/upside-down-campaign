@@ -91,6 +91,8 @@ export const BLIPS: Record<Speaker, BlipDef> = {
   // F4, a major third over Steve's square and a whole tone under Mike's, and runs a little longer than theirs so the warble has
   // time to turn over. Max's pulse is a fifth higher, so the wobble in pitch is what makes it his. His level is set by ear-weighted
   // energy like the others.
+  // Stand-in until Audio writes Vecna's (docs/level-13.md): very low, slow, just above Hopper, who stays the lowest and the only saw.
+  vecna: { wave: 'p12', midi: 46, spread: 1, dur: 0.12, vol: 0.26, attack: 0.01, bend: -2 },
   eddie: { wave: 'p25', midi: 65, spread: 3, dur: 0.08, vol: 0.19, attack: 0.003, vibrato: WARBLE },
   dm: { wave: 'p50', midi: 48, spread: 3, dur: 0.06, vol: 0.2, attack: 0.003 },
   narrator: { wave: 'p25', midi: 59, spread: 1, dur: 0.05, vol: 0.09, attack: 0.004 },

@@ -2,6 +2,7 @@
 // This file is the contract. Do not edit it from a sub-agent; report the change you need instead.
 import type { ColorName } from '../gfx/palette.ts';
 import type { SfxId } from './types_audio.ts';
+import type { ActorView, FxView } from './types_view.ts';
 
 export type { ColorName };
 
@@ -17,8 +18,8 @@ export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | '
 /** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1 and plays from
  *  2.2 on. Hopper is an npc at the Gate in 2.3 and at the food court in 3.3, and plays from 4.1. Erica is an npc at Scoops Ahoy in 3.1 and runs
  *  the cart on the map. Billy is never an npc: he is the `billy` enemy, and the cast entry gives him a portrait and a voice
- *  for his one line in 3.3 (docs/level-9.md). */
-export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
+ *  for his one line in 3.3 (docs/level-9.md). Vecna is the `vecna` enemy; the cast entry is his portrait and voice for 4.4's lines. */
+export type CharId = HeroId | 'joyce' | 'erica' | 'billy' | 'vecna';
 /**
  * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
  * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
@@ -30,12 +31,13 @@ export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
  * phase two. flayerleg: one of its four legs, hit on its own (docs/level-9.md).
  * kguard: a Kamchatka guard, the soldier in winter. kbaton: a camp guard with a baton who blocks from the front, like a riot guard.
  * pitdemo: the Demogorgon in the pit, the 4.1 mini-boss, finished by Hopper's slam (docs/level-10.md). ghoul: a Creel ghoul, who
- * waits in a haunted mirror and steps out of it (docs/level-11.md).
+ * waits in a haunted mirror and steps out of it (docs/level-11.md). demobat: a flyer that circles in flocks and dives (docs/level-12.md).
+ * vecna: the chapter 4 boss, three phases; orb: one of his four memory orbs, rooted, regrowing (docs/level-13.md).
  */
 export type EnemyKind =
   | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
   | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg'
-  | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul';
+  | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul' | 'demobat' | 'vecna' | 'orb';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
 export type Utility = 'push' | 'burn' | 'smash' | 'shoot' | 'sense' | 'dash' | 'read' | 'riff' | 'compass';
@@ -48,96 +50,7 @@ export type Difficulty = 'kid' | 'normal' | 'chief' | 'upside';
 // The sim produces these each frame (Sim.view()). gfx draws them. Nobody else invents draw state.
 export type AnimId = 'idle' | 'walk' | 'attack' | 'cast' | 'dash' | 'hurt' | 'ko';
 
-export interface ActorView {
-  kind: 'hero' | 'enemy' | 'npc';
-  id: CharId | EnemyKind;
-  /** Feet position: bottom-center of the sprite, in world pixels. */
-  x: number; y: number;
-  dir: Dir;
-  anim: AnimId;
-  /** Frames spent in the current anim, for frame selection. */
-  t: number;
-  /** 0..1 white hit flash. */
-  flash: number;
-  /** True = skip drawing this frame (invulnerability flicker). */
-  blink: boolean;
-  /** Eleven's nosebleed: drawn when her MP is low. */
-  strained: boolean;
-  tint: ColorName | null;
-  /** Red "!" over the head: an attack is about to land. */
-  alert: boolean;
-  /** Pixels above the ground (knockback arcs, leaps). */
-  z: number;
-  /** Small HP bar over an enemy once it has been hit, and over a hero who is standing. */
-  bar: { hp: number; hpMax: number } | null;
-  /** An elite enemy: gfx draws it with its own marks (red trim, a bigger bar). Absent means a normal one. */
-  elite?: boolean;
-  /** A guard or warden whose shield is up. It stops hits from the front, so gfx can show the shield raised or dropped. */
-  guarding?: boolean;
-  /** A boss's pose, when it is doing something other than walking. The Demogorgon uses charge to pinned
-   *  (docs/level-3.md). The Alpha uses crouch (the pounce wind-up), leap (in the air), howl and stun (docs/level-6.md).
-   *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. Billy uses
-   *  charge, grab, stun and pinned (kneeling). The Mind Flayer's body uses rise (coming in through the skylight) and down
-   *  (its head on the floor), and a leg uses warn (its line shown), slam (striking down it) and severed (docs/level-9.md). The pit
-   *  Demogorgon uses the Demogorgon's. A ghoul uses rise (stepping out of its mirror) (docs/level-11.md). */
-  pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab' | 'warn' | 'slam' | 'severed' | 'down';
-  /** A Mind Flayer leg's tip in world px: the end of the line it strikes down. x, y is its root. Absent on everything else. */
-  aim?: Vec2;
-  /** 0..1 how far Eleven has reached a pinned Billy. Absent means 0. */
-  k?: number;
-  /** The Demogorgon's head petals are open (below 60% HP). */
-  petals?: boolean;
-  /** A hidden enemy that only Will's Cold spot shows, or Lucas under his Camo. gfx draws it faint or not at all. */
-  hidden?: boolean;
-  /** A held Special filling toward its Lv 6 variant, 0..1 (heroes/hold.ts). gfx draws a ring round the hero. */
-  charge?: number;
-  /** An enemy confused by Robin's Word vomit: it fights the other enemies. gfx draws a swirl over its head. */
-  confused?: boolean;
-  /** A dormant Flayed, waiting as a goo puddle until its group wakes. */
-  puddle?: boolean;
-  /** A hero under the clock curse: the chimes sounded so far, 1 to 3. gfx draws the clock mark and its four pips over them, and
-   *  z lifts them. Drawn where the curse found them, benched or not (docs/level-11.md, "The curse"). Absent when not cursed. */
-  curse?: number;
-  /** A boss or elite marked by Eddie's Hellfire DM: the party's hits on it deal more. gfx draws a small d20 over it. */
-  marked?: boolean;
-}
-
-export type FxKind =
-  | 'slash' | 'push' | 'beam' | 'flame' | 'shield' | 'nova' | 'spark' | 'dust'
-  | 'rock' | 'candy' | 'dart' | 'blast' | 'heal' | 'ring' | 'spore'
-  /** acid: a Demogorgon spit glob in flight and its splash. mark: a shadow mark on the floor where it will land.
-   *  bolt: Will's sketch bolt. reveal: a hidden path showing itself. */
-  | 'acid' | 'mark' | 'bolt' | 'reveal'
-  /** trail: the streak behind Max's Skate dash, w its length, angle its heading. howl: the Alpha's howl, a ring that
-   *  grows to w. taunt: Steve's Babysit pulse, a ring that grows to w. */
-  | 'trail' | 'howl' | 'taunt'
-  /** scoop: Robin's ice cream in flight and its splat. babble: her Word vomit cone, w its reach. bullet: a pistol or rifle round
-   *  in flight. goo: a melting rat's burst, w its diameter. trap: one of Nancy's bear traps on the floor. arcs: the power box
-   *  firing, w and h its size. */
-  | 'scoop' | 'babble' | 'bullet' | 'goo' | 'trap' | 'arcs'
-  /** pet: Dustin's Dart, w 1 while he bites. bottle: Nancy's Molotov in flight, h its height off the ground. fire: its pool on the
-   *  floor, w the diameter. */
-  | 'pet' | 'bottle' | 'fire'
-  /** slam: a Mind Flayer leg striking the floor, w its reach. glass: the skylight shattering as the Mind Flayer comes in,
-   *  w the spread. sweep: a Mind Flayer leg sweeping a band across the arena: x, y its top-left, w and h its size, t < 40 the
-   *  warning, then the strike. */
-  | 'slam' | 'glass' | 'sweep'
-  /** riff: Eddie's sound ring, x, y its center and w its diameter: the small one where his swing lands and each pulse of his solo.
-   *  chime: a ring off a grandfather clock's face as it chimes, w its diameter. walkman: notes round Max as she plays her Walkman,
-   *  w the spread (docs/level-11.md). */
-  | 'riff' | 'chime' | 'walkman';
-
-export interface FxView {
-  kind: FxKind;
-  x: number; y: number;
-  dir: Dir;
-  /** Radians, 0 = right. */
-  angle: number;
-  /** Frames elapsed and total frames. */
-  t: number; life: number;
-  /** Extent in px: beam length, nova diameter, slash reach. */
-  w: number; h: number;
-}
+export type { ActorView, FxKind, FxView } from './types_view.ts';
 
 export type ItemKind = 'eggo' | 'coke' | 'quarter';
 export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
@@ -333,8 +246,10 @@ export type SimEvent =
   | { t: 'stashUsed'; item: StashItem }
   /** A clock chimed and cursed this hero (docs/level-11.md, "The curse"). */
   | { t: 'cursed'; hero: HeroId }
-  /** A curse ended: its clock broken, Max's Walkman, or the fourth chime's KO. */
-  | { t: 'curseEnd'; hero: HeroId; how: 'clock' | 'walkman' | 'ko' }
+  /** A curse ended: its clock broken, Max's Walkman, the marked memory orb broken (4.4), or the fourth chime's KO. */
+  | { t: 'curseEnd'; hero: HeroId; how: 'clock' | 'walkman' | 'orb' | 'ko' }
+  /** A boss moved into a new phase: Vecna's Float (2) and Burn (3) (docs/level-13.md). Once each. */
+  | { t: 'phase'; spawnId: string; phase: number }
   /** Max played her Walkman. */
   | { t: 'walkman' }
   | { t: 'burst' }
@@ -342,8 +257,9 @@ export type SimEvent =
 
 export type SimSpawn =
   /** hidden: drawn faint until Will's Cold spot shows it or it attacks (docs/level-4.md). mirror: the prop id of the haunted mirror a
-   *  ghoul waits in (docs/level-11.md). */
-  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean; mirror?: string }
+   *  ghoul waits in (docs/level-11.md). x: numbers that replace the def's x for this spawn alone, such as Vecna's speedMul and chimeEvery,
+   *  which 5.3 runs faster (docs/level-13.md). */
+  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean; mirror?: string; x?: Record<string, number> }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
   /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. hits: a clock's,
    *  the basic attacks from up close it takes to break by a hero without its `hitBy`. */
@@ -463,6 +379,13 @@ export interface Sim {
   curse?(prop: string): void;
   /** The party gets Max's Walkman, the 4.2 story item. Optional like curse. */
   giveWalkman?(): void;
+  /** The 4.3 rooftop (docs/level-12.md): on, Eddie is planted as the active hero and a flock circles him; off, it ends. Optional. */
+  rooftop?(on: boolean): void;
+  /** One note of the rooftop's song: a hit pulses Eddie's ring (a crit when perfect), a miss sends a bat down at him. Optional. */
+  soloNote?(hit: boolean, perfect: boolean): void;
+  /** A hero leaves the party for good mid-stage: Eddie's fall at the end of 4.3. Gone from the view and the HUD, kept in party() so
+   *  progress keeps their level. Optional. */
+  dismissHero?(id: HeroId): void;
   healParty(frac: number): void;
   /** Switches the difficulty mid-stage: hits land at the new factor at once, and each living enemy keeps its share of HP. */
   setDifficulty(d: Difficulty): void;

@@ -13,6 +13,8 @@ import { xpForLevel } from '../src/progression/xp.ts';
 import { nearUsable } from '../src/world/interact.ts';
 import { isLoss } from '../src/world/loss.ts';
 import { routeFrom, simOptions, stageGrid } from '../src/world/options.ts';
+import { SONG_BOT, SONG_CARELESS, botSong } from '../src/world/rooftop.ts';
+import type { Song } from '../src/world/rooftop.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import type { DirectorState } from '../src/world/triggers.ts';
 import type { StageData } from '../src/world/types.ts';
@@ -27,14 +29,18 @@ import { STAGE_32 } from '../src/world/stages/stage32.ts';
 import { STAGE_33 } from '../src/world/stages/stage33.ts';
 import { STAGE_41 } from '../src/world/stages/stage41.ts';
 import { STAGE_42 } from '../src/world/stages/stage42.ts';
+import { STAGE_43 } from '../src/world/stages/stage43.ts';
+import { STAGE_44 } from '../src/world/stages/stage44.ts';
 
-export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42 };
+export const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42, '4.3': STAGE_43, '4.4': STAGE_44 };
 
 /** Props a retry leaves open, as the play scene's KEPT_PROPS. */
 const KEPT = new Set(['gate', 'log', 'target', 'lights', 'door', 'console', 'crate', 'camera', 'van', 'vines', 'firebox', 'hidden', 'crack', 'gap']);
 /** Frames one attempt at a stage may take, and attempts before a stage counts as stuck. */
 const MAX_FRAMES = 30000;
 const MAX_TRIES = 6;
+
+const IDLE: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, swapDelta: 0, swapTo: -1, burstPressed: false };
 
 export interface RunOpts {
   difficulty?: Difficulty;
@@ -78,6 +84,8 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
   let sim: Sim = createSim(simOptions(S, grid, { party, seed, difficulty: o.difficulty ?? 'chief' }));
   /** Max's Walkman, once a beat gives it (4.2): a retry keeps it, as the save does. */
   let walkman = false;
+  /** The 4.3 rooftop's song, played by the solo's bot in step with the sim (world/rooftop.ts). */
+  let song: Song | null = null;
   const lightUp = (prop: string): void => {
     sim.openProp(prop);
     sim.healParty(0.5);
@@ -89,6 +97,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
     alarm: () => undefined, jingle: () => undefined, finish: () => undefined,
     light: (p) => { if (sim.view().props.some((q) => q.id === p && q.kind === 'lights' && q.state !== 'lit')) lightUp(p); },
     walkman: () => { walkman = true; sim.giveWalkman?.(); },
+    solo: (chart, done) => { song = botSong(sim, chart, done, o.careless ? SONG_CARELESS : SONG_BOT); },
   });
   let bot = createBot({ grid, waypoints: S.waypoints, careless: o.careless });
   const every = Math.round((o.rotate ?? 0) * 60);
@@ -96,7 +105,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
   while (!dir.finished() && wipes < MAX_TRIES) {
     let lost = false;
     for (f = 0; f < MAX_FRAMES && !dir.finished() && !lost; f++, frames++) {
-      const input: SimInput = bot.next(sim);
+      const input: SimInput = song ? { ...IDLE } : bot.next(sim);
       if (every > 0 && input.swapTo < 0 && frames - lastSwap >= every) {
         const hud = sim.view().hud;
         if (!hud.boss && !hud.ward) {
@@ -108,6 +117,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
       if (input.swapTo >= 0) lastSwap = frames;
       const ev = sim.step(input);
       dir.events(ev);
+      if (song) { song.step(); if (song.done) song = null; }
       for (const e of ev) if (e.t === 'kill') killed.add(e.spawnId);
       if (ev.some(isLoss)) lost = true;
       const p = sim.heroPos();
@@ -127,6 +137,7 @@ export function runStage(id: string, party: PartySeed[], seed: number, o: RunOpt
     const skip = live.some((h) => h.id === 'eleven') ? [...killed, 'eleven'] : [...killed];
     sim = createSim(simOptions(S, grid, { party: live, start: { x: checkpoint.x, y: checkpoint.y }, seed: seed + 1000 * wipes, difficulty: o.difficulty ?? 'chief', skipSpawns: skip, openProps: open, walkman }));
     dir.restore(checkpoint.state);
+    song = null;
     bot = createBot({ grid, waypoints: routeFrom(S.waypoints, checkpoint), careless: o.careless });
   }
   return { stage: id, cleared: dir.finished(), wipes, frames, xp: sim.stats().xpEarned, entered: party, party: sim.party() };

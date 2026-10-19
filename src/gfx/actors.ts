@@ -313,6 +313,8 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
 
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
+/** 4.3's and 4.4's foes borrow a sprite until Art draws them (docs/level-12.md, docs/level-13.md). */
+const BORROWED: Partial<Record<string, ActorView['id']>> = { demobat: 'rat', vecna: 'billy', orb: 'pod' };
 
 /** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. A hero under the curse and a foe Eddie has marked wear their marks over it. */
 export function drawActor(ctx: Ctx, w: ActorView): void {
@@ -322,7 +324,7 @@ export function drawActor(ctx: Ctx, w: ActorView): void {
 
 /** The actor itself, without its marks: the row its head is on, or null when it has none to hang a mark on (a puddle, a body that draws its own). */
 function drawBody(ctx: Ctx, w: ActorView): number | null {
-  const sub = ALIAS[w.id];
+  const sub = ALIAS[w.id] ?? BORROWED[w.id];
   const v: ActorView = sub ? { ...w, id: sub } : w;
   switch (v.id) {
     case 'demogorgon': return drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big');

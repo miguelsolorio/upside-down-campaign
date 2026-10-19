@@ -7,9 +7,15 @@ import { campTile } from './tile_camp.ts';
 import { clubTile } from './tile_club.ts';
 import { creelTile } from './tile_creel.ts';
 import { pitTile } from './tile_pit.ts';
+import { udTile } from './tile_ud.ts';
 import type { TileCtx } from './tile_ground.ts';
 
+/** The skins a stage's own letters can bake in: Blood red memory (4.2's parlor), the Upside Down rot (4.4's house) and the storm's
+ *  flash (4.3's bolts). Tiles a skin doesn't touch bake as they always do. */
+export type Skin = 'memory' | 'upside' | 'flash';
+
 /** A chapter 4 tile, or null when `name` isn't one. `phase` is the step of a club tile that moves (the window's rain and lightning, the table's candles); the default is the one the stage is baked with. */
-export function ch4Tile(name: TileName, c: TileCtx, memory = false, phase?: number): Px | null {
-  return campTile(name, c) ?? pitTile(name, c) ?? clubTile(name, c, phase) ?? creelTile(name, c, memory);
+export function ch4Tile(name: TileName, c: TileCtx, skin?: Skin, phase?: number): Px | null {
+  return campTile(name, c) ?? pitTile(name, c) ?? clubTile(name, c, phase) ?? creelTile(name, c, skin === 'memory')
+    ?? udTile(name, c, skin === 'flash');
 }

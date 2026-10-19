@@ -224,7 +224,7 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy' | 'eddie'>, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy' | 'eddie' | 'vecna'>, PortraitSpec>;
 
 // Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica are in portraits_l78.ts. Billy is in portraits_l9.ts.
 export const PORTRAITS: Record<CharId, PortraitSpec> = {
@@ -232,4 +232,6 @@ export const PORTRAITS: Record<CharId, PortraitSpec> = {
   robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: BILLY_PORTRAIT,
   // Eddie's is the Hellfire Club pick, on its dark red ground (data/eddie.ts).
   eddie: EDDIE_PORTRAIT,
+  // Vecna borrows Billy's until Art draws his (docs/level-13.md).
+  vecna: BILLY_PORTRAIT,
 };

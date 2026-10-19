@@ -35,7 +35,11 @@ export type TileName =
   | 'pitcap' | 'pitwall' | 'pitfloor' | 'pitbar'
   // The Hellfire Club's classroom and the Creel House (stage 4.2).
   | 'clubcap' | 'clubwall' | 'clubboard' | 'clubposter' | 'clubwindow' | 'clubdoor' | 'clubshelf' | 'clubfloor' | 'clubdesk' | 'dndtable'
-  | 'creelcap' | 'creelwall' | 'creelwin' | 'creelfloor' | 'creelrug' | 'creelhole' | 'creelstairs' | 'creelfurn';
+  | 'creelcap' | 'creelwall' | 'creelwin' | 'creelfloor' | 'creelrug' | 'creelhole' | 'creelstairs' | 'creelfurn'
+  // Upside Down Hawkins and the roof of Eddie's trailer (stage 4.3), and Vecna's attic (stage 4.4).
+  | 'udroad' | 'udline' | 'udwalk' | 'udlawn' | 'udveins' | 'udhouse' | 'udwindow' | 'uddoor' | 'udroof' | 'udtrailer' | 'udfence'
+  | 'udtree' | 'roofdeck' | 'roofedge'
+  | 'atticroof' | 'atticwall' | 'atticfloor' | 'atticrug' | 'atticeave';
 
 export interface TileDef { name: TileName; solid: boolean; animated?: boolean }
 
@@ -223,6 +227,32 @@ export const TILES: Record<string, TileDef> = {
   'è': { name: 'creelhole', solid: true },
   'é': { name: 'creelstairs', solid: true },
   'ê': { name: 'creelfurn', solid: true },
+  // Stage 4.3: Hawkins in the Upside Down under the Blue storm (docs/level-12.md). The road, its center line, the sidewalk, dead lawns
+  // and veins over them are walked on. House fronts with their windows and doors face the street under the roofs seen from above;
+  // trailers, fences and dead trees are walked round. Eddie's trailer has a flat roof deck, the song's arena, edged by its lip. Latin-1
+  // runs out here (chapter 5 holds the rest), so the stage takes Latin Extended-A from Ā on, still one UTF-16 unit each.
+  'ë': { name: 'udroad', solid: false },
+  'ì': { name: 'udline', solid: false },
+  'í': { name: 'udwalk', solid: false },
+  'î': { name: 'udlawn', solid: false },
+  'ï': { name: 'udveins', solid: false, animated: true },
+  'ð': { name: 'udhouse', solid: true },
+  'ñ': { name: 'udwindow', solid: true },
+  'ò': { name: 'uddoor', solid: true },
+  'Ā': { name: 'udroof', solid: true },
+  'ā': { name: 'udtrailer', solid: true },
+  'Ă': { name: 'udfence', solid: true },
+  'ă': { name: 'udtree', solid: true },
+  'Ą': { name: 'roofdeck', solid: false },
+  'ą': { name: 'roofedge', solid: true },
+  // Stage 4.4: Vecna's attic in the Creel House (docs/level-13.md). The underside of the roof over a knee wall, floorboards with a rug
+  // where he stands, and the eaves along the side walls, low floor where the cover sits. The house below is the creel letters baked in
+  // their Upside Down skin (StageData.skin).
+  'Ć': { name: 'atticroof', solid: true },
+  'ć': { name: 'atticwall', solid: true },
+  'Ĉ': { name: 'atticfloor', solid: false },
+  'ĉ': { name: 'atticrug', solid: false },
+  'Ċ': { name: 'atticeave', solid: false },
 };
 
 export const TILE_NAMES = Object.values(TILES).map((d) => d.name);

@@ -21,6 +21,8 @@
 import { createSim } from '../src/combat/index.ts';
 import { createBot } from '../src/combat/bot.ts';
 import { simOptions, stageGrid } from '../src/world/options.ts';
+import { SONG_BOT, SONG_CARELESS, botSong } from '../src/world/rooftop.ts';
+import type { Song } from '../src/world/rooftop.ts';
 import { createDirector } from '../src/world/triggers.ts';
 import { STAGE_11 } from '../src/world/stages/stage11.ts';
 import { STAGE_12 } from '../src/world/stages/stage12.ts';
@@ -33,14 +35,16 @@ import { STAGE_32 } from '../src/world/stages/stage32.ts';
 import { STAGE_33 } from '../src/world/stages/stage33.ts';
 import { STAGE_41 } from '../src/world/stages/stage41.ts';
 import { STAGE_42 } from '../src/world/stages/stage42.ts';
+import { STAGE_43 } from '../src/world/stages/stage43.ts';
+import { STAGE_44 } from '../src/world/stages/stage44.ts';
 import { defaultParty } from '../src/core/campaign.ts';
-import type { Difficulty, HeroId, PartySeed } from '../src/core/types.ts';
+import type { Difficulty, HeroId, PartySeed, SimInput } from '../src/core/types.ts';
 import type { StageData } from '../src/world/types.ts';
 
 const args = process.argv.slice(2);
 const flag = (f: string): boolean => args.includes(f);
 const [stageId = '1.2', difficulty = 'chief', seedsArg = '20'] = args.filter((a) => !a.startsWith('--'));
-const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42 };
+const STAGES: Record<string, StageData> = { '1.1': STAGE_11, '1.2': STAGE_12, '1.3': STAGE_13, '2.1': STAGE_21, '2.2': STAGE_22, '2.3': STAGE_23, '3.1': STAGE_31, '3.2': STAGE_32, '3.3': STAGE_33, '4.1': STAGE_41, '4.2': STAGE_42, '4.3': STAGE_43, '4.4': STAGE_44 };
 const base = STAGES[stageId];
 if (!base) throw new Error(`unknown stage ${stageId}; try ${Object.keys(STAGES).join(' or ')}`);
 if (!['kid', 'normal', 'chief', 'upside'].includes(difficulty)) throw new Error(`difficulty is kid, normal, chief or upside, not ${difficulty}`);
@@ -52,29 +56,36 @@ const party: PartySeed[] = partyArg
   ? partyArg.split(',').map((t) => { const [id, lv] = t.split(':'); const [level, xp] = (lv ?? '1').split('+'); return { id: id as HeroId, level: Number(level), xp: Number(xp ?? 0) }; })
   : defaultParty(stageId);
 const careless = flag('--careless');
+const IDLE: SimInput = { mx: 0, my: 0, attackHeld: false, attackPressed: false, specialPressed: false, specialHeld: false, swapDelta: 0, swapTo: -1, burstPressed: false };
 const tile = (x: number, y: number): [number, number] => [Math.floor(x / 16), Math.floor((y - 4) / 16)];
 
 const rows: string[] = [];
 let cleared = 0, wiped = 0, stuck = 0, dmg = 0, kos = 0, frames = 0, low = 0, bossFrames = 0, bossRuns = 0, fell = 0;
 // The fight the script times: 2.1, 2.2 and 3.1 end on an ambush, 2.3 on the Alpha and the defense after it, 3.2 on Grigori,
-// 3.3 on Billy and the Mind Flayer after him, 4.1 on the pit Demogorgon, 4.2 on the Creel House's back hall.
+// 3.3 on Billy and the Mind Flayer after him, 4.1 on the pit Demogorgon, 4.2 on the Creel House's back hall, 4.3 on the rooftop's song,
+// 4.4 on Vecna.
 const BOSS_BEAT = stageId === '2.1' || stageId === '2.2' || stageId === '3.1' ? 'ambush' : stageId === '2.3' ? 'alpha'
-  : stageId === '3.2' ? 'grigori' : stageId === '3.3' ? 'billy' : stageId === '4.1' ? 'pit' : stageId === '4.2' ? 'finale' : 'demogorgon';
+  : stageId === '3.2' ? 'grigori' : stageId === '3.3' ? 'billy' : stageId === '4.1' ? 'pit' : stageId === '4.2' ? 'finale'
+  : stageId === '4.3' ? 'solo' : stageId === '4.4' ? 'vecna' : 'demogorgon';
 for (let seed = 1; seed <= N; seed++) {
   const grid = stageGrid(S);
   const sim = createSim(simOptions(S, grid, { party, seed, difficulty: difficulty as Difficulty }));
   const bot = createBot({ grid, waypoints: S.waypoints, careless });
+  // The 4.3 rooftop's song, played by the solo's bot in step with the sim (world/rooftop.ts).
+  let song: Song | null = null;
   const dir = createDirector(S.beats, S.waves, {
     sim: () => sim, say: (_i, done) => done(), scare: (done) => done(), open: (id) => sim.openProp(id),
     alarm: () => undefined, jingle: () => undefined, finish: () => undefined,
     // A beat that lights a string does what the play scene's lightUp does to the party.
     light: (id) => { sim.openProp(id); sim.healParty(0.5); },
     walkman: () => sim.giveWalkman?.(),
+    solo: (chart, done) => { song = botSong(sim, chart, done, careless ? SONG_CARELESS : SONG_BOT); },
   });
   let allDown = false, f = 0, lowest = 1, bossAt = -1, wardDown = false;
   for (; f < 30000 && !dir.finished() && !allDown; f++) {
-    const ev = sim.step(bot.next(sim));
+    const ev = sim.step(song ? IDLE : bot.next(sim));
     dir.events(ev);
+    if (song) { song.step(); if (song.done) song = null; }
     if (ev.some((e) => e.t === 'allDown')) allDown = true;
     // In a defense (2.3) the one the party guards going down loses the run too.
     if (ev.some((e) => e.t === 'wardDown')) { allDown = true; wardDown = true; }

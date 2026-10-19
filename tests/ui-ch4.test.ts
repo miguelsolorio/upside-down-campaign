@@ -447,8 +447,8 @@ test('the chapter four card says CHAPTER FOUR and HELLFIRE, and both fit the 256
   assert.ok(left >= 8 && 256 - right >= 8 && Math.abs(left - (256 - right)) <= 2, `the title spans ${left} to ${right}, centered, with a margin of 8 px or more`);
   assert.ok(textWidth(card.subtitle) <= 96, 'the subtitle fits under the 96 px rule');
   assert.equal(chapterOf('4.1'), 4);
-  // It is the card the first visit to 4.1 shows, and only that: 4.2 opens no chapter.
-  assert.equal(STAGE_ORDER.filter((id) => chapterOf(id) === 4).length, 2);
+  // It is the card the first visit to 4.1 shows, and only that: 4.2 to 4.4 open no chapter.
+  assert.equal(STAGE_ORDER.filter((id) => chapterOf(id) === 4).length, 4);
   // Drawn at full fade, it stays inside the frame.
   const scene = createChapterCard({ ...card, onDone() {} });
   for (let i = 0; i < 80; i++) scene.update(idle);
@@ -459,13 +459,14 @@ test('the chapter four card says CHAPTER FOUR and HELLFIRE, and both fit the 256
   assert.ok(b.y >= 80 && b.y + b.h <= 140, 'and sits in the middle of the screen');
 });
 
-test('stage 4.2 ends the build: END OF LEVEL 11 under the feedback note, not CHAPTER FOUR CLEAR, and the title fits', () => {
-  const id = '4.2';
-  assert.equal(levelNumber(id), 11);
+test('stage 4.4 ends the build and chapter four: CHAPTER FOUR CLEAR under the feedback note, and the title fits', () => {
+  const id = '4.4';
+  assert.equal(levelNumber(id), 13);
   assert.equal(nextStage(id), null);
-  assert.equal(closesChapter(id), false, 'chapter four has two more stages to come');
+  assert.equal(closesChapter('4.2'), false, '4.2 is the middle of chapter four');
+  assert.equal(closesChapter(id), true);
   const title = resultsTitle({ chapter: closesChapter(id) ? chapterOf(id) : undefined, final: nextStage(id) === null, level: levelNumber(id) });
-  assert.equal(title, 'END OF LEVEL 11');
+  assert.equal(title, 'CHAPTER FOUR CLEAR');
   const [left, right] = titleSpan(title, 256);
   assert.ok(left >= 8 && 256 - right >= 8 && Math.abs(left - (256 - right)) <= 2, `${title} spans ${left} to ${right}, centered`);
   assert.equal(TITLE_SCALE, 2);

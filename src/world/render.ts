@@ -45,6 +45,8 @@ export interface WorldOpts {
   light: { level: number; flicker: number };
   /** 0..1, how much of the stage's memory room shows in its Blood red skin while a curse counts (docs/level-11.md). */
   memory?: number;
+  /** 0..1, how strong the storm's bolt is over a stage with `storm` (docs/level-12.md, world/storm.ts). */
+  flash?: number;
 }
 
 // ---------------------------------------------------------------- the scare figure
@@ -141,6 +143,12 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   const camX = cam.x - view.shake.x, camY = cam.y - view.shake.y;
   drawStage(ctx, stage.baked, camX, camY, t);
   if (stage.memory && stage.memoryBaked && (o.memory ?? 0) > 0) drawMemory(ctx, stage, camX, camY, t, o.memory as number);
+  if (stage.flashBaked && (o.flash ?? 0) > 0) {
+    ctx.save();
+    ctx.globalAlpha = o.flash as number;
+    drawStage(ctx, stage.flashBaked, camX, camY, t);
+    ctx.restore();
+  }
   const night = stage.time === 'night';
   // The pools go on the ground, under everything that moves, so the party is never tinted by them.
   if (night) paintGlow(ctx, glowLights(stage, view, cam, o.light.flicker), t, o.light.level);

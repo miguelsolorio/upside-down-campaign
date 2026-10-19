@@ -4,7 +4,7 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '4.3', '4.4'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
 export const STAGES_AHEAD: readonly string[] = [];
@@ -79,6 +79,9 @@ const ROSTER: Record<string, HeroId[]> = {
   '3.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   '4.1': ['hopper'],
   '4.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'eddie'],
+  '4.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'eddie'],
+  // Eddie fell on the 4.3 roof: from here on he is in no pool (docs/level-12.md, "The fall").
+  '4.4': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
 };
 
 /** Heroes a stage can't be cleared without, because a gate on its route needs them. Party picks lock them in. Eleven
@@ -90,6 +93,7 @@ const REQUIRED: Record<string, HeroId[]> = {
   '3.2': ['robin'],
   '3.3': ['eleven'],
   '4.2': ['eddie'],
+  '4.3': ['eddie'],
 };
 
 /**
@@ -111,6 +115,9 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   // the party he joins (CATCH_UP) (docs/level-10.md, docs/level-11.md).
   '4.1': [{ id: 'hopper', level: 5 }],
   '4.2': [{ id: 'mike', level: 8, xp: 115 }, { id: 'dustin', level: 7, xp: 178 }, { id: 'robin', level: 5, xp: 212 }, { id: 'eddie', level: 5 }],
+  // Placeholders until 4.2 is tuned and the run measured through it (docs/level-12.md, docs/level-13.md).
+  '4.3': [{ id: 'mike', level: 8, xp: 400 }, { id: 'dustin', level: 7, xp: 400 }, { id: 'robin', level: 6 }, { id: 'eddie', level: 6 }],
+  '4.4': [{ id: 'mike', level: 9, xp: 100 }, { id: 'dustin', level: 8, xp: 0 }, { id: 'robin', level: 6 }, { id: 'eleven', level: 6 }],
 };
 
 /** Every hero who can play stage `id`: the party itself, or the pool the player picks from. */

@@ -281,6 +281,32 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 24, power: 0.8, cooldown: 90, drop: 0.25, weight: 1.1,
     x: { see: 80, rise: 40, gap: 90, range: 40, lungeT: 10, lungeSpeed: 3.2, recover: 30, kb: 3, bob: 2, light: 48, lightMul: 1.5 },
   },
+  // Chapter 4's second half (docs/level-12.md, docs/level-13.md). Starting numbers: Sim tunes them inside the stages' targets.
+  // The demobat (enemies/demobat.ts): orbit, its circle in px; diveEvery, frames between dives in a flock; diveWindup, diveT and
+  // diveSpeed, the dive; climb, frames back up; low, the z under which melee reaches it; stunT, frames stunned by a solo pulse.
+  demobat: {
+    kind: 'demobat', name: 'Demobat', hp: 40, atk: 30, def: 2, speed: 1.4, xp: 6, aggro: 160,
+    windup: 20, power: 0.8, cooldown: 150, drop: 0.15, weight: 0.8,
+    x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, roofPower: 0.6 },
+  },
+  // Vecna (enemies/vecna.ts): speedMul scales his timings and walk, chimeEvery the clock's curse (a spawn's x can override both, as
+  // 5.3 does). whip*: the vine lash. throw*: Float's debris. heal: the share of his max HP each standing orb gives every healEvery.
+  // floatAt and burnAt: the HP shares of his phases. downT: frames an orb's break pulls him down in Float, downMul what he takes then.
+  vecna: {
+    kind: 'vecna', name: 'Vecna', hp: 1400, atk: 24, def: 7, speed: 0.4, xp: 150, aggro: 400,
+    windup: 24, power: 0.7, cooldown: 120, drop: 1, weight: 99,
+    x: {
+      speedMul: 1, chimeEvery: 900, whipEvery: 120, burnWhipEvery: 80, whipLen: 60, whipHalf: 10, whipKb: 3,
+      throwEvery: 150, throwPower: 0.8, throwSplash: 20, throwT: 40, floatAt: 0.6, burnAt: 0.25, floatZ: 24,
+      heal: 0.01, healEvery: 120, downT: 300, downMul: 1.5,
+    },
+  },
+  // A memory orb (enemies/orb.ts): rooted, harmless, broken at 0 HP and back at full after regrow frames.
+  orb: {
+    kind: 'orb', name: 'Memory orb', hp: 80, atk: 0, def: 2, speed: 0, xp: 0, aggro: 0,
+    windup: 0, power: 0, cooldown: 999, drop: 0, weight: 99,
+    x: { regrow: 1200 },
+  },
 };
 
 /** Enemy HP and damage multiplier. */

@@ -13,6 +13,7 @@ import { bankMask, groundTile, waterTile } from './tile_ground.ts';
 import type { Block, Near, TileCtx } from './tile_ground.ts';
 import { objectTile, pulseTile } from './tile_objects.ts';
 import { ch4Tile } from './tile_ch4.ts';
+import type { Skin } from './tile_ch4.ts';
 import { clubNear, clubPulses, windowPhase } from './tile_club.ts';
 import { creelNear } from './tile_creel.ts';
 import { campBarrel, campNear } from './tile_camp.ts';
@@ -51,7 +52,7 @@ const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' ||
 function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
   if (name === 'veins') return tunnelTile(name, c, phase) as Px;
   if (name === 'barrel') return campBarrel(c, phase);
-  if (name === 'clubwindow' || name === 'clubfloor' || name === 'dndtable') return ch4Tile(name, c, false, phase) as Px;
+  if (name === 'clubwindow' || name === 'clubfloor' || name === 'dndtable') return ch4Tile(name, c, undefined, phase) as Px;
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
@@ -78,15 +79,16 @@ function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasEle
   return c;
 }
 
-function staticTile(name: TileName, c: TileCtx, memory = false): Px {
-  return (memory ? ch4Tile(name, c, true) : null) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
+function staticTile(name: TileName, c: TileCtx, skin?: Skin): Px {
+  return (skin ? ch4Tile(name, c, skin) : null) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
 }
 
 /**
  * rows use the legend in core/tiles.ts. night bakes the night art instead of the day art. skin 'memory' bakes the Creel House's
- * letters in its Blood red skin, for the room the 4.2 curse turns red (docs/level-11.md); every other tile bakes as always.
+ * letters in its Blood red skin, for the room the 4.2 curse turns red (docs/level-11.md); 'upside' in their Upside Down rot (4.4); and
+ * 'flash' paints 4.3's letters as a storm's bolt lights them (docs/level-12.md). Every other tile bakes as always.
  */
-export function bakeStage(rows: string[], night = false, skin?: 'memory'): BakedStage {
+export function bakeStage(rows: string[], night = false, skin?: Skin): BakedStage {
   const cols = rows[0]?.length ?? 0, nrows = rows.length;
   const names: TileName[] = [];
   for (let y = 0; y < nrows; y++) {
@@ -115,7 +117,7 @@ export function bakeStage(rows: string[], night = false, skin?: 'memory'): Baked
       const court = courts[ty * cols + tx];
       const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
       if (isPulse(name, near)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
-      const day = staticTile(name, tc, skin === 'memory');
+      const day = staticTile(name, tc, skin);
       const tile = night ? nightTile(day, name, tc) : day;
       if (night && litWindow(day, name)) windows.push({ x: tx * T + 8, y: ty * T + 16 });
       for (let j = 0; j < T; j++) {

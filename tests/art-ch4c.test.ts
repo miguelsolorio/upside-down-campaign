@@ -73,7 +73,7 @@ test('the fourteen 4.3 tiles are painted in place of the flat stand-ins: a drawi
   }
   const stub = src('src/gfx/tile_ud.ts');
   assert.doesNotMatch(stub, /udroad|udhouse|roofdeck|roofedge|udtree/, 'the flat stand-ins of 4.3 are gone from the hook');
-  assert.match(stub, /atticroof/, 'and the attic\'s five are still there for the next agent');
+  assert.match(stub, /atticTile/, 'and the attic is painted by tile_attic.ts (tests/art-ch4d.test.ts), no longer by stand-ins here');
   for (const n of NAMES) assert.ok(udTile(n, { tx: 1, ty: 1, near: around(n) }), `${n} has a painter`);
 });
 

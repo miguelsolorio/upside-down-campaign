@@ -5,11 +5,13 @@
 // frame. Shattered (state open) it is an empty frame with shards: a wall mirror's pane is dark with the last jagged pieces in it, and a doorway
 // has nothing in its frame at all, since the party walks through it, only teeth of glass along its edges and shards on the floor. The clock is
 // 16 by 32: whole it ticks (the pendulum swings in four steps), smashed (state open) its glass door is broken, its face cracked to a dark
-// hole and its pendulum fallen, and it stands there still (it is solid either way). Painted in daytime values, for the night pass. Pure
-// pixel work.
+// hole and its pendulum fallen, and it stands there still (it is solid either way). The attic's clock, `clock_attic` (docs/level-13.md), is
+// Vecna's: the Upside Down house's old clock with a vine up its trunk (gfx/var/attic_a.ts), and it is never smashed. Painted in daytime
+// values, for the night pass. Pure pixel work.
 import type { PropView } from '../core/types.ts';
 import { Px } from './px.ts';
 import type { Ctx } from './canvas.ts';
+import { oldClock } from './var/attic_a.ts';
 import { clock, mirror } from './var/creel_a.ts';
 import type { MirrorKit } from './var/creel_a.ts';
 
@@ -96,5 +98,6 @@ export function drawCh4Prop(ctx: Ctx, v: PropView, art: Art): void {
     return;
   }
   const phase = (v.t >> 4) & 3;
+  if (v.id === 'clock_attic') { ctx.drawImage(art(`clockattic${phase}`, () => oldClock(phase)), x + ((w - 16) >> 1), y + h - 32); return; }
   ctx.drawImage(art(open ? 'clockbroken' : `clock${phase}`, () => (open ? smashedClockPx() : clockPx(phase))), x + ((w - 16) >> 1), y + h - 32);
 }

@@ -1,6 +1,7 @@
 // Chapter 4's tiles: the Kamchatka camp and the pit (stage 4.1) are painted from the owner's picks in tile_camp.ts and tile_pit.ts; the
-// Hellfire Club (stage 4.2) in its Storm look in tile_club.ts, and the Creel House in tile_creel.ts, Abandoned and, in memory, Blood red.
-// `memory` paints the Creel House's letters in its Blood red skin (bakeStage(rows, night, 'memory')); every other tile is the same in it.
+// Hellfire Club (stage 4.2) in its Storm look in tile_club.ts, and the Creel House in tile_creel.ts, Abandoned, in memory Blood red and, in
+// Vecna's lair, Upside Down. Upside Down Hawkins and the attic (4.3 and 4.4) are in tile_ud.ts. 'memory' paints the Creel House's letters in its
+// Blood red skin (bakeStage(rows, night, 'memory')) and 'upside' in its Upside Down one; every other tile is the same in them.
 import type { TileName } from '../core/tiles.ts';
 import type { Px } from './px.ts';
 import { campTile } from './tile_camp.ts';
@@ -16,6 +17,6 @@ export type Skin = 'memory' | 'upside' | 'flash';
 
 /** A chapter 4 tile, or null when `name` isn't one. `phase` is the step of a tile that moves: a club tile's (the window's rain and lightning, the table's candles; the default is the one the stage is baked with), or 4.3's veins. */
 export function ch4Tile(name: TileName, c: TileCtx, skin?: Skin, phase?: number): Px | null {
-  return campTile(name, c) ?? pitTile(name, c) ?? clubTile(name, c, phase) ?? creelTile(name, c, skin === 'memory')
+  return campTile(name, c) ?? pitTile(name, c) ?? clubTile(name, c, phase) ?? creelTile(name, c, skin, phase)
     ?? udTile(name, c, skin === 'flash', phase ?? 0);
 }

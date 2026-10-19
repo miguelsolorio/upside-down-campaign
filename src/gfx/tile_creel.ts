@@ -1,6 +1,9 @@
-// The Creel House (stage 4.2), one tile set in two skins (docs/level-11.md, docs/chapter-4.md): Abandoned (gfx/var/creel_a.ts) is the house in
-// 1986, and Blood red (creel_b.ts) is the house in 1959, in memory. The play scene bakes the parlor a second time in Blood red and fades it
-// in over the first while a curse counts (bakeStage(rows, night, 'memory'), tile_ch4.ts). The sheets' painters are the game's, called through
+// The Creel House (stages 4.2 and 4.4), one tile set in three skins (docs/level-11.md, docs/level-13.md, docs/chapter-4.md): Abandoned (gfx/var/creel_a.ts)
+// is the house in 1986, Blood red (creel_b.ts) is the house in 1959, in memory, and the Upside Down (creel_b.ts again) is the house after the
+// Upside Down has taken it, Vecna's lair in 4.4. The play scene bakes the parlor a second time in Blood red and fades it in over the first while
+// a curse counts (bakeStage(rows, night, 'memory'), tile_ch4.ts); 4.4 bakes the whole house in the Upside Down ('upside'): the paper rotted off in
+// rags and grown over with vines, red veins running over the boards and the rug that pulse, a window that flashes red (tiles.ts draws those at
+// their step), spores in the air, the sheets over the furniture gone grey with a vine wound round them. The sheets' painters are the game's, called through
 // the sheet's looks with the letters they read (LETTER): the wall top and face, the boarded or draped windows, floorboards with their joints
 // and rubble, the rug, and the holes through the floor. Two tiles are the game's own, since the sheet's room had neither: the staircase
 // (steps, a runner down them and a newel post at its foot, one step missing here and there) and the furniture (dust sheets over lumps and
@@ -12,8 +15,10 @@ import { hash2 } from './canvas.ts';
 import type { ColorName as N } from './palette.ts';
 import { Px } from './px.ts';
 import type { Near, TileCtx } from './tile_ground.ts';
+import type { Skin as StageSkin } from './tile_ch4.ts';
 import { chair } from './var/creel_a.ts';
 import { CREEL_OPTS } from './var/creel.ts';
+import { vine } from './var/creel_b.ts';
 import type { StageLook, TC } from './var/look_kit.ts';
 
 export const CREEL_TILES: TileName[] = ['creelcap', 'creelwall', 'creelwin', 'creelfloor', 'creelrug', 'creelhole', 'creelstairs', 'creelfurn'];
@@ -32,6 +37,8 @@ interface Skin {
   sheet: [N, N, N, N];
   /** In 1959: the velvet (lit, body, shade) and the wood. */
   velvet: [N, N, N]; wood: N;
+  /** What the house has grown over its sheets and stairs: vines and spores (the Upside Down). */
+  grown?: boolean;
 }
 const look = (slug: string): StageLook => CREEL_OPTS.find((l) => l.slug === slug) as StageLook;
 const ABANDONED: Skin = {
@@ -41,6 +48,10 @@ const ABANDONED: Skin = {
 const BLOOD: Skin = {
   look: look('blood-red'), riser: 'soil0', tread: 'soil1', nosing: 'soil2', gap: 'black', runner: ['blood0', 'blood1'], post: 'soil1', ball: 'amber',
   sheet: ['bone', 'grey3', 'grey2', 'grey1'], velvet: ['red', 'blood1', 'blood0'], wood: 'soil1',
+};
+const UPSIDE: Skin = {
+  look: look('upside-down'), riser: 'shadow', tread: 'dusk', nosing: 'slate', gap: 'ink', runner: ['teal1', 'teal0'], post: 'dusk', ball: 'blood1',
+  sheet: ['mist', 'slate', 'dusk', 'shadow'], velvet: ['red', 'blood1', 'blood0'], wood: 'dusk', grown: true,
 };
 
 function tcOf(c: TileCtx, name: TileName): TC {
@@ -55,7 +66,7 @@ function tcOf(c: TileCtx, name: TileName): TC {
  */
 function stairs(c: TC, sk: Skin, floor: Px): Px {
   const px = floor, l = c.w === 'S', r = c.e === 'S';
-  const gone = c.v === 2 && sk === ABANDONED ? 1 + (c.tx & 1) : -1;
+  const gone = c.v === 2 && sk !== BLOOD ? 1 + (c.tx & 1) : -1;
   const rx0 = l ? 0 : r ? 8 : 4, rx1 = r ? 15 : l ? 7 : 11;
   for (let i = 0; i < 4; i++) {
     const y = i * 4, dim = i === 0;
@@ -66,7 +77,8 @@ function stairs(c: TC, sk: Skin, floor: Px): Px {
     px.rect(1, y, 14, 1, dim ? sk.tread : sk.nosing).rect(1, y + 1, 14, 1, dim ? sk.riser : sk.tread).rect(1, y + 2, 14, 1, dim ? sk.gap : sk.riser).rect(1, y + 3, 14, 1, sk.gap);
     px.rect(rx0, y, rx1 - rx0 + 1, 1, sk.runner[1]).rect(rx0, y + 1, rx1 - rx0 + 1, 2, sk.runner[0]).rect(rx0, y + 1, rx1 - rx0 + 1, 1, dim ? sk.runner[0] : sk.runner[1]);
   }
-  if (sk === ABANDONED) for (const [x, y] of [[3, 1], [12, 5], [2, 9], [13, 13]] as const) px.set(x, y, 'grey3');
+  if (sk !== BLOOD) for (const [x, y] of sk.grown ? [[3, 1], [13, 13]] as const : [[3, 1], [12, 5], [2, 9], [13, 13]] as const) px.set(x, y, sk.grown ? 'red' : 'grey3');
+  if (sk.grown && gone < 0) vine(px, c.v & 1 ? [[7, 15], [8, 11], [7, 7], [8, 3]] : [[8, 15], [7, 10], [8, 5], [7, 1]]);
   if (!l) px.rect(0, 0, 2, 16, sk.gap).rect(1, 0, 1, 16, sk.riser).rect(0, 0, 1, 16, sk.post);
   if (!r) px.rect(14, 0, 2, 16, sk.gap).rect(14, 0, 1, 16, sk.riser).rect(15, 0, 1, 16, sk.post);
   if (c.s !== 'S') {
@@ -96,6 +108,10 @@ function sheeted(c: TC, sk: Skin, floor: Px): Px {
   m.rect(x0, hem, x1 - x0 + 1, 1, shade);
   for (let x = x0; x <= x1; x++) if ((x + c.v) % 4 === 0) m.set(x, hem, fold); else if ((x + c.v) % 5 === 1 && hem < 15) m.set(x, hem + 1, shade);
   if (c.v === 2 && !l && !r) m.set(8, top - 1, lit).set(8, top, body);
+  if (sk.grown) { // the Upside Down has grown over it: a vine wound across the top and one hanging down the front
+    vine(m, [[x0 + 1, hem - 2], [(x0 + x1) >> 1, top + 4 + (c.tx & 1)], [x1 - 3, top + 1]]);
+    vine(m, [[x0 + 3 + (c.v & 1) * 4, top + 3], [x0 + 4 + (c.v & 1) * 4, top + 7], [x0 + 3 + (c.v & 1) * 4, hem]]);
+  }
   return floor.blit(m.outline('ink'), 0, 0);
 }
 
@@ -114,16 +130,25 @@ function upholstered(c: TC, sk: Skin, floor: Px): Px {
 }
 
 // ---------------------------------------------------------------- the set
-const skinOf = (memory: boolean): Skin => (memory ? BLOOD : ABANDONED);
+/** `true` is the Blood red skin (the old call of the sheet), a stage skin picks its own, and anything else is the house as it stands in 1986. */
+const skinOf = (skin: StageSkin | boolean | undefined): Skin => (skin === true || skin === 'memory' ? BLOOD : skin === 'upside' ? UPSIDE : ABANDONED);
 
-/** A Creel House tile in a skin, or null when `name` isn't one. */
-export function creelTile(name: TileName, c: TileCtx, memory = false): Px | null {
+/** The Upside Down's tiles that move: the window flashes red, and the veins and spores over the boards, the rug and the hole pulse (tiles.ts draws them at their step). */
+export function upsidePulses(name: TileName, ty: number): boolean {
+  return name === 'creelwin' || name === 'creelhole' || ((name === 'creelfloor' || name === 'creelrug') && !(ty & 1));
+}
+
+/**
+ * A Creel House tile in a skin, or null when `name` isn't one. `phase` is the step of what moves in the Upside Down: the veins' pulse (0 to 3),
+ * and the window's (windowPhase in tile_club.ts: 0 the flash, 1 to 3 the red glass between flashes, which is also how the stage is baked, 1).
+ */
+export function creelTile(name: TileName, c: TileCtx, skin?: StageSkin | boolean, phase = name === 'creelwin' ? 1 : 0): Px | null {
   const ch = LETTER[name];
   if (!ch) return null;
-  const sk = skinOf(memory), tc = tcOf(c, name);
-  if (name === 'creelstairs') return stairs(tc, sk, sk.look.tile({ ...tc, ch: '.' }, 0));
-  if (name === 'creelfurn') return (memory ? upholstered : sheeted)(tc, sk, sk.look.tile({ ...tc, ch: '.' }, 0));
-  return sk.look.tile(tc, 0);
+  const sk = skinOf(skin), tc = tcOf(c, name), floor = (): Px => sk.look.tile({ ...tc, ch: '.' }, phase);
+  if (name === 'creelstairs') return stairs(tc, sk, floor());
+  if (name === 'creelfurn') return (sk === BLOOD ? upholstered : sheeted)(tc, sk, floor());
+  return sk.look.tile(tc, phase);
 }
 
 /** The house's tiles at their best for the sheet: v 0 in a run, v 1 at an edge, v 2 beside something else they meet. */

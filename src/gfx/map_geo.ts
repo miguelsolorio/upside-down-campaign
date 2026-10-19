@@ -46,9 +46,9 @@ export const POS: Record<string, Pt> = {
   '4.2': { x: 188, y: 57 },
   // Upside Down Hawkins (4.3) is a window onto the town's street on the far side (map_udtown.ts), under the horizon, above it as the other
   // places down there are: the route drops to it from the Creel House through the horizon, and the token turns over on the way. Vecna's lair
-  // (4.4) is still a stand-in spot until Art places it (docs/level-13.md).
+  // (4.4) is the Creel House's twin hanging upside down from the earth on the right (map_lair.ts), the token standing over its hill.
   '4.3': { x: 152, y: 137 },
-  '4.4': { x: 230, y: 152 },
+  '4.4': { x: 233, y: 136 },
 };
 
 /** The place each stage sits in. */
@@ -70,10 +70,11 @@ export const LAND = {
   bunker: { x: 96, y: HZ },
   creel: { x: 190, base: 50 },
   udtown: { x: 152, top: 148 },
+  lair: { x: 233, top: 147 },
 };
 
 /** How far each leg of the route bows, in px: the sign picks the side. The last two are the flights to Kamchatka and back to the Creel House. */
-const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 8, -6];
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 8, 14];
 
 export interface Leg {
   pts: [number, number][];

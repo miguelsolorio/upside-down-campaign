@@ -15,10 +15,20 @@ export interface VecnaOpt {
   cols: VCols;
   /** The clock over a cursed hero: rim, face, and the sounded chimes. */
   mark: { ring: ColorName; face: ColorName; pip: ColorName };
-  /** phase counts up for anything that moves on its own, like tendrils that writhe in every pose. */
-  draw(pose: VPose, phase?: number): Px;
+  /** phase counts up for anything that moves on its own, like tendrils that writhe in every pose. `fire` (on) draws the flames of the burn and whip poses over him; the game draws them as an effect of its own. */
+  draw(pose: VPose, phase?: number, fire?: boolean): Px;
   /** Frames in the loop of what moves on its own, if anything does. */
   loop?: number;
+  /** The same frame in two layers, for a design with something that moves under him: the game loops the first under each body frame (actor_vecna.ts). */
+  layers?: Layers;
+}
+
+/** A frame in two layers, each VW by VH, in the rig's own place (no lift, no shadow, no outline): composed under, then over, then outlined, they are `draw`. */
+export interface Layers {
+  /** What moves on its own, drawn first: the tendrils. They hang off his shoulders, so they follow the pose. */
+  under(pose: VPose, phase?: number): Px;
+  /** The body in a pose, dressed, with the whip or the rock in his hand. */
+  over(pose: VPose, phase?: number): Px;
 }
 
 export interface Spec {
@@ -34,25 +44,41 @@ export interface Spec {
 /** The vine whip cracking over his head from the raised hand, relative to the hand. */
 const WHIP: Pt[] = [[2, -3], [-1, -8], [-8, -9], [-16, -8], [-22, -4], [-24, 1]];
 
-export function make(s: Spec): (pose: VPose, phase?: number) => Px {
-  return (pose, phase = 0) => {
-    const r = lowered(s.stretch ? s.stretch(POSES[pose]) : POSES[pose], TOP);
-    const fig = new Px(VW, VH);
-    s.before?.(fig, r, pose, phase);
-    body(fig, r, s.cols, s.body);
-    s.dress?.(fig, r, pose, phase);
-    if (pose === 'whip') {
-      const [hx, hy] = r.arms[1][2];
-      const pts = WHIP.map(([x, y]) => [hx + x, hy + y] as Pt);
-      for (let i = 0; i + 1 < pts.length; i++) seg(fig, pts[i] as Pt, pts[i + 1] as Pt, i < 2 ? 2 : 1, s.vine, null);
-      for (const [x, y] of pts.slice(1, 4)) fig.set(x + 1, y, s.cols.B);
-    }
-    if (pose === 'throw') {
-      const [hx, hy] = r.arms[1][2];
-      fig.rect(hx - 4, hy - 11, 7, 6, s.cols.D).rect(hx - 4, hy - 11, 7, 1, s.cols.B).rect(hx - 4, hy - 11, 1, 6, s.cols.B).set(hx - 1, hy - 8, s.cols.B);
-      fig.line(hx - 7, hy - 9, hx - 6, hy - 9, s.cols.B).line(hx - 7, hy - 6, hx - 6, hy - 6, s.cols.B);
-    }
-    return finish(fig, r, pose === 'burn' || pose === 'whip' ? onFire(r) : undefined);
+const rigOf = (s: Spec, pose: VPose): VRig => lowered(s.stretch ? s.stretch(POSES[pose]) : POSES[pose], TOP);
+
+/** The two layers of a spec: what is drawn before the body (`before`), and the body itself. */
+export function layersOf(s: Spec): Layers {
+  return {
+    under(pose, phase = 0) {
+      const fig = new Px(VW, VH);
+      s.before?.(fig, rigOf(s, pose), pose, phase);
+      return fig;
+    },
+    over(pose, phase = 0) {
+      const r = rigOf(s, pose), fig = new Px(VW, VH);
+      body(fig, r, s.cols, s.body);
+      s.dress?.(fig, r, pose, phase);
+      if (pose === 'whip') {
+        const [hx, hy] = r.arms[1][2];
+        const pts = WHIP.map(([x, y]) => [hx + x, hy + y] as Pt);
+        for (let i = 0; i + 1 < pts.length; i++) seg(fig, pts[i] as Pt, pts[i + 1] as Pt, i < 2 ? 2 : 1, s.vine, null);
+        for (const [x, y] of pts.slice(1, 4)) fig.set(x + 1, y, s.cols.B);
+      }
+      if (pose === 'throw') {
+        const [hx, hy] = r.arms[1][2];
+        fig.rect(hx - 4, hy - 11, 7, 6, s.cols.D).rect(hx - 4, hy - 11, 7, 1, s.cols.B).rect(hx - 4, hy - 11, 1, 6, s.cols.B).set(hx - 1, hy - 8, s.cols.B);
+        fig.line(hx - 7, hy - 9, hx - 6, hy - 9, s.cols.B).line(hx - 7, hy - 6, hx - 6, hy - 6, s.cols.B);
+      }
+      return fig;
+    },
+  };
+}
+
+export function make(s: Spec): VecnaOpt['draw'] {
+  const layers = layersOf(s);
+  return (pose, phase = 0, fire = true) => {
+    const r = rigOf(s, pose), fig = new Px(VW, VH).blit(layers.under(pose, phase), 0, 0).blit(layers.over(pose, phase), 0, 0);
+    return finish(fig, r, fire && (pose === 'burn' || pose === 'whip') ? onFire(r) : undefined);
   };
 }
 

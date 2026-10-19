@@ -9,6 +9,7 @@ import { HOPPER_PORTRAIT, MAX_PORTRAIT, STEVE_PORTRAIT } from './portraits_l56.t
 import { ERICA_PORTRAIT, NANCY_PORTRAIT, ROBIN_PORTRAIT } from './portraits_l78.ts';
 import { BILLY_PORTRAIT } from './portraits_l9.ts';
 import { EDDIE_PORTRAIT } from './eddie.ts';
+import { VECNA_PORTRAIT } from './vecna_portrait.ts';
 
 export type Shirt = 'stripes' | 'plaid' | 'plain' | 'jacket' | 'cardigan';
 
@@ -21,6 +22,10 @@ export interface PortraitSpec {
   trim: Part[];
   /** Replaces the mouth in the happy expression. */
   grin?: Part[];
+  /** Replaces the shared head and nose, for a face that isn't one (Vecna's skull). */
+  head?: Part[];
+  /** Replaces the shared expression layers, per expression (Vecna's). */
+  faces?: Partial<Record<Expr, Part[]>>;
 }
 
 export const HEAD: Part = { y: 4, rows: [
@@ -232,6 +237,6 @@ export const PORTRAITS: Record<CharId, PortraitSpec> = {
   robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: BILLY_PORTRAIT,
   // Eddie's is the Hellfire Club pick, on its dark red ground (data/eddie.ts).
   eddie: EDDIE_PORTRAIT,
-  // Vecna borrows Billy's until Art draws his (docs/level-13.md).
-  vecna: BILLY_PORTRAIT,
+  // Vecna's is his Rooted skull, on its own head and faces (data/vecna_portrait.ts).
+  vecna: VECNA_PORTRAIT,
 };

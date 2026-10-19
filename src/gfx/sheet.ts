@@ -17,8 +17,9 @@ import { L9B_PAGES } from './sheet_l9b.ts';
 import { L10_PAGES } from './sheet_l10.ts';
 import { L11_PAGES } from './sheet_l11.ts';
 import { L12_PAGES } from './sheet_l12.ts';
+import { L13_PAGES } from './sheet_l13.ts';
 
-const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D, ...PAGES_E, ...L56_PAGES, ...L56B_PAGES, ...L78_HERO_PAGES, ...L78_FOE_PAGES, ...L78B_PAGES, ...L9_PAGES, ...L9B_PAGES, ...L10_PAGES, ...L11_PAGES, ...L12_PAGES];
+const PAGES = [...PAGES_A, ...PAGES_B, ...PAGES_C, ...PAGES_D, ...PAGES_E, ...L56_PAGES, ...L56B_PAGES, ...L78_HERO_PAGES, ...L78_FOE_PAGES, ...L78B_PAGES, ...L9_PAGES, ...L9B_PAGES, ...L10_PAGES, ...L11_PAGES, ...L12_PAGES, ...L13_PAGES];
 
 function startPage(): { page: number; sub: number } {
   const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();

@@ -2,8 +2,9 @@
 // the way actor_demo.ts draws the Demogorgon: limbs stroked between joints, a torso filled between two widths, claws fanned
 // from the hands, a bald head with deep eyes and bare teeth. A design (vecna_opts.ts) picks five fill colors, can stretch
 // the rig, and dresses the body: vines, a robe, cracks, a suit. The poses follow his three phases: Clock (stand, walk, the
-// curse), Float (floating, the throw), Burn (burning, the vine whip), and a hurt frame. The fire is an effect on top of the
-// sprite, in its own colors. Pure pixel work: no DOM.
+// curse), Float (floating, the throw), Burn (burning, the vine whip), and a hurt frame. The game adds two more: the other step of his
+// walk (walkB, the same step with the legs the other way round) and stun (dropped to the floor when an orb breaks, stooped with his
+// arms hanging); the sheet's cards keep the eight of POSE_ORDER. The fire is an effect on top of the sprite, in its own colors. Pure pixel work: no DOM.
 import type { ColorName } from '../palette.ts';
 import { Px } from '../px.ts';
 
@@ -12,7 +13,7 @@ export const TOP = 10;
 export const VW = 36, VH = 52 + TOP;
 export type Pt = readonly [number, number];
 export type Tri = readonly [Pt, Pt, Pt];
-export type VPose = 'stand' | 'walk' | 'curse' | 'float' | 'throw' | 'burn' | 'whip' | 'hurt';
+export type VPose = 'stand' | 'walk' | 'walkB' | 'curse' | 'float' | 'throw' | 'burn' | 'whip' | 'hurt' | 'stun';
 
 export interface VRig {
   head: Pt; hr: readonly [number, number]; neck: Pt; waist: Pt; shW: number; wW: number;
@@ -34,6 +35,7 @@ const STAND: VRig = {
 export const POSES: Record<VPose, VRig> = {
   stand: STAND,
   walk: { ...STAND, arms: [[[13, 21], [9, 28], [10, 36]], [[23, 21], [27, 28], [25, 36]]], legs: [[[16, 33], [14, 41], [12, 49]], [[20, 33], [22, 40], [22, 47]]] },
+  walkB: { ...STAND, arms: [[[13, 21], [9, 28], [11, 36]], [[23, 21], [27, 28], [26, 36]]], legs: [[[16, 33], [14, 40], [14, 47]], [[20, 33], [22, 41], [24, 49]]] },
   curse: { ...STAND, head: [17, 14], arms: [[[13, 21], [11, 29], [10, 37]], [[23, 20], [28, 15], [31, 9]]], legs: [[[16, 33], [14, 41], [12, 49]], [[20, 33], [22, 41], [24, 49]]] },
   float: { ...STAND, lift: 8, arms: [[[13, 21], [7, 21], [3, 18]], [[23, 21], [29, 21], [33, 18]]], legs: [[[17, 33], [17, 41], [17, 48]], [[19, 33], [19, 41], [19, 48]]] },
   throw: { ...STAND, lift: 8, arms: [[[13, 21], [9, 19], [6, 22]], [[23, 21], [28, 24], [32, 25]]], legs: [[[17, 33], [16, 41], [16, 48]], [[19, 33], [20, 41], [20, 48]]] },
@@ -46,9 +48,15 @@ export const POSES: Record<VPose, VRig> = {
     arms: [[[13, 23], [9, 27], [7, 33]], [[23, 22], [28, 16], [30, 10]]], legs: [[[16, 34], [13, 41], [11, 49]], [[20, 34], [23, 41], [25, 49]]],
   },
   hurt: { ...STAND, head: [19, 13], arms: [[[13, 21], [8, 15], [6, 11]], [[23, 21], [28, 16], [31, 13]]], legs: [[[16, 33], [15, 41], [15, 49]], [[20, 33], [22, 41], [24, 48]]] },
+  stun: {
+    head: [18, 22], hr: [3.6, 4.6], neck: [18, 26], waist: [18, 38], shW: 5.2, wW: 3, lift: 0,
+    arms: [[[13, 28], [8, 36], [7, 44]], [[23, 28], [28, 36], [29, 44]]], legs: [[[16, 38], [11, 43], [10, 49]], [[20, 38], [25, 43], [26, 49]]],
+  },
 };
 
 export const POSE_ORDER: VPose[] = ['stand', 'walk', 'curse', 'float', 'throw', 'burn', 'whip', 'hurt'];
+/** Every pose the game draws: the sheet's eight, the walk's other step and the stun. */
+export const GAME_POSES: VPose[] = [...POSE_ORDER, 'walkB', 'stun'];
 
 /** A stroke from a to b, w px wide, with a shade line on its right or underside. */
 export function seg(px: Px, a: Pt, b: Pt, w: number, body: ColorName, shade: ColorName | null): void {

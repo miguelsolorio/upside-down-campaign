@@ -11,6 +11,7 @@ import { arcs, babble, bullet, goo, scoop, trap } from './fx_l78.ts';
 import { bottle, fire, pet } from './fx_l6.ts';
 import { glass, slam, sweep } from './fx_l9.ts';
 import { SMALL_GLASS, chime, riff, smallGlass, walkman } from './fx_ch4.ts';
+import { blaze, debris, whip } from './fx_vecna.ts';
 
 const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
@@ -348,6 +349,9 @@ export function drawFx(ctx: Ctx, f: FxView): void {
     case 'riff': riff(ctx, f, p); break;
     case 'chime': chime(ctx, f, p); break;
     case 'walkman': walkman(ctx, f, p); break;
+    case 'debris': debris(ctx, f); break;
+    case 'whip': whip(ctx, f, ang, p); break;
+    case 'blaze': blaze(ctx, f); break;
     default: break;
   }
 }

@@ -13,6 +13,7 @@ import { bunker, foodCourt, mall } from './map_mall.ts';
 import { INSET, kamchatka } from './map_inset.ts';
 import { creelHouse } from './map_house.ts';
 import { UDTOWN_H, dropHole, udTown } from './map_udtown.ts';
+import { LAIR_H, lair, lairRoots } from './map_lair.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
 
@@ -325,6 +326,12 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   if (locked('4.3')) remap(ut, grey);
   P.blit(ut, LAND.udtown.x - (ut.w >> 1), LAND.udtown.top);
 
+  // Vecna's lair hangs by roots from the cut edge of the earth over the dark sun, the Creel House's twin turned upside down.
+  const lr = lair(!locked('4.4')), lx = LAND.lair.x - (lr.w >> 1);
+  lairRoots(P, lx, LAND.lair.top, LAND.lair.top - hzAt(LAND.lair.x) - 2, !locked('4.4'));
+  if (locked('4.4')) remap(lr, grey);
+  P.blit(lr, lx, LAND.lair.top);
+
   paintRoute(P, st);
 
   // Kamchatka's inset goes over the route, which runs in to its edge; map.ts draws it again over the clouds.
@@ -337,6 +344,9 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   // whose pointer is the one that reaches the window, draws over its own.
   plates.push({ cx: LAND.udtown.x, y: LAND.udtown.top + UDTOWN_H + 8, name: 'HAWKINS', state: st['4.3'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: LAND.udtown.x, y: LAND.udtown.top + UDTOWN_H + 1, name: 'UPSIDE DOWN', state: st['4.3'] as NodeState, ud: true, point: 'up' });
+  // Vecna's lair's is the same stack under the twin: LAIR goes down first, so VECNA, whose pointer is the one that reaches the house, draws over its own.
+  plates.push({ cx: LAND.lair.x, y: LAND.lair.top + LAIR_H + 8, name: 'LAIR', state: st['4.4'] as NodeState, ud: true, point: 'up' });
+  plates.push({ cx: LAND.lair.x, y: LAND.lair.top + LAIR_H + 1, name: 'VECNA', state: st['4.4'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
   return { px: P, plates, veins, inset };
 }

@@ -74,12 +74,11 @@ function buildPortrait(who: CharId, expr: Expr, gray = false, prison = inPrison(
   draw(SHOULDERS, shirtFill);
   for (const p of spec.trim) draw(p);
   for (const p of spec.back) draw(p);
-  draw(HEAD);
-  draw(NOSE);
+  for (const p of spec.head ?? [HEAD, NOSE]) draw(p);
   // The face goes on before the front hair, so a cap or a bandana hides eyebrows the way it would in life.
   // The sweat drop is the exception: it sits on top of whatever is on the head.
   const late: Part[] = [];
-  for (const p of EXPR[expr]) {
+  for (const p of spec.faces?.[expr] ?? EXPR[expr]) {
     // A character's own grin replaces the plain smile, which is the layer that starts on row 13.
     if (expr === 'happy' && spec.grin && p.y === 13) { for (const g of spec.grin) draw(g); continue; }
     if (p.rows.some((r) => r.includes('z'))) late.push(p); else draw(p);

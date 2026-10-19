@@ -132,7 +132,9 @@ export const STAGE_44: StageData = {
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
   // Starting numbers, for the lead to tune with node scripts/measure-stage.ts 4.4 chief 20 (docs/level-13.md, "Targets").
-  enemyMult: 1.5,
+  // Tuned by the lead on HARD (docs/level-13.md, "Result"), with Vecna at 1000 HP and 32 ATK and his lash and throw quick and soft:
+  // chief clears 100 of 100, careless 86. The careful bot steps out of nearly every lash and throw, so its lowest HP stays high.
+  enemyMult: 1.7,
   xpMult: 1.8,
   waypoints: WAYPOINTS,
 };

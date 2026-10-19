@@ -299,11 +299,11 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // shares of his phases. floatZ: his height in Float, riseT the frames to rise or land. downT: frames an orb's break pulls him down for in
   // Float, downMul what he takes then. curseT: frames of the chime pose. splashT: frames a rock's splash is drawn.
   vecna: {
-    kind: 'vecna', name: 'Vecna', hp: 1400, atk: 24, def: 7, speed: 0.4, xp: 150, aggro: 400,
-    windup: 24, power: 0.7, cooldown: 120, drop: 1, weight: 99,
+    kind: 'vecna', name: 'Vecna', hp: 1000, atk: 32, def: 7, speed: 0.4, xp: 150, aggro: 400,
+    windup: 14, power: 0.5, cooldown: 120, drop: 1, weight: 99,
     x: {
-      speedMul: 1, chimeEvery: 900, whipEvery: 120, burnWhipEvery: 80, whipLen: 60, whipHalf: 10, whipKb: 3, lashT: 10,
-      throwEvery: 150, throwPower: 0.8, throwSplash: 20, throwT: 40, hold: 26, floatHold: 80, floatAt: 0.6, burnAt: 0.25, floatZ: 24, riseT: 30,
+      speedMul: 1, chimeEvery: 900, whipEvery: 120, burnWhipEvery: 80, whipLen: 72, whipHalf: 14, whipKb: 3, lashT: 10,
+      throwEvery: 150, throwPower: 0.6, throwSplash: 28, throwT: 40, hold: 26, floatHold: 80, floatAt: 0.6, burnAt: 0.25, floatZ: 24, riseT: 30,
       heal: 0.01, healEvery: 120, downT: 300, downMul: 1.5, curseT: 40, splashT: 12,
     },
   },

@@ -112,14 +112,14 @@ test('Clock: the whip comes about every 120 frames while the hero is in reach, a
   assert.equal(far.v.move, 'walk');
 });
 
-test('Clock: the whip hurts for 0.7 of his ATK and pushes the hero back', () => {
+test('Clock: the whip hurts for his power times his ATK and pushes the hero back', () => {
   const r = vRig({}, { tough: true });
   close(r);
   r.v.whipCd = 0;
   const ev = steps(r, VECNA.windup + 6);
   const dmg = hurt(ev)[0]?.dmg ?? 0;
   const def = r.hero.st.def;
-  const lo = Math.round(0.7 * VECNA.atk * 0.9 - def * 0.5), hi = Math.round(0.7 * VECNA.atk * 1.1 - def * 0.5);
+  const lo = Math.round(VECNA.power * VECNA.atk * 0.9 - def * 0.5), hi = Math.round(VECNA.power * VECNA.atk * 1.1 - def * 0.5);
   assert.ok(dmg >= lo && dmg <= hi, `${dmg} in ${lo} to ${hi}`);
   assert.ok(r.hero.vy > 0.5, 'shoved along the lash');
 });

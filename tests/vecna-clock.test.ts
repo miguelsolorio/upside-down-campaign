@@ -39,7 +39,7 @@ test('a spawn\'s x lies over its def\'s for that spawn alone: chapter 5\'s { spe
   assert.deepEqual(s.enemies.map((e) => xOf(e).speedMul), [2, 1]);
 });
 
-test('speedMul scales his walk, whip and throw: x1.3 walks 30% faster, winds up in 18 frames and whips every 92', () => {
+test('speedMul scales his walk, whip and throw: x1.3 walks 30% faster, winds up 30% sooner and whips every 92', () => {
   const walk = (x?: Record<string, number>): number => { const r = vRig({}, { x }); const y0 = r.body.y; steps(r, 60); return r.body.y - y0; };
   const ratio = walk({ speedMul: 1.3 }) / walk();
   assert.ok(Math.abs(ratio - 1.3) < 0.03, `${ratio}`);
@@ -50,7 +50,7 @@ test('speedMul scales his walk, whip and throw: x1.3 walks 30% faster, winds up 
   w.v.whipCd = 0;
   w.sim.step(inp());
   assert.equal(w.v.move, 'wind');
-  assert.equal(w.v.t, 18, 'the wind-up');
+  assert.equal(w.v.t, Math.round(ENEMY_DEFS.vecna.windup / 1.3), 'the wind-up');
   const starts: number[] = [];
   let was = 'walk';
   for (let f = 0; f < 800; f++) {
@@ -65,8 +65,9 @@ test('speedMul scales his walk, whip and throw: x1.3 walks 30% faster, winds up 
   toFloat(t);
   t.v.throwCd = 0;
   t.sim.step(inp());
-  assert.equal(t.v.t, 18, 'the throw\'s wind-up');
-  steps(t, 18);
+  const wind = Math.round(ENEMY_DEFS.vecna.windup / 1.3);
+  assert.equal(t.v.t, wind, 'the throw\'s wind-up');
+  steps(t, wind);
   assert.equal(t.v.rocks[0]?.life, 31, 'and the rock is in the air for 40 / 1.3 frames');
 });
 
@@ -281,23 +282,24 @@ test('the attic\'s clock is never broken while he lives, and chimes again and ag
 
 test('each standing orb heals him half a percent of his max HP every 120 frames, and a broken one does not', () => {
   const r = vRig();
-  r.body.hp = 1100;
+  const start = r.body.hpMax - 200;
+  r.body.hp = start;
   r.v.healCd = 120;
   steps(r, 120);
   const gain = Math.round(r.body.hpMax * VX.heal * 4);
-  assert.equal(r.body.hp, 1100 + gain, 'four orbs');
+  assert.equal(r.body.hp, start + gain, 'four orbs');
   assert.equal(r.v.healCd, 120);
   assert.ok(r.s.floaters.some((f) => f.text === `+${gain}`));
   breakOrb(r, 1);
   breakOrb(r, 2);
-  r.body.hp = 1100;
+  r.body.hp = start;
   steps(r, 120);
-  assert.equal(r.body.hp, 1100 + Math.round(r.body.hpMax * VX.heal * 2), 'two');
+  assert.equal(r.body.hp, start + Math.round(r.body.hpMax * VX.heal * 2), 'two');
   breakOrb(r, 3);
   breakOrb(r, 4);
-  r.body.hp = 1100;
+  r.body.hp = start;
   steps(r, 240);
-  assert.equal(r.body.hp, 1100, 'none');
+  assert.equal(r.body.hp, start, 'none');
   const cap = vRig();
   cap.body.hp = cap.body.hpMax - 5;
   cap.v.healCd = 1;

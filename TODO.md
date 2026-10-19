@@ -1,6 +1,19 @@
 # TODO
 
-Scope for this pass: chapter 4. Level 10 (stage 4.1, Kamchatka: Hopper alone, the guards, the Demogorgon pit), Level 11 (stage 4.2, the Hellfire Club and the Creel House: Eddie joins, Creel ghouls and haunted mirrors, the clock curse taught, Max's Walkman), Level 12 (stage 4.3, Upside Down Hawkins: demobats, the clocks, the rooftop's song and Eddie's fall) and Level 13 (stage 4.4, Vecna's lair). The pass before it built Level 9, the end of chapter 3.
+Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Hawkins under lockdown: Hopper back, troopers, the Commander), Level 15 (stage 5.2, the Abyss: islands over the void, the foe Demogorgon, the twins) and Level 16 (stage 5.3, Vecna inside the Mind Flayer: three phases, the channel, the Final Roll, Joyce's axe, the basement epilogue, THE END). Every stage in `docs/game-design.md` is now built, 1.1 to 5.3. The pass before it built chapter 4.
+
+## This pass (levels 14 to 16, chapter 5)
+
+- [x] Calls made under the owner's standing instruction ("go with your recommendation for all steps"), all in `docs/chapter-5.md` and `docs/level-14.md` to `docs/level-16.md`: Hopper locked into 5.1, Will into 5.2, Eleven and Will into 5.3, each catching up to the party; the Commander and the twins as the mini-bosses; the final fight in three phases with a channel that resets instead of failing; a Final Roll that sizes the finish and can't fail; the basement epilogue, THE END, then CAMPAIGN COMPLETE
+- [x] Built ahead of chapter 4 landing: Eddie's note-highway solo (`src/solo/`), the `abyss` and `ending` tracks, chapter 5's art (`src/gfx/ch5/`), the Lv 9 talents for the nine heroes, the Final Roll, THE END and the epilogue
+- [x] 5.1 and 5.2: the trooper, `agent5`, the Commander, the foe Demogorgon, the twins, the bot's flank and void rules, four sounds, eight lockdown props, the Abyss backdrop; then the stages, tuned on HARD
+- [x] Chapter 4 merged in: 4.4's Vecna is 5.3's phase one (1.3 speed, the clock every 12 s), demobats in all three stages, Eddie out of the pool
+- [x] 5.3: the spider with Vecna in its chest (legs open it, and a 16 s clock marks a leg), the channel with Eleven's and Will's bars and a 40 s countdown, the Final Roll, Joyce, the boom, and the ending chain in `flow_end.ts`
+- [x] Pace: `xpMult` 2.2, 2.4 and 5 for 5.1 to 5.3. The lead ends 5.2 at Lv 11 and 5.3 at the cap in every seed of 40; `tests/pace.test.ts` holds chapter 5
+- [x] Verified: typecheck clean, 2511 tests pass, the production build passes, the bot plays the whole campaign from 1.1 to 5.3 headless, and 5.3 played to the Final Roll, the epilogue, THE END, the results and the map in the browser, muted, with no console errors
+- [ ] Owner plays chapter 5 by hand: the Commander's shield, the twins over the void, the channel, the Final Roll
+- [ ] 5.1 and 5.2 run over the damage band (bench regen hides about half of what's taken); 5.1's seed 16 sticks above `enemyMult` 1.58 (bot navigation)
+- [ ] Hopper's and Eddie's Lv 9 talents; Vecna's sink in 5.3 is still chapter 4's KO thinning
 
 ## This pass (levels 10 to 13)
 
@@ -295,4 +308,4 @@ From Levels 1 and 2:
 
 ## Later (after feedback)
 
-Next: chapters 4 and 5, the other heroes (and their Lv 9 talents), the remaining tracks, docs polish.
+Every stage is built. Next: the owner's play-through of the whole campaign, then a balance pass from that feedback, Hopper's and Eddie's Lv 9 talents, and docs polish.

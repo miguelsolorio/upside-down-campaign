@@ -8,11 +8,14 @@ import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../ene
 import { demoImmovable, demoPoke, demoSettle, demoStunned, isFinisher } from '../enemies/demo_hit.ts';
 import { ghoulTakes } from '../enemies/ghoul_hit.ts';
 import { hasRiotShield, isSmash, smashShield } from '../enemies/ch5_hit.ts';
+import { batReached } from '../enemies/demobat_hit.ts';
 import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
 import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
 import { flayerBlock, flayerRooted, flayerTakes } from '../enemies/flayer_hit.ts';
 import { legHit } from '../enemies/flayer_legs.ts';
+import { orbBreak } from '../enemies/orb.ts';
+import { vecnaMiss, vecnaReached, vecnaTakes } from '../enemies/vecna_phase.ts';
 import { HOLD_BREAK_KB, isHolding, releaseHold, untouchable } from '../enemies/hold.ts';
 import { COLD_BONUS, coldSpot } from '../heroes/cold.ts';
 import { heroDef, steveTakes } from '../heroes/steve_guard.ts';
@@ -74,6 +77,8 @@ export interface HitOpts {
   beam?: boolean;
   /** Hopper's ground slam: the only thing that hurts the pinned pit Demogorgon. */
   slam?: boolean;
+  /** Reaches a flyer at any height, as a shot, a beam, the burst and Eddie's pulse do. A swing or an area hit without it reaches a demobat only while it is low. */
+  air?: boolean;
 }
 
 /** Makes an enemy notice the hero, and its group-mates within earshot. */
@@ -91,10 +96,13 @@ export function alertEnemy(s: S, e: Enemy): void {
 
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
-  if (e.dead || e.dormant || e.hp <= 0 || untouchable(e)) return 0;
-  // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy and the Mind Flayer and its legs are never staggered, stunned or broken off a
-  // wind-up by a hit.
-  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e) || e.kind === 'vecna5';
+  if (e.dead || e.dormant || e.hp <= 0 || untouchable(e) || !batReached(e, o)) return 0;
+  // Vecna in Float is out of reach of a swing or a blast (a shot, a beam, the burst and a solo pulse still land).
+  if (!vecnaReached(e, o)) { vecnaMiss(s, e); return 0; }
+  // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy, the Mind Flayer and its legs, and Vecna and his orbs are never staggered, stunned
+  // or broken off a wind-up by a hit.
+  const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e) || e.vecna !== null || e.orb !== null
+    || e.kind === 'vecna5';
   // A pinned Demogorgon shrugs off everything but the beam, and a pinned Billy everything at all. They report the try and take nothing. So
   // does the Mind Flayer's body while a leg stands.
   const finisher = isFinisher(e, by.id, o.beam === true, o.slam === true);
@@ -127,6 +135,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   if (e.billy) dmg = Math.round(dmg * billyTakes(e));
   // The Mind Flayer's head takes half again while it is down.
   if (e.flayer) dmg = Math.round(dmg * flayerTakes(e));
+  // Vecna takes half again while a broken orb has him on the floor.
+  if (e.vecna) dmg = Math.round(dmg * vecnaTakes(e));
   // Fire is double for a vine. Will's Cold spot makes a hidden enemy near him take 15 percent more, and a lit string of lights a ghoul half again.
   if (o.burn && e.kind === 'vine') dmg *= ENEMY_DEFS.vine.x.burnMul;
   if (e.ghoul) dmg = Math.round(dmg * ghoulTakes(s, e));
@@ -151,7 +161,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const planted = e.kind === 'flayed';
   const breaksHold = planted && (o.kb ?? 0) >= HOLD_BREAK_KB;
   if (holding && breaksHold) releaseHold(s, e);
-  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e) || billyImmovable(e) || flayerRooted(e))) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
+  const kb = (boss && (demoImmovable(e) || alphaImmovable(e) || grigoriImmovable(e) || billyImmovable(e) || flayerRooted(e) || e.vecna !== null || e.orb !== null)) || rooted || (planted && !breaksHold) ? 0 : (o.kb ?? 0) / ENEMY_DEFS[e.kind].weight;
   if (kb > 0) {
     const a = o.angle ?? 0;
     e.vx += Math.cos(a) * kb;
@@ -165,6 +175,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
     demoSettle(s, e, finisher);
     billySettle(s, e);
     legHit(s, e);
+    orbBreak(s, e);
   } else if (!shielded) {
     if (!(planted && !breaksHold)) {
       e.stagger = Math.max(e.stagger, o.stagger ?? (kb >= 3.2 ? 16 : 10));
@@ -228,8 +239,8 @@ function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'ho
   h.invuln = Math.max(h.invuln, invuln);
   h.blink = true;
   h.flash = 1;
-  // Hopper's Berserk (Lv 9): low on HP, nothing makes him flinch or knocks him back.
-  if (!berserkUp(h)) {
+  // Hopper's Berserk (Lv 9): low on HP, nothing makes him flinch or knocks him back. Nor does Eddie, while he plays the 4.3 roof.
+  if (!berserkUp(h) && !(s.roof.on && h.id === 'eddie')) {
     h.hurtT = HERO_HURT_FRAMES;
     h.actId++; h.actT = 0; h.act = null;
     h.vx += Math.cos(angle) * kb;

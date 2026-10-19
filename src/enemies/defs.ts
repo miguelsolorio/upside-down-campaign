@@ -253,7 +253,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // is the soldier in winter (enemies/soldier.ts reads these x), the camp guard the riot guard with a baton (enemies/guard.ts), and the
   // pit Demogorgon the 1.3 one sized for Hopper alone (enemies/demogorgon.ts). Its x mirrors the 1.3 one's.
   kguard: {
-    kind: 'kguard', name: 'Guard', hp: 80, atk: 36, def: 5, speed: 0.7, xp: 12, aggro: 130,
+    kind: 'kguard', name: 'Guard', hp: 40, atk: 20, def: 5, speed: 0.7, xp: 12, aggro: 130,
     windup: 30, power: 0.3, cooldown: 120, drop: 0.3, weight: 1.2,
     x: {
       near: 80, far: 120, panic: 60, back: 0.7, stamina: 50, speed: 3.2, range: 180, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6,
@@ -261,12 +261,12 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     },
   },
   kbaton: {
-    kind: 'kbaton', name: 'Camp guard', hp: 110, atk: 34, def: 7, speed: 0.7, xp: 16, aggro: 100,
+    kind: 'kbaton', name: 'Camp guard', hp: 55, atk: 18, def: 7, speed: 0.7, xp: 16, aggro: 100,
     windup: 30, power: 0.9, cooldown: 110, drop: 0.35, weight: 1.4,
     x: { range: 26, reach: 30, arc: 75, block: 0.2, breakKb: 3.2, breakT: 45, grace: 30, turn: 12, kb: 3.6, recover: 36, patrol: 0.5, lose: 240, hold: 18 },
   },
   pitdemo: {
-    kind: 'pitdemo', name: 'Demogorgon', hp: 600, atk: 34, def: 6, speed: 0.8, xp: 60, aggro: 200,
+    kind: 'pitdemo', name: 'Demogorgon', hp: 1100, atk: 16, def: 6, speed: 0.8, xp: 60, aggro: 200,
     windup: 30, power: 0.5, cooldown: 100, drop: 1, weight: 4,
     x: {
       reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
@@ -280,7 +280,7 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   // stepping out. gap: frames before the next ghoul of the same mirror. range, lungeT, lungeSpeed, recover, kb: the lunge. bob: px it
   // floats. light: px from a lit lights prop that it takes lightMul in.
   ghoul: {
-    kind: 'ghoul', name: 'Creel ghoul', hp: 110, atk: 38, def: 4, speed: 0.8, xp: 14, aggro: 140,
+    kind: 'ghoul', name: 'Creel ghoul', hp: 175, atk: 60, def: 4, speed: 0.8, xp: 14, aggro: 140,
     windup: 24, power: 0.8, cooldown: 90, drop: 0.25, weight: 1.1,
     x: { see: 80, rise: 40, gap: 90, range: 40, lungeT: 10, lungeSpeed: 3.2, recover: 30, kb: 3, bob: 2, light: 48, lightMul: 1.5 },
   },
@@ -389,7 +389,42 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 40, power: 0.8, cooldown: 70, drop: 0, weight: 99,
     x: LEG_X,
   },
+  // Chapter 4's second half (docs/level-12.md, docs/level-13.md). Starting numbers: Sim tunes them inside the stages' targets.
+  // The demobat (enemies/demobat.ts): orbit, its circle in px; diveEvery, frames between dives in a flock; diveWindup, diveT and
+  // diveSpeed, the dive; climb, frames back up; low, the z under which melee reaches it; stunT, frames stunned by a solo pulse; kb, a dive's
+  // shove. roofPower, roofN and roofGap: the 4.3 roof's dive (a miss sends a bat), the flock that circles Eddie and the frames before a
+  // bat replaces one that died.
+  demobat: {
+    kind: 'demobat', name: 'Demobat', hp: 40, atk: 30, def: 2, speed: 1.4, xp: 6, aggro: 160,
+    windup: 20, power: 0.8, cooldown: 150, drop: 0.15, weight: 0.8,
+    x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, kb: 2, roofPower: 0.35, roofN: 5, roofGap: 45 },
+  },
+  // Vecna (enemies/vecna.ts, vecna_phase.ts): speedMul scales his walk and the timings of his whip, throw and rise, chimeEvery the clock's
+  // curse (a spawn's x can override both, as 5.3 does). Windup and power are the whip's and the rock's wind-up. whip*: the vine lash: every
+  // whipEvery frames (burnWhipEvery in Burn), whipLen px long, whipHalf px either side of the line, whipKb its shove, lashT frames out.
+  // throw*: Float's rock: every throwEvery frames, throwPower, throwSplash px, throwT frames in the air. hold and floatHold: px he stops short
+  // of the hero on the floor and in the air. heal: the share of his max HP each standing orb gives every healEvery. floatAt and burnAt: the HP
+  // shares of his phases. floatZ: his height in Float, riseT the frames to rise or land. downT: frames an orb's break pulls him down for in
+  // Float, downMul what he takes then. curseT: frames of the chime pose. splashT: frames a rock's splash is drawn.
+  vecna: {
+    kind: 'vecna', name: 'Vecna', hp: 1000, atk: 32, def: 7, speed: 0.4, xp: 150, aggro: 400,
+    windup: 14, power: 0.5, cooldown: 120, drop: 1, weight: 99,
+    x: {
+      speedMul: 1, chimeEvery: 900, whipEvery: 120, burnWhipEvery: 80, whipLen: 72, whipHalf: 14, whipKb: 3, lashT: 10,
+      throwEvery: 150, throwPower: 0.6, throwSplash: 28, throwT: 40, hold: 26, floatHold: 80, floatAt: 0.6, burnAt: 0.25, floatZ: 24, riseT: 30,
+      heal: 0.01, healEvery: 120, downT: 300, downMul: 1.5, curseT: 40, splashT: 12,
+    },
+  },
+  // A memory orb (enemies/orb.ts): rooted, harmless, broken at 0 HP and back at full after regrow frames.
+  orb: {
+    kind: 'orb', name: 'Memory orb', hp: 80, atk: 0, def: 2, speed: 0, xp: 0, aggro: 0,
+    windup: 0, power: 0, cooldown: 999, drop: 0, weight: 99,
+    x: { regrow: 1200 },
+  },
 };
+
+/** The numbers an enemy runs on: its def's x, or the def's with its spawn's overrides laid over (SimSpawn.x, Enemy.tune). */
+export const xOf = (e: { kind: EnemyKind; tune: Record<string, number> | null }): Record<string, number> => e.tune ?? ENEMY_DEFS[e.kind].x;
 
 /** Enemy HP and damage multiplier. */
 export const DIFFICULTY_MULT: Record<Difficulty, number> = { kid: 0.7, normal: 0.85, chief: 1, upside: 1.4 };

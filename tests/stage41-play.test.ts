@@ -32,7 +32,7 @@ test('stage 4.1: the bot clears the stage on chief, through every beat in order,
       const run = playStage(PLAYED, seed, party, 30000, 'chief', careless);
       assert.ok(run.done && !run.allDown, `seed ${seed}${careless ? ' careless' : ''} clears`);
       assert.deepEqual(run.said, ORDER, `seed ${seed}: every beat, in order, and not the cache's`);
-      assert.deepEqual(run.steps, ['open door1'], 'the bot opens no gate by the director, and the clear opens the door');
+      assert.deepEqual(run.steps, ['light lights_shaft', 'open door1'], 'the shaft beat lights its string, the bot opens no gate by the director, and the clear opens the door');
       assert.ok(run.xp >= stageXp(PLAYED), `seed ${seed}: ${run.xp} XP, every guard and the beast`);
       assert.ok(run.frames > 60 * 45 && run.frames < 60 * 240, `seed ${seed}: ${(run.frames / 60).toFixed(0)} s`);
       assert.ok((run.levels[0] ?? 0) >= 5, 'Hopper keeps his level');

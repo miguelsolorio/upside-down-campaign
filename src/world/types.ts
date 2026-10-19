@@ -66,6 +66,11 @@ export type BeatStep =
   | { t: 'walkman' }
   /** Sets the tempo phase of the playing music (audio.phase), as the final boss's phases step `abyss` from 160 to 164 to 168 bpm. It does not wait. */
   | { t: 'phase'; n: number }
+  /** The rooftop's song on the note highway (docs/level-12.md): the play scene runs src/solo's createSolo with the chart and feeds each
+   *  note to the sim. It waits for the song to end. */
+  | { t: 'solo'; chart: 'rooftop' }
+  /** A hero falls for good: Eddie on the 4.3 roof (Sim.dismissHero). It does not wait. */
+  | { t: 'fall'; hero: HeroId }
   | { t: 'finish' };
 
 /** What fires a beat. Rect beats fire once, the first time the hero's tile enters the rectangle. `needs` holds a
@@ -84,7 +89,9 @@ export type BeatWhen =
   /** The final fight reached this phase (the sim's `bossPhase` event, docs/level-16.md). */
   | { event: 'bossPhase'; phase: 1 | 2 | 3 }
   /** The channel ran out (the sim's `finalRoll` event): the Final Roll is next. */
-  | { event: 'finalRoll' };
+  | { event: 'finalRoll' }
+  /** A boss with this spawn id moved into this phase (the sim's `phase` event). */
+  | { event: 'phase'; spawn: string; phase: number };
 
 export interface Beat { id: string; when: BeatWhen; steps: BeatStep[] }
 
@@ -154,5 +161,9 @@ export interface StageData {
   finale?: FinaleDef;
   /** The room drawn in the memory skin (the Creel House in Blood red) while a curse counts: 4.2's parlor (docs/level-11.md). */
   memory?: TileRect;
+  /** The skin the stage's own letters bake in: 'upside' paints the Creel House in its Upside Down rot (4.4, docs/level-13.md). */
+  skin?: 'upside';
+  /** A storm flashes over the stage: a bolt every 6 to 10 s floods the lit edges red (4.3's Blue storm, docs/level-12.md). */
+  storm?: boolean;
   waypoints: BotWaypoint[];
 }

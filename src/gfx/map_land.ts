@@ -7,11 +7,14 @@ import type { ColorName } from './palette.ts';
 import { BAYER4, ctx2d, makeCanvas, px32, rect } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 import { drawTinyText } from './font.ts';
-import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
+import { BAND_Y, DROP, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
 import { arcade, gate, grey, lab, pumpkin, remap, roots, school, toUD, toUDLand, tunnels, woods } from './map_art.ts';
 import { bunker, foodCourt, mall } from './map_mall.ts';
 import { abyssMark, lockdownMark } from './map_ch5.ts';
 import { INSET, kamchatka } from './map_inset.ts';
+import { creelHouse } from './map_house.ts';
+import { UDTOWN_H, dropHole, udTown } from './map_udtown.ts';
+import { LAIR_H, lair, lairRoots } from './map_lair.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
 
@@ -232,6 +235,7 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   stand(arcade(), 245, 90, lp);
   stand(mall(), LAND.mall.x, LAND.mall.base, locked('3.1'));
   const fc = stand(foodCourt(), LAND.food.x, LAND.food.base, locked('3.3'));
+  stand(creelHouse(), LAND.creel.x, LAND.creel.base, locked('4.2'));
   const plates: PlateSpec[] = [
     { cx: LAND.woods.x, y: wd.y0 - 12, name: 'MIRKWOOD', state: st['1.1'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.lab.x, y: lb.y0 - 12, name: 'LAB', state: st['1.2'] as NodeState, ud: false, point: 'down' },
@@ -242,6 +246,8 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
     { cx: LAND.mall.x + 6, y: fc.y0 - 19, name: 'STARCOURT', state: st['3.1'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.mall.x + 6, y: fc.y0 - 11, name: 'FOOD COURT', state: st['3.3'] as NodeState, ud: false, point: 'down' },
     { cx: LAND.bunker.x - 26, y: LAND.bunker.y - 12, name: 'BASE', state: st['3.2'] as NodeState, ud: false, point: 'right' },
+    // The Creel House's plate hangs over its hill, pointing down at the roof.
+    { cx: LAND.creel.x, y: 15, name: 'CREEL HOUSE', state: st['4.2'] as NodeState, ud: false, point: 'down' },
     // Kamchatka's plate hangs under its inset, pointing up into it.
     { cx: INSET.x + 22, y: INSET.y + INSET.h, name: 'KAMCHATKA', state: st['4.1'] as NodeState, ud: false, point: 'up', night: true },
   ];
@@ -295,6 +301,7 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
 
   // The hole in the patch, and what is down there. The bunker of the base stands on the cut of the earth: underground, but not upside down.
   drawHole(P, lp);
+  dropHole(P, DROP.x, DROP.y, !locked('4.3'));
   const bk = bunker();
   if (locked('3.2')) remap(bk, grey);
   P.blit(bk, LAND.bunker.x - (bk.w >> 1), hzAt(LAND.bunker.x) - bk.h + 1);
@@ -322,6 +329,15 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
     if (locked(id)) remap(mark, grey);
     P.blit(mark, at.x - (mark.w >> 1), at.top);
   }
+  const ut = udTown(!locked('4.3'));
+  if (locked('4.3')) remap(ut, grey);
+  P.blit(ut, LAND.udtown.x - (ut.w >> 1), LAND.udtown.top);
+
+  // Vecna's lair hangs by roots from the cut edge of the earth over the dark sun, the Creel House's twin turned upside down.
+  const lr = lair(!locked('4.4')), lx = LAND.lair.x - (lr.w >> 1);
+  lairRoots(P, lx, LAND.lair.top, LAND.lair.top - hzAt(LAND.lair.x) - 2, !locked('4.4'));
+  if (locked('4.4')) remap(lr, grey);
+  P.blit(lr, lx, LAND.lair.top);
 
   paintRoute(P, st);
 
@@ -331,12 +347,19 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
   P.blit(inset, INSET.x, INSET.y);
 
   plates.push({ cx: LAND.tunnels.x, y: LAND.tunnels.top + tn.h + 3, name: 'TUNNELS', state: st['2.2'] as NodeState, ud: true, point: 'up' });
+  // Upside Down Hawkins' plate is one stacked sign under its window, like STARCOURT and FOOD COURT above: HAWKINS goes down first, so UPSIDE DOWN,
+  // whose pointer is the one that reaches the window, draws over its own.
+  plates.push({ cx: LAND.udtown.x, y: LAND.udtown.top + UDTOWN_H + 8, name: 'HAWKINS', state: st['4.3'] as NodeState, ud: true, point: 'up' });
+  plates.push({ cx: LAND.udtown.x, y: LAND.udtown.top + UDTOWN_H + 1, name: 'UPSIDE DOWN', state: st['4.3'] as NodeState, ud: true, point: 'up' });
+  // Vecna's lair's is the same stack under the twin: LAIR goes down first, so VECNA, whose pointer is the one that reaches the house, draws over its own.
+  plates.push({ cx: LAND.lair.x, y: LAND.lair.top + LAIR_H + 8, name: 'LAIR', state: st['4.4'] as NodeState, ud: true, point: 'up' });
+  plates.push({ cx: LAND.lair.x, y: LAND.lair.top + LAIR_H + 1, name: 'VECNA', state: st['4.4'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
   // Chapter 5's plates hang under their landmarks, pointing up, like the tunnels'.
   for (const [id, name, mark, at] of CH5_MARKS) plates.push({ cx: at.x, y: at.top + (mark.h as number) + 3, name, state: st[id] as NodeState, ud: true, point: 'up' });
-  // The heart has no landmark yet (Art draws it): its plate hangs just under its node, in line with the other two.
+  // The heart has no landmark yet (Art draws it): its plate hangs just under its node, clear of the token standing on it.
   const heart = POS['5.3'] as { x: number; y: number };
-  plates.push({ cx: heart.x, y: 181, name: 'HEART', state: st['5.3'] as NodeState, ud: true, point: 'up' });
+  plates.push({ cx: heart.x, y: heart.y + 17, name: 'HEART', state: st['5.3'] as NodeState, ud: true, point: 'up' });
   return { px: P, plates, veins, inset };
 }
 

@@ -225,10 +225,41 @@
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;
 //   the active hero takes 15 and is thrown clear. The breaker is 'closed' again 300 frames after it was lit. openProps never leaves it lit.
+// - The demobat (enemies/demobat.ts, demobat_hit.ts): a flyer. It ignores solid tiles, props and the nav grid, hovers 10 to 14 px up (z) and,
+//   once the hero is within 160 px or its group is woken, circles the active hero at 56 px with the rest of its group, in equal slots. About every
+//   150 frames the group sends one bat down, never two at once: a 20 frame "!" (pose 'crouch') on a line locked at the hero, a 12 frame dive at
+//   4 px a frame (pose 'charge', z falling to 2, power 0.8, the `screech` sfx), then 30 frames climbing back. A swing or an area hit (HitOpts
+//   without `air`) reaches it only while it is low, z under 6; a shot, a beam, the burst and Eddie's pulses (`air`) reach it at any height. A
+//   pulse stuns it for 40 frames: it falls to z 2, pose 'stun', and anyone can hit it. It dies in a few 'spark' fx. A hit that staggers it breaks a
+//   wind-up or a dive. The bot (bot_demobat.ts) steps off a dive's line, ignores a bat it can't reach and swaps to a hero who shoots.
+// - The 4.3 rooftop (combat/roof.ts): Sim.rooftop(true) brings Eddie to the front, planted (anim `cast`, no walking, attacking, flinching or
+//   swapping), and five demobats (group `roof`, run-time, 0 XP, no drop) come up from the burrows and circle him; one is replaced 45 frames after
+//   it dies. Sim.soloNote(hit, perfect): a hit pulses his ring (a crit when perfect) and widens it a step (two when perfect), 24 to 72 px, from 40;
+//   a miss narrows it a step and sends the nearest circling bat down at him for power 0.6. The roof's bats dive only on a miss. Eddie at 0 HP while
+//   it is on is allDown. HudView.solo is { t, life 0, streak, ring, beat 0 } meanwhile. Sim.rooftop(false) ends it and leaves the bats as they are.
+// - Sim.dismissHero(id): the hero leaves the party for good. Gone from the view and the HUD, never swapped to, not counted when the party goes down;
+//   if they were up the party swaps to the next hero who can fight (nobody left is allDown). party() still reports them, after the others. The last
+//   hero in the party can't be dismissed.
+// - Vecna (enemies/vecna.ts, vecna_phase.ts, orb.ts; docs/level-13.md): `vecna` and four `orb` spawns (ids orb1 to orb4) in one group. hud.boss reads
+//   VECNA with `parts`, the four orbs' HP shares (0 when broken). A spawn's `x` lays over its def's numbers for that spawn: speedMul scales his walk,
+//   whip, throw and rise, chimeEvery sets the clock. Waking the group (spawnGroup) starts the clock and the heal. Clock: he walks (0.4 px a frame) and
+//   every 120 frames, inside 60 px, whips: pose 'whip' and the "!" for a 24 frame wind-up with ActorView.aim the tip of the line (locked on the hero),
+//   then a 'whip' fx for the 10 frames of the lash (x, y where it starts on the floor, angle, w its length, h its width), power 0.7 for a hero within
+//   10 px of the line, once. Every chimeEvery frames (900) the attic's clock (the first 'clock' prop) chimes and curses a random hero who is standing
+//   and not cursed, never the last one standing, and marks a random standing orb (ActorView.marked; breaking it lifts that curse, { t: 'curseEnd',
+//   how: 'orb' }); the curse's four chimes are a third of the interval apart. Nothing happens while the Walkman is on or with no orb standing. Each
+//   standing orb heals him 1% of his max HP every 120 frames. Float (60%, { t: 'phase', spawnId, phase: 2 }): z 24, pose 'float', out of reach of a
+//   swing or a blast (HitOpts without `air` or `beam`), no whip; every 150 frames a rock (pose 'throw' and a 24 frame "!", then a 'debris' fx for the
+//   40 frames it falls: x, y the mark, h its height, w 40; and 12 more of splash with h 0; plus a 'mark' fx w 40 h 20 where it lands) for power 0.8
+//   inside 20 px. A broken orb pulls him down for 300 frames (pose 'stun', x1.5, reachable). Burn (25%, phase 3): on the floor, a 'blaze' fx over him,
+//   the whip every 80 frames, the clock at half the interval. An orb is rooted, harmless and hit by anyone; at 0 HP it breaks (pose 'severed', `orb`
+//   sfx, no kill, can't be hit) and regrows whole after 1200 frames. No knockback, stagger, stun, confusion or trap on either. At 0 HP he dies and his
+//   orbs with him in one pass (one groupCleared `boss`), and every curse the orbs were marked for is lifted. The attic's clock can't be broken while
+//   he lives. The bot is bot_vecna.ts.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 
-export { setShakeScale, setReduceFlashing } from './view.ts';
+export { setShakeScale, setReduceFlashing, CALM_FLASH } from './view.ts';
 
 export function createSim(opts: SimOptions): Sim {
   return buildSim(opts).sim;

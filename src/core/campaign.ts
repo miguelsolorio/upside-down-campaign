@@ -4,7 +4,7 @@
 import type { HeroId, HeroSnapshot, PartySeed } from './types.ts';
 
 /** Stage ids in play order. The last one ends this build with the feedback note. */
-export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2', '5.3'];
+export const STAGE_ORDER: readonly string[] = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '4.3', '4.4', '5.1', '5.2', '5.3'];
 
 /** Stages the map shows locked, past the end of this build, so the player can see where the road goes. */
 export const STAGES_AHEAD: readonly string[] = [];
@@ -80,6 +80,9 @@ const ROSTER: Record<string, HeroId[]> = {
   '3.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   '4.1': ['hopper'],
   '4.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'eddie'],
+  '4.3': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'eddie'],
+  // Eddie fell on the 4.3 roof: from here on he is in no pool (docs/level-12.md, "The fall").
+  '4.4': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy'],
   // Chapter 5: everyone met but Eddie, who fell in 4.3, with Hopper back (docs/chapter-5.md, "Stages").
   '5.1': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'hopper'],
   '5.2': ['mike', 'dustin', 'lucas', 'will', 'eleven', 'max', 'steve', 'robin', 'nancy', 'hopper'],
@@ -96,6 +99,7 @@ const REQUIRED: Record<string, HeroId[]> = {
   '3.2': ['robin'],
   '3.3': ['eleven'],
   '4.2': ['eddie'],
+  '4.3': ['eddie'],
   '5.1': ['hopper'],
   '5.2': ['will'],
   '5.3': ['eleven', 'will'],
@@ -119,7 +123,10 @@ const ARRIVAL: Record<string, PartySeed[]> = {
   // Hopper plays 4.1 alone and joins at the average of the best four less one (joinLevel); Eddie is locked in 4.2 and catches up to
   // the party he joins (CATCH_UP) (docs/level-10.md, docs/level-11.md).
   '4.1': [{ id: 'hopper', level: 5 }],
-  '4.2': [{ id: 'mike', level: 8, xp: 115 }, { id: 'dustin', level: 7, xp: 178 }, { id: 'robin', level: 5, xp: 212 }, { id: 'eddie', level: 5 }],
+  '4.2': [{ id: 'mike', level: 8, xp: 150 }, { id: 'dustin', level: 7, xp: 224 }, { id: 'robin', level: 5, xp: 230 }, { id: 'eddie', level: 5 }],
+  // 4.3 from the run through a stub 4.3; 4.4 from the run through the built one, which pays 245 XP at xpMult 1.8 (docs/level-12.md, docs/level-13.md).
+  '4.3': [{ id: 'mike', level: 8, xp: 500 }, { id: 'dustin', level: 7, xp: 473 }, { id: 'robin', level: 6, xp: 189 }, { id: 'eddie', level: 5, xp: 256 }],
+  '4.4': [{ id: 'mike', level: 9, xp: 260 }, { id: 'dustin', level: 8, xp: 463 }, { id: 'robin', level: 7, xp: 138 }, { id: 'eleven', level: 5, xp: 188 }],
   // Chapter 5 placeholders until the stages pay their XP and 4.3 and 4.4 are in (docs/chapter-5.md, "The pace"): the lead walks into 5.1
   // at Lv 10. Hopper is locked in 5.1 and Will in 5.2, and each catches up to the party he joins (CATCH_UP), so their levels here are the
   // party's average less one.

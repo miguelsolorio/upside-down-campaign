@@ -111,6 +111,12 @@ The level pauses on its own when you're pulled away from it, so nothing hits a p
 
 The game goes silent whenever the page isn't focused: another window, another tab, or the chat next to the pane. It comes back when you click the game. The `M` mute sits on top of that and survives it.
 
+## Flashing, shake and reading the screen
+
+Three rows in the options (the title's OPTIONS and the pause menu) soften the show. SCANLINES turns the CRT lines off. SHAKE is OFF, HALF or FULL and scales every screen shake, the boom in the food court included. REDUCE FLASH turns the flashing and strobing down: a hit's white flash over the world is held under a tenth of white, a sprite's hit flash is a dithered tint rather than a white silhouette (the Mind Flayer is hit five times a second), the melee arc and the Mind Flayer's sweep lose their white, Grigori's power box and the Lab's electric panels re-strike under twice a second, the Lab's klaxon holds one steady glow instead of breathing, and the lights, the title, the HUD bulbs and the level-up pulses hold still. With nothing saved yet, a phone or computer set to reduce motion starts the game with REDUCE FLASH on and SHAKE off, and whatever is saved after that wins.
+
+Text is held to one rule: hints and labels that sit a step under the main text are mist (over 4.5:1 on the dark panels), never slate, and anything that floats over the world (damage numbers, +quarters, LEVEL UP, the controls in the corner) has an ink outline so it reads on the Lab's white floors. `docs/perf-a11y.md` has the measurements behind all of this.
+
 ## Puzzles and the Lab
 
 Eleven joins at the shed. Lucas can shoot the lantern across the creek to open the gate, and only Eleven can push the log off the trail. In the Lab each of three gates needs a different hero: Dustin burns a sensor, Lucas shoots a relay through the glass, and Eleven pushes a crate. Anyone who crosses the sparking floor to stand right at the sensor can smash it with a basic attack instead.

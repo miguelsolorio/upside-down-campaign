@@ -17,11 +17,15 @@ import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
 import { newSoldier } from '../enemies/soldier.ts';
 import { newGhoul } from '../enemies/ghoul_hit.ts';
+import { HOVER, newBat } from '../enemies/demobat_hit.ts';
+import { newRoof } from './roof.ts';
 import { newHouse } from './house.ts';
 import { newGrigori } from '../enemies/grigori_hit.ts';
 import { newBilly } from '../enemies/billy_hit.ts';
 import { newFlayer, newLeg } from '../enemies/flayer_hit.ts';
 import { linkFlayer } from '../enemies/flayer_legs.ts';
+import { newOrb, newVecna } from './vecna_state.ts';
+import { linkVecna } from '../enemies/vecna_phase.ts';
 
 const TRAIL = 256;
 
@@ -61,9 +65,11 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
   const elite = sp.tier === 'elite';
   const hp = enemyHp(s, sp.type, elite);
   const patrol = (sp.patrol ?? []).map((p) => tileFeet(p.tx, p.ty));
+  // A spawn's own x lies over its def's (SimSpawn.x): Vecna and his orbs read it through xOf.
+  const tune = sp.x ? { ...def.x, ...sp.x } : null;
   return {
     uid, id: sp.id, kind: sp.type, group: sp.group,
-    x: f.x, y: f.y, hx: f.x, hy: f.y, dir: sp.dir ?? 'down', vx: 0, vy: 0, z: 0,
+    x: f.x, y: f.y, hx: f.x, hy: f.y, dir: sp.dir ?? 'down', vx: 0, vy: 0, z: sp.type === 'demobat' ? HOVER : 0,
     hp, hpMax: hp, atk: elite ? def.atk * ELITE.atk : def.atk, def: def.def,
     dormant: sp.dormant === true || sp.type === 'ghoul', dead: false, deadT: 0, aware: false,
     mode: patrol.length > 0 ? 'patrol' : 'idle', modeT: 0, cd: 0, stagger: 0, flash: 0, hurtSeen: false,
@@ -81,6 +87,8 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     leg: sp.type === 'flayerleg' || sp.type === 'leg5' ? newLeg(f.x, f.y) : null, fin: newFin(sp.type),
     ghoul: sp.type === 'ghoul' ? newGhoul(s, sp.mirror ?? '', sp.dormant !== true) : null,
     ch5: newCh5(sp.type, s.enemies.some((o) => o.kind === 'twin'), ENEMY_DEFS.commander.x.whistleFirst as number),
+    bat: sp.type === 'demobat' ? newBat() : null,
+    vecna: sp.type === 'vecna' ? newVecna(tune ?? def.x) : null, orb: sp.type === 'orb' ? newOrb() : null, tune,
   };
 }
 
@@ -143,7 +151,7 @@ export function createState(opts: SimOptions): S {
     wardFlow: { tx: -1, ty: -1, dist: null, nav: null, age: 0 },
     burrows: (opts.burrows ?? []).map((b) => ({ ...b })), defense: opts.defense ? newDefense(opts.defense) : null,
     finale: opts.finale ? newFinale(opts.finale) : null, rtSeq: 0,
-    pools: [], poolCd: 0, house: newHouse(opts.walkman === true), cleared: new Set(), god: opts.god === true, boxes: false,
+    pools: [], poolCd: 0, house: newHouse(opts.walkman === true), roof: newRoof(), flocks: new Map(), gone: [], cleared: new Set(), god: opts.god === true, boxes: false,
   };
   for (const sp of opts.spawns) {
     if (sp.kind !== 'prop' && skip.has(sp.id)) continue;
@@ -176,7 +184,8 @@ export function createState(opts: SimOptions): S {
       });
     }
   }
-  // The Mind Flayer's legs find their body, and their tips lie at rest.
+  // The Mind Flayer's legs find their body, and their tips lie at rest. Vecna finds his orbs.
   linkFlayer(s);
+  linkVecna(s);
   return s;
 }

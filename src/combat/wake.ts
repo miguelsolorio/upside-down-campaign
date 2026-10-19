@@ -4,8 +4,9 @@ import { alertEnemy } from './damage.ts';
 import { dust } from './fx.ts';
 import { wakeFlayed } from '../enemies/flayed.ts';
 import { wakeFlayer } from '../enemies/flayer.ts';
+import { wakeVecna } from '../enemies/vecna_phase.ts';
 
-/** Wakes every dormant enemy of `group`, already hunting. A Creel ghoul only starts to watch for a hero; a Flayed rises, the Mind Flayer comes in. */
+/** Wakes every dormant enemy of `group`, already hunting. A Creel ghoul only starts to watch for a hero; a Flayed rises, the Mind Flayer comes in, Vecna steps up. */
 export function wakeGroup(s: S, group: string): void {
   for (const e of s.enemies) {
     if (!e.dormant || e.dead || e.group !== group) continue;
@@ -17,5 +18,6 @@ export function wakeGroup(s: S, group: string): void {
     // A Flayed comes up out of its puddle before it hunts.
     wakeFlayed(e);
     wakeFlayer(s, e);
+    wakeVecna(s, e);
   }
 }

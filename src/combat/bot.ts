@@ -1,20 +1,20 @@
-// ?bot=1 and headless tests. Owner: Sim agent.
-// Plays the stage by itself: A* on the grid toward the next waypoint, fight whatever is close, step aside from
-// inbound darts, swap when the active hero is low. Gates are skipped: the bot calls sim.openProp itself when it
+// ?bot=1 and headless tests. Owner: Sim agent. Plays the stage by itself: A* on the grid toward the next waypoint, fight whatever is
+// close, step aside from inbound darts, swap when the active hero is low. Gates are skipped: the bot calls sim.openProp itself when it
 // reaches a waypoint flagged `open`, and sim.spawnGroup at one flagged `wake`. No randomness: same sim, same bot.
-// Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's
-// Push break them, hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the
-// charge line and the marks on the floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a
-// pod's swell unless a demodog is closing in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it
-// while it howls (bot_alpha.ts). In a defense it stays by the ward, fights what is nearest her, and casts Babysit with Steve when two
-// are on her (bot_ward.ts). When to cast each hero's Special, the Lv 6 holds and Hopper's wind-up are in bot_talents.ts. Rifle
+// Guards: it circles to the blind side instead of hacking at the shield, burns them with Dustin's spray, lets Eleven's Push break them,
+// hits them while they recover, and steps out of the Warden's slam. Against the Demogorgon it leaves the charge line and the marks on the
+// floor, and swaps to Eleven for the finisher (bot_boss.ts). It backs away from a vine's lash and a pod's swell unless a demodog is closing
+// in (bot_threat.ts). Against the Alpha it steps off the lunge line and the marks and hits it while it howls (bot_alpha.ts). In a defense it
+// stays by the ward, fights what is nearest her, and casts Babysit with Steve when two are on her (bot_ward.ts). When to cast each hero's Special, the Lv 6 holds and Hopper's wind-up are in bot_talents.ts. Rifle
 // bullets are dodged like darts, a swap frees a held hero (bot_hold.ts), and Grigori is fought by getting round him while he
 // recovers, with the power box when there is a shooter (bot_grigori.ts). Billy's charge and grab are stepped out of, his wall stun is hit
 // and Eleven is walked up to him once he kneels (bot_billy.ts). Against the Mind Flayer it steps off a warned line, band or pool and hits the
 // nearest leg, then the head when it is down (bot_flayer.ts). It steps out of a ghoul's lunge line during the wind-up (bot_ghoul.ts), slams
 // the pinned pit Demogorgon with Hopper (bot_boss.ts), and under a curse swaps to Max if her Walkman is ready, else to Eddie, and attacks the
-// clock (bot_curse.ts), careless or not. In the final fight it steps out of Vecna's blast and his orbs (bot_finale.ts, bot_threat.ts), hits the Mind
-// Flayer's legs and then its open chest (bot_flayer.ts), and in the channel guards the channeler with a foe on them like the Gate's ward (bot_ward.ts).
+// clock (bot_curse.ts), careless or not. Against a flock of demobats a hero who shoots leads, a bat out of a swing's reach is ignored, and a dive's
+// line is left during the wind-up (bot_demobat.ts). Against Vecna it leaves a whip's line, breaks the marked orb under a curse, shoots him in Float
+// or breaks an orb to pull him down, and otherwise hits him (bot_vecna.ts). In the final fight it steps out of Vecna's blast and orbs (bot_finale.ts,
+// bot_threat.ts), hits the Mind Flayer's legs and its open chest (bot_flayer.ts), and guards the channeler like the Gate's ward (bot_ward.ts).
 // It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
@@ -26,6 +26,7 @@ import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
 import { createBossSense } from './bot_boss.ts';
 import { createGhoulSense } from './bot_ghoul.ts';
+import { batFoe, createBatSense, isShooter } from './bot_demobat.ts';
 import { createCurseSense } from './bot_curse.ts';
 import { createDashCross } from './bot_dash.ts';
 import { createAlphaSense, howlFirst } from './bot_alpha.ts';
@@ -35,6 +36,7 @@ import { createBillySense } from './bot_billy.ts';
 import { createFlayerSense } from './bot_flayer.ts';
 import { createFinaleSense } from './bot_finale.ts';
 import { createVoidSense } from './bot_void.ts';
+import { createVecnaSense } from './bot_vecna.ts';
 import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
@@ -122,11 +124,11 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     swapDelta: 0, swapTo: -1, burstPressed: false,
   });
 
-  function clearLine(ax: number, ay: number, bx: number, by: number): boolean {
+  function clearLine(ax: number, ay: number, bx: number, by: number, lift = 4): boolean {
     const n = Math.ceil(dist(ax, ay, bx, by) / 4);
     for (let i = 1; i < n; i++) {
       const t = i / n;
-      const tx = Math.floor((ax + (bx - ax) * t) / TILE), ty = Math.floor((ay + (by - ay) * t - 4) / TILE);
+      const tx = Math.floor((ax + (bx - ax) * t) / TILE), ty = Math.floor((ay + (by - ay) * t - lift) / TILE);
       if (tx < 0 || ty < 0 || tx >= nav.w || ty >= nav.h || nav.blocked[ty * nav.w + tx] === 1) return false;
     }
     return true;
@@ -164,13 +166,15 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return [(tx - hx) / d, (ty - hy) / d];
   }
 
-  function foesOf(v: SimView, hx: number, hy: number): Foe[] {
+  function foesOf(v: SimView, hx: number, hy: number, shoots: boolean, reach: number): Foe[] {
     const out: Foe[] = [];
     for (const a of v.actors) {
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
       // The Mind Flayer's body and legs are the plan's (bot_flayer.ts), not the nearest foe.
       // A twin Demogorgon in the void (pose fall or climb) is out of reach, and so is the Mind Flayer's body and legs.
-      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.pose === 'fall' || a.pose === 'climb' || a.id === 'flayer' || a.id === 'flayerleg' || a.id === 'flayer5' || a.id === 'leg5') continue;
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.pose === 'fall' || a.pose === 'climb' || a.id === 'flayer' || a.id === 'flayerleg' || a.id === 'flayer5' || a.id === 'leg5' || a.id === 'vecna' || a.id === 'orb') continue;
+      // A bat circling out of reach is not a target for a swing (bot_demobat.ts).
+      if (a.id === 'demobat' && !batFoe(a, dist(hx, hy, a.x, a.y), shoots, reach)) continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -262,6 +266,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   const edge = createVoidSense(opts.grid, walkable);
   const vecna = createFinaleSense({ walkable });
   const ghoul = createGhoulSense();
+  const bats = createBatSense();
   const curse = createCurseSense();
   const cross = createDashCross();
   const alpha = createAlphaSense();
@@ -270,6 +275,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   const bil = createBillySense({ walkable, walkTo });
   // The Mind Flayer's plan reads the map as built, not the tiles the stuck check has learned to avoid.
   const fl = createFlayerSense({ walkable: (x, y) => walkable(x, y, base), walkTo, careless });
+  const vc = createVecnaSense({ walkable, walkTo, clearLine, careless });
   const caster = createCaster();
 
   /** A waypoint that sits inside a solid tile is moved to the nearest walkable one. */
@@ -305,6 +311,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       if (rects.length > 0) { base = buildNav(opts.grid, rects); nav = base; }
     }
     const me = v.hud.party.find((p) => p.active);
+    const alone = v.hud.party.length === 1;
     if (!me || me.ko) return out;
     const { x: hx, y: hy } = sim.heroPos();
     // Eddie's solo plants him: the bot presses nothing until it is over, unless he is hurt enough to swap out (below).
@@ -327,11 +334,18 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's. A twin winding up beside the
     // void comes first (bot_void.ts): the lane has no room there.
     const bossStep = boss.dodge(v, hx, hy);
-    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? vecna.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
+    // A ghoul's lunge is only worth leaving when the hero is low: stepping off every one gives the next ghoul in line a free swing, and
+    // the careful bot took more than the careless one that way (docs/level-11.md, "Result").
+    const low = me ? me.hp < me.hpMax * 0.5 : false;
+    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? vecna.dodge(v, hx, hy)
+      ?? bats.dodge(v, hx, hy, walkable) ?? vc.dodge(v, hx, hy) ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
-    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
-    const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
+    const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style) ?? vc.plan(v, hx, hy, style);
+    // A flock of demobats in sight: a hero who shoots leads, and the one he relieved comes back when it is gone.
+    const lead = fin ? -1 : bats.lead(v, me, hx, hy);
+    if (lead >= 0 && frame - lastSwap > 40) { out.swapTo = lead; lastSwap = frame; }
+    const foes = foesOf(v, hx, hy, isShooter(me.id), style.reach).filter((f) => reachable(hx, hy, f));
     // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
     const ward = guardWard.read(v);
     if (ward) foes.sort((p, q) => dist(p.x, p.y, ward.x, ward.y) - dist(q.x, q.y, ward.x, ward.y));
@@ -408,7 +422,10 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
           ? orbitPoint(near, hx, hy, Math.max(style.hold, near.kind === 'warden' ? 46 : 34)) : null;
         if (orbit) {
           [mx, my] = walkTo(hx, hy, orbit[0], orbit[1]);
-        } else if (near.d > (spray ? 40 : hold) + 6) {
+        } else if (near.d > (spray ? 40 : hold) + 6 || (alone && !clearLine(hx, hy, near.x, near.y, 0))) {
+          // A hero alone (Hopper in 4.1) close to a foe but round a corner, by the line a hit needs (feet to feet, combat/space.ts los),
+          // walks to it rather than swing at the wall between. With a party a swap or a ranged hero breaks that stand-off, and the stages
+          // built before were measured without it.
           [mx, my] = walkTo(hx, hy, near.x, near.y);
         } else if (!aligned) {
           // Strafe along the perpendicular to line up one of the eight shot directions.

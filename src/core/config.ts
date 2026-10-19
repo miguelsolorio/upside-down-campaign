@@ -58,4 +58,5 @@ export const CHAR_NAMES: Record<CharId, string> = {
   erica: 'Erica',
   billy: 'Billy',
   eddie: 'Eddie',
+  vecna: 'Vecna',
 };

@@ -15,6 +15,7 @@ import { startAhoy } from '../heroes/ahoy.ts';
 import { isCursed } from './house.ts';
 import { isChanneling } from './finale_state.ts';
 import { clearCurses } from './curse.ts';
+import { roofFell } from './roof.ts';
 import { hiveLink } from '../heroes/hive.ts';
 import { extraLife } from '../heroes/extralife.ts';
 import { swearOath } from '../heroes/oath.ts';
@@ -72,7 +73,7 @@ function shockwave(s: S, h: Hero): void {
 export function trySwap(s: S, idx: number, forced = false): boolean {
   const to = s.heroes[idx];
   if (!to || idx === s.active || to.ko || isCursed(s, to) || isChanneling(s, to)) return false;
-  if (!forced && s.swapLock > 0) return false;
+  if (!forced && (s.swapLock > 0 || s.roof.on)) return false;
   // A rolling Max lands first: tagging out mid-roll could leave the next hero standing over a gap.
   if (!forced && activeHero(s).dash) return false;
   const charged = forced || s.swapCd <= 0;
@@ -135,6 +136,8 @@ export function reapHeroes(s: S): void {
     // Mike's Oath (Lv 9): the first ally down is raised a beat later, if he is still standing.
     swearOath(s, h);
     if (i !== s.active) continue;
+    // Eddie down while the 4.3 song plays loses the roof, whoever else is standing.
+    if (roofFell(s, h)) continue;
     const next = nextLiving(s, i, 1);
     if (next >= 0) {
       trySwap(s, next, true);
@@ -225,6 +228,34 @@ export function recruitHero(s: S, id: HeroId): void {
   s.heroes.push(h);
 }
 
+/**
+ * Sim.dismissHero: a hero leaves the party for good, mid-stage (Eddie's fall at the end of 4.3). They are gone from the field, the view and the
+ * HUD, never swapped to and not counted when the party goes down, but `s.gone` keeps them so party() still reports their level. If they were
+ * the one up the party swaps to the next hero who can fight, and with nobody left to fight the stage is lost. The last hero cannot be dismissed.
+ */
+export function dismissHero(s: S, id: HeroId): void {
+  const i = s.heroes.findIndex((h) => h.id === id);
+  const h = s.heroes[i];
+  if (!h || s.heroes.length < 2) return;
+  if (id === 'eddie') s.roof.on = false;
+  if (s.t6.stand?.hero === h) s.t6.stand = null;
+  if (i === s.active) {
+    const next = nextLiving(s, i, 1);
+    if (next >= 0) trySwap(s, next, true);
+    else if (!s.over) { s.over = true; s.events.push({ t: 'allDown' }); }
+  }
+  s.heroes.splice(i, 1);
+  if (s.active > i) s.active--;
+  else if (s.active === i) s.active = Math.min(i, s.heroes.length - 1);
+  s.house.curses = s.house.curses.filter((c) => c.hero !== h);
+  s.house.down.delete(h);
+  if (s.hold?.hero === h) s.hold = null;
+  s.bodies = s.bodies.filter((b) => b.id !== id);
+  s.buf.swapT = 0;
+  s.gone.push(h);
+  dust(s, h.x, h.y, 4);
+}
+
 /** Heals HP and MP by a fraction of max. KO'd heroes get back up with at least 1 HP. */
 export function healParty(s: S, frac: number): void {
   if (s.over) {
@@ -232,6 +263,7 @@ export function healParty(s: S, frac: number): void {
     s.hitstop = 0; s.projs = []; s.globs = []; s.zones = []; s.timers = []; s.seq = null; s.hold = null;
     resetTalentState(s.t6);
     clearCurses(s);
+    s.roof.on = false;
   }
   for (const h of s.heroes) {
     if (h.ko) { h.ko = false; h.hp = 0; h.anim = 'idle'; h.animT = 0; }

@@ -43,9 +43,9 @@ export function knot(phase: number, cx: number, cy: number): Px {
   return px;
 }
 
-/** Roots over the floor: a vein from each foot in `from` to `to`, with the pulse running toward `to`, and a few short ones branching off. Room sized. */
-export function roots(phase: number, from: readonly Pt[], to: Pt): Px {
-  const px = new Px(ROOM_W, ROOM_H);
+/** Roots over the floor: a vein from each foot in `from` to `to`, with the pulse running toward `to`, and a few short ones branching off. Room sized, unless the stage asks for another size. */
+export function roots(phase: number, from: readonly Pt[], to: Pt, w = ROOM_W, h = ROOM_H): Px {
+  const px = new Px(w, h);
   from.forEach(([x, y], i) => {
     const s = i % 2 ? -1 : 1;
     const pts: Pt[] = [[x, y], [Math.round(x + (to[0] - x) * 0.35), Math.round(y + (to[1] - y) * 0.1 + 5 * s)], [Math.round(x + (to[0] - x) * 0.7), Math.round(to[1] + 4 * s)], to];

@@ -169,10 +169,11 @@ test('stage 4.1: the roster is worth 200 to 250 XP, in its groups, the yard in t
   assert.ok(inRoom('pit', boss[0]?.tx ?? 0, boss[0]?.ty ?? 0) && boss[0]?.ty === 4, 'the Demogorgon sleeps under the barricade over its tunnel');
   assert.ok(Math.abs((boss[0]?.tx ?? 0) - 30.5) <= 1, 'in front of it');
   const k = (n: string): number => items.filter((i) => i.item === n).length;
-  assert.deepEqual([k('eggo'), k('coke'), k('quarter')], [3, 2, 8]);
+  // Two of the Eggos wait in the pit's corners: alone, Hopper's fight carries its own heals (docs/level-10.md, "Result").
+  assert.deepEqual([k('eggo'), k('coke'), k('quarter')], [5, 2, 8]);
   const cache = items.filter((i) => inRoom('cache', i.tx, i.ty));
   assert.ok(cache.some((i) => i.item === 'eggo') && cache.filter((i) => i.item === 'quarter').length === 2, 'an Eggo and two quarters in the cache, behind crack2');
-  assert.ok(items.every((i) => !inRoom('pit', i.tx, i.ty)), 'nothing to pick up in the arena');
+  assert.deepEqual(items.filter((i) => inRoom('pit', i.tx, i.ty)).map((i) => i.item), ['eggo', 'eggo'], 'an Eggo in each of two corners of the arena');
 });
 
 // ---------------------------------------------------------------- the gates

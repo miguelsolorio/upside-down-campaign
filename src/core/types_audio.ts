@@ -34,6 +34,9 @@ export type SfxId =
   /** whistle: the Commander calling his squad. clang: a hit bouncing off a trooper's shield. shieldBreak: a smash breaking it for good.
    *  fall: a twin Demogorgon dropping into the void (docs/level-14.md, docs/level-15.md). */
   | 'whistle' | 'clang' | 'shieldBreak' | 'fall'
+  /** screech: a demobat's dive. flap: a flock passing. bolt: the storm's thunder (docs/level-12.md). whip: Vecna's vine lash. orb: a
+   *  memory orb breaking. debris: a throw landing. vecna: his call as a phase turns (docs/level-13.md). */
+  | 'screech' | 'flap' | 'bolt' | 'whip' | 'orb' | 'debris' | 'vecna'
   | 'roll' | 'rollLand' | 'natTwenty' | 'levelUp' | 'alert' | 'step';
 
 /** upside: 1.3's halls and 2.2. clock: every boss fight. hawkins: the map screen, 2.1 and 4.2. starcourt: 3.1 to 3.3. sour:

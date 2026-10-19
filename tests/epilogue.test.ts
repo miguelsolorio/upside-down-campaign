@@ -27,8 +27,11 @@ test('chapter three ends on Hopper\'s letter, chapter five on the basement, and 
 test('the epilogue is for the chapter the last stage closes, and plays only with words in its script', () => {
   const last = [...STAGE_ORDER].reverse().find(closesChapter) as string;
   assert.equal(last, '5.3', 'the last chapter end built is the heart: the campaign closes on it');
+  assert.deepEqual(STAGE_ORDER.filter(closesChapter), ['1.3', '2.3', '3.3', '4.4', '5.3']);
   assert.equal(EPILOGUES[chapterOf(last)], 'l16_basement');
-  assert.equal(EPILOGUES[3], 'l9_letter');
+  assert.equal(EPILOGUES[chapterOf('3.3')], 'l9_letter');
+  // Chapter four ends on its results: it has no epilogue of its own (docs/level-13.md).
+  assert.equal(hasEpilogue(4), false);
   // World fills the letter in. Until then the chapter goes straight to its results, as flow.ts expects.
   assert.equal(hasEpilogue(3), (SCRIPTS['l9_letter']?.lines.length ?? 0) > 0);
   assert.equal(hasEpilogue(5), (SCRIPTS['l16_basement']?.lines.length ?? 0) > 0);
@@ -149,7 +152,7 @@ test('every chapter\'s last stage says CHAPTER n CLEAR, and the others say LEVEL
     if (closes) said.push(title);
     else assert.equal(title, nextStage(id) === null ? `END OF LEVEL ${levelNumber(id)}` : `LEVEL ${levelNumber(id)} CLEAR`);
   }
-  assert.deepEqual(said, ['CHAPTER ONE CLEAR', 'CHAPTER TWO CLEAR', 'CHAPTER THREE CLEAR', 'CHAPTER FIVE CLEAR']);
+  assert.deepEqual(said, ['CHAPTER ONE CLEAR', 'CHAPTER TWO CLEAR', 'CHAPTER THREE CLEAR', 'CHAPTER FOUR CLEAR', 'CHAPTER FIVE CLEAR']);
 });
 
 test('the last stage of the whole campaign says CAMPAIGN COMPLETE, and no other stage reads differently for it', () => {

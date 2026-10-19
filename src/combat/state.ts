@@ -6,12 +6,19 @@ import type {
 import type { Rng, Stats } from '../progression/xp.ts';
 import type { TalentState } from './talent_state.ts';
 import type { GhoulState, HouseState } from './house.ts';
+import type { FlayerState, LegState, Pool } from './flayer_state.ts';
+import type { OrbState, VecnaState } from './vecna_state.ts';
+import type { BatState } from '../enemies/demobat_hit.ts';
+import type { RoofState } from './roof.ts';
 import type { Ch5State } from '../enemies/ch5_state.ts';
 import type { FinState } from '../enemies/fin_state.ts';
 import type { Finale } from './finale_state.ts';
 import type { BondMods } from '../heroes/bonds.ts';
 
 export type { Rng, Stats };
+export type { FlayerMove, FlayerState, LegMove, LegState, Pool, SweepBand } from './flayer_state.ts';
+export type { Lash, OrbState, Rock, VecnaMove, VecnaState } from './vecna_state.ts';
+
 export interface Pos { x: number; y: number }
 
 /** Burn, stun, slow and confuse are live (confuse is on enemies only, combat/confuse.ts). Curse is a type only. */
@@ -167,37 +174,6 @@ export type BillyMove = 'walk' | 'wind' | 'run' | 'stun' | 'grab' | 'hold' | 'ja
  */
 export interface BillyState { move: BillyMove; t: number; chargeCd: number; grabCd: number; raged: boolean; pokeCd: number }
 
-/**
- * What the Mind Flayer's body is doing (enemies/flayer.ts). rise: coming in through the skylight, and nothing can hit it or its legs. up:
- * fighting, shielded while any leg stands. down: every leg severed, its head on the floor and open to hits.
- */
-export type FlayerMove = 'rise' | 'up' | 'down';
-
-/**
- * The Mind Flayer body's own state. Every other enemy has `flayer: null`. `t` is the frames left in a rise or a down. `legs` are its legs in id
- * order. The three counters are frames until a leg is sent, until a leg sweeps (phase two) and until the next Flayed wave.
- */
-export interface FlayerState { move: FlayerMove; t: number; legs: Enemy[]; slamCd: number; sweepCd: number; waveCd: number; phase2: boolean; waves: number }
-
-/**
- * What a Mind Flayer leg is doing (enemies/flayer_legs.ts). idle: waiting for its turn, tip on the floor. warn: the line or band is shown.
- * slam: striking. rest: tip on the floor after it. severed: cut at 0 HP, and not dead.
- */
-export type LegMove = 'idle' | 'warn' | 'slam' | 'rest' | 'severed';
-
-/** A sweep's band: a row 24 px tall from x0 to x1 at y, and the 'sweep' fx that draws it. */
-export interface SweepBand { y: number; x0: number; x1: number; fx: FxView }
-
-/**
- * A leg's own state. Every other enemy has `leg: null`. The enemy's x, y is the leg's tip, where it is hit; `rx, ry` is the root it grows
- * from. `body` is the Mind Flayer it belongs to (linked once the spawns are built), `sweep` the band it is warning when it sweeps,
- * `struck` that this slam has already hurt a hero, `at` the frame its warning started (its own clock begins the frame after).
- */
-export interface LegState { body: Enemy | null; move: LegMove; t: number; rx: number; ry: number; sweep: SweepBand | null; struck: boolean; at: number }
-
-/** One of the Mind Flayer's goo pools (combat/pools.ts): where a leg's tip landed, and the frames since. */
-export interface Pool { x: number; y: number; age: number }
-
 export interface Enemy {
   uid: number;
   id: string;
@@ -262,8 +238,8 @@ export interface Enemy {
   taunt: number;
   /** The Demodog Alpha only. */
   alpha: AlphaState | null;
-  /** A run-time spawn: a howl's pup or a defense wave's enemy (combat/spawns.ts). Worth 1 XP, drops nothing. */
-  rt: 'howl' | 'wave' | 'squad' | null;
+  /** A run-time spawn: a howl's pup, a defense wave's enemy, a bat of the 4.3 roof or a trooper of the Commander's squad (combat/spawns.ts). Worth 1 XP (the roof's 0), drops nothing. */
+  rt: 'howl' | 'wave' | 'roof' | 'squad' | null;
   /** The target its current attack is locked on: Eleven in a defense, instead of the hero. Chosen again after each attack. */
   onWard: boolean;
   /** The frame a hero last hit it. The defense's targeting reads it. */
@@ -276,11 +252,17 @@ export interface Enemy {
   /** The Mind Flayer's body, or one of its legs, only (docs/level-9.md). */
   flayer: FlayerState | null;
   leg: LegState | null;
-  /** A Creel ghoul only (docs/level-11.md). */
+  /** A Creel ghoul only (docs/level-11.md), and a demobat only (docs/level-12.md). */
   ghoul: GhoulState | null;
   /** A trooper, the Commander or a twin only (enemies/ch5_state.ts), and the final boss's Vecna and Mind Flayer (enemies/fin_state.ts). */
   ch5: Ch5State | null;
   fin: FinState | null;
+  bat: BatState | null;
+  /** Vecna's body, or one of his memory orbs, only (docs/level-13.md). */
+  vecna: VecnaState | null;
+  orb: OrbState | null;
+  /** The numbers this spawn runs on when it overrides its def's x (SimSpawn.x): the def's with the spawn's laid over. Null means the def's (xOf in enemies/defs.ts). */
+  tune: Record<string, number> | null;
 }
 
 /** A Flayed, Grigori or Billy holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */
@@ -473,6 +455,10 @@ export interface S {
   poolCd: number;
   /** The haunted mirrors, the clock curse and Max's Walkman (combat/house.ts). */
   house: HouseState;
+  /** The 4.3 roof's song (combat/roof.ts), the frame each demobat flock may next send a bat down (by group), and the heroes dismissed for good. */
+  roof: RoofState;
+  flocks: Map<string, number>;
+  gone: Hero[];
   cleared: Set<string>;
   god: boolean;
   boxes: boolean;

@@ -81,7 +81,9 @@ const BEATS: Beat[] = [
   { id: 'crack_done', when: { event: 'propCleared', prop: 'crack1' }, steps: [say('l10_crack_done')] },
   { id: 'block', when: { rect: rect(11, 11, 4, 3) }, steps: [say('l10_block'), { t: 'wake', group: 'guardroom' }] },
   { id: 'cell_hint', when: { rect: rect(3, 11, 4, 2) }, steps: [say('l10_cell_hint')] },
-  { id: 'shaft', when: { rect: rect(19, 8, 2, 6) }, steps: [say('l10_shaft')] },
+  // The care package's last string is already hung at the shaft's foot: the beat lights it, the save point and the heal before the pit,
+  // the way Hopper's lights waited at the Gate in 2.3. Alone, Hopper has nobody to swap to, so the pit starts fair.
+  { id: 'shaft', when: { rect: rect(19, 8, 2, 6) }, steps: [say('l10_shaft'), { t: 'light', prop: 'lights_shaft' }] },
   {
     id: 'pit', when: { rect: rect(27, 8, 3, 6), needs: 'shaft' },
     steps: [{ t: 'close', prop: 'door1' }, { t: 'music', track: 'clock' }, say('l10_pit'), { t: 'wake', group: 'boss' }],
@@ -135,11 +137,12 @@ export const STAGE_41: StageData = {
   ],
   // This stage has no scare. The beats never ask for one.
   scare: { from: { x: px(2), y: fy(2) }, to: { x: px(2), y: fy(2) }, frames: 1 },
-  // A first pass for the lead to tune (docs/level-10.md, "Targets"). One hero on one bar is a cliff: node scripts/measure-stage.ts 4.1 chief 100
-  // clears 100 at 0.4, 82 to 88 at 0.5, 29 at 0.6 and none from 0.7 up, a wipe each time it fails. The campaign run (tests/pace.test.ts, six
-  // tries with the kills kept) clears every seed up to 0.6, loses two in ten at 0.65 and one in ten at 1. xpMult 1.8 pays 252 before
-  // the pit, 25 short of Lv 6 (277 for Lv 5 to 6): 2.2 gets Lv 6 and the Wind-up in the pit for a run that kills every guard.
-  enemyMult: 0.5,
-  xpMult: 1.8,
+  // Tuned by the lead on HARD (docs/level-10.md, "Result"), with the guards and the pit Demogorgon rebased for Hopper alone, the shaft's
+  // string lit by its beat and two Eggos in the pit: node scripts/measure-stage.ts 4.1 chief 20 clears 16 (84 of 100, none stuck) for 146
+  // damage, 0.2 wipes, 21% lowest HP and 123 s, the pit a third of it; careless 19, kid 20, NORMAL 20. Upside clears none: one hero on one
+  // bar, a KO is the end, and the pit's length and its hits both grow with the factor.
+  enemyMult: 1.4,
+  // Pays Hopper, in at Lv 5 with no XP, to Lv 6 and the Wind-up before the pit (308 XP from the guards, 277 needed).
+  xpMult: 2.2,
   waypoints: WAYPOINTS,
 };

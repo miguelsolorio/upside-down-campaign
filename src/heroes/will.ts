@@ -43,7 +43,7 @@ function burst(s: S, h: Hero, x: number, y: number): void {
   shake(s, nat ? 3 : 1.5);
   const reached = s.enemies.filter((e): e is Enemy => !e.dead && !e.dormant && e.hp > 0 && dist(x, y, e.x, e.y - BODY_Y) <= r + 4);
   for (const e of reached) {
-    hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: Math.atan2(e.y - BODY_Y - y, e.x - x), noCrit: true });
+    hitEnemy(s, h, e, { power: d.power, kb: d.kb, angle: Math.atan2(e.y - BODY_Y - y, e.x - x), noCrit: true, air: true });
   }
   if (nat) {
     floater(s, 'NAT 20', x, y - 12, 'yellow', true, 52);

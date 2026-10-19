@@ -1,6 +1,6 @@
 // Props (log, gate, target, lights, bike, sign, van, floodlight, crate, door, console, camera, tank, rack, generator, firebox,
-// vines, arcade, hidden, gap, crack, rift, shutter, cipher, powerbox, breaker, and the army's truck, tent, sandbags, barricade, barrier, tower,
-// booth and curfew sign, props_army.ts) and pickup items.
+// vines, arcade, hidden, gap, crack, rift, shutter, cipher, powerbox, breaker, mirror, clock, and the army's truck, tent, sandbags, barricade, barrier,
+// tower, booth and curfew sign, props_army.ts) and pickup items.
 // Static art is cached per kind, size and state; blinking bulbs, glare and sparkles are drawn live.
 //
 // State meaning: log closed = in the way, open = cleared. gate open = swung wide. target closed or off = unhit,
@@ -9,7 +9,8 @@
 // red-lit, lit or off = shot and dead, any other state = calm. tank, rack and generator ignore their state. gap ignores its state. crack open = rubble.
 // rift ignores its state and shows PropView.k (0 wide open, 1 a seam). vines open = burned, or low roots for a seal (props_gate.ts).
 // shutter open = rolled up, over its first 18 frames. cipher shows PropView.k (the letters turn to English), open = slid into the wall. powerbox lit =
-// arcing, breaker lit = thrown and sparking (props_l78.ts). A crate 32 wide or more is the mall's toppled kiosk.
+// arcing, breaker lit = thrown and sparking (props_l78.ts). A crate 32 wide or more is the mall's toppled kiosk. mirror shows PropView.k, the share
+// of its ghouls still in the glass, and open = shattered; clock open = smashed (props_ch4.ts).
 import type { ItemView, PropView } from '../core/types.ts';
 import { settings } from '../core/settings.ts';
 import { createRng } from '../core/rng.ts';
@@ -28,6 +29,7 @@ import { drawL78Prop, kioskArt } from './props_l78.ts';
 import { drawArmyProp } from './props_army.ts';
 import { drawAbyssProp } from './props_abyss.ts';
 import { inAbyss } from './looks.ts';
+import { drawCh4Prop } from './props_ch4.ts';
 
 const cache = new Map<string, HTMLCanvasElement>();
 function cached(key: string, build: () => HTMLCanvasElement): HTMLCanvasElement {
@@ -258,9 +260,7 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
     case 'truck': case 'tent': case 'sandbags': case 'barricade': case 'barrier': case 'tower': case 'booth': case 'curfew': drawArmyProp(ctx, v, art, calm()); return;
     // A crack 40 px or more on its long side is the checkpoint's boom gate (props_army.ts).
     case 'gap': case 'crack': case 'rift': if (!drawArmyProp(ctx, v, art, calm())) drawGateProp(ctx, v, art, calm()); return;
-    // Stand-ins until Art draws the haunted mirror and the grandfather clock (docs/level-11.md): a frame and a fill.
-    case 'mirror': rect(ctx, x, y, w, h, 'ink'); if (v.state !== 'open') rect(ctx, x + 2, y + 2, w - 4, h - 4, 'mist'); return;
-    case 'clock': rect(ctx, x, y, w, h, 'soil0'); rect(ctx, x + 3, y + 3, w - 6, 8, v.state === 'open' ? 'grey1' : 'bone'); return;
+    case 'mirror': case 'clock': drawCh4Prop(ctx, v, art); return;
     case 'lights':
       ctx.drawImage(art(`lights${w}x${h}`, () => lightsArt(w, h)), x, y);
       drawLights(ctx, v, x, y);

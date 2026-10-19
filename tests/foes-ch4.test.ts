@@ -33,7 +33,7 @@ function guardRig(type: EnemyKind, gap: number, over: Parameters<typeof makeWhit
 
 test('kguard: the soldier\'s brain with its own numbers, and the soldier is as it was', () => {
   const k = ENEMY_DEFS.kguard, so = ENEMY_DEFS.soldier;
-  assert.deepEqual([k.hp, k.atk, k.def, k.speed, k.xp], [80, 36, 5, 0.7, 12]);
+  assert.deepEqual([k.hp, k.atk, k.def, k.speed, k.xp], [40, 20, 5, 0.7, 12]);
   assert.deepEqual([so.hp, so.atk, so.def, so.speed, so.xp], [90, 38, 5, 0.8, 12], 'chapter 3 is untouched');
   assert.equal(foe(guardRig('kguard', 100).s).soldier?.move, 'walk', 'it runs the soldier\'s state');
   // Walking in from the edge of its sight, each at its own pace: seven frames at 0.7 px and at 0.8, before it is inside its band.
@@ -61,20 +61,20 @@ test('kguard: a 30 frame "!", three rounds six frames apart with his ATK, and th
   }
   assert.equal(longest, 30);
   assert.deepEqual(shots.slice(1).map((f, i) => f - (shots[i] as number)), [6, 6]);
-  assert.deepEqual([...atks], [36], 'the rounds carry the guard\'s ATK, not the soldier\'s 38');
+  assert.deepEqual([...atks], [ENEMY_DEFS.kguard.atk], 'the rounds carry the guard\'s ATK, not the soldier\'s');
   const club = guardRig('kguard', 14, {});
   steady(club.s);
   const dmg: number[] = [];
   for (let f = 0; f < 60; f++) for (const h of hurt(club.sim.step(inp()))) dmg.push(h.dmg);
   assert.equal(dmg.length, 1, 'one swing of the butt');
-  assert.equal(dmg[0], rollDamage(0.8, 36, hero(club.s).st.def, 1), 'power 0.8 of his ATK');
+  assert.equal(dmg[0], rollDamage(0.8, ENEMY_DEFS.kguard.atk, hero(club.s).st.def, 1), 'power 0.8 of his ATK');
 });
 
 // ------------------------------------------------------------------ the camp guard
 
 test('kbaton: blocks from the front like a riot guard, takes the full hit from behind, and the slam breaks the block', () => {
   const x = ENEMY_DEFS.kbaton.x;
-  assert.deepEqual([ENEMY_DEFS.kbaton.hp, ENEMY_DEFS.kbaton.atk, ENEMY_DEFS.kbaton.def, ENEMY_DEFS.kbaton.xp], [110, 34, 7, 16]);
+  assert.deepEqual([ENEMY_DEFS.kbaton.hp, ENEMY_DEFS.kbaton.atk, ENEMY_DEFS.kbaton.def, ENEMY_DEFS.kbaton.xp], [55, 18, 7, 16]);
   // He faces west, toward Mike at his west: a front hit.
   const front = guardRig('kbaton', 20, {}, { dir: 'left' });
   steady(front.s);
@@ -121,7 +121,7 @@ test('kbaton: winds up 30 frames and bashes for power 0.9 of his ATK, and turns 
     if (actor(r.sim, 'kbaton')?.alert) alerts++; else if (alerts) { longest = Math.max(longest, alerts); alerts = 0; }
   }
   assert.equal(longest, 30);
-  assert.equal(dmg[0], Math.max(1, Math.round(0.9 * 34 - hero(r.s).st.def * 0.5)));
+  assert.equal(dmg[0], Math.max(1, Math.round(0.9 * ENEMY_DEFS.kbaton.atk - hero(r.s).st.def * 0.5)));
   const turn = guardRig('kbaton', 20, {}, { dir: 'right' });
   turn.e.cd = 1e9;
   run(turn.sim, 11);
@@ -147,19 +147,19 @@ function pitRig(party: { id: HeroId; level?: number }[] = [{ id: 'hopper', level
 const quiet = (r: ReturnType<typeof pitRig>): void => { r.d.chargeCd = r.d.spitCd = r.d.leapCd = 99999; r.boss.cd = 99999; };
 const pins = (ev: SimEvent[]) => ofType(ev, 'pinned');
 
-test('pitdemo: boss bar DEMOGORGON while it is awake, 600 HP of its own, and the 1.3 one\'s moves', () => {
+test('pitdemo: boss bar DEMOGORGON while it is awake, HP of its own, and the 1.3 one\'s moves', () => {
   const r = pitRig();
   assert.equal(r.sim.view().hud.boss, null, 'nothing while it sleeps');
   r.sim.spawnGroup('boss');
-  assert.deepEqual(r.sim.view().hud.boss, { name: 'DEMOGORGON', hp: 600, hpMax: 600 });
+  assert.deepEqual(r.sim.view().hud.boss, { name: 'DEMOGORGON', hp: ENEMY_DEFS.pitdemo.hp, hpMax: ENEMY_DEFS.pitdemo.hp });
   assert.deepEqual(ENEMY_DEFS.pitdemo.x, ENEMY_DEFS.demogorgon.x, 'the same x as the 1.3 one');
   const t = [ENEMY_DEFS.pitdemo.hp, ENEMY_DEFS.pitdemo.atk, ENEMY_DEFS.pitdemo.def, ENEMY_DEFS.pitdemo.speed, ENEMY_DEFS.pitdemo.xp];
-  assert.deepEqual(t, [600, 34, 6, 0.8, 60]);
+  assert.deepEqual(t, [1100, 16, 6, 0.8, 60]);
   assert.equal(r.boss.demo?.move, 'walk');
 });
 
 test('pitdemo: the swipe is its own ATK, and the 1.3 Demogorgon\'s is still 24', () => {
-  for (const [type, atk] of [['pitdemo', 34], ['demogorgon', 24]] as const) {
+  for (const [type, atk] of [['pitdemo', ENEMY_DEFS.pitdemo.atk], ['demogorgon', 24]] as const) {
     const r = makeWhite({ party: [{ id: 'hopper', level: 5 }], grid: arena(18, 12), start: { x: tc(3), y: tf(6) }, spawns: [unit('b', type, 4, 6, { group: 'boss' })], seed: 4 });
     steady(r.s);
     hero(r.s).st.hp = hero(r.s).hp = 900;
@@ -220,7 +220,7 @@ test('pitdemo: HP stops at 1 until the third stun, then the hit that would finis
   assert.deepEqual(pins(ev), [{ t: 'pinned', spawnId: 'pitdemo' }]);
   assert.equal(actor(r.sim, 'pitdemo')?.pose, 'pinned');
   assert.equal(r.boss.hp, 1);
-  assert.deepEqual(r.sim.view().hud.boss, { name: 'DEMOGORGON', hp: 1, hpMax: 600 }, 'the bar is still up, nearly empty');
+  assert.deepEqual(r.sim.view().hud.boss, { name: 'DEMOGORGON', hp: 1, hpMax: ENEMY_DEFS.pitdemo.hp }, 'the bar is still up, nearly empty');
   run(r.sim, 200);
   assert.equal(r.d.move, 'pinned', 'it does not attack any more');
 });

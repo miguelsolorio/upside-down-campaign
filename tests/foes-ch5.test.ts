@@ -22,7 +22,9 @@ const full = (s: Parameters<typeof heroAtk>[0], power: number, def: number): num
 test('the five foes: HP and ATK sized for a Lv 10 party (chapter 4 guards are 80 to 110 HP), the riot shields stop 60 and 75 degrees and let nothing through', () => {
   assert.deepEqual([D.trooper.hp, D.trooper.atk, D.agent5.hp, D.agent5.atk, D.commander.hp, D.commander.atk], [130, 34, 90, 38, 700, 28]);
   assert.deepEqual([D.demofoe.hp, D.demofoe.atk, D.twin.hp, D.twin.atk], [400, 30, 560, 32]);
-  assert.ok(D.trooper.hp > D.kbaton.hp && D.agent5.hp > D.kguard.hp && D.demofoe.hp > D.pitdemo.hp / 2, 'bigger than chapter 4\'s');
+  // Chapter 4's pit boss was tuned up to 1100 HP at its own stage's factor, so the foe Demogorgon is measured against the 1.3 boss's 760 instead.
+  assert.ok(D.trooper.hp > D.kbaton.hp && D.agent5.hp > D.kguard.hp, 'bigger than chapter 4\'s guards');
+  assert.ok(D.demofoe.hp < D.demogorgon.hp, 'a foe, smaller than the 1.3 boss');
   assert.deepEqual([D.trooper.x.arc, D.trooper.x.block, D.commander.x.arc, D.commander.x.block], [60, 0, 75, 0]);
   assert.equal(D.commander.name, 'The Commander');
 });

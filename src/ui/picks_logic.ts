@@ -2,23 +2,21 @@
 // and in what order (the first is the lead), who is locked in, the cursor over the cards and the START row, toggling a hero
 // in or out, making a picked hero the lead, and when START is live. No DOM here; ui/picks.ts runs the input and the drawing.
 // Every change returns a new state, or the very same object when the rules refuse it, so a caller can tell by `next === s`.
+// Where the cards sit is ui/picks_layout.ts; the cursor here reads its column count (three across, four for ten heroes or more).
 import type { HeroId, PartySeed } from '../core/types.ts';
 import { CHAR_NAMES } from '../core/config.ts';
 import { PARTY_SIZE } from '../core/campaign.ts';
 import type { PromptDevice } from '../core/bindings.ts';
-import type { Rect } from '../core/pointer.ts';
-import { BAND_Y, TOP_H } from '../gfx/map_geo.ts';
 import { utilitiesAt } from '../heroes/defs.ts';
 import { activeBonds, gainedBonds } from '../heroes/bonds.ts';
 import type { BondDef } from '../heroes/bonds.ts';
 import { tinyWidth } from '../gfx/font.ts';
-
-/** Cards per row in the Grid layout. */
-export const COLS = 3;
+import { colsFor } from './picks_layout.ts';
 
 /** The word for the gate each hero opens. Mike opens none. */
 const GATES: Partial<Record<HeroId, string>> = {
   dustin: 'BURN', lucas: 'SHOOT', will: 'SENSE', max: 'DASH', steve: 'SMASH', eleven: 'PUSH', robin: 'READ', nancy: 'SHOOT',
+  hopper: 'SMASH', eddie: 'RIFF',
 };
 
 /** The card's gate word. Nancy's Lv 6 Molotov burns, so from then her card says BURN too. */
@@ -45,7 +43,7 @@ export interface PickRow {
   id: HeroId;
   name: string;
   level: number;
-  /** DASH, SMASH, BURN, SHOOT, SENSE, PUSH or READ, SHOOT BURN for Nancy from Lv 6, or empty. */
+  /** DASH, SMASH, BURN, SHOOT, SENSE, PUSH, READ or RIFF, SHOOT BURN for Nancy from Lv 6, or empty. */
   gate: string;
   /** 1 to 4 in party order, 0 on the bench. Slot 1 is the lead. */
   slot: number;
@@ -140,15 +138,15 @@ export function bondLine(s: PicksState): BondLine | null {
 }
 
 // ---------------------------------------------------------------- the cursor
-const rowsCount = (n: number): number => Math.ceil(n / COLS);
+const rowsCount = (n: number): number => Math.ceil(n / colsFor(n));
 /** How many cards sit in row `r`. The last row can be short. */
-const inRow = (n: number, r: number): number => Math.min(COLS, n - r * COLS);
+const inRow = (n: number, r: number): number => Math.min(colsFor(n), n - r * colsFor(n));
 
 /** Puts the cursor on card (or the START row) `i`. A click calls this. Out of range is refused. */
 export function moveTo(s: PicksState, i: number): PicksState {
   const n = s.pool.length;
   if (i < 0 || i > n || i === s.cursor) return s;
-  return { ...s, cursor: i, col: i < n ? i % COLS : s.col };
+  return { ...s, cursor: i, col: i < n ? i % colsFor(n) : s.col };
 }
 
 /**
@@ -159,20 +157,20 @@ export function moveTo(s: PicksState, i: number): PicksState {
 export function step(s: PicksState, dir: 'left' | 'right' | 'up' | 'down'): PicksState {
   const n = s.pool.length;
   if (n === 0) return s;
-  const rows = rowsCount(n);
+  const rows = rowsCount(n), cols = colsFor(n);
   if (onStart(s)) {
     if (dir === 'left' || dir === 'right') return s;
     const r = dir === 'down' ? 0 : rows - 1;
-    return moveTo(s, r * COLS + Math.min(s.col, inRow(n, r) - 1));
+    return moveTo(s, r * cols + Math.min(s.col, inRow(n, r) - 1));
   }
-  const r = Math.floor(s.cursor / COLS), c = s.cursor % COLS;
+  const r = Math.floor(s.cursor / cols), c = s.cursor % cols;
   if (dir === 'left' || dir === 'right') {
     const w = inRow(n, r);
-    return moveTo(s, r * COLS + ((c + (dir === 'right' ? 1 : -1) + w) % w));
+    return moveTo(s, r * cols + ((c + (dir === 'right' ? 1 : -1) + w) % w));
   }
   const to = r + (dir === 'down' ? 1 : -1);
   if (to < 0 || to >= rows) return moveTo(s, n);
-  return moveTo(s, to * COLS + Math.min(c, inRow(n, to) - 1));
+  return moveTo(s, to * cols + Math.min(c, inRow(n, to) - 1));
 }
 
 // ---------------------------------------------------------------- the picks
@@ -208,52 +206,6 @@ export function makeLead(s: PicksState, i: number = s.cursor): PicksState {
   const id = heroAt(s, i);
   if (!id || s.picked[0] === id || !s.picked.includes(id)) return s;
   return { ...s, picked: [id, ...s.picked.filter((h) => h !== id)] };
-}
-
-// ---------------------------------------------------------------- the layout
-/** Where everything sits, in frame px, for a pool of `n`. Six heroes are three cards by two. Nine are three by three, on
- * shorter cards (the face, the text and the mark each a pixel or two higher), so the panel still fits between the map's top
- * strip and its party band with START and the legend. Pure, so a test can check the fit. */
-export interface PicksLayout {
-  rows: number;
-  compact: boolean;
-  panel: Rect;
-  /** A card's width and height, and the pitch from one to the next. */
-  cw: number; ch: number; gx: number; gy: number;
-  /** The first card's top left. */
-  x0: number; y0: number;
-  start: Rect;
-  /** Top of the one-line legend, level with the top of START, and of the bond line under it. */
-  legendY: number;
-  bondY: number;
-  /** Offsets inside a card: the face's top, the gate word's, and the mark under the face (LEAD, the party number, the lock). */
-  top: number; gateY: number; markY: number;
-}
-
-export function picksLayout(n: number): PicksLayout {
-  const rows = Math.max(1, rowsCount(n));
-  const compact = rows > 2;
-  const ch = compact ? 40 : 44, gy = ch + (compact ? 4 : 6);
-  const startDy = 17 + (rows - 1) * gy + ch + 8;
-  const ph = startDy + 11 + 6;
-  const py = Math.round(TOP_H + (BAND_Y - TOP_H - ph) / 2);
-  return {
-    rows, compact, panel: { x: 4, y: py, w: 248, h: ph }, cw: 74, ch, gx: 80, gy, x0: 11, y0: py + 17,
-    start: { x: 11, y: py + startDy, w: 56, h: 11 }, legendY: py + startDy, bondY: py + startDy + 6,
-    top: compact ? 4 : 5, gateY: compact ? 25 : 26, markY: compact ? 32 : 34,
-  };
-}
-
-/** Card `i`'s box, and the click cell round it: the cells meet, so the mouse is always over one card. */
-export const cardRect = (l: PicksLayout, i: number): Rect => ({ x: l.x0 + (i % COLS) * l.gx, y: l.y0 + Math.floor(i / COLS) * l.gy, w: l.cw, h: l.ch });
-export function cellRect(l: PicksLayout, i: number): Rect {
-  const c = cardRect(l, i);
-  return { x: c.x - 3, y: c.y - 3, w: l.gx, h: l.gy };
-}
-/** The mark under card `i`'s face: a click on a picked hero's makes them lead. */
-export function markRect(l: PicksLayout, i: number): Rect {
-  const c = cardRect(l, i);
-  return { x: c.x + 2, y: c.y + l.markY - 3, w: 32, h: 11 };
 }
 
 // ---------------------------------------------------------------- the legend

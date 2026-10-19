@@ -11,11 +11,14 @@
 //     { t: 'curseEnd', hero, how }, and that clock never chimes again.
 //   The Walkman: a swap to Max while it is ready plays it. Forced swaps don't. Every curse ends, no hero can be cursed for WALKMAN_ON
 //     frames, and it is ready again WALKMAN_CD frames after it played.
+//   Vecna's clock (enemies/vecna_phase.ts) starts curses of its own with beginCurse: it picks a random standing hero (fightTarget) and marks
+//     a memory orb, which the curse remembers (Curse.orb). Breaking that orb lifts the curse (liftOrbCurse, curseEnd 'orb'). The attic's
+//     clock never breaks and chimes again and again, so none of the one-clock rules above apply to it.
 import type { HudView } from '../core/types.ts';
 import type { Hero, S } from './state.ts';
 import { activeHero } from './state.ts';
 import type { Curse } from './house.ts';
-import { CHIME_LIFT, cursedBy, isCursed } from './house.ts';
+import { CHIME_LIFT, cursedBy, isCursed, standing } from './house.ts';
 import { addFx, sfx } from './fx.ts';
 import { BODY_Y } from './space.ts';
 
@@ -49,6 +52,18 @@ function chime(s: S, c: Curse): void {
   if (clock) addFx(s, 'chime', clock.x + clock.w / 2, clock.y + clock.h / 2, 'down', 0, 30, 40, 0);
 }
 
+/** A curse begins on `hero`: the first chime sounds at once. `clock` is the prop that chimed ('' for none), `orb` the orb it marked. */
+export function beginCurse(s: S, hero: Hero, clock: string, gap: number, orb = ''): void {
+  const hs = s.house;
+  hs.down.delete(hero);
+  const c: Curse = { hero, clock, chimes: 0, t: 0, gap, orb };
+  hs.curses.push(c);
+  hero.vx = 0; hero.vy = 0; hero.holdT = 0;
+  s.events.push({ t: 'cursed', hero: hero.id });
+  chime(s, c);
+  sfx(s, 'curse');
+}
+
 /**
  * The clock `propId` chimes for the first time and curses a hero. Returns the hero, or null when nothing happened. The caller swaps the party
  * away if it was the active one (party.ts).
@@ -60,18 +75,18 @@ export function startCurse(s: S, propId: string, gap = CHIME_FRAMES): Hero | nul
   const hero = curseTarget(s);
   if (!hero) return null;
   hs.spent.add(propId);
-  hs.down.delete(hero);
-  const c: Curse = { hero, clock: propId, chimes: 0, t: 0, gap };
-  hs.curses.push(c);
-  hero.vx = 0; hero.vy = 0; hero.holdT = 0;
-  s.events.push({ t: 'cursed', hero: hero.id });
-  chime(s, c);
-  sfx(s, 'curse');
+  beginCurse(s, hero, propId, gap);
   return hero;
 }
 
+/** The hero Vecna's clock curses: a random hero who is standing and not cursed, and only while another is left standing. Null when none. */
+export function fightTarget(s: S): Hero | null {
+  const up = standing(s);
+  return up.length < 2 ? null : (up[Math.floor(s.rng() * up.length)] as Hero);
+}
+
 /** A curse ends. Lifted, the hero floats back down to the bench as they were; on the KO they are down already. */
-function endCurse(s: S, c: Curse, how: 'clock' | 'walkman' | 'ko'): void {
+function endCurse(s: S, c: Curse, how: 'clock' | 'walkman' | 'orb' | 'ko'): void {
   s.house.curses = s.house.curses.filter((o) => o !== c);
   if (how === 'ko') c.hero.z = 0; else s.house.down.set(c.hero, c.hero.z);
   s.events.push({ t: 'curseEnd', hero: c.hero.id, how });
@@ -81,6 +96,14 @@ function endCurse(s: S, c: Curse, how: 'clock' | 'walkman' | 'ko'): void {
 export function liftCurse(s: S, clockId: string): void {
   for (const c of s.house.curses.filter((o) => o.clock === clockId)) endCurse(s, c, 'clock');
 }
+
+/** The memory orb `orbId` broke: every curse it was marked for is lifted. */
+export function liftOrbCurse(s: S, orbId: string): void {
+  for (const c of s.house.curses.filter((o) => o.orb === orbId)) endCurse(s, c, 'orb');
+}
+
+/** The orb is the one a curse counting marked, so breaking it would lift that curse. */
+export const markedOrb = (s: S, orbId: string): boolean => s.house.curses.some((c) => c.orb === orbId);
 
 /** A wipe or a getting up from one: no curse carries over. */
 export function clearCurses(s: S): void {

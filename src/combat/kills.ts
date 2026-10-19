@@ -1,13 +1,17 @@
 // Deaths: kill events, XP, quarter drops, group-cleared, and removing bodies after their death animation.
 import { cancelAttack } from '../enemies/shield.ts';
+import { advancePhase } from '../enemies/vecna_phase.ts';
 import { clearAlpha } from '../enemies/alpha_hit.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { releaseHold } from '../enemies/hold.ts';
 import { leaveBilly } from '../enemies/billy_hit.ts';
 import { glassDeath, inGlass } from '../enemies/ghoul_hit.ts';
 import { enrageMate } from '../enemies/twin.ts';
-import { clearVecna } from '../enemies/vecna5.ts';
+import { clearVecna as clearVecna5 } from '../enemies/vecna5.ts';
+import { batDeath } from '../enemies/demobat_hit.ts';
 import { clearFlayer, doomLegs, legHeld } from '../enemies/flayer_hit.ts';
+import { doomOrbs, orbHeld } from '../enemies/orb.ts';
+import { clearVecna } from '../enemies/vecna_phase.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
 import { activeHero } from './state.ts';
@@ -52,6 +56,7 @@ function kill(s: S, e: Enemy): void {
   clearAlpha(s, e);
   clearFlayer(s, e);
   clearVecna(s, e);
+  clearVecna5(s, e);
   releaseHold(s, e);
   e.dead = true;
   e.deadT = 0;
@@ -70,13 +75,15 @@ function kill(s: S, e: Enemy): void {
   if (!s.seq) s.burst = Math.min(1, s.burst + 0.06);
   // The roll is always drawn so the random stream does not depend on the Compass talent. A run-time spawn (a howl's pup or a
   // defense wave's enemy) drops nothing: a failed defense, retried, can't be farmed. Nor does a ghoul that died in its mirror.
-  if (s.rng() < dropChance(s, e.drop) && e.rt === null && !inGlass(e)) {
+  if (s.rng() < dropChance(s, e.drop) && e.rt === null && !inGlass(e) && e.orb === null) {
     s.items.push({ id: `drop${s.nextDrop++}`, kind: 'quarter', x: e.x, y: e.y, t: 0 });
   }
   awardXp(s, e.xp);
   if (e.kind === 'melter') meltBurst(s, e);
   // A ghoul dies as glass.
   glassDeath(s, e);
+  // A demobat dies in a flash of sparks.
+  batDeath(s, e);
   // Freed, Billy stays on the floor as scenery (enemies/billy_hit.ts). The twin left standing enrages (enemies/twin.ts).
   leaveBilly(s, e);
   enrageMate(s, e);
@@ -90,9 +97,13 @@ function kill(s: S, e: Enemy): void {
 export function reapEnemies(s: S): void {
   let remove = false;
   // The Mind Flayer at 0 HP takes its legs with it, so the body and all four die in this pass. A cut leg waits on the floor until then.
+  // Vecna at 0 HP takes his orbs the same way.
   doomLegs(s);
+  doomOrbs(s);
   for (const e of s.enemies) {
-    if (!e.dead && !e.dormant && e.hp <= 0 && !legHeld(e)) kill(s, e);
+    // A blow that takes Vecna from above a phase line straight to 0 still plays the phases it crossed, in order, before he falls.
+    if (!e.dead && !e.dormant && e.hp <= 0 && e.vecna) advancePhase(s, e);
+    if (!e.dead && !e.dormant && e.hp <= 0 && !legHeld(e) && !orbHeld(e)) kill(s, e);
     if (e.dead) {
       e.deadT++;
       if (e.deadT > deathFrames(e)) remove = true;

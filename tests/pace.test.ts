@@ -98,3 +98,14 @@ test('pace: a ?stage= jump walks in with the party a real run brings, within a f
     }
   }
 });
+
+test('pace: chapter 4 ends with the lead at Lv 10 in most runs, and never under Lv 9', () => {
+  let ten = 0;
+  for (const [i, r] of kept.entries()) {
+    const party = after(r, lastOf(4));
+    // Hopper plays 4.1 alone and Eddie falls in 4.3, so the lead is Mike or Dustin, carried from chapter 3 (docs/pace.md, "Chapter 4").
+    assert.ok(best(party) >= xpForLevel(9) && best(party) < xpForLevel(11), `seed ${i + 1}: the lead has ${best(party)} XP`);
+    if (levelOf(best(party)) >= 10) ten++;
+  }
+  assert.ok(ten >= 7, `Lv 10 after chapter 4 in ${ten} of ${kept.length} runs`);
+});

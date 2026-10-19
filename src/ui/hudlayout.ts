@@ -6,6 +6,7 @@
 // (rightShift), and everything is moved down by the band's `top` so it sits centered in the strip.
 import { HUD_PAD_X, STRIP_H, VIEW_TOP, VIEW_W, VIEW_X } from '../core/config.ts';
 import type { PartyHud, Stash, StashItem } from '../core/types.ts';
+import type { PromptDevice } from '../core/bindings.ts';
 import type { Rect } from '../core/pointer.ts';
 
 /** The width the constants below are laid out for. */
@@ -27,6 +28,11 @@ export const BENCH_START = BENCH_END - BENCH_W;
 /** The active hero's name and level, and the XP notches under them, start here, right of the portrait and its shortcut
  * key. */
 export const LEFT_X = 25;
+/** The active hero's shortcut key sits this far left of the name. On a bench slot the face frame starts FACE_Y down, which centers
+ * it in the strip like the active portrait, and the key is KEY_DX in from the slot's left edge. */
+export const ACTIVE_KEY_X = LEFT_X - 7;
+export const FACE_Y = 2;
+export const KEY_DX = 2;
 /** XP is ten notches, 5 px thick, under the name. The widest name and level, DUSTIN LV12, ends at 90, so the notches and
  * the columns beside them never meet it. */
 export const XP_Y = 10;
@@ -86,6 +92,8 @@ export interface SlotRect {
   n: 1 | 2 | 3 | 4;
   active: boolean;
   ko: boolean;
+  /** Under the clock curse (docs/level-11.md): the slot shows the chimes where the key is, and it is no swap target. */
+  cursed: boolean;
   /** The click cell. It covers the portrait and its key label. */
   x: number; y: number; w: number; h: number;
   /** Left edge of the face frame: 11 px wide for a bench slot, 16 px for the active hero. */
@@ -115,6 +123,12 @@ export function benchX(k: number, count: number, band: HudBand = hudBand()): num
   return BENCH_START + rightShift(band) + k * benchPitch(count);
 }
 
+const isCursed = (p: PartyHud): boolean => (p.curse ?? 0) > 0;
+
+/** The shortcut keys are printed on a keyboard, and only where a swap can happen: a party of one has nobody to swap to, and its
+ * one portrait is no button (4.1 is Hopper alone, docs/level-10.md). */
+export const showsKeys = (party: readonly PartyHud[], device: PromptDevice = 'keyboard'): boolean => device === 'keyboard' && party.length > 1;
+
 /** One rectangle per hero, the active one first and then the bench left to right in party order. */
 export function slotRects(party: readonly PartyHud[], band: HudBand = hudBand()): SlotRect[] {
   const out: SlotRect[] = [];
@@ -122,20 +136,20 @@ export function slotRects(party: readonly PartyHud[], band: HudBand = hudBand())
   const lx = leftShift(band);
   party.forEach((p, i) => {
     if (!p.active) return;
-    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, h: band.h, px: 1 + lx });
+    out.push({ index: i, n: (i + 1) as SlotRect['n'], active: true, ko: p.ko, cursed: isCursed(p), ...ACTIVE_CELL, x: ACTIVE_CELL.x + lx, h: band.h, px: 1 + lx });
   });
   const pitch = benchPitch(bench.length);
   bench.forEach((b, k) => {
     const x = benchX(k, bench.length, band);
-    out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, x, y: 0, w: pitch, h: band.h, px: x + BENCH_FACE_DX });
+    out.push({ index: b.i, n: (b.i + 1) as SlotRect['n'], active: false, ko: b.p.ko, cursed: isCursed(b.p), x, y: 0, w: pitch, h: band.h, px: x + BENCH_FACE_DX });
   });
   return out;
 }
 
-/** Party index under a point in game px, or -1. The active hero and a KO'd hero are not swap targets. */
+/** Party index under a point in game px, or -1. The active hero, a KO'd hero and a cursed one are not swap targets. */
 export function slotAt(party: readonly PartyHud[], x: number, y: number, band: HudBand = hudBand()): number {
   for (const r of slotRects(party, band)) {
-    if (r.active || r.ko) continue;
+    if (r.active || r.ko || r.cursed) continue;
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return r.index;
   }
   return -1;
@@ -206,3 +220,25 @@ export function bossLayout(screenW: number, viewTop: number, parts?: readonly nu
   });
   return { x, y, pips, nextY: y + NEXT_DY_PIPS };
 }
+
+// ---------------------------------------------------------------- the curse and the Walkman
+// Both are drawn from a slot's own left edge: a bench slot's x, and for the active hero the strip's origin once it is shifted to the
+// band, which is where its key sits at ACTIVE_KEY_X.
+/** A cursed hero's slot shows four pips where its key is, a column as tall as the face: each 3 by 2, a pixel apart, from the face's top.
+ * The chimes sounded are lit, red (ui/hudcurse.ts). It sits where the key does, so it never meets the face. */
+export const CURSE_PIPS = 4;
+export const CURSE_PIP_W = 3;
+export const CURSE_PIP_H = 2;
+export const CURSE_PIP_GAP = 1;
+export const CURSE_H = CURSE_PIPS * CURSE_PIP_H + (CURSE_PIPS - 1) * CURSE_PIP_GAP;
+export const cursePipsDx = (active: boolean): number => (active ? ACTIVE_KEY_X : KEY_DX);
+
+/** Max's Walkman is a 6 by 5 tape on her slot, a gap under the key, so it never meets the face or the XP notches. A bench slot's sits
+ * left of the face, flush with the slot's edge; the active hero's under the key, level with the XP notches. The mark it shows while
+ * it protects is a line TAPE_W wide, a pixel under it. */
+export const TAPE_W = 6;
+export const TAPE_H = 5;
+export const TAPE_BENCH_Y = 11;
+export const TAPE_ACTIVE_Y = XP_Y;
+export const TAPE_MARK_DY = TAPE_H + 1;
+export const tapeSpot = (active: boolean): { dx: number; y: number } => (active ? { dx: ACTIVE_KEY_X, y: TAPE_ACTIVE_Y } : { dx: 0, y: TAPE_BENCH_Y });

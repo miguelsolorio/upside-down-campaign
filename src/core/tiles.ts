@@ -36,6 +36,10 @@ export type TileName =
   // The Hellfire Club's classroom and the Creel House (stage 4.2).
   | 'clubcap' | 'clubwall' | 'clubboard' | 'clubposter' | 'clubwindow' | 'clubdoor' | 'clubshelf' | 'clubfloor' | 'clubdesk' | 'dndtable'
   | 'creelcap' | 'creelwall' | 'creelwin' | 'creelfloor' | 'creelrug' | 'creelhole' | 'creelstairs' | 'creelfurn'
+  // Upside Down Hawkins and the roof of Eddie's trailer (stage 4.3), and Vecna's attic (stage 4.4).
+  | 'udroad' | 'udline' | 'udwalk' | 'udlawn' | 'udveins' | 'udhouse' | 'udwindow' | 'uddoor' | 'udroof' | 'udtrailer' | 'udfence'
+  | 'udtree' | 'roofdeck' | 'roofedge'
+  | 'atticroof' | 'atticwall' | 'atticfloor' | 'atticrug' | 'atticeave'
   // Hawkins under lockdown (stage 5.1): the town at dusk with the army laid over it, and the Lab's halls dressed by the army.
   | 'lockroad' | 'lockline' | 'lockstop' | 'lockwalk' | 'locklawn' | 'lockroof' | 'lockhouse' | 'lockvine' | 'lockdoor' | 'rift0' | 'rift1' | 'rift2'
   | 'armyfloor' | 'armycable' | 'armycable2' | 'armycrate' | 'armycrate2' | 'armywall'
@@ -230,8 +234,34 @@ export const TILES: Record<string, TileDef> = {
   'è': { name: 'creelhole', solid: true },
   'é': { name: 'creelstairs', solid: true },
   'ê': { name: 'creelfurn', solid: true },
-  // Chapter 5 (docs/level-14.md, docs/level-15.md). These took the Latin-1 signs that were left, and the top of the lowercase run, so
-  // that ë to ò are still free for chapter 4's last two stages.
+  // Stage 4.3: Hawkins in the Upside Down under the Blue storm (docs/level-12.md). The road, its center line, the sidewalk, dead lawns
+  // and veins over them are walked on. House fronts with their windows and doors face the street under the roofs seen from above;
+  // trailers, fences and dead trees are walked round. Eddie's trailer has a flat roof deck, the song's arena, edged by its lip. Latin-1
+  // runs out here (chapter 5 holds the rest, ó to ÿ), so the stage takes Latin Extended-A from Ā on, still one UTF-16 unit each.
+  'ë': { name: 'udroad', solid: false },
+  'ì': { name: 'udline', solid: false },
+  'í': { name: 'udwalk', solid: false },
+  'î': { name: 'udlawn', solid: false },
+  'ï': { name: 'udveins', solid: false, animated: true },
+  'ð': { name: 'udhouse', solid: true },
+  'ñ': { name: 'udwindow', solid: true },
+  'ò': { name: 'uddoor', solid: true },
+  'Ā': { name: 'udroof', solid: true },
+  'ā': { name: 'udtrailer', solid: true },
+  'Ă': { name: 'udfence', solid: true },
+  'ă': { name: 'udtree', solid: true },
+  'Ą': { name: 'roofdeck', solid: false },
+  'ą': { name: 'roofedge', solid: true },
+  // Stage 4.4: Vecna's attic in the Creel House (docs/level-13.md). The underside of the roof over a knee wall, floorboards with a rug
+  // where he stands, and the eaves along the side walls, low floor where the cover sits. The house below is the creel letters baked in
+  // their Upside Down skin (StageData.skin).
+  'Ć': { name: 'atticroof', solid: true },
+  'ć': { name: 'atticwall', solid: true },
+  'Ĉ': { name: 'atticfloor', solid: false },
+  'ĉ': { name: 'atticrug', solid: false },
+  'Ċ': { name: 'atticeave', solid: false },
+  // Chapter 5 (docs/level-14.md, docs/level-15.md). These took the Latin-1 signs that were left, and the top of the lowercase run,
+  // while chapter 4's last two stages took ë to ò and the Latin Extended-A run from Ā.
   // Stage 5.1: the town at dusk. Road, the double yellow line, the white stop line, sidewalk and trampled lawn are walked; the house
   // front (roof, a wall, a wall under vines, a taped door) is not. A rift is three tiles that join, a red tear in the asphalt, walked
   // over. Inside, the Lab's floor, two cable runs, two stacks of crates and an army-dressed wall.

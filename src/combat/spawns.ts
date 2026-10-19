@@ -2,7 +2,8 @@
 // three young demodogs from the three burrows nearest the Alpha, and each defense wave comes from the burrows nearest the ward,
 // in turn. The ids are made up (rt1, rt2, ...) and never looked up in skipSpawns, so a retry brings every one of them back.
 // Each is awake at once, comes up in a puff of dust and is worth 1 XP, so the XP lives in the Alpha and the halls and a failed
-// defense can't be farmed. They drop nothing. The Commander's squad (docs/level-14.md) comes up the same way, on the ring round him.
+// defense can't be farmed. They drop nothing. The Commander's squad (docs/level-14.md) comes up the same way, on the ring round him, and
+// so do the 4.3 roof's bats (combat/roof.ts), for 0 XP.
 import { TILE } from '../core/config.ts';
 import type { EnemyKind, EnemyTier } from '../core/types.ts';
 import type { Enemy, Pos, S } from './state.ts';
@@ -62,7 +63,7 @@ export function waveSpots(s: S, x: number, y: number): Pos[] {
  * Brings `n` enemies of `type` up in turn from `spots`, starting at `from`, and returns them. They are awake and hunting, worth 1 XP
  * and drop nothing. `group` is what their kills report.
  */
-export function bringUp(s: S, rt: 'howl' | 'wave' | 'squad', group: string, type: EnemyKind, tier: EnemyTier | undefined, spots: Pos[], n: number, from = 0): Enemy[] {
+export function bringUp(s: S, rt: 'howl' | 'wave' | 'roof' | 'squad', group: string, type: EnemyKind, tier: EnemyTier | undefined, spots: Pos[], n: number, from = 0): Enemy[] {
   const out: Enemy[] = [];
   for (let k = 0; k < n; k++) {
     const p = spots[(from + k) % spots.length] as Pos;

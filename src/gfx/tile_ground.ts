@@ -30,6 +30,8 @@ export interface TileCtx {
   tx: number; ty: number; near: Near; court?: TileBox; blk?: Block;
   /** Set on a tile of a stage that has the mall in it: the school's checker is Scoops Ahoy's floor there, and goes as dim as the mall at night (night.ts). */
   mall?: boolean;
+  /** Set on an attic eave: the wall it runs along is on its west side, not its east (tile_attic.ts, eaveWest). Absent, the tile guesses from its neighbors. */
+  west?: boolean;
 }
 
 export const isWater = (n: TileName): boolean => n === 'shallows' || n === 'creek';

@@ -1,5 +1,6 @@
 // Effects, drawn with pixel-snapped rects and driven by t and life. Nothing is pre-rendered, nothing blends:
 // fades are dithers. angle is in radians with 0 pointing right and y growing down.
+import { settings } from '../core/settings.ts';
 import type { Dir, FxView } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import { arcPx, discPx, hash2, linepx, rect, ringPx, unit } from './canvas.ts';
@@ -11,6 +12,8 @@ import { arcs, babble, bullet, goo, scoop, trap } from './fx_l78.ts';
 import { bottle, fire, pet } from './fx_l6.ts';
 import { glass, slam, sweep } from './fx_l9.ts';
 import { fall } from './fx_l1415.ts';
+import { SMALL_GLASS, chime, riff, smallGlass, walkman } from './fx_ch4.ts';
+import { blaze, debris, whip } from './fx_vecna.ts';
 
 const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
@@ -23,6 +26,7 @@ function coneHalf(w: number, h: number, fallback: number): number {
   return w > 0 && h > 0 ? Math.asin(clamp(h / (2 * w), 0, 1)) : fallback;
 }
 
+/** The melee arc. With Reduce flashing on it is bone and mist, not white and cream: a big arc every dozen frames is a flash of its own in a dark arena. */
 function slash(ctx: Ctx, f: FxView, ang: number, p: number): void {
   const R = f.w > 0 ? f.w : 28;
   const half = coneHalf(f.w, f.h, Math.PI * 0.4);
@@ -41,7 +45,7 @@ function slash(ctx: Ctx, f: FxView, ang: number, p: number): void {
       const x = Math.round(f.x + c * r), y = Math.round(f.y + s * r);
       if (!keep(x, y, fade)) continue;
       const edge = r >= R - 1;
-      const col: ColorName = u > 0.7 || edge ? 'white' : u > 0.25 ? 'cream' : 'bone';
+      const col: ColorName = settings.reduceFlashing ? (u > 0.7 || edge ? 'bone' : u > 0.25 ? 'mist' : 'slate') : u > 0.7 || edge ? 'white' : u > 0.25 ? 'cream' : 'bone';
       rect(ctx, x, y, 1, 1, col);
     }
   }
@@ -345,9 +349,15 @@ export function drawFx(ctx: Ctx, f: FxView): void {
     case 'bottle': bottle(ctx, f); break;
     case 'fire': fire(ctx, f); break;
     case 'slam': slam(ctx, f, p); break;
-    case 'glass': glass(ctx, f, p); break;
+    case 'glass': (f.w > 0 && f.w <= SMALL_GLASS ? smallGlass : glass)(ctx, f, p); break;
     case 'sweep': sweep(ctx, f); break;
     case 'fall': fall(ctx, f, p); break;
+    case 'riff': riff(ctx, f, p); break;
+    case 'chime': chime(ctx, f, p); break;
+    case 'walkman': walkman(ctx, f, p); break;
+    case 'debris': debris(ctx, f); break;
+    case 'whip': whip(ctx, f, ang, p); break;
+    case 'blaze': blaze(ctx, f); break;
     default: break;
   }
 }

@@ -6,7 +6,7 @@ import { activeHero } from './state.ts';
 import { createState, setDifficulty } from './init.ts';
 import { bufferInput, regen, updateActive, updateFollowers } from './hero.ts';
 import { updateTalents } from '../heroes/talents6.ts';
-import { ageBodies, awardXp, awayFrom, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
+import { ageBodies, awardXp, awayFrom, dismissHero, handleSwap, healParty, reapHeroes, recruitHero, setActiveLevel } from './party.ts';
 import { reapEnemies } from './kills.ts';
 import { tickEnemyStatus, tickHeroStatus } from './status.ts';
 import { updateAreas, updateProjectiles } from './proj.ts';
@@ -17,6 +17,7 @@ import { wakeGroup } from './wake.ts';
 import { startDefense, updateDefense } from './defense.ts';
 import { startFinale, updateFinale } from './finale.ts';
 import { startCurse, swapped, updateCurse } from './curse.ts';
+import { setRoof, soloNote, updateRoof } from './roof.ts';
 import { updateCameras } from './cameras.ts';
 import { updateHazards } from './hazards.ts';
 import { updatePools } from './pools.ts';
@@ -103,6 +104,7 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
     return drain(s);
   }
   runTimers(s);
+  updateRoof(s);
   updateActive(s, input);
   updateTalents(s);
   updateFollowers(s);
@@ -134,7 +136,8 @@ function stepSim(s: S, input: SimInput): SimEvent[] {
 
 /** HeroSnapshot plus the d20 bonus points earned so far. Pass a snapshot back as a PartySeed and the stats carry over. */
 function snapshot(s: S): HeroSnapshot[] {
-  return s.heroes.map((h) => {
+  // A hero dismissed for good (Sim.dismissHero) is still reported, after the ones in the party, so progress keeps their level.
+  return [...s.heroes, ...s.gone].map((h) => {
     const snap: HeroSnapshot & { bonus: Stats } = {
       id: h.id, level: h.level, xp: h.xp, hp: h.ko ? 0 : Math.max(1, Math.ceil(h.hp)), hpMax: h.st.hp, bonus: { ...h.bonus },
     };
@@ -165,6 +168,9 @@ export function buildSim(opts: SimOptions): { sim: Sim; s: S } {
     defend() { startDefense(s); startFinale(s); },
     curse(prop) { if (startCurse(s, prop) === activeHero(s)) awayFrom(s); },
     giveWalkman() { s.house.walkman = true; },
+    rooftop: (on) => setRoof(s, on),
+    soloNote: (hit, perfect) => soloNote(s, hit, perfect),
+    dismissHero: (id) => dismissHero(s, id),
     healParty: (frac) => healParty(s, frac),
     setDifficulty: (d) => setDifficulty(s, d),
     bonus(xp, quarters) {

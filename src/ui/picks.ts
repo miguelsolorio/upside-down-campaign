@@ -1,7 +1,8 @@
 // The party picks panel over the map (docs/map-screen.md, "Party picks"), in the Grid layout the owner picked from
 // picks-variations.html: a PARTY panel with the pool as cards, three across (two rows for six, three for nine: face, name, level
-// and gate word, the place or LEAD under the face), the frame carrying the state (amber lead, bone party, slate bench), a padlock
-// on the locked, then START and a one-line legend. ui/picks_logic.ts holds the rules; this file turns input into those calls and draws the result inside
+// and gate word, the place or LEAD under the face; four across for ten or eleven, the name and gate word under the face), the frame
+// carrying the state (amber lead, bone party, slate bench), a padlock on the locked, then START and a one-line legend. ui/picks_logic.ts
+// holds the rules and ui/picks_layout.ts where everything sits; this file turns input into those calls and draws the result inside
 // inFrame, with the HUD's own colors and fonts. ui/map.ts opens it and hands the picks on.
 import type { Game } from '../core/scene.ts';
 import type { HeroId, PartySeed } from '../core/types.ts';
@@ -15,8 +16,10 @@ import { audio } from '../audio/index.ts';
 import { drawPortrait, drawText, drawTinyText, tinyWidth } from '../gfx/index.ts';
 import { box, brackets, outline, plate, toFrame } from './kit.ts';
 import type { Ctx } from './kit.ts';
-import { blockedBy, bondLine, cardRect, cellRect, createPicks, heroAt, legend, makeLead, markRect, moveTo, onStart, picksLayout, ready, result, rowOf, step, toggle } from './picks_logic.ts';
-import type { PickRow, PicksLayout, PicksState } from './picks_logic.ts';
+import { blockedBy, bondLine, createPicks, heroAt, legend, makeLead, moveTo, onStart, ready, result, rowOf, step, toggle } from './picks_logic.ts';
+import type { PickRow, PicksState } from './picks_logic.ts';
+import { LOCK_W, bondTag, cardRect, cellRect, markRect, picksLayout } from './picks_layout.ts';
+import type { PicksLayout } from './picks_layout.ts';
 
 export interface PicksOpts {
   /** Every hero in the stage's pool, in order, at the level they would play at. */
@@ -44,7 +47,7 @@ const FLASH = 24;
 
 export function createPicksPanel(opts: PicksOpts): PicksPanel {
   let s = createPicks(opts.pool, opts.locked, opts.seed);
-  /** Laid out once for the pool: three rows of shorter cards for nine, the roomy two rows for six. */
+  /** Laid out once for the pool: the roomy two rows for six, shorter cards for nine, four across for ten and eleven. */
   const L = picksLayout(opts.pool.length);
   const START: Rect = L.start;
   let done = false;
@@ -145,20 +148,21 @@ function look(r: PickRow): { frame: ColorName; name: ColorName; level: ColorName
 }
 
 function drawCard(ctx: Ctx, L: PicksLayout, r: PickRow, x: number, y: number, refused = false): void {
-  const l = look(r);
+  const l = look(r), c = L.card;
   outline(ctx, x, y, L.cw, L.ch, refused ? 'hot' : l.frame);
-  drawPortrait(ctx, r.id, 'neutral', x + 5, y + L.top);
-  drawText(ctx, r.name.toUpperCase(), x + 34, y + L.top + 1, l.name);
-  drawText(ctx, `LV${r.level}`, x + 34, y + L.top + 11, l.level);
-  if (r.gate) drawTinyText(ctx, r.gate, x + 34, y + L.gateY, 'mist');
-  drawMark(ctx, r, x + 5, y + L.markY);
-  if (r.bond) drawTinyText(ctx, r.bond, x + L.cw - 3 - tinyWidth(r.bond), y + L.markY, 'leaf');
+  drawPortrait(ctx, r.id, 'neutral', x + c.face.x, y + c.face.y);
+  drawText(ctx, r.name.toUpperCase(), x + c.name.x, y + c.name.y, l.name);
+  drawText(ctx, `LV${r.level}`, x + c.level.x, y + c.level.y, l.level);
+  if (r.gate) drawTinyText(ctx, r.gate, x + c.gate.x, y + c.gate.y, 'mist');
+  drawMark(ctx, r, x + c.mark.x, y + c.mark.y);
+  const tag = bondTag(L, r);
+  if (tag) drawTinyText(ctx, tag, x + c.bond.x - tinyWidth(tag), y + c.bond.y, 'leaf');
 }
 
 /** A padlock, 5 by 6, drawn for this size. It sits on the baseline of the 3 by 5 font, one px taller. */
 const LOCK = ['.###.', '#...#', '#####', '##.##', '#####', '#####'];
 function lock(ctx: Ctx, x: number, y: number, color: ColorName): void {
-  LOCK.forEach((row, j) => { for (let i = 0; i < 5; i++) if (row[i] === '#') box(ctx, x + i, y + j, 1, 1, color); });
+  LOCK.forEach((row, j) => { for (let i = 0; i < LOCK_W; i++) if (row[i] === '#') box(ctx, x + i, y + j, 1, 1, color); });
 }
 
 /** LEAD for the first slot, the number for the others, and a padlock after it for a hero the stage needs. Nothing on the bench. */

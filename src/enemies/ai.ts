@@ -3,6 +3,7 @@
 // A soldier's brain runs the Kamchatka guard too, the riot guard's the camp guard, the Demogorgon's the pit one, the foe Demogorgon and the
 // twins, the agent's the Lab agent of chapter 5, each on its own def. The trooper and the Commander have brains of their own, and so has Vecna
 // of the final boss (vecna5.ts); the Mind Flayer of the final boss (`flayer5`) and its legs (`leg5`) run the 3.3 brains on their own defs.
+// A demobat (demobat.ts) flies: it is knocked about without collision, ignores the candy bar and the soft push, and falls when stunned.
 // A pinned Billy is the exception to the order: his reach runs before everything that could skip his turn (a stagger, a hero down).
 // Holds (hold.ts) are checked first every tick, because a confused, stunned or staggered holder never reaches its own brain.
 import { ENEMY_DEFS } from './defs.ts';
@@ -25,13 +26,15 @@ import { billyReach, isBillyPinned } from './billy_hit.ts';
 import { flayerUpdate } from './flayer.ts';
 import { legUpdate, legWait } from './flayer_legs.ts';
 import { flayerRooted } from './flayer_hit.ts';
+import { updateVecna, vecnaUpdate } from './vecna.ts';
 import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
 import { ghoulUpdate, glassUpdate } from './ghoul.ts';
 import { commanderUpdate } from './commander.ts';
-import { vecnaUpdate } from './vecna5.ts';
+import { vecnaUpdate as vecna5Update } from './vecna5.ts';
 import { trooperUpdate } from './trooper.ts';
+import { batUpdate, glide, stunBat } from './demobat.ts';
 import { isShielded } from './shield.ts';
 import { isAway } from './twin_fall.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
@@ -48,12 +51,15 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.grace > 0) e.grace--;
   if (e.noLure > 0) e.noLure--;
   if (e.vx !== 0 || e.vy !== 0) {
-    moveBody(s, e, e.vx, e.vy);
+    // A bat is knocked through walls as it flies through them.
+    if (e.bat) glide(s, e, e.vx, e.vy); else moveBody(s, e, e.vx, e.vy);
     e.vx *= FRICTION; e.vy *= FRICTION;
     if (Math.hypot(e.vx, e.vy) < 0.1) { e.vx = 0; e.vy = 0; }
   }
   // The reach of a pinned Billy climbs and falls whatever else is going on (a hero down, say): it is Eleven's to hold.
   if (isBillyPinned(e)) { billyReach(s, e, hero); return; }
+  // A stunned bat falls to the floor, whatever else holds it.
+  if (e.bat && e.stat.stun > 0) { stunBat(e); return; }
   if (e.stagger > 0) { e.stagger--; legWait(e); setEnemyAnim(e, 'hurt'); return; }
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   // A foe that has lost Lucas to his Camo stands and looks round (heroes/camo.ts).
@@ -63,15 +69,19 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.stat.confuse > 0) { confusedUpdate(s, e); return; }
   // The bosses ignore the candy bar, and no hit staggers them. They run their own moves.
   if (e.kind === 'commander') { commanderUpdate(s, e, hero); return; }
-  if (e.kind === 'vecna5') { vecnaUpdate(s, e, hero); return; }
+  if (e.kind === 'vecna5') { vecna5Update(s, e, hero); return; }
   if (e.demo) { demogorgonUpdate(s, e, hero); return; }
   if (e.alpha) { alphaUpdate(s, e, hero); return; }
   if (e.grigori) { grigoriUpdate(s, e, hero); return; }
   if (e.billy) { billyUpdate(s, e, hero); return; }
   if (e.flayer) { flayerUpdate(s, e, hero); return; }
   if (e.leg) { legUpdate(s, e, hero); return; }
+  if (e.vecna) { vecnaUpdate(s, e, hero); return; }
+  if (e.orb) { setEnemyAnim(e, 'idle'); return; }
   // A Creel ghoul floats at the hero and ignores the candy bar too.
   if (e.ghoul) { ghoulUpdate(s, e, hero); return; }
+  // A demobat flies over everything and ignores the candy bar, too.
+  if (e.bat) { batUpdate(s, e, hero); return; }
   // The vine and the pod are rooted: no lure moves them.
   if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
   if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }
@@ -104,10 +114,12 @@ function unhide(e: Enemy): void {
   if (e.hidden && (e.mode === 'windup' || e.mode === 'lunge')) e.hidden = false;
 }
 
-const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e) || flayerRooted(e) || (e.demo !== null && isAway(e.demo.move));
+const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e) || flayerRooted(e) || e.orb !== null
+  || (e.demo !== null && isAway(e.demo.move));
 
 function separate(s: S): void {
-  const list = s.enemies.filter((e) => !e.dead && !e.dormant);
+  // A flyer passes over the rest: the flock keeps its own slots.
+  const list = s.enemies.filter((e) => !e.dead && !e.dormant && !e.bat);
   for (let i = 0; i < list.length; i++) {
     const a = list[i] as Enemy;
     for (let j = i + 1; j < list.length; j++) {
@@ -128,9 +140,11 @@ function separate(s: S): void {
 }
 
 export function updateEnemies(s: S): void {
-  const hero = activeHero(s);
   updateGlobs(s);
   updateHolds(s);
+  // Vecna's clock may curse the hero who is up, and the party swaps away before the brains read who that is.
+  updateVecna(s);
+  const hero = activeHero(s);
   for (const e of s.enemies) {
     if (e.dead) continue;
     // A ghoul in its mirror is dormant, and still keeps an eye out for a hero who comes near.

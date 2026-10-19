@@ -36,12 +36,14 @@ export interface ActorView {
    *  A Flayed uses rise (coming up out of the goo) and grab (holding a hero), and Grigori uses grab and stun. Billy uses
    *  charge, grab, stun and pinned (kneeling). The Mind Flayer's body uses rise (coming in through the skylight) and down
    *  (its head on the floor), and a leg uses warn (its line shown), slam (striking down it) and severed (docs/level-9.md). The pit
-   *  Demogorgon uses the Demogorgon's. A ghoul uses rise (stepping out of its mirror) (docs/level-11.md). The Commander uses plant (the
+   *  Demogorgon uses the Demogorgon's. A ghoul uses rise (stepping out of its mirror) (docs/level-11.md). A demobat uses crouch (its dive's wind-up), charge (the dive)
+   *  and stun (docs/level-12.md). Vecna uses curse (the clock's chime), whip, float, throw, burn and stun; an orb uses severed when
+   *  broken (docs/level-13.md). The Commander uses plant (the
    *  shield planted, whistling up a squad), charge and stun, and a trooper uses flank (walking round to a hero's side). A twin
    *  Demogorgon (5.2) uses the Demogorgon's, and fall (dropping into the void, k running 0 to 1) and climb (coming back up, k running
    *  1 to 0) (docs/level-14.md, docs/level-15.md). */
   pose?: 'charge' | 'stun' | 'spit' | 'leap' | 'pinned' | 'crouch' | 'howl' | 'rise' | 'grab' | 'warn' | 'slam' | 'severed' | 'down'
-    | 'plant' | 'flank' | 'fall' | 'climb';
+    | 'curse' | 'whip' | 'float' | 'throw' | 'burn' | 'plant' | 'flank' | 'fall' | 'climb';
   /** A Mind Flayer leg's tip in world px: the end of the line it strikes down. x, y is its root. Absent on everything else. */
   aim?: Vec2;
   /** 0..1 how far Eleven has reached a pinned Billy, or how far a twin Demogorgon has fallen (pose fall) or has left to climb (pose
@@ -60,7 +62,8 @@ export interface ActorView {
   /** A hero under the clock curse: the chimes sounded so far, 1 to 3. gfx draws the clock mark and its four pips over them, and
    *  z lifts them. Drawn where the curse found them, benched or not (docs/level-11.md, "The curse"). Absent when not cursed. */
   curse?: number;
-  /** A boss or elite marked by Eddie's Hellfire DM: the party's hits on it deal more. gfx draws a small d20 over it. */
+  /** A boss or elite marked by Eddie's Hellfire DM: the party's hits on it deal more. gfx draws a small d20 over it. On a memory orb
+   *  (4.4) it is the orb the clock marked: breaking it lifts the curse, and gfx draws the orb lit red instead. */
   marked?: boolean;
   /** A trooper whose riot shield a smash has broken for good: gfx draws him without one, and `guarding` stays false. Absent otherwise.
    *  (The shield being up or down at the moment is `guarding`, as for the riot guard.) */
@@ -101,7 +104,10 @@ export type FxKind =
   /** fall: a twin Demogorgon dropping into the void (x, y the edge it went over, w its width, life the fall) (docs/level-15.md). */
   | 'fall'
   /** orb: Vecna's slow homing orb in flight, x, y its middle at chest height, angle its heading, w its diameter (docs/level-16.md). */
-  | 'orb';
+  | 'orb'
+  /** debris: a rock Vecna throws, in flight (h its height) and its splash. whip: one of his vine lashes, along `angle`, w its length.
+   *  blaze: the fire over him in Burn, w its size (docs/level-13.md). */
+  | 'debris' | 'whip' | 'blaze';
 
 export interface FxView {
   kind: FxKind;

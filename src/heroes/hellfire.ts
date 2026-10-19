@@ -13,8 +13,10 @@ export function metalMul(h: Pick<Hero, 'id' | 'level'>): number {
 
 /** A boss or an elite: the foes Hellfire DM marks. A boss is any of the stage bosses, a Mind Flayer leg, or anything in the `boss` group. */
 export function isBossOrElite(e: Enemy): boolean {
+  // A memory orb's mark is the clock's (ActorView.marked), not Eddie's.
+  if (e.orb !== null) return false;
   return e.elite || e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || e.flayer !== null
-    || e.leg !== null || e.kind === 'warden' || e.group === 'boss';
+    || e.leg !== null || e.vecna !== null || e.kind === 'warden' || e.group === 'boss';
 }
 
 /** Eddie has hit `e`: from Lv 6 a boss or an elite carries the mark for the next 300 frames. */

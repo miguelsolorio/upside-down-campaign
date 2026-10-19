@@ -55,7 +55,7 @@ function collide(s: S, p: Proj, hero: Hero): boolean {
       // A fireball bursts on the first enemy it touches, and the burst does the hitting.
       if (p.end) return false;
       p.hit.push(e.uid);
-      hitEnemy(s, by, e, { power: p.power, kb: p.kb, angle: Math.atan2(p.vy, p.vx), sfx: p.kind === 'bullet' ? 'hit' : 'rockHit', util: p.util ?? undefined, kbCap: p.kbCap });
+      hitEnemy(s, by, e, { power: p.power, kb: p.kb, angle: Math.atan2(p.vy, p.vx), sfx: p.kind === 'bullet' ? 'hit' : 'rockHit', util: p.util ?? undefined, kbCap: p.kbCap, air: true });
       if (p.pierce <= 0) return false;
       p.pierce--;
     }

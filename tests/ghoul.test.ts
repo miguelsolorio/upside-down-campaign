@@ -47,7 +47,7 @@ test('in the glass: not in the view, not hittable, not aware, and still alive fo
   assert.equal(hitEnemy(r.s, hero(r.s), e, { power: 5 }), 0, 'a hit finds nothing');
   assert.equal(e.hp, e.hpMax);
   assert.equal(r.sim.view().props.find((p) => p.id === 'm1')?.k, 1, 'the mirror shows all of its ghouls inside');
-  assert.deepEqual([ENEMY_DEFS.ghoul.hp, ENEMY_DEFS.ghoul.atk, ENEMY_DEFS.ghoul.def, ENEMY_DEFS.ghoul.speed, ENEMY_DEFS.ghoul.xp], [110, 38, 4, 0.8, 14]);
+  assert.deepEqual([ENEMY_DEFS.ghoul.hp, ENEMY_DEFS.ghoul.atk, ENEMY_DEFS.ghoul.def, ENEMY_DEFS.ghoul.speed, ENEMY_DEFS.ghoul.xp], [175, 60, 4, 0.8, 14]);
 });
 
 test('it steps out when its group is awake and a hero is within 80 px of the mirror with a clear line, not before', () => {
@@ -166,7 +166,7 @@ test('the lunge: a 24 frame "!", 10 frames at 3.2 px, power 0.8 and a shove of 3
   assert.equal(lunged, 10, 'a lunge of 10 frames');
   assert.equal(run0('recover'), X.recover, 'and 30 to recover');
   assert.equal(dmg.length, 1, 'the touch hurts once');
-  assert.equal(dmg[0], Math.max(1, Math.round(0.8 * 38 - hero(r.s).st.def * 0.5)), 'power 0.8 of 38');
+  assert.equal(dmg[0], Math.max(1, Math.round(0.8 * ENEMY_DEFS.ghoul.atk - hero(r.s).st.def * 0.5)), 'power 0.8 of his ATK');
   assert.ok(e.y - y0 > 10 || Math.hypot(e.x - x0, e.y - y0) > 10, 'it moved along the locked line');
 });
 
@@ -324,7 +324,7 @@ test('an elite ghoul is drawn elite, with more HP and bite', () => {
   approach(r);
   run(r.sim, 3);
   assert.equal(visible(r.sim)[0]?.elite, true);
-  assert.ok(ghoulOf(r.s, 'g1').hp > 110 * 1.8);
+  assert.ok(ghoulOf(r.s, 'g1').hp > ENEMY_DEFS.ghoul.hp * 1.8);
 });
 
 // ------------------------------------------------------------------ the bot

@@ -19,8 +19,8 @@ export type HeroId = 'mike' | 'dustin' | 'lucas' | 'eleven' | 'will' | 'max' | '
 /** Anything with a hero-style sprite and portrait, playable or not. Max is an npc at the arcade in 2.1 and plays from
  *  2.2 on. Hopper is an npc at the Gate in 2.3 and at the food court in 3.3, and plays from 4.1. Erica is an npc at Scoops Ahoy in 3.1 and runs
  *  the cart on the map. Billy is never an npc: he is the `billy` enemy, and the cast entry gives him a portrait and a voice
- *  for his one line in 3.3 (docs/level-9.md). */
-export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
+ *  for his one line in 3.3 (docs/level-9.md). Vecna is the `vecna` enemy; the cast entry is his portrait and voice for 4.4's lines. */
+export type CharId = HeroId | 'joyce' | 'erica' | 'billy' | 'vecna';
 /**
  * guard: a riot guard with a shield that stops frontal hits. warden: the Lab's mini-boss, a bigger shielded guard.
  * demogorgon: the chapter 1 boss (docs/level-3.md). demodog: a young demodog, lunges in packs (docs/level-4.md).
@@ -38,12 +38,15 @@ export type CharId = HeroId | 'joyce' | 'erica' | 'billy';
  * Demogorgon's charge and swipe at a foe's size. twin: one of the two Demogorgons of the 5.2 mini-boss (docs/level-15.md).
  * vecna5: Vecna, phase one of the 5.3 final boss, fast. flayer5: the Mind Flayer with Vecna in its chest, phase two, its chest opened by hits
  * on its legs. leg5: one of its four legs (docs/level-16.md).
+ * demobat: a flyer that circles in flocks and dives (docs/level-12.md). vecna: the chapter 4 boss, three phases; orb: one of his four
+ * memory orbs, rooted, regrowing (docs/level-13.md).
  */
 export type EnemyKind =
   | 'agent' | 'rat' | 'guard' | 'warden' | 'demogorgon' | 'demodog' | 'vine' | 'pod' | 'alpha'
   | 'melter' | 'flayed' | 'soldier' | 'grigori' | 'billy' | 'flayer' | 'flayerleg'
   | 'kguard' | 'kbaton' | 'pitdemo' | 'ghoul'
   | 'trooper' | 'agent5' | 'commander' | 'demofoe' | 'twin'
+  | 'demobat' | 'vecna' | 'orb'
   | 'vecna5' | 'flayer5' | 'leg5';
 /** An elite is the same enemy, tougher and meaner: more HP and damage, a faster pace, double XP. Set per spawn. */
 export type EnemyTier = 'elite';
@@ -266,8 +269,10 @@ export type SimEvent =
   | { t: 'stashUsed'; item: StashItem }
   /** A clock chimed and cursed this hero (docs/level-11.md, "The curse"). */
   | { t: 'cursed'; hero: HeroId }
-  /** A curse ended: its clock broken, Max's Walkman, or the fourth chime's KO. */
-  | { t: 'curseEnd'; hero: HeroId; how: 'clock' | 'walkman' | 'ko' }
+  /** A curse ended: its clock broken, Max's Walkman, the marked memory orb broken (4.4), or the fourth chime's KO. */
+  | { t: 'curseEnd'; hero: HeroId; how: 'clock' | 'walkman' | 'orb' | 'ko' }
+  /** A boss moved into a new phase: Vecna's Float (2) and Burn (3) (docs/level-13.md). Once each. */
+  | { t: 'phase'; spawnId: string; phase: number }
   /** Max played her Walkman. */
   | { t: 'walkman' }
   | { t: 'burst' }
@@ -282,8 +287,9 @@ export type SimEvent =
 
 export type SimSpawn =
   /** hidden: drawn faint until Will's Cold spot shows it or it attacks (docs/level-4.md). mirror: the prop id of the haunted mirror a
-   *  ghoul waits in (docs/level-11.md). */
-  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean; mirror?: string }
+   *  ghoul waits in (docs/level-11.md). x: numbers that replace the def's x for this spawn alone, such as Vecna's speedMul and chimeEvery,
+   *  which 5.3 runs faster (docs/level-13.md). */
+  | { kind: 'enemy'; id: string; type: EnemyKind; tx: number; ty: number; group: string; dormant?: boolean; patrol?: { tx: number; ty: number }[]; tier?: EnemyTier; dir?: Dir; hidden?: boolean; mirror?: string; x?: Record<string, number> }
   | { kind: 'item'; id: string; item: ItemKind; tx: number; ty: number }
   /** smash: any hero's basic attack from up close lights it too, on top of the `hitBy` hero's way of doing it. hits: a clock's,
    *  the basic attacks from up close it takes to break by a hero without its `hitBy`. */
@@ -418,6 +424,13 @@ export interface Sim {
   curse?(prop: string): void;
   /** The party gets Max's Walkman, the 4.2 story item. Optional like curse. */
   giveWalkman?(): void;
+  /** The 4.3 rooftop (docs/level-12.md): on, Eddie is planted as the active hero and a flock circles him; off, it ends. Optional. */
+  rooftop?(on: boolean): void;
+  /** One note of the rooftop's song: a hit pulses Eddie's ring (a crit when perfect), a miss sends a bat down at him. Optional. */
+  soloNote?(hit: boolean, perfect: boolean): void;
+  /** A hero leaves the party for good mid-stage: Eddie's fall at the end of 4.3. Gone from the view and the HUD, kept in party() so
+   *  progress keeps their level. Optional. */
+  dismissHero?(id: HeroId): void;
   healParty(frac: number): void;
   /** Switches the difficulty mid-stage: hits land at the new factor at once, and each living enemy keeps its share of HP. */
   setDifficulty(d: Difficulty): void;

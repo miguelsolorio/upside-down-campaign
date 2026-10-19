@@ -6,7 +6,7 @@ import { HERO_IDS } from '../src/heroes/index.ts';
 import type { HeroSnapshot } from '../src/core/types.ts';
 
 test('stages run 1.1 to 5.3, and only the last one is final', () => {
-  assert.deepEqual([...STAGE_ORDER], ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2', '5.3']);
+  assert.deepEqual([...STAGE_ORDER], ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '4.3', '4.4', '5.1', '5.2', '5.3']);
   assert.equal(nextStage('1.1'), '1.2');
   assert.equal(nextStage('1.3'), '2.1');
   assert.equal(nextStage('2.1'), '2.2');
@@ -16,7 +16,9 @@ test('stages run 1.1 to 5.3, and only the last one is final', () => {
   assert.equal(nextStage('3.2'), '3.3');
   assert.equal(nextStage('3.3'), '4.1');
   assert.equal(nextStage('4.1'), '4.2');
-  assert.equal(nextStage('4.2'), '5.1');
+  assert.equal(nextStage('4.2'), '4.3');
+  assert.equal(nextStage('4.3'), '4.4');
+  assert.equal(nextStage('4.4'), '5.1');
   assert.equal(nextStage('5.1'), '5.2');
   assert.equal(nextStage('5.2'), '5.3');
   assert.equal(nextStage('5.3'), null);
@@ -27,15 +29,16 @@ test('stages run 1.1 to 5.3, and only the last one is final', () => {
   assert.equal(isFinalStage('3.2'), false);
   assert.equal(isFinalStage('3.3'), false);
   assert.equal(isFinalStage('4.2'), false);
+  assert.equal(isFinalStage('4.4'), false);
   assert.equal(isFinalStage('5.1'), false);
   assert.equal(isFinalStage('5.2'), false);
   assert.equal(isFinalStage('5.3'), true);
-  assert.deepEqual(STAGE_ORDER.map(levelNumber), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+  assert.deepEqual(STAGE_ORDER.map(levelNumber), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
   assert.equal(levelNumber('9.9'), 1);
-  assert.deepEqual(STAGE_ORDER.map(chapterOf), [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5]);
+  assert.deepEqual(STAGE_ORDER.map(chapterOf), [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5]);
   assert.deepEqual(STAGE_ORDER.filter(opensChapter), ['1.1', '2.1', '3.1', '4.1', '5.1']);
-  // 4.2 is the second of chapter 4's four and 5.2 the second of chapter 5's three, so neither closes its chapter; 5.3 is the third and does (docs/map-screen.md).
-  assert.deepEqual(STAGE_ORDER.filter(closesChapter), ['1.3', '2.3', '3.3', '5.3']);
+  // 4.2 is the second of chapter 4's four and 5.2 the second of chapter 5's three, so neither closes its chapter; 4.4 and 5.3 do (docs/map-screen.md).
+  assert.deepEqual(STAGE_ORDER.filter(closesChapter), ['1.3', '2.3', '3.3', '4.4', '5.3']);
   assert.equal(closesChapter('9.9'), false);
 });
 

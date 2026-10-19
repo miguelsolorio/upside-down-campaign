@@ -128,7 +128,7 @@ The real solo, the note highway with its charts, its timing and the bot's play, 
 
 | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|
-| 110 | 38 | 4 | 0.8 | 14 |
+| 175 | 60 | 4 | 0.8 | 14 |
 
 - **In the glass.** Every ghoul spawn names its mirror (`mirror` on the spawn). It waits in the glass, unseen and untouchable, until its group is awake and a hero is within 80 px of the mirror with a clear line. Then it steps out (pose `rise` for 40 frames, sfx `ghoul`, it can be hit) at the mirror's foot. One ghoul at a time per mirror: the next waits 90 frames after the last stepped out. A dormant spawn's group is woken by a beat; an awake one's group is awake from the start.
 - **The mirror breaks first.** A mirror shattered while ghouls wait in it kills them with it: a `kill` with no XP and no drop, so its group can clear and a retry leaves them dead.
@@ -219,4 +219,22 @@ The same bands as `docs/level-3.md`, "Targets", measured on HARD with `node scri
 
 ## Result
 
-To be measured (see "Targets").
+Measured with `node scripts/measure-stage.ts 4.2` on HARD (`chief`) at `enemyMult` 1.5, with the party a real run brings (Mike 8, Dustin 7, Robin 5, Eddie 5). "Boss" runs from the `finale` beat to the finish.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Careless, 100 | Kid | Upside | NORMAL | NORMAL, careless |
+|---|---|---|---|---|---|---|---|---|
+| Cleared | 18 | 86, none stuck | 17 | 89 | 20 | 19 | 20 | 20 |
+| Damage taken | 278 | 257 | 251 | 237 | 67 | 289 | 207 | 205 |
+| KOs | 1.85 | 1.55 | 1.65 | 1.42 | 0.05 | 1.70 | 0.35 | 0.65 |
+| Lowest party HP | 34% | 44% | 41% | 47% | 80% | 38% | 55% | 51% |
+| Time | 83 s | 81 s | 84 s | 83 s | 75 s | 105 s | 77 s | 78 s |
+| Boss time | 26 s (31%) | 24 s (30%) | 28 s | 27 s | 28 s | 42 s | 25 s | 26 s |
+
+Stage XP is 238 before `xpMult` 2.1, so it pays about 500. The lead comes out of 4.2 with about 2050 XP, Lv 8 a hundred short of Lv 9, a third of the way to the chapter's Lv 10.
+
+- **The ghoul was too soft.** At its first numbers (110 HP, 38 ATK) and a factor of 1, the bot cleared every run for 50 damage. It is 175 HP and 60 ATK now, and the stage sits at 1.5.
+- **The careful bot's dodge hurt it.** Stepping off every ghoul's lunge gave the next ghoul a free swing: at a high factor the careful bot cleared 5 of 20 and the careless 20. It steps off a lunge now only below half HP (`combat/bot.ts`), and the two bots land within a few runs of each other.
+- **The curse ends at the clock in every run.** The bot swaps to Eddie and breaks it. The Walkman never plays in the measured runs, since Max isn't in the default party.
+- **The run is short** (about 80 s against 90 to 150): the walk from the club to the house has no fights, by design. The finale is about a third of it.
+- **The upside bot clears more than the chief one**: tougher ghouls step out of their mirrors more slowly, so fewer of them stand at once. The bands hold.
+- **The finale has seven ghouls, not six,** so the stage's XP clears the 230 floor (World's call). The `curse` beat waits on `mirror_hint` and the `finale` on `curse`, not on the events after them, so a retry with the mirror or the clock already broken can't lock the chain.

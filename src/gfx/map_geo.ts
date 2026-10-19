@@ -17,7 +17,7 @@ for (let x = 0; x < SCREEN_W; x++) WAVE.push(HZ + Math.round(2.4 * Math.sin(x * 
 export const hzAt = (x: number): number => WAVE[Math.max(0, Math.min(SCREEN_W - 1, Math.round(x)))] as number;
 
 /** Every stage on the map, in play order. */
-export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '5.1', '5.2', '5.3'] as const;
+export const ORDER = ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '4.3', '4.4', '5.1', '5.2', '5.3'] as const;
 
 export interface Pt { x: number; y: number }
 
@@ -40,22 +40,28 @@ export const POS: Record<string, Pt> = {
   '3.2': { x: 96, y: 93 },
   '3.3': { x: 118, y: 48 },
   // Chapter 4 (docs/map-screen.md, "Chapter four on the map"): Kamchatka is half a world away, so 4.1 sits on the inset in the top left corner
-  // (map_inset.ts), on its lower right corner where the token stands over the picture. 4.2 is a stand-in spot until Art draws the Creel House.
+  // (map_inset.ts), on its lower right corner where the token stands over the picture. The Creel House stands on its hill in the top right of
+  // the town (map_house.ts), 4.2 in front of it on the road.
   '4.1': { x: 57, y: 30 },
-  '4.2': { x: 186, y: 40 },
+  '4.2': { x: 188, y: 57 },
+  // Upside Down Hawkins (4.3) is a window onto the town's street on the far side (map_udtown.ts), under the horizon, above it as the other
+  // places down there are: the route drops to it from the Creel House through the horizon, and the token turns over on the way. Vecna's lair
+  // (4.4) is the Creel House's twin hanging upside down from the earth on the right (map_lair.ts), the token standing over its hill.
+  '4.3': { x: 152, y: 137 },
+  '4.4': { x: 233, y: 136 },
   // Chapter 5 (docs/map-screen.md, "Chapter five on the map"), both in the Upside Down half, below the horizon: 5.1 is Hawkins under the
   // army's lockdown, seen from the dark side, in the bottom left; 5.2 is the Abyss, in the bottom right, its island floating over the dark
   // sun. Each node sits over its landmark (map_ch5.ts) like the tunnels' node, with room under it for the landmark and its plate.
   '5.1': { x: 44, y: 139 },
-  '5.2': { x: 230, y: 137 },
-  // The heart (5.3) is the last stop, in the Upside Down half beside the Abyss, left of it and under the tunnels: a node and a plate until Art draws it.
-  '5.3': { x: 176, y: 170 },
+  '5.2': { x: 84, y: 118 },
+  // The heart (5.3) is the last stop, in the Upside Down half between the Abyss and the town, under the horizon: a node and a plate until Art draws it.
+  '5.3': { x: 126, y: 121 },
 };
 
 /** The place each stage sits in. */
 export const PLACE_OF: Record<string, Place> = {
   '1.1': 'woods', '1.2': 'lab', '1.3': 'school', '2.1': 'patch', '2.2': 'tunnels', '2.3': 'gate', '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt',
-  '4.1': 'kamchatka', '4.2': 'creel', '5.1': 'lockdown', '5.2': 'abyss', '5.3': 'heart',
+  '4.1': 'kamchatka', '4.2': 'creel', '4.3': 'udtown', '4.4': 'lair', '5.1': 'lockdown', '5.2': 'abyss', '5.3': 'heart',
 };
 
 /** The landmarks: Hawkins ones stand on `base` (their bottom row), the ones below hang from `top`. */
@@ -67,14 +73,17 @@ export const LAND = {
   tunnels: { x: 194, top: 133 },
   gate: { x: 112, top: 168 },
   lockdown: { x: 44, top: 150 },
-  abyss: { x: 230, top: 148 },
+  abyss: { x: 84, top: 128 },
   mall: { x: 118, base: 72 },
   food: { x: 118, base: 52 },
   bunker: { x: 96, y: HZ },
+  creel: { x: 190, base: 50 },
+  udtown: { x: 152, top: 148 },
+  lair: { x: 233, top: 147 },
 };
 
-/** How far each leg of the route bows, in px: the sign picks the side. The last five are the flights to Kamchatka and back to the Creel House, and down into the Upside Down to the lockdown, the Abyss and the heart. */
-const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 14, -10, -12];
+/** How far each leg of the route bows, in px: the sign picks the side. The last six are the flights to Kamchatka and back to the Creel House, down to Upside Down Hawkins and Vecna's lair, and on to the lockdown, the Abyss and the heart. */
+const BEND = [6, 12, 5, -8, 10, -12, 4, -6, 7, -12, 8, 14, 14, -10, -12];
 
 export interface Leg {
   pts: [number, number][];
@@ -101,6 +110,13 @@ function leg(a: Pt, b: Pt, bend: number): Leg {
 
 /** Leg i runs from node i to node i + 1. */
 export const LEGS: Leg[] = ORDER.slice(0, -1).map((id, i) => leg(POS[id] as Pt, POS[ORDER[i + 1] as string] as Pt, BEND[i] as number));
+
+/** Where the route from the Creel House goes under the horizon on its way to Upside Down Hawkins: the first point of that leg at or below the ground's cut edge. The map opens a hole there. */
+export const DROP: Pt = (() => {
+  const l = LEGS[ORDER.indexOf('4.2')] as Leg;
+  const at = l.pts.find(([x, y]) => y >= hzAt(x)) ?? (l.pts[l.pts.length - 1] as [number, number]);
+  return { x: Math.round(at[0]), y: Math.round(at[1]) };
+})();
 
 const idx = (id: string): number => ORDER.indexOf(id as typeof ORDER[number]);
 

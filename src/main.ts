@@ -12,6 +12,7 @@ import { initGfx } from './gfx/index.ts';
 import { createSheetScene } from './gfx/sheet.ts';
 import { audio } from './audio/index.ts';
 import { createAudioLabScene } from './audio/lab.ts';
+import { perfMark, perfOn } from './core/perf.ts';
 import { createToast } from './ui/toast.ts';
 import { mountTouchUi } from './ui/touchui.ts';
 import type { TouchLayout } from './core/touchlayout.ts';
@@ -133,6 +134,8 @@ startLoop(
     g.scenes.draw(ctx);
     toast.draw(ctx);
     view.imageSmoothingEnabled = false;
+    const t = perfOn ? performance.now() : 0;
     view.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    if (perfOn) perfMark.copy = performance.now() - t;
   },
 );

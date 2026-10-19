@@ -142,10 +142,10 @@ export function trap(ctx: Ctx, f: FxView): void {
 }
 
 // ---------------------------------------------------------------- arcs
-/** The power box firing: a web of lightning across the plate, re-struck every other frame, with sparks at the corners and a flash at the start. */
+/** The power box firing: a web of lightning across the plate, re-struck every other frame (every 32 with Reduce flashing on, under two a second), with sparks at the corners and a flash at the start. */
 export function arcs(ctx: Ctx, f: FxView, p: number): void {
   const W = f.w > 0 ? f.w : 32, H = f.h > 0 ? f.h : 32, x0 = f.x - W / 2, y0 = f.y - H / 2;
-  const fade = p > 0.8 ? 1 - (p - 0.8) / 0.2 : 1, step = f.t >> (settings.reduceFlashing ? 3 : 1);
+  const fade = p > 0.8 ? 1 - (p - 0.8) / 0.2 : 1, step = f.t >> (settings.reduceFlashing ? 5 : 1);
   const pts = (i: number): [number, number] => {
     const k = hash2(i, step, 63), edge = k & 3, r = unit(i, step, 64);
     return edge === 0 ? [x0 + r * W, y0] : edge === 1 ? [x0 + W, y0 + r * H] : edge === 2 ? [x0 + r * W, y0 + H] : [x0, y0 + r * H];

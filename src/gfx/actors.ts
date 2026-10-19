@@ -4,8 +4,10 @@
 // Which frame of the atlas a view asks for is actor_pick.ts. A dormant Flayed is a puddle and a rising one comes up out of it
 // (actor_goo.ts). The Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts,
 // actor_dog.ts, actor_alpha.ts, actor_plant.ts), and so are Billy, kneeling with his veins fading and slumped once he is free
-// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts). Chapter 5's trooper and Commander are drawn from the painters in ch5/
-// (actor_troops.ts), and the twin Demogorgons from the Demogorgon, the second in a red skin, falling and climbing (actor_twin.ts).
+// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts). So are Eddie (actor_eddie.ts), the Creel ghoul (actor_ghoul.ts) and the
+// demobat (actor_demobat.ts), a flier whose shadow stays on the ground under the height `z` lifts it to, and Vecna (actor_vecna.ts), who floats the
+// same way, and his memory orbs (actor_orb.ts). Chapter 5's trooper and Commander are drawn from the painters in ch5/ (actor_troops.ts), and the
+// twin Demogorgons from the Demogorgon, the second in a red skin, falling and climbing (actor_twin.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
@@ -25,9 +27,16 @@ import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
 import { ALPHA_H, ALPHA_W, alphaFrame } from './actor_alpha.ts';
 import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
 import { BILLY_H, BILLY_W, billyFrame } from './actor_billy.ts';
+import { EDDIE_H, EDDIE_W, eddieFrameOf } from './actor_eddie.ts';
+import { GHOUL_H, GHOUL_W, ghoulFrameOf } from './actor_ghoul.ts';
+import { BAT_H, BAT_W, batFrameFor } from './actor_demobat.ts';
+import { VECNA_H, VECNA_W, vecnaFrameOf } from './actor_vecna.ts';
+import { ORB_H, ORB_W, orbFrameOf } from './actor_orb.ts';
+import { whipWarn } from './fx_vecna.ts';
+import { drawMarks } from './actor_mark.ts';
 import { drawFlayer, drawFlayerLeg } from './actor_flayer.ts';
 import type { Frame } from './actor_kit.ts';
-import { ghostKeep } from './actor_kit.ts';
+import { flashOf, ghostKeep } from './actor_kit.ts';
 import { chargeRing } from './fx_l6.ts';
 import { KIDS } from './data/heroes.ts';
 import { ADULTS } from './data/adultchars.ts';
@@ -151,8 +160,9 @@ function render(sh: Sheet, mode: Mode): HTMLCanvasElement {
 
 function atlasFor(sh: Sheet, v: ActorView): HTMLCanvasElement {
   if (v.hidden && v.kind === 'hero') return sh.faint ?? (sh.faint = render(sh, 'faint'));
-  if (v.flash > 0.6) return sh.white ?? (sh.white = render(sh, 'white'));
-  const tint: ColorName | null = v.flash > 0.25 ? 'white' : v.tint;
+  const flash = flashOf(v);
+  if (flash > 0.6) return sh.white ?? (sh.white = render(sh, 'white'));
+  const tint: ColorName | null = flash > 0.25 ? 'white' : v.tint;
   if (tint) {
     let c = sh.tints.get(tint);
     if (!c) { c = render(sh, tint); sh.tints.set(tint, c); }
@@ -273,17 +283,19 @@ function drawNosebleed(ctx: Ctx, v: ActorView, ox: number, oy: number, frame: nu
   if (phase >= 34 && phase < 44) rect(ctx, px, y0 + 4, 1, 1, 'red');
 }
 
-/** An actor drawn from a frame of its own (actor_kit.ts), cw by ch with its feet on the bottom, with the same shadow, bar and "!" as the others. */
-function drawFramed(ctx: Ctx, v: ActorView, f: Frame, cw: number, ch: number, shadow: 'none' | 'small' | 'big' | 'huge'): void {
+/** An actor drawn from a frame of its own (actor_kit.ts), cw by ch with its feet on the bottom, with the same shadow, bar and "!" as the others. Returns the row of its head. */
+function drawFramed(ctx: Ctx, v: ActorView, f: Frame, cw: number, ch: number, shadow: 'none' | 'small' | 'big' | 'huge'): number {
   const cx = Math.round(v.x), cy = Math.round(v.y), z = Math.max(0, Math.round(v.z));
   const oy = cy - ch - z, head = oy + f.top;
   if (!v.blink) {
     if (shadow !== 'none' && !v.hidden) drawShadow(ctx, cx, cy, z, shadow === 'huge' ? 2 : shadow === 'big' ? 1 : 0);
     ctx.drawImage(f.img, cx - (cw >> 1), oy);
-    if (v.bar && !v.hidden) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
+    // A hero's bar is drawn later, on top of the whole scene, by drawHeroBar.
+    if (v.bar && v.kind === 'enemy' && !v.hidden) drawHpBar(ctx, cx, head - 5, v.bar.hp, v.bar.hpMax, v.elite === true);
     if (v.confused && v.kind === 'enemy' && !v.hidden) swirl(ctx, cx, head - (v.bar ? 8 : 3), v.t);
   }
   if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (v.bar ? 15 : 10) + ((v.t >> 2) & 1));
+  return head;
 }
 
 const puddles = new Map<number, HTMLCanvasElement>();
@@ -311,42 +323,51 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
   ctx.drawImage(pud, 0, PUDDLE_H - 4, PUDDLE_W, 4, px, py + PUDDLE_H - 4, PUDDLE_W, 4);
 }
 
-/** Stand-ins: each borrows a sprite that already exists. Chapter 4's ghoul and Eddie wait for Art; chapter 5's Lab agent is the 1.2 agent in his
- *  hazmat suit and the foe Demogorgon is the 1.3 one (docs/level-14.md, docs/level-15.md). */
-const STAND_IN: Partial<Record<string, ActorView['id']>> = {
-  ghoul: 'flayed', eddie: 'steve', agent5: 'agent', demofoe: 'demogorgon',
+/** Chapter 5's foes that wear a sprite that already exists: the Lab agent is the 1.2 agent in his hazmat suit and the foe Demogorgon is the 1.3
+ *  one (docs/level-14.md, docs/level-15.md). The final boss's bodies wear the Warden and the 3.3 spider until their own art is wired. */
+const CH5_LOOK: Partial<Record<string, ActorView['id']>> = {
+  agent5: 'agent', demofoe: 'demogorgon',
   // The final boss (docs/level-16.md): Vecna is the Warden, the spider and its legs the 3.3 ones, until Art wires drawFinaleVecna and drawFinaleSpider.
   vecna5: 'warden', flayer5: 'flayer', leg5: 'flayerleg',
 };
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
-
-/** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. */
+/** Draws one actor. Feet at v.x, v.y; z lifts the sprite but not its shadow. A hero under the curse and a foe Eddie has marked wear their marks over it; a memory orb the clock marked is lit red instead (actor_orb.ts), so it has no d20. */
 export function drawActor(ctx: Ctx, w: ActorView): void {
-  const sub = ALIAS[w.id] ?? STAND_IN[w.id];
+  const head = drawBody(ctx, w);
+  if (head !== null && (w.curse || (w.marked && w.id !== 'orb')) && !w.blink) drawMarks(ctx, w, head);
+}
+
+/** The actor itself, without its marks: the row its head is on, or null when it has none to hang a mark on (a puddle, a body that draws its own). */
+function drawBody(ctx: Ctx, w: ActorView): number | null {
+  const sub = ALIAS[w.id] ?? CH5_LOOK[w.id];
   const v: ActorView = sub ? { ...w, id: sub } : w;
   switch (v.id) {
-    case 'demogorgon': drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big'); return;
-    case 'demodog': drawFramed(ctx, v, dogFrame(v), DOG_W, DOG_H, 'big'); return;
-    case 'alpha': drawFramed(ctx, v, alphaFrame(v), ALPHA_W, ALPHA_H, 'huge'); return;
-    case 'billy': drawFramed(ctx, v, billyFrame(v), BILLY_W, BILLY_H, v.kind === 'npc' ? 'small' : 'big'); return;
-    case 'flayer': drawFlayer(ctx, v); return;
-    case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); return;
-    case 'vine': drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return;
-    case 'pod': drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none'); return;
-    case 'trooper': drawFramed(ctx, v, trooperFrame(v), TROOPER_CELL, TROOPER_CELL, 'small'); return;
-    case 'commander': drawFramed(ctx, v, commanderFrame(v), COMMANDER_CELL, COMMANDER_CELL, 'big'); return;
+    case 'demogorgon': return drawFramed(ctx, v, demoFrame(v), DEMO_W, DEMO_H, 'big');
+    case 'demodog': return drawFramed(ctx, v, dogFrame(v), DOG_W, DOG_H, 'big');
+    case 'alpha': return drawFramed(ctx, v, alphaFrame(v), ALPHA_W, ALPHA_H, 'huge');
+    case 'billy': return drawFramed(ctx, v, billyFrame(v), BILLY_W, BILLY_H, v.kind === 'npc' ? 'small' : 'big');
+    case 'eddie': return drawFramed(ctx, v, eddieFrameOf(v), EDDIE_W, EDDIE_H, 'small');
+    case 'ghoul': return drawFramed(ctx, v, ghoulFrameOf(v), GHOUL_W, GHOUL_H, 'small');
+    case 'demobat': return drawFramed(ctx, v, batFrameFor(v), BAT_W, BAT_H, 'small');
+    case 'vecna': if (v.pose === 'whip' && v.aim && !v.blink) whipWarn(ctx, Math.round(v.x), Math.round(v.y), v.aim.x, v.aim.y, v.t); return drawFramed(ctx, v, vecnaFrameOf(v), VECNA_W, VECNA_H, 'big');
+    case 'orb': return drawFramed(ctx, v, orbFrameOf(v), ORB_W, ORB_H, 'none');
+    case 'flayer': drawFlayer(ctx, v); return null;
+    case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); return null;
+    case 'vine': { const head = drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return head; }
+    case 'pod': return drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none');
+    case 'trooper': return drawFramed(ctx, v, trooperFrame(v), TROOPER_CELL, TROOPER_CELL, 'small');
+    case 'commander': return drawFramed(ctx, v, commanderFrame(v), COMMANDER_CELL, COMMANDER_CELL, 'big');
     case 'twin': {
       // Out of sight below the edge (pose fall with k at 1): nothing to draw until it starts to climb.
-      if (v.pose === 'fall' && (v.k ?? 0) >= 1) return;
+      if (v.pose === 'fall' && (v.k ?? 0) >= 1) return null;
       const t = twinFrame(v);
-      if (t.grounded) drawFramed(ctx, v, t.frame, DEMO_W, DEMO_H, 'big');
-      else drawFramed(ctx, { ...v, y: v.y + t.dy, bar: null, alert: false }, t.frame, DEMO_W, DEMO_H, 'none');
-      return;
+      if (t.grounded) return drawFramed(ctx, v, t.frame, DEMO_W, DEMO_H, 'big');
+      return drawFramed(ctx, { ...v, y: v.y + t.dy, bar: null, alert: false }, t.frame, DEMO_W, DEMO_H, 'none');
     }
     default: break;
   }
-  if (v.puddle) { drawPuddle(ctx, v); return; }
+  if (v.puddle) { drawPuddle(ctx, v); return null; }
   const sh = sheetOf(keyOf(v.id, v.guarding, v.elite, v.kind));
   const C = sh.cell;
   const cx = Math.round(v.x), cy = Math.round(v.y);
@@ -354,7 +375,7 @@ export function drawActor(ctx: Ctx, w: ActorView): void {
   const ox = cx - (C >> 1), oy = cy - C - z;
   const row = DIR_ROW[v.dir];
   const head = oy + (sh.tops[row] as number);
-  if (v.pose === 'rise' && v.id === 'flayed') { if (!v.blink) drawRise(ctx, v, sh); return; }
+  if (v.pose === 'rise' && v.id === 'flayed') { if (!v.blink) drawRise(ctx, v, sh); return null; }
   const bar = v.bar && v.kind === 'enemy';
   if (!v.blink) {
     drawShadow(ctx, cx, cy, z, C > CELL);
@@ -367,6 +388,7 @@ export function drawActor(ctx: Ctx, w: ActorView): void {
     if (v.confused && v.kind === 'enemy') swirl(ctx, cx, head - (bar ? 8 : 3), v.t);
   }
   if (v.alert) ctx.drawImage(alertSprite(), cx - 2, head - (bar ? 15 : 10) + ((v.t >> 2) & 1));
+  return head;
 }
 
 /** Builds every sheet and the main atlases up front. */

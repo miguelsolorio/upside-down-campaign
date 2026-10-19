@@ -5,12 +5,14 @@ import type { CharId } from './types.ts';
 
 export type NodeState = 'cleared' | 'open' | 'locked';
 
-export type Place = 'woods' | 'lab' | 'school' | 'patch' | 'tunnels' | 'gate' | 'mall' | 'base' | 'foodcourt' | 'kamchatka' | 'creel' | 'lockdown' | 'abyss' | 'heart';
+export type Place = 'woods' | 'lab' | 'school' | 'patch' | 'tunnels' | 'gate' | 'mall' | 'base' | 'foodcourt' | 'kamchatka' | 'creel' | 'udtown' | 'lair'
+  | 'lockdown' | 'abyss' | 'heart';
 
 /** Which part of Hawkins each stage sits in. */
 export const MAP_PLACE: Record<string, Place> = {
   '1.1': 'woods', '1.2': 'lab', '1.3': 'school', '2.1': 'patch', '2.2': 'tunnels', '2.3': 'gate',
-  '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt', '4.1': 'kamchatka', '4.2': 'creel', '5.1': 'lockdown', '5.2': 'abyss', '5.3': 'heart',
+  '3.1': 'mall', '3.2': 'base', '3.3': 'foodcourt', '4.1': 'kamchatka', '4.2': 'creel', '4.3': 'udtown', '4.4': 'lair',
+  '5.1': 'lockdown', '5.2': 'abyss', '5.3': 'heart',
 };
 
 export interface MapNode {

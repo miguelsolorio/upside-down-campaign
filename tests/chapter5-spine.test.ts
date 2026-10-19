@@ -160,7 +160,7 @@ test('chapter five is its own chapter: the card says Chapter five, The last camp
   assert.equal(closesChapter('5.2'), false, '5.3 closes chapter 5');
   assert.equal(closesChapter('5.3'), true);
   assert.equal(nextStage('5.3'), null, '5.3 is the last stage of the campaign');
-  assert.equal(nextStage('4.2'), '5.1');
+  assert.equal(nextStage('4.4'), '5.1');
   assert.equal(nextStage('5.1'), '5.2');
   assert.equal(nextStage('5.2'), '5.3');
 });

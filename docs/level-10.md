@@ -62,7 +62,7 @@ World triggers them and writes the scripts.
 | `crack_done` | event `propCleared` on `crack1` | `l10_crack_done` | Script only |
 | `block` | inside the block, past `crack1` | `l10_block` | Script, then `wake` `guardroom` |
 | `cell_hint` | in front of `crack2` | `l10_cell_hint` | Arrival beat of the cache |
-| `shaft` | the shaft's top | `l10_shaft` | Script. `lights_shaft` is the third save point |
+| `shaft` | the shaft's top | `l10_shaft` | Script, then `light` `lights_shaft`: the third save point and the heal before the pit |
 | `pit` | arena rect, needs `shaft` | `l10_pit` | `close` `door1`, `music` `clock`, the script, `wake` `boss` |
 | `pit_down` | event `pinned` on spawn `pitdemo` | `l10_pit_down` | Arrival beat of the finisher |
 | `level_clear` | cleared `boss` | `l10_clear` | The script, `open` `door1`, `finish` |
@@ -118,8 +118,8 @@ Both are new kinds that reuse an existing brain, with their own numbers and look
 
 | Kind | Brain | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|---|---|
-| `kguard`, the Kamchatka guard | the 3.2 soldier (`enemies/soldier.ts`): keeps his distance, aims, a burst of rifle rounds, a rifle butt up close | 80 | 36 | 5 | 0.7 | 12 |
-| `kbaton`, the camp guard | the Lab's riot guard (`enemies/guard.ts`): blocks from the front, a baton swing | 110 | 34 | 7 | 0.7 | 16 |
+| `kguard`, the Kamchatka guard | the 3.2 soldier (`enemies/soldier.ts`): keeps his distance, aims, a burst of rifle rounds, a rifle butt up close | 40 | 20 | 5 | 0.7 | 12 |
+| `kbaton`, the camp guard | the Lab's riot guard (`enemies/guard.ts`): blocks from the front, a baton swing | 55 | 18 | 7 | 0.7 | 16 |
 
 - The baton guard's block is the riot guard's: a hit in the 75 degree front arc deals 20%, knockback of 3.2 or more breaks the block for 45 frames. He circles to face the hero.
 - Rifle rounds are dodged like the 3.2 soldier's, and crates and barrels are cover.
@@ -130,7 +130,7 @@ Both are new kinds that reuse an existing brain, with their own numbers and look
 
 | HP | ATK | DEF | Walk | XP |
 |---|---|---|---|---|
-| 600 | 34 | 6 | 0.8 | 60 |
+| 1100 | 16 | 6 | 0.8 | 60 |
 
 - **The moves are the 1.3 ones.** The swipe; the charge that stuns it on a wall (stun 150 frames, x1.5 taken); the acid arcs from 60%; the leap onto shadow marks from 30%; the roar.
 - **Three stuns and a slam.** Below 0 HP after three wall stuns it is pinned: no attacks, every hit is a `poked`, and the sim emits `{ t: 'pinned', spawnId: 'pitdemo' }` once. Hopper's ground slam reaching it kills it. Before the third stun its HP stops at 1, as the 1.3 one's does.
@@ -149,7 +149,7 @@ Both are new kinds that reuse an existing brain, with their own numbers and look
 Count the XP from `ENEMY_DEFS` before `xpMult` and keep it between 200 and 250. A test enforces it. `xpMult` then sets what the stage pays, so Hopper, in at Lv 5 with no XP, reaches Lv 6 before the pit in most runs.
 
 Items:
-- three Eggos (one in the cache)
+- five Eggos (one in the cache, two in the pit's corners)
 - two Cokes
 - 8 quarters
 
@@ -193,4 +193,21 @@ The same bands as `docs/level-3.md`, "Targets", measured on HARD with `node scri
 
 ## Result
 
-To be measured (see "Targets").
+Measured with `node scripts/measure-stage.ts 4.1` on HARD (`chief`) at `enemyMult` 1.4, Hopper alone at Lv 5 with no XP (`ARRIVAL`). "Boss" runs from the `pit` beat to the finish. A KO is the end of a run, so "KOs" is the share of runs that wipe.
+
+| | Chief, 20 seeds | Chief, 100 seeds | Careless, chief | Kid | Upside | NORMAL | NORMAL, careless |
+|---|---|---|---|---|---|---|---|
+| Cleared | 16 | 84, none stuck | 19 | 20 | 0 | 20 | 20 |
+| Damage taken | 146 | 145 | 148 | 80 | 170 | 110 | 112 |
+| KOs | 0.20 | 0.16 | 0.05 | 0 | 0.95 | 0 | 0 |
+| Lowest party HP | 21% | 24% | 33% | 53% | 3% | 37% | 56% |
+| Time | 123 s | 120 s | 106 s | 95 s | 137 s | 107 s | 96 s |
+| Boss time | 40 s (33%) | 41 s (34%) | 32 s | 27 s | 34 s | 34 s | 28 s |
+
+Stage XP is 200 before `xpMult` 2.2, so it pays 440: 308 from the guards, which takes Hopper from Lv 5 to Lv 6 and the Wind-up before the pit, and 132 for the Demogorgon.
+
+- **The first numbers were a wall for one hero.** At a factor of 1 the bot never cleared: the guards and the pit were sized like the 3.2 soldier against a party of four, and a lone Hopper has nobody to swap to. The guards were halved (the rifle guard 40 HP and 20 ATK, the camp guard 55 and 18) and the Demogorgon went to 1100 HP with 16 ATK, a longer fight with softer hits, so the stage sits at 1.4.
+- **The pit starts fair.** The shaft beat lights `lights_shaft` (the save point and the heal, as Hopper's own lights did at the Gate in 2.3), and two Eggos wait in the pit's corners. Without them every loss was in the pit, entered with whatever the route had left.
+- **Upside clears none.** One hero on one bar: the factor makes the pit both longer and harder hitting, and a KO ends the run. Every factor that let upside through (1.0 and under) made HARD a walk (20 of 20, 45% lowest HP). The parent's done line asks for chief and careless only; upside is left out of band.
+- **The boss is a third of the run,** under the usual half: a longer pit means a longer war of attrition for one bar.
+- **Two stalls fixed.** A guard close to the hero but round a corner now keeps coming instead of standing idle across the wall (`enemies/guard.ts`, every stage). And a hero alone walks round a corner to a foe a hit can't reach, where the bot used to swing at the wall for good (`combat/bot.ts`). That second fix is for a party of one only: applied to everyone it moved the XP of a carried run through chapters 2 and 3 off their measured `ARRIVAL`. Between them they stalled 6 runs in 100.

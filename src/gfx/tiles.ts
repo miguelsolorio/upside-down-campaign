@@ -1,10 +1,11 @@
 // Stage baking and drawing. bakeStage paints every static tile into one big canvas; drawStage blits the
 // visible part and then draws the animated water on top, and the veins and tears of the tunnels and the overrun Lab at the step of their
-// pulse. A night stage is baked from the night art (night.ts).
+// pulse, and in Vecna's lair the vines and roots laid over the attic. A night stage is baked from the night art (night.ts).
 // The day painters always run first, so a night tile is the same tile in a night palette with a few extras.
 import type { TileName } from '../core/tiles.ts';
 import { TILES } from '../core/tiles.ts';
 import { SCREEN_H, SCREEN_W, VIEW_TOP } from '../core/config.ts';
+import { settings } from '../core/settings.ts';
 import { canvasFromPixels, hash2 } from './canvas.ts';
 import type { Ctx } from './canvas.ts';
 import type { Px } from './px.ts';
@@ -13,8 +14,15 @@ import type { Block, Near, TileCtx } from './tile_ground.ts';
 import { objectTile, pulseTile } from './tile_objects.ts';
 import { ch4Tile } from './tile_ch4.ts';
 import { ch5Tile, isCh5Pulse, nightName } from './tile_ch5.ts';
+import type { Skin } from './tile_ch4.ts';
+import { clubNear, clubPulses, windowPhase } from './tile_club.ts';
+import { creelNear, upsidePulses } from './tile_creel.ts';
+import { atticNear, eaveWest, lairLayers } from './tile_attic.ts';
+import type { LairLayer } from './tile_attic.ts';
 import { campBarrel, campNear } from './tile_camp.ts';
 import { pitNear } from './tile_pit.ts';
+import { parkNear } from './tile_udpark.ts';
+import { townNear } from './tile_udtown.ts';
 import { litWindow, nightTile, nightWater } from './night.ts';
 import { tunnelTile } from './tile_tunnel.ts';
 import { findCourts } from './tile_school.ts';
@@ -30,61 +38,100 @@ export interface Spot { readonly x: number; readonly y: number }
 export interface BakedStage { readonly w: number; readonly h: number; readonly night: boolean; readonly windows: readonly Spot[] }
 
 interface WaterSpot { tx: number; ty: number; deep: boolean; variant: number; banks: number }
-/** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain, the base's machine and the camp's burning drum. They are baked at their first step and drawn over at the others. */
-interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block }
-interface StageData extends BakedStage { canvas: HTMLCanvasElement; water: WaterSpot[]; pulses: PulseSpot[] }
+/** A tile whose light moves: the tunnels' veins, the Gate's tears, the mall's fountain, the base's machine, the camp's burning drum, the Hellfire Club's windows, the floor under them and the table with its candles, the veins over Upside Down Hawkins' lawns, and the Creel House in its Upside Down skin: the window that flashes and the veins and spores over its boards. They are baked at their first step and drawn over at the others. */
+interface PulseSpot { tx: number; ty: number; name: TileName; near: Near; blk?: Block; skin?: Skin }
+/** px is the baked pixels (0 where a moving tile goes); solid is the same with black in place of 0, as the frame shows it. layers are
+ *  pictures laid over the bake (the attic's vines, 4.4). */
+interface StageData extends BakedStage { canvas: HTMLCanvasElement; px: Uint32Array; solid: Uint32Array; water: WaterSpot[]; pulses: PulseSpot[]; layers: LairLayer[] }
 
+/** Opaque black, packed the way ImageData holds it. What the frame holds where there is no stage. */
+const BLACK = 0xff000000;
 const T = 16;
 const WATER_TICKS = 16;
 /** Frames each step of a pulse lasts: the veins and the tears move through four steps. */
 const PULSE_TICKS = 16;
 const waterCache = new Map<string, HTMLCanvasElement>();
 const pulseCache = new Map<string, HTMLCanvasElement>();
+const layerCache = new Map<string, HTMLCanvasElement>();
+/** The pixels behind those canvases, so a light pool can lift the animated tiles too without reading the canvas back. */
+const waterPxCache = new Map<string, Px>();
+const pulsePxCache = new Map<string, Px>();
 
-const isPulse = (n: TileName): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel' || isCh5Pulse(n);
-/** The tiles that paint one picture across a run of them, and so need to know where in it they are. */
-const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' || n === 'lift' || n === 'drift';
+const isPulse = (n: TileName, near: Near): boolean => n === 'veins' || n === 'tear' || n === 'fountain' || n === 'machine' || n === 'barrel' || n === 'udveins' || clubPulses(n, near) || isCh5Pulse(n);
+/** The tiles that paint one picture across a run of them, and so need to know where in it they are: the club's table, and a run of its posters, which is the banner. */
+const isBlock = (n: TileName): boolean => n === 'fountain' || n === 'machine' || n === 'lift' || n === 'drift' || n === 'dndtable' || n === 'clubposter';
 
 /** The pixels of a pulsing tile at a step of its pulse. */
-function pulsePx(name: TileName, c: TileCtx, phase: number): Px {
+function pulsePx(name: TileName, c: TileCtx, phase: number, skin?: Skin): Px {
+  if (skin === 'upside' && upsidePulses(name, c.ty)) return ch4Tile(name, c, skin, phase) as Px;
   if (name === 'veins') return tunnelTile(name, c, phase) as Px;
+  if (name === 'udveins') return ch4Tile(name, c, skin, phase) as Px;
   if (name === 'barrel') return campBarrel(c, phase);
   if (isCh5Pulse(name)) return ch5Tile(name, c, phase) as Px;
+  if (name === 'clubwindow' || name === 'clubfloor' || name === 'dndtable') return ch4Tile(name, c, undefined, phase) as Px;
   return (name === 'tear' ? fleshTile(name, c, phase) : pulseTile(name, c, phase)) as Px;
 }
 
+function pulsePxAt(s: PulseSpot, phase: number, night: boolean): Px {
+  const key = `${night ? 'n' : 'd'}${s.skin ?? ''}:${s.name}:${s.tx}:${s.ty}:${phase}`;
+  let p = pulsePxCache.get(key);
+  if (!p) {
+    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
+    const day = pulsePx(s.name, tc, phase, s.skin);
+    p = night ? nightTile(day, nightName(s.name), tc) : day;
+    pulsePxCache.set(key, p);
+  }
+  return p;
+}
+
 function pulseCanvas(s: PulseSpot, phase: number, night: boolean): HTMLCanvasElement {
-  const key = `${night ? 'n' : 'd'}:${s.name}:${s.tx}:${s.ty}:${phase}`;
+  const key = `${night ? 'n' : 'd'}${s.skin ?? ''}:${s.name}:${s.tx}:${s.ty}:${phase}`;
   let c = pulseCache.get(key);
   if (!c) {
-    const tc: TileCtx = { tx: s.tx, ty: s.ty, near: s.near, ...(s.blk ? { blk: s.blk } : {}) };
-    const day = pulsePx(s.name, tc, phase);
-    c = (night ? nightTile(day, nightName(s.name), tc) : day).toCanvas();
+    c = pulsePxAt(s, phase, night).toCanvas();
     pulseCache.set(key, c);
   }
   return c;
+}
+
+function layerCanvas(l: LairLayer, phase: number): HTMLCanvasElement {
+  const key = `${l.id}:${l.x}:${l.y}:${phase}`;
+  let c = layerCache.get(key);
+  if (!c) { c = l.draw(phase).toCanvas(); layerCache.set(key, c); }
+  return c;
+}
+
+function waterPxAt(s: WaterSpot, frame: number, night: boolean): Px {
+  const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
+  let p = waterPxCache.get(key);
+  if (!p) {
+    const day = waterTile(s.deep, s.variant, frame, s.banks);
+    p = night ? nightWater(day, s.deep, s.variant, frame) : day;
+    waterPxCache.set(key, p);
+  }
+  return p;
 }
 
 function waterCanvas(s: WaterSpot, frame: number, night: boolean): HTMLCanvasElement {
   const key = `${night ? 'n' : 'd'}:${s.deep ? 1 : 0}:${s.variant}:${frame}:${s.banks}`;
   let c = waterCache.get(key);
   if (!c) {
-    const day = waterTile(s.deep, s.variant, frame, s.banks);
-    c = (night ? nightWater(day, s.deep, s.variant, frame) : day).toCanvas();
+    c = waterPxAt(s, frame, night).toCanvas();
     waterCache.set(key, c);
   }
   return c;
 }
 
-function staticTile(name: TileName, c: TileCtx, memory = false): Px {
-  return (memory ? ch4Tile(name, c, true) : null) ?? ch5Tile(name, c) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
+function staticTile(name: TileName, c: TileCtx, skin?: Skin): Px {
+  return (skin ? ch4Tile(name, c, skin) : null) ?? ch5Tile(name, c) ?? groundTile(name, c) ?? objectTile(name, c) ?? (groundTile('grass', c) as Px);
 }
 
 /**
  * rows use the legend in core/tiles.ts. night bakes the night art instead of the day art. skin 'memory' bakes the Creel House's
- * letters in its Blood red skin, for the room the 4.2 curse turns red (docs/level-11.md); every other tile bakes as always.
+ * letters in its Blood red skin, for the room the 4.2 curse turns red (docs/level-11.md); 'upside' in their Upside Down rot (4.4); and
+ * 'flash' paints 4.3's letters as a storm's bolt lights them (docs/level-12.md). Every other tile bakes as always.
  */
-export function bakeStage(rows: string[], night = false, skin?: 'memory'): BakedStage {
+export function bakeStage(rows: string[], night = false, skin?: Skin): BakedStage {
   const cols = rows[0]?.length ?? 0, nrows = rows.length;
   const names: TileName[] = [];
   for (let y = 0; y < nrows; y++) {
@@ -111,9 +158,9 @@ export function bakeStage(rows: string[], night = false, skin?: 'memory'): Baked
       let blk: Block | undefined;
       if (isBlock(name)) { const ox = run(tx, ty, -1, 0, name), oy = run(tx, ty, 0, -1, name); blk = { ox, oy, w: ox + 1 + run(tx, ty, 1, 0, name), h: oy + 1 + run(tx, ty, 0, 1, name) }; }
       const court = courts[ty * cols + tx];
-      const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}) };
-      if (isPulse(name)) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}) });
-      const day = staticTile(name, tc, skin === 'memory');
+      const tc: TileCtx = { tx, ty, near, ...(court ? { court } : {}), ...(blk ? { blk } : {}), ...(mall && name === 'checker' ? { mall } : {}), ...(name === 'atticeave' ? { west: eaveWest((x, y) => (x < 0 || y < 0 || x >= cols || y >= nrows ? '' : (names[y * cols + x] as TileName)), tx, ty) } : {}) };
+      if (isPulse(name, near) || (skin === 'upside' && upsidePulses(name, ty))) pulses.push({ tx, ty, name, near, ...(blk ? { blk } : {}), ...(skin ? { skin } : {}) });
+      const day = staticTile(name, tc, skin);
       // A lockdown tile goes through the night pass as the town tile it is built on (tile_ch5.ts).
       const tile = night ? nightTile(day, nightName(name), tc) : day;
       if (night && litWindow(day, nightName(name))) windows.push({ x: tx * T + 8, y: ty * T + 16 });
@@ -123,7 +170,9 @@ export function bakeStage(rows: string[], night = false, skin?: 'memory'): Baked
       }
     }
   }
-  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), water, pulses };
+  const layers = skin === 'upside' ? lairLayers(names, cols) : [];
+  const solid = px.map((v) => (v === 0 ? BLACK : v));
+  const data: StageData = { w: W, h: H, night, windows, canvas: canvasFromPixels(px, W, H), px, solid, water, pulses, layers };
   return data;
 }
 
@@ -141,13 +190,49 @@ export function drawStage(ctx: Ctx, stage: BakedStage, camX: number, camY: numbe
     if (px + T <= x0 || px >= x1 || py + T <= y0 || py >= y1) continue;
     ctx.drawImage(waterCanvas(w, frame, s.night), px, py);
   }
-  const phase = ((t / PULSE_TICKS) | 0) & 3;
-  if (phase === 0) return;
+  const phase = ((t / PULSE_TICKS) | 0) & 3, storm = windowPhase(t, settings.reduceFlashing);
   for (const p of s.pulses) {
     const px = p.tx * T, py = p.ty * T;
     if (px + T <= x0 || px >= x1 || py + T <= y0 || py >= y1) continue;
-    ctx.drawImage(pulseCanvas(p, phase, s.night), px, py);
+    // The club's window and the floor under it, and the lair's windows, keep their own time (rain and lightning, or the red flash), and are baked at the rain's first step, 1.
+    const lit = p.name === 'clubwindow' || p.name === 'clubfloor' || p.name === 'creelwin', ph = lit ? storm : phase;
+    if (ph === (lit ? 1 : 0)) continue;
+    ctx.drawImage(pulseCanvas(p, ph, s.night), px, py);
   }
+  // The attic's vines and roots sway at the step of the pulse, the roots under the actors' feet and the knot over the floor.
+  for (const l of s.layers) {
+    if (l.x + l.w <= x0 || l.x >= x1 || l.y + l.h <= y0 || l.y >= y1) continue;
+    ctx.drawImage(layerCanvas(l, phase), l.x, l.y);
+  }
+}
+
+/**
+ * The pixels drawStage leaves on screen for the world rectangle (x, y, w, h) at frame t, into out: opaque, black where there is
+ * no stage. It is what the light pools lift (gfx/glow.ts), so a pool never has to read the canvas back, which stalls the frame.
+ */
+export function stagePixels(stage: BakedStage, x: number, y: number, w: number, h: number, t: number, out: Uint32Array): void {
+  const s = stage as StageData;
+  const xs = Math.max(0, x), xe = Math.min(s.w, x + w);
+  for (let j = 0; j < h; j++) {
+    const o = j * w, wy = y + j;
+    if (wy < 0 || wy >= s.h || xe <= xs) { out.fill(BLACK, o, o + w); continue; }
+    if (xs > x) out.fill(BLACK, o, o + xs - x);
+    out.set(s.solid.subarray(wy * s.w + xs, wy * s.w + xe), o + xs - x);
+    if (xe < x + w) out.fill(BLACK, o + xe - x, o + w);
+  }
+  /** One animated tile on top, the way drawStage draws its canvas. */
+  const lay = (tile: Px, tx: number, ty: number): void => {
+    const px = tx * T, py = ty * T;
+    for (let j = Math.max(0, y - py); j < Math.min(T, y + h - py); j++) {
+      const o = (py + j - y) * w + px - x;
+      for (let i = Math.max(0, x - px); i < Math.min(T, x + w - px); i++) { const v = tile.d[j * T + i] as number; if (v !== 0) out[o + i] = v; }
+    }
+  };
+  const near = (tx: number, ty: number): boolean => tx * T < x + w && tx * T + T > x && ty * T < y + h && ty * T + T > y;
+  const frame = ((t / WATER_TICKS) | 0) & 3;
+  for (const sp of s.water) if (near(sp.tx, sp.ty)) lay(waterPxAt(sp, frame, s.night), sp.tx, sp.ty);
+  const phase = ((t / PULSE_TICKS) | 0) & 3;
+  if (phase !== 0) for (const sp of s.pulses) if (near(sp.tx, sp.ty)) lay(pulsePxAt(sp, phase, s.night), sp.tx, sp.ty);
 }
 
 // ---------------------------------------------------------------- single tiles, for the sheet
@@ -272,13 +357,15 @@ export function samplePx(name: TileName, v: number): Px {
   if (name === 'planks') near = v === 0 ? { n: 'creek', e: 'trail', s: 'creek', w: 'trail' } : { n: 'planks', e: 'planks', s: 'planks', w: 'planks' };
   if (name === 'trail' || name === 'dirt') near = { n: 'grass', e: v === 1 ? 'grass2' : name, s: name, w: 'grass' };
   if (name === 'fence' || name === 'labfence') near = v === 1 ? { n: name, e: 'grass', s: name, w: 'grass' } : { n: 'grass', e: name, s: 'grass', w: name };
-  near = pitNear(name, v, campNear(name, v, foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near))))))));
+  near = parkNear(name, v, townNear(name, v, atticNear(name, v, creelNear(name, v, clubNear(name, v, pitNear(name, v, campNear(name, v, foodNear(name, v, l56Near(name, v, patchNear(name, v, schoolNear(name, v, lab2Near(name, v, labNear(name, v, near)))))))))))));
   // The fountain, the lift and the machine are one picture over a block: v 0 is its top left piece, v 1 the one beside it, v 2 one inside.
   if (name === 'fountain' || name === 'lift' || name === 'machine') {
     const floor: TileName = name === 'machine' ? 'basefloor' : 'mallfloor';
     near = { n: v === 2 ? name : floor, e: name, s: name, w: v === 0 ? floor : name };
   }
-  return staticTile(name, { tx, ty, near });
+  // The club's table is a 3 by 2 block (v 0 its top left piece, v 1 one on its skirt, v 2 the right end of it) and a poster run of two is the banner (v 1 its left half, v 2 its right).
+  const blk: Block | undefined = name === 'dndtable' ? { ox: [0, 1, 2][v] as number, oy: v === 0 ? 0 : 1, w: 3, h: 2 } : name === 'clubposter' && v > 0 ? { ox: v - 1, oy: 0, w: 2, h: 1 } : undefined;
+  return staticTile(name, { tx, ty, near, ...(blk ? { blk } : {}) });
 }
 
 /** One tile on its own: v picks the position hash (so different variants), t drives water. */

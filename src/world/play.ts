@@ -36,6 +36,9 @@ import { boomView, deadBilly, leavers } from './aftermath.ts';
 import { devHooks } from './devhooks.ts';
 import { sheetHeroes } from './sheet_party.ts';
 import { createMemoryFade } from './memory.ts';
+import { SONG_BOT, liveSong } from './rooftop.ts';
+import type { Song } from './rooftop.ts';
+import { stormFlash } from './storm.ts';
 import { createKlaxon } from './klaxon.ts';
 import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, inView, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld } from './render.ts';
 import type { PlayOptions } from './types.ts';
@@ -126,6 +129,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** The save has Max's Walkman, or a beat gave it this visit (docs/level-11.md). The room the curse turns red fades with memory. */
   let walkman = opts.walkman === true;
   const memory = createMemoryFade();
+  /** The rooftop's song while it plays (docs/level-12.md): the highway takes the action keys, so the sim gets IDLE meanwhile. */
+  let song: Song | null = null;
 
   // ---------------------------------------------------------------- setup
   function seeds(g: Game): PartySeed[] {
@@ -168,6 +173,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     alarm() { audio.sfx('klaxon'); klaxon.ring(); },
     boom() { audio.sfx('boom'); boom = 0; },
     walkman() { if (!walkman) { walkman = true; sim.giveWalkman?.(); opts.onWalkman?.(); } },
+    solo(chart, done) { song = liveSong(sim, chart, () => { song = null; deferred.push(done); }, bot ? SONG_BOT : undefined); },
     music: (track) => audio.music(track), phase: (n) => audio.phase(n),
     // A beat that lights a string for the party (2.3's Gate) goes through the same lightUp as a player's press.
     light(prop) {
@@ -233,6 +239,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
     klaxon.clear();
     boom = -1;
     memory.reset();
+    song = null;
     swapAge = null;
     deferred.length = 0;
     swallow.clear();
@@ -430,9 +437,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const click = g.input.clicked();
       const lead = view.hud.party.find((m) => m.active);
       if (!bot && !frozen && lead && click && onLevel(view.hud.party, click.x, click.y)) { openSheet(lead.id); return; }
-      const input = frozen ? IDLE : bot ? bot.next(sim) : playerInput(g);
+      const input = frozen || song ? IDLE : bot ? bot.next(sim) : playerInput(g);
       // The scare holds the whole level still, as dialogue does, so nothing lands a hit on a party that can't move.
       if (!scare) forward(sim.step(input));
+      song?.step(g.input);
       view = sim.view(); memory.step(view);
       // Lights the burst button on a touch screen.
       if (view.hud.burstReady && !frozen) g.input.offer('burst');
@@ -482,7 +490,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
         camW = SCREEN_W;
       }
       const fig = figure();
-      drawWorld(ctx, stage, boom >= 0 ? boomView(view, boom, g.settings.shake) : view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 }, memory: memory.k() });
+      drawWorld(ctx, stage, boom >= 0 ? boomView(view, boom, g.settings.shake) : view, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 }, memory: memory.k(), flash: stage.storm ? stormFlash(g.frame, g.settings.reduceFlashing) : 0 });
       drawFlash(ctx, view);
       drawLevelFx(ctx, levelFx.list(), view, cam);
       drawKlaxon(ctx, klaxon.level(g.settings.reduceFlashing));
@@ -507,6 +515,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       const hover = at ? slotAt(view.hud.party, at.x, at.y) : -1;
       const levelHot = !!at && onLevel(view.hud.party, at.x, at.y);
       drawHud(ctx, view.hud, g.frame, { focus: stuck?.hero, levelUp: lit, swapAge, hover, levelHot, device: g.input.device() });
+      song?.draw(ctx);
       // The prize floaters and Max's line sit over the cabinets, so the cabinet's prompt waits until they're done.
       if (prompt && maxLine < 0) drawCallout(ctx, promptText(prompt), prompt.x + prompt.w / 2, prompt.y - (prompt.kind === 'arcade' ? 10 : 2), cam, 'yellow');
       if (saved) drawCallout(ctx, 'SAVED', saved.x, saved.y, cam, 'leaf');
@@ -518,9 +527,9 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (max) drawCallout(ctx, MAX_LINE, max.x, max.y - 38, cam, 'pink', 18);
       // The burst line sits under the HUD, near the d20 it's about, so it never covers the fight around the hero.
       if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss);
-      // The subtitle sits where the corner controls do, so it replaces them while it shows.
+      // The subtitle sits where the corner controls do, so it replaces them while it shows. A dialogue box does too, or they peek out round it.
       if (hint) drawSubtitle(ctx, hint.text);
-      else drawControlsCorner(ctx, hintFade);
+      else if (!dialog.active) drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);
       bonds.draw(ctx);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);

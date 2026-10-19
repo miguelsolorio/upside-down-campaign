@@ -8,6 +8,8 @@ import type { Part } from './types.ts';
 import { HOPPER_PORTRAIT, MAX_PORTRAIT, STEVE_PORTRAIT } from './portraits_l56.ts';
 import { ERICA_PORTRAIT, NANCY_PORTRAIT, ROBIN_PORTRAIT } from './portraits_l78.ts';
 import { BILLY_PORTRAIT } from './portraits_l9.ts';
+import { EDDIE_PORTRAIT } from './eddie.ts';
+import { VECNA_PORTRAIT } from './vecna_portrait.ts';
 
 export type Shirt = 'stripes' | 'plaid' | 'plain' | 'jacket' | 'cardigan';
 
@@ -20,6 +22,10 @@ export interface PortraitSpec {
   trim: Part[];
   /** Replaces the mouth in the happy expression. */
   grin?: Part[];
+  /** Replaces the shared head and nose, for a face that isn't one (Vecna's skull). */
+  head?: Part[];
+  /** Replaces the shared expression layers, per expression (Vecna's). */
+  faces?: Partial<Record<Expr, Part[]>>;
 }
 
 export const HEAD: Part = { y: 4, rows: [
@@ -223,12 +229,14 @@ const BASE_PORTRAITS = {
     ] }],
     trim: [],
   },
-} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy' | 'eddie'>, PortraitSpec>;
+} satisfies Record<Exclude<CharId, 'max' | 'steve' | 'hopper' | 'robin' | 'nancy' | 'erica' | 'billy' | 'eddie' | 'vecna'>, PortraitSpec>;
 
 // Max, Steve and Hopper are in portraits_l56.ts. Robin, Nancy and Erica are in portraits_l78.ts. Billy is in portraits_l9.ts.
 export const PORTRAITS: Record<CharId, PortraitSpec> = {
   ...BASE_PORTRAITS, max: MAX_PORTRAIT, steve: STEVE_PORTRAIT, hopper: HOPPER_PORTRAIT,
   robin: ROBIN_PORTRAIT, nancy: NANCY_PORTRAIT, erica: ERICA_PORTRAIT, billy: BILLY_PORTRAIT,
-  // Eddie borrows Steve's until Art draws his Hellfire Club portrait (docs/level-11.md).
-  eddie: STEVE_PORTRAIT,
+  // Eddie's is the Hellfire Club pick, on its dark red ground (data/eddie.ts).
+  eddie: EDDIE_PORTRAIT,
+  // Vecna's is his Rooted skull, on its own head and faces (data/vecna_portrait.ts).
+  vecna: VECNA_PORTRAIT,
 };

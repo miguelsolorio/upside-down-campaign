@@ -7,8 +7,8 @@ import type { ColorName } from '../palette.ts';
 import type { Px } from '../px.ts';
 import { seg, wrap } from './vecna_kit.ts';
 import type { Pt, Tri, VCols, VRig } from './vecna_kit.ts';
-import { make } from './vecna_opts.ts';
-import type { VecnaOpt } from './vecna_opts.ts';
+import { layersOf, make } from './vecna_opts.ts';
+import type { Spec, VecnaOpt } from './vecna_opts.ts';
 
 /** The head sunk between raised shoulders, the arms a little longer and wider. */
 function hunch(r: VRig): VRig {
@@ -106,21 +106,23 @@ const FLAYED: VecnaOpt = {
 
 // ---------------------------------------------------------------- 3. Rooted
 const ROOTED_COLS: VCols = { G: 'grey2', D: 'grey1', B: 'bone', E: 'red' };
+const ROOTED_SPEC: Spec = {
+  cols: ROOTED_COLS, vine: 'blood1', stretch: hunch, body: { claw: 4.6 },
+  before: (px, r, _pose, phase) => tendrils(px, r, 'blood1', 2, 12, phase),
+  dress(px, r) {
+    veins(px, r, 'blood1', 'red');
+    if (!r.lift) for (const t of r.legs) { const [fx, fy] = t[2]; px.line(fx - 1, fy, fx - 5, fy + 1, 'blood1').line(fx + 2, fy, fx + 6, fy + 1, 'blood1'); }
+    for (const t of r.legs) wrap(px, [t[0], t[1], t[1]] as Tri, 'blood1', 4);
+    skull(px, r, ROOTED_COLS, 'blood1');
+  },
+};
 const ROOTED: VecnaOpt = {
   slug: 'rooted', name: 'Rooted', loop: WRITHE,
   note: 'Ash grey, as if the Upside Down had dried him out, hunched under four tall dark red tendrils that rise behind him like a crown, roots running from his feet into the floor, red points for eyes. The biggest outline.',
   cols: ROOTED_COLS,
   mark: { ring: 'blood1', face: 'bone', pip: 'red' },
-  draw: make({
-    cols: ROOTED_COLS, vine: 'blood1', stretch: hunch, body: { claw: 4.6 },
-    before: (px, r, _pose, phase) => tendrils(px, r, 'blood1', 2, 12, phase),
-    dress(px, r) {
-      veins(px, r, 'blood1', 'red');
-      if (!r.lift) for (const t of r.legs) { const [fx, fy] = t[2]; px.line(fx - 1, fy, fx - 5, fy + 1, 'blood1').line(fx + 2, fy, fx + 6, fy + 1, 'blood1'); }
-      for (const t of r.legs) wrap(px, [t[0], t[1], t[1]] as Tri, 'blood1', 4);
-      skull(px, r, ROOTED_COLS, 'blood1');
-    },
-  }),
+  draw: make(ROOTED_SPEC),
+  layers: layersOf(ROOTED_SPEC),
 };
 
 export const VECNA_SCARY: VecnaOpt[] = [GAUNT, FLAYED, ROOTED];

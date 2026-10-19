@@ -144,7 +144,7 @@ A probe on a copy of the tree (`scripts/polish/contrast-probe.py`) records where
 | Controls screen: ACTION, KEY 1, KEY 2, the empty slots, the hint lines | slate on night, 2.7 to 2.9 to 1 | mist, 5.7 to 1 |
 | The HUD's hero keys (1 to 4) | slate on ink, 2.9 to 1 | mist, 6.2 to 1 |
 | Floating words and numbers (damage, +quarters, LEVEL UP, NAT 20, BREAK) | ink shadow on two sides: white on a white Lab floor was 1 to 1 on the other two | an ink outline on every side |
-| The controls in the corner, once they fade | slate over the night floor, about 2 to 1, and hard to read over the Lab | mist with the same outline |
+| The controls in the corner, once they fade | slate over the night floor, about 2 to 1, and hard to read over the Lab | mist with the same outline. They also step aside for a dialogue box now, which left the keys and SWAP peeking out round its edge |
 
 Counted over every string the probe saw, texts under 4.5 to 1 at the worst quarter of their edges went from 7 to 0 on the controls screen, 1 to 0 on the HUD, 9 to 0 on the pause menu and 25 to 0 on the character sheet, and from 225 of 818 to 1 of 555 on the play field (four stages, before and after the same way). The one left is a knocked-out hero's key label, drawn in dusk on purpose.
 
@@ -199,4 +199,4 @@ node scripts/polish/scenes.mjs --port 5173 --mode desktop
 node scripts/polish/shots.mjs --port 5173 --what title,map,stages
 ```
 
-The scripts need Chrome at `/Applications/Google Chrome.app` and Node 22 or newer (its built-in `WebSocket`). They write under `polish-out/`, which is not tracked. `contrast-probe.py` patches `font.ts` and `main.ts`, so run it on a copy of the tree, never this one.
+The scripts need Chrome at `/Applications/Google Chrome.app` and Node 22 or newer (its built-in `WebSocket`). `run.mjs`, `scenes.mjs` and `flash.mjs` work against a production build (`vite build`, then `vite preview`) or the dev server; the three `a11y-*.mjs` scripts and `contrast-run.mjs` import source files, so they need the dev server. They write under `polish-out/`, which is not tracked. `contrast-probe.py` patches `font.ts` and `main.ts`, so run it on a copy of the tree, never this one.

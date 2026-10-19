@@ -44,10 +44,10 @@ export const POS: Record<string, Pt> = {
   '4.1': { x: 57, y: 30 },
   '4.2': { x: 186, y: 40 },
   // Chapter 5 (docs/map-screen.md, "Chapter five on the map"), both in the Upside Down half, below the horizon: 5.1 is Hawkins under the
-  // army's lockdown, seen from the dark side, in the bottom left; 5.2 is the Abyss, in the bottom right under the dark sun. Stand-in
-  // spots until Art draws their landmarks.
-  '5.1': { x: 44, y: 150 },
-  '5.2': { x: 228, y: 158 },
+  // army's lockdown, seen from the dark side, in the bottom left; 5.2 is the Abyss, in the bottom right, its island floating over the dark
+  // sun. Each node sits over its landmark (map_ch5.ts) like the tunnels' node, with room under it for the landmark and its plate.
+  '5.1': { x: 44, y: 139 },
+  '5.2': { x: 230, y: 137 },
 };
 
 /** The place each stage sits in. */
@@ -64,6 +64,8 @@ export const LAND = {
   hole: { x: 210, y: HZ },
   tunnels: { x: 194, top: 133 },
   gate: { x: 112, top: 168 },
+  lockdown: { x: 44, top: 150 },
+  abyss: { x: 230, top: 148 },
   mall: { x: 118, base: 72 },
   food: { x: 118, base: 52 },
   bunker: { x: 96, y: HZ },

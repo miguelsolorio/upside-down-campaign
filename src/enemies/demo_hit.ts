@@ -4,7 +4,8 @@
 // Its HP can't drop below 1 until it has been stunned three times against a wall. After that, the hit that would
 // take it to 0 pins it instead: pose 'pinned', no more attacks, and from then on only its finisher hurts it: Eleven's Mind Blast beam
 // for the 1.3 one, Hopper's ground slam for the pit one of stage 4.1 (docs/level-10.md). Anything else that touches it is reported as a
-// try ('poked' with its spawn id) and does nothing.
+// try ('poked' with its spawn id) and does nothing. (Chapter 5's foe Demogorgon, twins and Commander share the state and the stun, not the pin:
+// they die at 0 HP.)
 import type { DemoState, Enemy, S } from '../combat/state.ts';
 import { floater, flashScreen, sfx, shake, sparks } from '../combat/fx.ts';
 import { BODY_Y } from '../combat/space.ts';
@@ -32,6 +33,9 @@ export function demoPose(d: DemoState): ActorView['pose'] {
     case 'spit': return 'spit';
     case 'crouch': case 'air': return 'leap';
     case 'pinned': return 'pinned';
+    case 'plant': return 'plant';
+    case 'fall': case 'below': return 'fall';
+    case 'climb': return 'climb';
     default: return undefined;
   }
 }
@@ -44,7 +48,7 @@ export const demoStunned = (e: Enemy): boolean => e.demo?.move === 'stun';
 /** A hit while it flies or charges does not shove it off its line, and a pinned one does not move. */
 export const demoImmovable = (e: Enemy): boolean => {
   const m = e.demo?.move;
-  return m === 'run' || m === 'air' || m === 'pinned';
+  return m === 'run' || m === 'air' || m === 'pinned' || m === 'plant';
 };
 
 /**
@@ -115,7 +119,8 @@ export function pinBoss(s: S, e: Enemy): void {
  */
 export function demoSettle(s: S, e: Enemy, finisher: boolean): void {
   const d = e.demo;
-  if (!d || e.hp > 0) return;
+  // Only the 1.3 Demogorgon and the pit one hold at 1 HP and wait to be pinned. The foe, the twins and the Commander die at 0.
+  if (!d || e.hp > 0 || (e.kind !== 'demogorgon' && e.kind !== 'pitdemo')) return;
   if (d.move === 'pinned') {
     if (finisher) return;
     e.hp = 1;

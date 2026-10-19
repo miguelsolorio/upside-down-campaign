@@ -6,6 +6,7 @@ import type {
 import type { Rng, Stats } from '../progression/xp.ts';
 import type { TalentState } from './talent_state.ts';
 import type { GhoulState, HouseState } from './house.ts';
+import type { Ch5State } from '../enemies/ch5_state.ts';
 import type { BondMods } from '../heroes/bonds.ts';
 
 export type { Rng, Stats };
@@ -77,16 +78,15 @@ export type EnemyMode = 'idle' | 'patrol' | 'chase' | 'windup' | 'lunge' | 'reco
  * What the Demogorgon is doing (enemies/demogorgon.ts). walk: stalking. swipe: the close-range wind-up. wind: planted before
  * the charge. run: the charge. stun: dazed against a wall. roar: the petals opening. spit: the acid wind-up. crouch: before
  * the leap. air: the leap. recover: after a swipe, a spit or a landing. pinned: at 0 HP after three stuns, waiting for the beam.
+ * Chapter 5 adds plant (the Commander's shield planted, whistling) and a twin's fall, below and climb (enemies/twin_fall.ts).
  */
-export type DemoMove = 'walk' | 'swipe' | 'wind' | 'run' | 'stun' | 'roar' | 'spit' | 'crouch' | 'air' | 'recover' | 'pinned';
+export type DemoMove = 'walk' | 'swipe' | 'wind' | 'run' | 'stun' | 'roar' | 'spit' | 'crouch' | 'air' | 'recover' | 'pinned' | 'plant' | 'fall' | 'below' | 'climb';
 
-/** The Demogorgon's own state, the pit one's too. Every other enemy has `demo: null`. */
+/** The Demogorgon's own state, the pit one's, the foe's, a twin's and the Commander's. Every other enemy has `demo: null`. */
 export interface DemoState {
   move: DemoMove;
-  /** Frames left in the current move. */
-  t: number;
-  /** Wall stuns so far. */
-  stuns: number;
+  /** Frames left in the current move, and wall stuns so far. */
+  t: number; stuns: number;
   /** The petals have opened (once, at 60 percent HP). */
   petals: boolean;
   /** Frames until each attack can start. */
@@ -237,8 +237,7 @@ export interface Enemy {
   /** Elite tier: true when the spawn asked for it. spd scales every walking speed, cdMul every attack cooldown. */
   elite: boolean;
   spd: number; cdMul: number;
-  /** Guards and wardens only (zero on everything else). */
-  /** Frames the shield stays broken. */
+  /** Guards and wardens only (zero on everything else): frames the shield stays broken. */
   broken: number;
   /** Frames after a break during which another break does nothing. */
   grace: number;
@@ -263,7 +262,7 @@ export interface Enemy {
   /** The Demodog Alpha only. */
   alpha: AlphaState | null;
   /** A run-time spawn: a howl's pup or a defense wave's enemy (combat/spawns.ts). Worth 1 XP, drops nothing. */
-  rt: 'howl' | 'wave' | null;
+  rt: 'howl' | 'wave' | 'squad' | null;
   /** The target its current attack is locked on: Eleven in a defense, instead of the hero. Chosen again after each attack. */
   onWard: boolean;
   /** The frame a hero last hit it. The defense's targeting reads it. */
@@ -278,6 +277,8 @@ export interface Enemy {
   leg: LegState | null;
   /** A Creel ghoul only (docs/level-11.md). */
   ghoul: GhoulState | null;
+  /** A trooper, the Commander or a twin only (enemies/ch5_state.ts). */
+  ch5: Ch5State | null;
 }
 
 /** A Flayed, Grigori or Billy holding the active hero (enemies/hold.ts). `t` counts the frames of the hold. At most one at a time. */
@@ -299,8 +300,7 @@ export interface Defense {
   down: boolean; done: boolean;
   flash: number;
   animT: number;
-  /** The next wave to bring up, and where the round of burrows is. */
-  next: number; cursor: number;
+  next: number; cursor: number; // the next wave to bring up, and where the round of burrows is
   /** Where she stands (feet). `ward` marks it as hers for the enemies' steering (enemies/steer.ts). */
   pos: Pos & { ward: true };
 }
@@ -315,12 +315,10 @@ export interface Proj {
   by: HeroId | null;
   power: number; kb: number; atk: number;
   util: Utility | null;
-  /** How many more enemies it can pass through. */
-  pierce: number;
+  pierce: number; // how many more enemies it can pass through
   /** Where the shooter stood (feet) when it fired. Used for knockback and the DM screen test. */
   ox: number; oy: number;
-  /** Enemy uids already hit. */
-  hit: number[];
+  hit: number[]; // enemy uids already hit
   /** The most a hit may leave an enemy's shove at (before its weight), so a volley that all lands does not stack (Nancy's Shotgun). */
   kbCap?: number;
   /** Enemy rounds only: the frames of invulnerability a hit leaves the hero, where it isn't the usual 45 (a soldier's burst). */

@@ -62,9 +62,13 @@ const guarded = (s: CastScene): boolean => s.shielded || (s.near.up === true && 
 
 /**
  * True for a hero who has what it takes to break a guard's shield, so the bot walks straight at it and does not circle to its blind side:
- * Eleven's Push, Hopper's slam while he has the MP, and his wind-up from Lv 6.
+ * Eleven's Push, Hopper's slam while he has the MP, and his wind-up from Lv 6. A trooper's or the Commander's riot shield breaks for good under
+ * any swing of Steve's or Hopper's (a smash), so they walk straight at it; Eleven's Push breaks a trooper's for a moment, and the Commander's
+ * not at all.
  */
-export function breaksGuard(me: PartyHud): boolean {
+export function breaksGuard(me: PartyHud, kind = ''): boolean {
+  if ((kind === 'trooper' || kind === 'commander') && (me.id === 'steve' || me.id === 'hopper')) return true;
+  if (kind === 'commander') return false;
   return me.id === 'eleven' || (me.id === 'hopper' && (me.level >= LV6 || me.mp >= HERO_DEFS.hopper.special.mp));
 }
 

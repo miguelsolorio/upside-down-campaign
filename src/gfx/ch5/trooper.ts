@@ -113,8 +113,8 @@ function rifle(buf: Uint8Array, a: Pt, b: Pt): void {
   if (Math.abs(dx) >= Math.abs(dy)) put(buf, C, mx, my + 1, 'r'); else put(buf, C, mx + 1, my, 'r');
 }
 
-/** One frame of the trooper, facing right when view is 'side'. */
-export function composeTrooper(view: View, pose: TrooperPose, frame = 0): Uint8Array {
+/** One frame of the trooper, facing right when view is 'side'. `broken` is a trooper whose riot shield a smash has broken for good: the same frame with no shield. */
+export function composeTrooper(view: View, pose: TrooperPose, frame = 0, broken = false): Uint8Array {
   const list = TROOPER_POSES[pose];
   const step = list[Math.min(frame, list.length - 1)] as Step;
   const rig = RIGS[view][step.stance];
@@ -137,9 +137,12 @@ export function composeTrooper(view: View, pose: TrooperPose, frame = 0): Uint8A
     return lying;
   }
   outline(body, C);
-  const sh = shieldLayer(C, fit(rig.shield.r, dx, step.stance === 'block' || step.stance === 'carry' ? dy : 0, C), SHIELD);
   let out: Uint8Array;
-  if (rig.shield.front) { out = body.slice(); over(out, sh); } else { out = sh.slice(); for (let i = 0; i < out.length; i++) if (body[i]) out[i] = body[i] as number; }
+  if (broken) out = body;
+  else {
+    const sh = shieldLayer(C, fit(rig.shield.r, dx, step.stance === 'block' || step.stance === 'carry' ? dy : 0, C), SHIELD);
+    if (rig.shield.front) { out = body.slice(); over(out, sh); } else { out = sh.slice(); for (let i = 0; i < out.length; i++) if (body[i]) out[i] = body[i] as number; }
+  }
   if (step.boom && rig.gun) {
     const [a, m] = rig.gun, sx = Math.sign(m[0] - a[0]), sy = Math.sign(m[1] - a[1]);
     flash(out, C, [m[0] + dx + sx * 2, m[1] + dy + sy * 2], step.boom, 'F', 'G');
@@ -148,7 +151,7 @@ export function composeTrooper(view: View, pose: TrooperPose, frame = 0): Uint8A
 }
 
 /** A painted frame for a direction on screen (left is the right profile mirrored). */
-export function trooperPx(dir: Dir, pose: TrooperPose, frame = 0): Px {
-  return toPx(faced((v) => composeTrooper(v, pose, frame), dir, C), C, TROOPER_PAL);
+export function trooperPx(dir: Dir, pose: TrooperPose, frame = 0, broken = false): Px {
+  return toPx(faced((v) => composeTrooper(v, pose, frame, broken), dir, C), C, TROOPER_PAL);
 }
 

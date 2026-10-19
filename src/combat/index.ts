@@ -179,12 +179,30 @@
 // - Max's Walkman (SimOptions.walkman, Sim.giveWalkman): a swap to Max that is not forced, while it is ready, plays it: the `walkman` sfx, a
 //   'walkman' fx, { t: 'walkman' }, every curse ends ('walkman'), 480 frames in which Sim.curse does nothing, and 1800 frames until it is ready
 //   again. HudView.walkman is { ready, on } while the party has it and Max is in it.
-// - Chapter 5's five foes are stand-ins until Sim builds them (docs/level-14.md, docs/level-15.md), each on an existing brain and its own def: the
-//   trooper (`trooper`) and the Commander (`commander`) run the riot guard's, shield and all (isShieldedKind, no slam), the Lab agent in hazmat
-//   (`agent5`) the agent's, and the Demogorgon foe (`demofoe`) and the twins (`twin`) the demodog's. hud.boss reads THE COMMANDER and THE TWINS.
-//   The view has the fields they will need and the sim does not set them yet: ActorView.broken (a trooper's shield broken for good), cracked
-//   (the Commander below half HP), second (the second twin), poses plant, flank, fall and climb (a twin dropping into the void, k its depth),
-//   the `fall` fx, and Grid.drop (the void's tiles, solid, from the legend) for the fall.
+// - Chapter 5's foes (docs/level-14.md, docs/level-15.md; defs in enemies/defs.ts, the sizes in the comments there):
+//   The trooper (enemies/trooper.ts, ch5_hit.ts) carries a riot shield: a hit from the front, within 60 degrees of the way it faces (ActorView.dir
+//   and `guarding`), does no damage at all (no 'hit' event, a 'BLOCK' floater and the `clang` sfx instead of `hit`), and a hit from the side or
+//   behind lands in full. A hit from a hero with the `smash` utility (Steve, Hopper) breaks the shield for good, from any side: the `shieldBreak` sfx, a BREAK
+//   floater, ActorView.broken true and `guarding` false from then on (the Commander's takes three smashes, one once cracked). It walks at the hero
+//   to 130 px, holds there, and from 64 px out to 170 fires a burst after a 30 frame "!": three 'bullet' rounds six frames apart along the aim
+//   locked at the wind-up's end, `rifle` on each, power 0.4. Then it walks round the hero for 60 frames (ActorView.pose 'flank'). A hero inside 64
+//   px gets the rifle butt instead (20 frame "!", power 0.8, then 30 frames with the shield down, the only time it is, bar a hard shove that
+//   breaks it for a moment). Like a guard, it turns to the hero only after 12 frames with the hero in its blind side.
+//   The Lab agent in hazmat (`agent5`) is the agent's brain on its own def.
+//   The Commander (enemies/commander.ts; hud.boss THE COMMANDER) walks at the hero behind the same kind of shield (75 degrees), bashes (34 frame
+//   "!", power 0.9, 36 frames with the shield down) and, 180 frames in and then every 480, plants the shield for 72 frames (pose 'plant', the
+//   `whistle` sfx) and calls a squad: troopers on the ring round him, group `squad`, run-time spawns (Enemy.rt 'squad') worth 1 XP, at most three
+//   alive, a little weaker than the stage's. At half HP the shield cracks (ActorView.cracked, `shieldBreak`), the whistles stop and he charges
+//   as the Demogorgon does (pose 'charge', pose 'stun' for 120 frames against a wall, x1.5 damage taken, shield down). Poise: no hit staggers him.
+//   The foe Demogorgon (`demofoe`) and the twins (`twin`) run the Demogorgon's brain on their own defs: swipe, charge and wall stun; no petals
+//   or leap, and no pin, they die at 0 HP. The twins take turns (enemies/twin.ts: while one charges the other circles 96 px out, by the count of
+//   charges), share one boss bar, THE TWINS, with their HP added, and ActorView.second is true on the second. When one dies the other roars, opens
+//   its petals (the acid every 300 frames) and moves and charges 30 percent faster. A twin whose charge ends against a tile that is a drop
+//   (Grid.drop) falls (enemies/twin_fall.ts): pose 'fall' with k running 0 to 1 over 40 frames, a 'fall' fx at the edge and the `fall` sfx, then
+//   100 frames below (pose 'fall', k 1) and a 40 frame climb (pose 'climb', k 1 to 0). It loses 15 percent of its max HP (never its last) and
+//   can't be hit, confused or targeted by the bot until it is back, 180 frames after the fall began.
+//   The bot flanks them (bot.ts orbits to a shielded foe's blind side; Steve and Hopper walk straight at a riot shield), dodges the charges
+//   (bot_boss.ts), and keeps off the ring's edge while a twin winds up (bot_void.ts). Its map treats Grid.drop as wall (nav.ts).
 // - The power box (combat/powerbox.ts): a shot on a 'breaker' prop emits targetHit and fires every 'powerbox' prop for 30 frames (state
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;

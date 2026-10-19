@@ -10,7 +10,7 @@ import { settings } from '../core/settings.ts';
 import { wrapText } from '../core/text.ts';
 import { box, clipped } from '../ui/kit.ts';
 import { clamp01, hpBarColor } from '../ui/format.ts';
-import { drawAbyssBg, drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, paintGlow, textWidth, tinyWidth } from '../gfx/index.ts';
+import { drawAbyssBg, drawActor, drawCamCone, drawFx, drawHazard, drawHeroBar, drawIcon, drawItem, drawPool, drawProp, drawSideFade, drawStage, drawText, drawTinyText, drawTowerCone, paintGlow, towerPool, textWidth, tinyWidth } from '../gfx/index.ts';
 import type { Glow } from '../gfx/index.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
@@ -153,6 +153,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
     if (p.y + p.h + p.cam.range < camY || p.y - p.cam.range > camY + SCREEN_H - VIEW_TOP) continue;
     drawCamCone(ctx, p, solidAt(stage), camX, camY, t);
   }
+  // A floodlight tower's cone lifts the ground it falls on (stage 5.1).
+  for (const p of view.props) if (p.kind === 'tower') drawTowerCone(ctx, p, camX, camY, settings.reduceFlashing);
   for (const h of view.hazards) drawHazard(ctx, h, camX, camY, t);
   // The Mind Flayer's goo lies on the floor with them.
   for (const p of view.pools) drawPool(ctx, p);
@@ -208,6 +210,7 @@ function glowLights(stage: Stage, view: SimView, cam: Camera, flicker: number): 
     const on = p.state === 'lit' || p.state === 'open';
     if (p.kind === 'lights' && on) out.push({ x: sx(cx), y: sy(cy), r: 40, flicker: 0.4 + flicker * 0.6 });
     else if (p.kind === 'floodlight' && p.state !== 'off') out.push({ x: sx(cx), y: sy(cy - 6), r: 64, k: 1.15, flicker: 0.1 + flicker * 0.4 });
+    else if (p.kind === 'tower' && p.state !== 'off') out.push({ x: sx(towerPool(p).x), y: sy(towerPool(p).y), r: 36, k: 0.8, flicker: 0.1 + flicker * 0.4 });
     else if (p.kind === 'target') out.push({ x: sx(cx), y: sy(cy), r: on ? 34 : 22, flicker: 0.3 });
     // The fire-door box glows once it is lit, and vines throw a flickering light while they burn.
     else if (p.kind === 'firebox' && on) out.push({ x: sx(cx), y: sy(cy), r: 30, k: 1.1, flicker: 0.5 + flicker * 0.6 });

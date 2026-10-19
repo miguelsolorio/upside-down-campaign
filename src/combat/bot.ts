@@ -31,6 +31,7 @@ import { WARD_REACH, createWardSense, holdPost } from './bot_ward.ts';
 import { createGrigoriSense } from './bot_grigori.ts';
 import { createBillySense } from './bot_billy.ts';
 import { createFlayerSense } from './bot_flayer.ts';
+import { createVoidSense } from './bot_void.ts';
 import { STYLE } from './bot_style.ts';
 import { holdSwap } from './bot_hold.ts';
 import { pickupNear } from './bot_pick.ts';
@@ -161,7 +162,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     for (const a of v.actors) {
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
       // The Mind Flayer's body and legs are the plan's (bot_flayer.ts), not the nearest foe.
-      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.id === 'flayer' || a.id === 'flayerleg') continue;
+      // A twin Demogorgon in the void (pose fall or climb) is out of reach, and so is the Mind Flayer's body and legs.
+      if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.pose === 'fall' || a.pose === 'climb' || a.id === 'flayer' || a.id === 'flayerleg') continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -250,6 +252,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
   }
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
+  const edge = createVoidSense(opts.grid, walkable);
   const ghoul = createGhoulSense();
   const curse = createCurseSense();
   const cross = createDashCross();
@@ -313,8 +316,10 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
       wp = opts.waypoints[wi] ? goalOf(opts.waypoints[wi] as BotWaypoint) : undefined;
     }
 
-    // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's.
-    const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
+    // The boss's marks and charge are read every frame, so its heading is known. A pinned boss is the finisher's. A twin winding up beside the
+    // void comes first (bot_void.ts): the lane has no room there.
+    const bossStep = boss.dodge(v, hx, hy);
+    const leave = edge.dodge(v, hx, hy) ?? bossStep ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy) ?? ghoul.dodge(v, hx, hy, walkable);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
     const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
@@ -390,7 +395,8 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
         // to its blind side. Once it recovers, is broken or turns its back, this is an ordinary fight again.
         const shielded = isGuard(near.kind) && near.up && inArc(near, hx, hy);
         const spray = me.id === 'dustin' && shielded && !near.burning && me.mp >= HERO_DEFS.dustin.special.mp;
-        const orbit = shielded && !desperate && !careless && !breaksGuard(me) && !spray
+        // A riot shield lets nothing through (block 0): swinging at it from the front is for nothing, so it never gives up on the circling.
+        const orbit = shielded && (!desperate || defOf(near.kind).x.block === 0) && !careless && !breaksGuard(me, near.kind) && !spray
           ? orbitPoint(near, hx, hy, Math.max(style.hold, near.kind === 'warden' ? 46 : 34)) : null;
         if (orbit) {
           [mx, my] = walkTo(hx, hy, orbit[0], orbit[1]);

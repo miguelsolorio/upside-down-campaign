@@ -10,6 +10,7 @@ import { drawTinyText } from './font.ts';
 import { BAND_Y, HZ, LAND, LEGS, ORDER, POS, SCREEN_H, SCREEN_W, TOP_H, hzAt } from './map_geo.ts';
 import { arcade, gate, grey, lab, pumpkin, remap, roots, school, toUD, toUDLand, tunnels, woods } from './map_art.ts';
 import { bunker, foodCourt, mall } from './map_mall.ts';
+import { abyssMark, lockdownMark } from './map_ch5.ts';
 import { INSET, kamchatka } from './map_inset.ts';
 import { groundBoxes, paintTownGround, townItems } from './map_town.ts';
 import type { Box, Item } from './map_town.ts';
@@ -312,8 +313,15 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
       else if (d <= 15 && d > 10 && (x & 1) === 0 && (y & 1) === 0) P.set(x, y, 'blood1');
     }
   }
+  const CH5_MARKS = [['5.1', 'LOCKDOWN', lockdownMark(), LAND.lockdown], ['5.2', 'ABYSS', abyssMark(), LAND.abyss]] as const;
   const gt = gate(!locked('2.3'));
   P.blit(gt, gx - (gt.w >> 1), LAND.gate.top);
+
+  // Chapter 5: the lockdown's floodlight over its sandbags and the Abyss's floating island, in the Upside Down half.
+  for (const [id, , mark, at] of CH5_MARKS) {
+    if (locked(id)) remap(mark, grey);
+    P.blit(mark, at.x - (mark.w >> 1), at.top);
+  }
 
   paintRoute(P, st);
 
@@ -324,11 +332,8 @@ export function paintLand(st: Record<string, NodeState>): { px: Px; plates: Plat
 
   plates.push({ cx: LAND.tunnels.x, y: LAND.tunnels.top + tn.h + 3, name: 'TUNNELS', state: st['2.2'] as NodeState, ud: true, point: 'up' });
   plates.push({ cx: 86, y: GATE_AT.y - 4, name: 'GATE', state: st['2.3'] as NodeState, ud: true, point: 'right' });
-  // Chapter 5 (stand-in plates until Art draws the lockdown and the Abyss): each hangs under its node, pointing up at it.
-  for (const [id, name] of [['5.1', 'LOCKDOWN'], ['5.2', 'ABYSS']] as const) {
-    const at = POS[id] as { x: number; y: number };
-    plates.push({ cx: at.x, y: at.y + 18, name, state: st[id] as NodeState, ud: true, point: 'up' });
-  }
+  // Chapter 5's plates hang under their landmarks, pointing up, like the tunnels'.
+  for (const [id, name, mark, at] of CH5_MARKS) plates.push({ cx: at.x, y: at.top + (mark.h as number) + 3, name, state: st[id] as NodeState, ud: true, point: 'up' });
   return { px: P, plates, veins, inset };
 }
 

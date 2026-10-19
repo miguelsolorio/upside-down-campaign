@@ -281,34 +281,75 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
     windup: 24, power: 0.8, cooldown: 90, drop: 0.25, weight: 1.1,
     x: { see: 80, rise: 40, gap: 90, range: 40, lungeT: 10, lungeSpeed: 3.2, recover: 30, kb: 3, bob: 2, light: 48, lightMul: 1.5 },
   },
-  // Chapter 5 (docs/level-14.md, docs/level-15.md). Stand-ins until Sim builds the real brains: each borrows an existing kind's brain and
-  // its `x`, with numbers sized for a Lv 10 party that Sim tunes inside the stages' targets. The trooper (a rifle and a riot shield) runs the
-  // riot guard's brain and the Commander the same, with the shield and no slam (enemies/shield.ts, isShieldedKind); the chapter 5 Lab agent
-  // is the 1.2 agent's; the Demogorgon foe and the twins lunge like a demodog (enemies/demodog.ts, which reads the demodog's own numbers).
+  // Chapter 5 (docs/level-14.md, docs/level-15.md). Sized for the Lv 10 party that walks into 5.1 on HARD, at enemyMult 1: the stages
+  // set their own factor when the maps are built. The guide is chapter 4's guards (80 to 110 HP, 34 to 36 ATK) for a Lv 7 party.
+  // The trooper (enemies/trooper.ts, trooper_hit.ts). arc: the shield's half angle in degrees, block: the share of a blocked hit that
+  // gets through (none), breakKb, breakT and grace: a shove that drops the shield for a while, turn: frames the hero must stay in the
+  // blind side before it turns, smashes: smash hits that break the shield for good. far bounds the band it holds from the hero with a
+  // line, and inside near it doesn't fire (it presses on to the butt); range is the burst's reach. speed, r and kb are a round's (px a
+  // frame, size, shove), burst the rounds, gap the frames between them, recover the frames after. flankT frames of walking round to a
+  // hero's side at flankSpeed (a multiple of its walk). butt and the rest are the rifle butt up close, as the soldier's, reach the same
+  // for the bot's reading of it. patrol, lose and hold are the guard's.
   trooper: {
-    kind: 'trooper', name: 'Trooper', hp: 120, atk: 40, def: 9, speed: 0.75, xp: 18, aggro: 110,
-    windup: 30, power: 1, cooldown: 110, drop: 0.35, weight: 1.4,
-    x: { range: 26, reach: 30, arc: 60, block: 0, breakKb: 3.2, breakT: 45, grace: 30, turn: 12, kb: 3.6, recover: 36, patrol: 0.5, lose: 240, hold: 18 },
+    kind: 'trooper', name: 'Trooper', hp: 130, atk: 34, def: 9, speed: 0.75, xp: 18, aggro: 120,
+    windup: 30, power: 0.4, cooldown: 130, drop: 0.35, weight: 1.4,
+    x: {
+      arc: 60, block: 0, breakKb: 3.2, breakT: 45, grace: 90, turn: 12, smashes: 1,
+      near: 64, far: 130, range: 170, speed: 3.2, r: 3, kb: 1.8, burst: 3, eliteBurst: 5, gap: 6, recover: 24, flankT: 60, flankSpeed: 1,
+      butt: 22, buttWindup: 20, buttPower: 0.8, buttKb: 3, buttReach: 28, reach: 28, buttRecover: 30, buttGap: 60, patrol: 0.5, lose: 240, hold: 18,
+    },
   },
+  // The Lab agent at chapter 5 numbers: the 1.2 agent's brain (enemies/agent.ts) on its own def, so it keeps the same x.
   agent5: {
     kind: 'agent5', name: 'Lab agent', hp: 90, atk: 38, def: 8, speed: 0.9, xp: 14, aggro: 100,
     windup: 24, power: 0.65, cooldown: 100, drop: 0.3, weight: 1,
     x: { near: 70, far: 100, dart: 2, range: 170, patrol: 0.5, back: 0.7, stamina: 50, recover: 18, lose: 240 },
   },
+  // The 5.1 mini-boss (enemies/commander.ts, trooper_hit.ts). Walk, windup, power and cooldown are the shield bash's; reach, arc (the shield's
+  // half angle too), kb, range, recover, hold, turn, patrol and lose are as the riot guard's. smashes: smash hits it takes on the shield before
+  // it breaks for good (one once the shield has cracked). crackAt: the HP share at which the shield cracks and the charges begin.
+  // whistleFirst, whistleEvery: frames to the first whistle and between them, plantT: frames planted, squad: troopers a whistle calls in,
+  // at most that many alive, squadHp and squadAtk the share of a trooper's HP and ATK they come with. The charge is the Demogorgon's (chargeEvery, chargeWindup, chargeSpeed, chargePower, chargeKb), stunT frames
+  // dazed against a wall and stunMul the damage taken meanwhile.
   commander: {
-    kind: 'commander', name: 'The Commander', hp: 700, atk: 44, def: 12, speed: 0.7, xp: 80, aggro: 140,
-    windup: 34, power: 1, cooldown: 100, drop: 1, weight: 4,
-    x: { range: 30, reach: 34, arc: 75, block: 0, breakKb: 99, breakT: 45, grace: 120, turn: 12, kb: 4.2, recover: 36, patrol: 0.5, lose: 300, hold: 20 },
+    kind: 'commander', name: 'The Commander', hp: 700, atk: 28, def: 12, speed: 0.7, xp: 80, aggro: 140,
+    windup: 34, power: 0.9, cooldown: 100, drop: 1, weight: 4,
+    x: {
+      range: 30, reach: 34, arc: 75, block: 0, breakKb: 99, breakT: 45, grace: 120, turn: 12, kb: 4.2, recover: 36, patrol: 0.5, lose: 300, hold: 20, smashes: 3,
+      crackAt: 0.5, whistleFirst: 180, whistleEvery: 480, plantT: 72, squad: 3, squadHp: 0.75, squadAtk: 0.85,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1, chargeKb: 5, stunT: 120, stunMul: 1.5,
+    },
   },
+  // The foe Demogorgon (enemies/demogorgon.ts on this def): the 1.3 swipe, charge and wall stun at a foe's size, with no petals or leap
+  // (petalsAt and leapAt 0 turn them off) and nothing to pin it (it dies at 0 HP). The keys are the Demogorgon's, above.
   demofoe: {
-    kind: 'demofoe', name: 'Demogorgon', hp: 420, atk: 46, def: 9, speed: 0.9, xp: 40, aggro: 150,
-    windup: 28, power: 0.9, cooldown: 90, drop: 0.5, weight: 3,
-    x: { orbit: 48, near: 38, far: 58, range: 64, lungeT: 14, lungeSpeed: 4, recover: 30, gap: 20, kb: 4 },
+    kind: 'demofoe', name: 'Demogorgon', hp: 400, atk: 30, def: 9, speed: 0.85, xp: 40, aggro: 150,
+    windup: 30, power: 0.6, cooldown: 100, drop: 0.5, weight: 3,
+    x: {
+      reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargePower: 1, chargeKb: 5, stunT: 120, stunMul: 1.5,
+      petalsAt: 0, leapAt: 0, roarT: 40,
+      spitWindup: 26, spitEvery: 120, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.3,
+      crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
+    },
   },
+  // One of the 5.2 twins (enemies/demogorgon.ts, twin.ts, twin_fall.ts): the foe's brain, taking turns. The petals (the acid) open when its
+  // mate dies: it roars, walks enrage times as fast and spits every spitEvery frames. orbit and band: the radius in px it circles the hero at
+  // while its mate charges, and how far off that it drifts; orbitSpeed is its pace then, a multiple of its walk. chargeRange: the most px a
+  // charge runs (so it only reaches the edge of the ring when the hero stands within about that of it). turnWait: frames it holds
+  // the turn without charging before the turn passes. fallT, belowT, climbT: frames falling into the void, gone, and climbing back (180 in all),
+  // fallLoss the share of its max HP the fall costs (it never kills).
   twin: {
-    kind: 'twin', name: 'Demogorgon', hp: 600, atk: 48, def: 10, speed: 0.9, xp: 70, aggro: 200,
-    windup: 28, power: 0.9, cooldown: 90, drop: 1, weight: 4,
-    x: { orbit: 48, near: 38, far: 58, range: 64, lungeT: 14, lungeSpeed: 4, recover: 30, gap: 20, kb: 4 },
+    kind: 'twin', name: 'Demogorgon', hp: 560, atk: 32, def: 10, speed: 0.8, xp: 70, aggro: 200,
+    windup: 30, power: 0.6, cooldown: 100, drop: 1, weight: 4,
+    x: {
+      reach: 30, arc: 70, kb: 4, range: 26, recover: 22, hold: 16,
+      chargeEvery: 150, chargeWindup: 36, chargeSpeed: 4.2, chargeRange: 230, chargePower: 1, chargeKb: 5, stunT: 120, stunMul: 1.5,
+      petalsAt: 0, leapAt: 0, roarT: 40,
+      spitWindup: 26, spitEvery: 300, spitRecover: 20, fan: 0.38, flight: 40, splash: 14, splashT: 14, globPower: 0.3,
+      crouch: 30, air: 45, height: 30, shock: 40, leapPower: 1, leapKb: 5, leapRecover: 50, leapEvery: 200,
+      enrage: 1.3, orbit: 96, band: 14, orbitSpeed: 0.9, turnWait: 360, fallT: 40, belowT: 100, climbT: 40, fallLoss: 0.15,
+    },
   },
 };
 

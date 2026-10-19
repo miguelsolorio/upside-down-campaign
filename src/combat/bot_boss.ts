@@ -2,14 +2,16 @@
 // pose and "!", the marks on the floor, and the pinned pose. Nothing here reaches into the sim.
 //
 //   dodge: steps off a live mark (an acid splash or the leap's landing), backs away from the planted boss during the
-//     charge wind-up, and sidesteps the line once it runs, reading the boss's heading from where it was a frame ago.
+//     charge wind-up, and sidesteps the line once it runs, reading the boss's heading from where it was a frame ago. The foe Demogorgon, the
+//     twins and the Commander charge the same way; of two twins it reads the one that is charging.
 //   finish: when the boss is pinned, swaps to Eleven, walks up to it and fires Mind Blast. The pit Demogorgon of stage 4.1 is dodged the same
 //     way, and finished by Hopper's ground slam from close by.
-import type { EnemyKind, HeroId, SimView, Vec2 } from '../core/types.ts';
+import type { ActorView, EnemyKind, HeroId, SimView, Vec2 } from '../core/types.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { HERO_DEFS } from '../heroes/defs.ts';
 
-const isDemo = (id: string): boolean => id === 'demogorgon' || id === 'pitdemo';
+/** The kinds that charge along a locked line and swipe: the Demogorgons of chapters 1 and 4, the foe and the twins of chapter 5, and the Commander. */
+const isDemo = (id: string): boolean => id === 'demogorgon' || id === 'pitdemo' || id === 'demofoe' || id === 'twin' || id === 'commander';
 const TAU = Math.PI * 2;
 const dist = (ax: number, ay: number, bx: number, by: number): number => Math.hypot(bx - ax, by - ay);
 /** Sideways distance from the charge line that clears the boss's body. */
@@ -105,7 +107,9 @@ export function createBossSense(env: BossEnv): BossSense {
   }
 
   function dodge(v: SimView, hx: number, hy: number): [number, number] | null {
-    const boss = v.actors.find((a) => a.kind === 'enemy' && isDemo(a.id) && a.anim !== 'ko');
+    // There can be two (the twins): the one that is charging is the one to read, else the nearest. One in the void is out of the fight.
+    const demos = v.actors.filter((a) => a.kind === 'enemy' && isDemo(a.id) && a.anim !== 'ko' && a.pose !== 'fall' && a.pose !== 'climb');
+    const boss = demos.find((a) => a.pose === 'charge') ?? demos.reduce<ActorView | undefined>((b, a) => (!b || dist(hx, hy, a.x, a.y) < dist(hx, hy, b.x, b.y) ? a : b), undefined);
     const was = prev;
     prev = boss ? { x: boss.x, y: boss.y } : null;
     const off = leaveMarks(v, hx, hy);
@@ -119,8 +123,8 @@ export function createBossSense(env: BossEnv): BossSense {
       return was && runAge > REACT_CHARGE ? leaveLane(hx, hy, boss.x, boss.y, was) : null;
     }
     // The swipe's wind-up: step out of its reach.
-    if (boss.alert && boss.pose === undefined && d <= ENEMY_DEFS[boss.id as EnemyKind].x.reach + 10) return away(hx, hy, boss.x, boss.y);
-    return null;
+    const swipe = demos.find((a) => a.alert && a.pose === undefined && dist(hx, hy, a.x, a.y) <= ENEMY_DEFS[a.id as EnemyKind].x.reach + 10);
+    return swipe ? away(hx, hy, swipe.x, swipe.y) : null;
   }
 
   function finish(v: SimView, hx: number, hy: number): Finish | null {

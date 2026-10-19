@@ -2,7 +2,8 @@
 // front of them from close range. The Warden also slams the ground all around. Neither fires darts.
 //
 // A guard faces one of four ways. It turns to the hero only after the hero has stayed in its blind side for x.turn
-// frames, so walking around it works. Its shield is down while it recovers from an attack.
+// frames, so walking around it works. Its shield is down while it recovers from an attack. The trooper and the Commander of chapter 5
+// (trooper.ts, commander.ts) turn and walk the same way.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { dirOfAngle } from '../combat/state.ts';
@@ -19,7 +20,7 @@ const RAD = Math.PI / 180;
 const SWING_POSE = 12;
 
 /** Turns toward the hero, but only after x.turn frames of the hero standing in the blind side. */
-function turn(e: Enemy, toHero: number, delay: number): void {
+export function turn(e: Enemy, toHero: number, delay: number): void {
   if (inFront(e, toHero)) { e.turnT = 0; return; }
   if (++e.turnT >= delay) {
     e.dir = dirOfAngle(toHero);
@@ -28,7 +29,7 @@ function turn(e: Enemy, toHero: number, delay: number): void {
 }
 
 /** Walks at the hero. The facing stays where it was, as long as the hero is in sight. */
-function walk(s: S, e: Enemy, hero: Hero, speed: number, clear: boolean): number {
+export function walk(s: S, e: Enemy, hero: Hero, speed: number, clear: boolean): number {
   const facing = e.dir;
   const moved = chaseHero(s, e, hero, speed, clear);
   if (clear) e.dir = facing; else e.turnT = 0;

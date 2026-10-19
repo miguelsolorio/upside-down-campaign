@@ -5,6 +5,7 @@ import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { releaseHold } from '../enemies/hold.ts';
 import { leaveBilly } from '../enemies/billy_hit.ts';
 import { glassDeath, inGlass } from '../enemies/ghoul_hit.ts';
+import { enrageMate } from '../enemies/twin.ts';
 import { clearFlayer, doomLegs, legHeld } from '../enemies/flayer_hit.ts';
 import { hasTalent } from '../progression/talents.ts';
 import type { Enemy, S } from './state.ts';
@@ -72,8 +73,9 @@ function kill(s: S, e: Enemy): void {
   if (e.kind === 'melter') meltBurst(s, e);
   // A ghoul dies as glass.
   glassDeath(s, e);
-  // Freed, Billy stays on the floor as scenery (enemies/billy_hit.ts).
+  // Freed, Billy stays on the floor as scenery (enemies/billy_hit.ts). The twin left standing enrages (enemies/twin.ts).
   leaveBilly(s, e);
+  enrageMate(s, e);
   if (!s.cleared.has(e.group) && !s.enemies.some((o) => o.group === e.group && !o.dead)) {
     s.cleared.add(e.group);
     s.events.push({ t: 'groupCleared', group: e.group });

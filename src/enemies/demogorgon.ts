@@ -1,5 +1,7 @@
 // The Demogorgon, chapter 1's boss (docs/level-3.md). One brain for all its moves. The pit Demogorgon of stage 4.1 (docs/level-10.md) runs
-// it on its own def: every number is read from the enemy's kind.
+// it on its own def: every number is read from the enemy's kind. So do the foe Demogorgon and the twins of chapter 5 (docs/level-15.md): a
+// petalsAt or leapAt of 0 switches that move off, and the twins take turns (twin.ts), fall into the void when a charge ends on a drop
+// (twin_fall.ts) and spit once enraged. The Commander (commander.ts) borrows the charge.
 //
 //   stalk and swipe: walks at the hero, 30 frames under the red "!", then an arc in front of it (anim 'attack' without the
 //     "!" for the first 12 frames after, the swing pose).
@@ -24,25 +26,27 @@ import { alertEnemy, hurtHero } from '../combat/damage.ts';
 import { speedMul } from '../combat/status.ts';
 import { DIR_ANGLE } from './shield.ts';
 import { chaseHero, faceHero, setEnemyAnim } from './steer.ts';
+import { dropAhead, fallUpdate, startFall } from './twin_fall.ts';
+import { twinCharged, twinCircle, twinMine } from './twin.ts';
 
 const RAD = Math.PI / 180;
 /** Frames of the swing pose at the start of the swipe's recovery (anim 'attack' without the "!"). */
 const SWING_POSE = 12;
 
 /** n, give or take a tenth: so the moves don't fall into lockstep. */
-const jitter = (s: S, n: number): number => Math.round(n * (0.9 + s.rng() * 0.2));
+export const jitter = (s: S, n: number): number => Math.round(n * (0.9 + s.rng() * 0.2));
 
 /** Starts a move: how long it lasts, the enemy mode the rest of the sim sees (windup shows the red "!") and the base anim. */
-function begin(e: Enemy, d: DemoState, move: DemoMove, frames: number, mode: Enemy['mode'], anim: AnimId): void {
+export function begin(e: Enemy, d: DemoState, move: DemoMove, frames: number, mode: Enemy['mode'], anim: AnimId): void {
   d.move = move;
   d.t = frames;
   e.mode = mode;
   setEnemyAnim(e, anim);
 }
 
-function toWalk(e: Enemy, d: DemoState): void { begin(e, d, 'walk', 0, 'chase', 'idle'); }
+export function toWalk(e: Enemy, d: DemoState): void { begin(e, d, 'walk', 0, 'chase', 'idle'); }
 
-function toRecover(e: Enemy, d: DemoState, frames: number): void { begin(e, d, 'recover', frames, 'recover', 'idle'); }
+export function toRecover(e: Enemy, d: DemoState, frames: number): void { begin(e, d, 'recover', frames, 'recover', 'idle'); }
 
 // ---------------------------------------------------------------- swipe
 function startSwipe(s: S, e: Enemy, d: DemoState, hero: Hero): void {
@@ -67,7 +71,7 @@ function swipe(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 }
 
 // ---------------------------------------------------------------- charge
-function startCharge(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+export function startCharge(s: S, e: Enemy, d: DemoState, hero: Hero): void {
   const X = ENEMY_DEFS[e.kind].x;
   faceHero(e, hero);
   begin(e, d, 'wind', X.chargeWindup, 'windup', 'attack');
@@ -75,14 +79,18 @@ function startCharge(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 }
 
 /** The wind-up is over: lock the line through where the hero stands now and go. */
-function launch(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+export function launch(s: S, e: Enemy, d: DemoState, hero: Hero): void {
   const X = ENEMY_DEFS[e.kind].x;
   const a = dist(e.x, e.y, hero.x, hero.y) < 2 ? DIR_ANGLE[e.dir] : Math.atan2(hero.y - e.y, hero.x - e.x);
-  e.ax = Math.cos(a) * X.chargeSpeed;
-  e.ay = Math.sin(a) * X.chargeSpeed;
+  // An enraged twin charges as much faster as it walks.
+  const speed = X.chargeSpeed * (e.ch5?.enraged ? X.enrage : 1);
+  e.ax = Math.cos(a) * speed;
+  e.ay = Math.sin(a) * speed;
+  twinCharged(e);
   e.dir = dirOfVec(e.ax, e.ay, e.dir);
   e.hitDone = false;
-  begin(e, d, 'run', 150, 'lunge', 'dash');
+  // The 1.3 boss runs until it meets a solid (at most 150 frames); a def with chargeRange limits the run to that many px.
+  begin(e, d, 'run', X.chargeRange ? Math.ceil(X.chargeRange / speed) : 150, 'lunge', 'dash');
   sfx(s, 'lunge');
 }
 
@@ -97,7 +105,7 @@ function hitWall(s: S, e: Enemy, d: DemoState): void {
   e.cd = Math.max(e.cd, 30);
 }
 
-function run(s: S, e: Enemy, d: DemoState, hero: Hero): void {
+export function run(s: S, e: Enemy, d: DemoState, hero: Hero): void {
   const X = ENEMY_DEFS[e.kind].x;
   const mx = moveBody(s, e, e.ax, 0), my = moveBody(s, e, 0, e.ay);
   if ((s.frame & 3) === 0) dust(s, e.x, e.y, 1);
@@ -108,7 +116,12 @@ function run(s: S, e: Enemy, d: DemoState, hero: Hero): void {
   }
   const blockedX = Math.abs(e.ax) > 0.3 && mx < Math.abs(e.ax) - 0.01;
   const blockedY = Math.abs(e.ay) > 0.3 && my < Math.abs(e.ay) - 0.01;
-  if (blockedX || blockedY) { hitWall(s, e, d); return; }
+  if (blockedX || blockedY) {
+    // A twin's charge that ended on a drop goes over the edge. Against anything else it stuns, as every charge does.
+    const over = e.kind === 'twin' && ((blockedX && dropAhead(s, e.x, e.y, Math.sign(e.ax), 0)) || (blockedY && dropAhead(s, e.x, e.y, 0, Math.sign(e.ay))));
+    if (over) startFall(s, e, d); else hitWall(s, e, d);
+    return;
+  }
   // Nothing to hit inside the cap: it pulls up without a stun.
   if (--d.t <= 0) { d.chargeCd = jitter(s, X.chargeEvery); toRecover(e, d, X.recover); }
 }
@@ -213,13 +226,19 @@ function air(s: S, e: Enemy, d: DemoState, hero: Hero): void {
 function stalk(s: S, e: Enemy, d: DemoState, hero: Hero, dd: number, clear: boolean): void {
   const DEF = ENEMY_DEFS[e.kind], X = DEF.x;
   e.mode = 'chase';
-  if (!d.petals && e.hp <= e.hpMax * X.petalsAt) { roar(s, e, d); return; }
+  // The petals open at petalsAt (0 for the foe and the twins: never), or on the roar of a twin whose mate has died.
+  if (!d.petals && ((X.petalsAt > 0 && e.hp <= e.hpMax * X.petalsAt) || e.ch5?.enraged)) { roar(s, e, d); return; }
+  // A twin whose mate has the turn circles instead of attacking, and only swipes at a hero who walks up to it.
+  const mine = twinMine(s, e);
   if (clear) {
-    if (e.hp <= e.hpMax * X.leapAt && d.leapCd <= 0) { startLeap(s, e, d, hero); return; }
-    if (d.chargeCd <= 0) { startCharge(s, e, d, hero); return; }
-    if (d.petals && d.spitCd <= 0) { startSpit(s, e, d, hero); return; }
+    if (mine) {
+      if (X.leapAt > 0 && e.hp <= e.hpMax * X.leapAt && d.leapCd <= 0) { startLeap(s, e, d, hero); return; }
+      if (d.chargeCd <= 0) { startCharge(s, e, d, hero); return; }
+      if (d.petals && d.spitCd <= 0) { startSpit(s, e, d, hero); return; }
+    }
     if (e.cd <= 0 && dd <= X.range) { startSwipe(s, e, d, hero); return; }
   }
+  if (!mine) { twinCircle(s, e, hero, dd, clear); return; }
   // Close but round a corner: no attack lands without a line, so it keeps coming until it has one.
   if (dd > X.hold || !clear) {
     const moved = chaseHero(s, e, hero, DEF.speed * e.spd * speedMul(e.stat), clear);
@@ -259,5 +278,6 @@ export function demogorgonUpdate(s: S, e: Enemy, hero: Hero): void {
     case 'spit': faceHero(e, hero); if (--d.t <= 0) spit(s, e, d, hero); return;
     case 'crouch': faceHero(e, hero); if (--d.t <= 0) jump(s, e, d, hero); return;
     case 'air': air(s, e, d, hero); return;
+    case 'fall': case 'below': case 'climb': fallUpdate(s, e, d); return;
   }
 }

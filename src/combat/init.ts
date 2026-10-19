@@ -10,6 +10,7 @@ import { makeHero } from './party.ts';
 import { hazardAt } from './hazards.ts';
 import { newTalentState } from './talent_state.ts';
 import { newDemo } from '../enemies/demo_hit.ts';
+import { newCh5 } from '../enemies/ch5_state.ts';
 import { newAlpha } from '../enemies/alpha_hit.ts';
 import { newFlayed } from '../enemies/flayed.ts';
 import { newSoldier } from '../enemies/soldier.ts';
@@ -40,6 +41,10 @@ const DEFAULT_HIT: Partial<Record<PropKind, Utility>> = {
 };
 const DEFAULT_STATE: Partial<Record<PropKind, PropState>> = { lights: 'off', floodlight: 'off' };
 
+/** The kinds that run the Demogorgon's brain (enemies/demogorgon.ts): the 1.3 boss, the pit one, the foe, a twin, and the Commander's charge. */
+const hasDemo = (kind: EnemyKind): boolean =>
+  kind === 'demogorgon' || kind === 'pitdemo' || kind === 'demofoe' || kind === 'twin' || kind === 'commander';
+
 /** An enemy's full HP at the state's difficulty and stage factor. */
 function enemyHp(s: S, kind: EnemyKind, elite: boolean): number {
   const def = ENEMY_DEFS[kind];
@@ -65,13 +70,14 @@ export function makeEnemy(s: S, sp: Extract<SimSpawn, { kind: 'enemy' }>): Enemy
     xp: def.xp <= 0 ? 0 : Math.max(1, Math.round((elite ? def.xp * ELITE.xp : def.xp) * s.xpMult)), drop: elite ? def.drop * ELITE.drop : def.drop, elite,
     spd: elite ? ELITE.speed : 1, cdMul: elite ? ELITE.cooldown : 1,
     broken: 0, grace: 0, turnT: 0, swings: 0, slam: false, ring: null,
-    demo: sp.type === 'demogorgon' || sp.type === 'pitdemo' ? newDemo() : null,
+    demo: hasDemo(sp.type) ? newDemo() : null,
     hidden: sp.hidden === true, cloaked: sp.hidden === true, lunging: false, taunt: 0,
     alpha: sp.type === 'alpha' ? newAlpha() : null, rt: null, onWard: false, hitAt: -9999,
     flayed: sp.type === 'flayed' ? newFlayed() : null, soldier: sp.type === 'soldier' || sp.type === 'kguard' ? newSoldier() : null,
     grigori: sp.type === 'grigori' ? newGrigori() : null, billy: sp.type === 'billy' ? newBilly() : null,
     flayer: sp.type === 'flayer' ? newFlayer() : null, leg: sp.type === 'flayerleg' ? newLeg(f.x, f.y) : null,
     ghoul: sp.type === 'ghoul' ? newGhoul(s, sp.mirror ?? '', sp.dormant !== true) : null,
+    ch5: newCh5(sp.type, s.enemies.some((o) => o.kind === 'twin'), ENEMY_DEFS.commander.x.whistleFirst as number),
   };
 }
 

@@ -4,7 +4,8 @@
 // Which frame of the atlas a view asks for is actor_pick.ts. A dormant Flayed is a puddle and a rising one comes up out of it
 // (actor_goo.ts). The Demogorgon, the demodog, the Alpha, the vine and the pod are drawn from frames of their own (actor_demo.ts,
 // actor_dog.ts, actor_alpha.ts, actor_plant.ts), and so are Billy, kneeling with his veins fading and slumped once he is free
-// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts).
+// (actor_billy.ts), and the Mind Flayer and its legs (actor_flayer.ts). Chapter 5's trooper and Commander are drawn from the painters in ch5/
+// (actor_troops.ts), and the twin Demogorgons from the Demogorgon, the second in a red skin, falling and climbing (actor_twin.ts).
 import type { ActorView, AnimId, Dir } from '../core/types.ts';
 import type { ColorName } from './palette.ts';
 import type { CharSpec } from './data/types.ts';
@@ -16,6 +17,10 @@ import { slotOf } from './actor_pick.ts';
 import { CH4_SPECS, keyOf, lookSpec } from './actor_look.ts';
 import { PUDDLE_H, PUDDLE_W, RISE_FRAMES, puddlePx, puddleStep, swirl } from './actor_goo.ts';
 import { DEMO_H, DEMO_W, demoFrame } from './actor_demo.ts';
+import { commanderFrame, trooperFrame } from './actor_troops.ts';
+import { twinFrame } from './actor_twin.ts';
+import { COMMANDER_CELL } from './ch5/commander.ts';
+import { TROOPER_CELL } from './ch5/trooper.ts';
 import { DOG_H, DOG_W, dogFrame } from './actor_dog.ts';
 import { ALPHA_H, ALPHA_W, alphaFrame } from './actor_alpha.ts';
 import { PLANT, drawWhip, podFrame, vineFrame } from './actor_plant.ts';
@@ -306,13 +311,9 @@ function drawRise(ctx: Ctx, v: ActorView, sh: Sheet): void {
   ctx.drawImage(pud, 0, PUDDLE_H - 4, PUDDLE_W, 4, px, py + PUDDLE_H - 4, PUDDLE_W, 4);
 }
 
-/** Chapter 4 stand-ins until Art draws them (docs/level-11.md): each borrows a sprite that already exists. */
-const STAND_IN: Partial<Record<string, ActorView['id']>> = {
-  ghoul: 'flayed', eddie: 'steve',
-  // Chapter 5 (docs/level-14.md, docs/level-15.md): the trooper and the Commander wear the riot guard's and the Warden's, the Lab agent in hazmat
-  // the agent's, the foe Demogorgon and the twins the 1.3 one's.
-  trooper: 'guard', commander: 'warden', agent5: 'agent', demofoe: 'demogorgon', twin: 'demogorgon',
-};
+/** Stand-ins: each borrows a sprite that already exists. Chapter 4's ghoul and Eddie wait for Art; chapter 5's Lab agent is the 1.2 agent in his
+ *  hazmat suit and the foe Demogorgon is the 1.3 one (docs/level-14.md, docs/level-15.md). */
+const STAND_IN: Partial<Record<string, ActorView['id']>> = { ghoul: 'flayed', eddie: 'steve', agent5: 'agent', demofoe: 'demogorgon' };
 /** The pit's Demogorgon is the 1.3 sprite as it is, all twelve poses (the owner's call, docs/chapter-4.md): an alias for good, not a stand-in. */
 const ALIAS: Partial<Record<string, ActorView['id']>> = { pitdemo: 'demogorgon' };
 
@@ -329,6 +330,16 @@ export function drawActor(ctx: Ctx, w: ActorView): void {
     case 'flayerleg': drawFlayerLeg(ctx, v, drawHpBar); return;
     case 'vine': drawFramed(ctx, v, vineFrame(v), PLANT, PLANT, 'none'); if (!v.blink) drawWhip(ctx, v); return;
     case 'pod': drawFramed(ctx, v, podFrame(v), PLANT, PLANT, 'none'); return;
+    case 'trooper': drawFramed(ctx, v, trooperFrame(v), TROOPER_CELL, TROOPER_CELL, 'small'); return;
+    case 'commander': drawFramed(ctx, v, commanderFrame(v), COMMANDER_CELL, COMMANDER_CELL, 'big'); return;
+    case 'twin': {
+      // Out of sight below the edge (pose fall with k at 1): nothing to draw until it starts to climb.
+      if (v.pose === 'fall' && (v.k ?? 0) >= 1) return;
+      const t = twinFrame(v);
+      if (t.grounded) drawFramed(ctx, v, t.frame, DEMO_W, DEMO_H, 'big');
+      else drawFramed(ctx, { ...v, y: v.y + t.dy, bar: null, alert: false }, t.frame, DEMO_W, DEMO_H, 'none');
+      return;
+    }
     default: break;
   }
   if (v.puddle) { drawPuddle(ctx, v); return; }

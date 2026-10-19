@@ -73,11 +73,17 @@ export interface ItemView { kind: ItemKind; x: number; y: number; t: number }
  *   Its PropView.k is the share of its ghouls still waiting in the glass.
  * clock: a grandfather clock, hitBy 'riff', or `hits` basic attacks from anyone else. Its chime is the curse. Broken, it is open and
  *   still solid (docs/level-11.md).
+ * truck, tent, sandbags, barricade, barrier, tower, booth, curfew: the army's props in stage 5.1 (docs/level-14.md), plain decor that the sim
+ *   treats as nothing in particular: none is solid unless its spawn says `solid: true`. truck and tent face left when open. sandbags,
+ *   barricade and barrier are drawn at the spawn's w (sandbags at its h too). tower is a floodlight tower whose cone lights the ground
+ *   under it unless it is 'off'. A 'crack' 40 px or more on its long side is the checkpoint's boom gate (smash, solid, open = the arm swung
+ *   up); its arm runs across the short side.
  */
 export type PropKind =
   | 'log' | 'gate' | 'target' | 'lights' | 'bike' | 'sign' | 'van' | 'floodlight' | 'crate' | 'door' | 'console'
   | 'camera' | 'tank' | 'rack' | 'generator' | 'vines' | 'firebox' | 'hidden' | 'arcade' | 'gap' | 'crack' | 'rift'
-  | 'shutter' | 'cipher' | 'powerbox' | 'breaker' | 'mirror' | 'clock';
+  | 'shutter' | 'cipher' | 'powerbox' | 'breaker' | 'mirror' | 'clock'
+  | 'truck' | 'tent' | 'sandbags' | 'barricade' | 'barrier' | 'tower' | 'booth' | 'curfew';
 /** alert: a camera that has just spotted the party. */
 export type PropState = 'closed' | 'open' | 'lit' | 'off' | 'alert';
 export interface PropView {

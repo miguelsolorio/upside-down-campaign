@@ -10,6 +10,7 @@ import { howl, taunt, trail } from './fx_l56.ts';
 import { arcs, babble, bullet, goo, scoop, trap } from './fx_l78.ts';
 import { bottle, fire, pet } from './fx_l6.ts';
 import { glass, slam, sweep } from './fx_l9.ts';
+import { fall } from './fx_l1415.ts';
 
 const DIR_ANGLE: Record<Dir, number> = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
 const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
@@ -344,6 +345,7 @@ export function drawFx(ctx: Ctx, f: FxView): void {
     case 'slam': slam(ctx, f, p); break;
     case 'glass': glass(ctx, f, p); break;
     case 'sweep': sweep(ctx, f); break;
+    case 'fall': fall(ctx, f, p); break;
     default: break;
   }
 }

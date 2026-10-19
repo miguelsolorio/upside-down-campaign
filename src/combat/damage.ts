@@ -7,6 +7,7 @@ import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
 import { demoImmovable, demoPoke, demoSettle, demoStunned, isFinisher } from '../enemies/demo_hit.ts';
 import { ghoulTakes } from '../enemies/ghoul_hit.ts';
+import { hasRiotShield, isSmash, smashShield } from '../enemies/ch5_hit.ts';
 import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
 import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
@@ -107,6 +108,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   // Grigori's front guard works the same way, with no shield to break: it is down only while he is stunned on the power box.
   const guardUp = up || (e.grigori !== null && grigoriGuards(e));
   const blocked = guardUp && !o.pierce && inFront(e, (o.angle ?? Math.atan2(e.y - by.y, e.x - by.x)) + Math.PI);
+  // A smash (Steve's bat, Hopper's haymaker and slam) on a trooper's or the Commander's shield breaks it for good, whichever side it lands on.
+  const smashed = up && hasRiotShield(e) && isSmash(by) && smashShield(s, e);
   // Mike's fiat crit waits for a hit that gets through: a block neither crits nor spends it.
   const first = s.armed;
   if (!blocked) s.armed = false;
@@ -114,7 +117,8 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   const crit = !blocked && !o.noCrit && (o.crit === true || fiat || critRoll < critChance(HERO_DEFS[by.id], by.level) + by.bond.crit);
   let dmg = rollDamage(o.power, heroAtk(s, by), e.def, spread);
   if (crit) dmg *= 2;
-  if (blocked) dmg = Math.max(1, Math.round(dmg * sx.block));
+  // A riot shield (the trooper's, the Commander's) lets nothing through: block 0 is no damage at all, not the 1 the rest take.
+  if (blocked) dmg = sx.block <= 0 ? 0 : Math.max(1, Math.round(dmg * sx.block));
   // Dazed against a wall, the Demogorgon takes half again as much.
   if (boss && demoStunned(e)) dmg = Math.round(dmg * ENEMY_DEFS[e.kind].x.stunMul);
   // The Alpha takes double while it howls and half again while it is dazed. Grigori and Billy take half again while they are stunned.
@@ -169,10 +173,10 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   } else {
     // A shove hard enough breaks the shield. A guard has poise: only a break or the burst staggers it.
     const breaks = up && (o.kb ?? 0) >= sx.breakKb && e.grace <= 0;
-    if (breaks) {
+    if (breaks || smashed) {
       e.stagger = Math.max(e.stagger, sx.breakT);
       breakShield(s, e);
-      floater(s, 'BREAK', e.x, e.y - 33, 'yellow', false, 36);
+      if (!smashed) floater(s, 'BREAK', e.x, e.y - 33, 'yellow', false, 36);
     } else if (o.pierce) {
       e.stagger = Math.max(e.stagger, o.stagger ?? 10);
       cancelAttack(s, e);
@@ -186,7 +190,7 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
   }
   alertEnemy(s, e);
 
-  floater(s, String(dmg), e.x, e.y - 15, crit ? 'yellow' : blocked ? 'mist' : 'white', crit);
+  if (dmg > 0) floater(s, String(dmg), e.x, e.y - 15, crit ? 'yellow' : blocked ? 'mist' : 'white', crit);
   if (blocked) floater(s, 'BLOCK', e.x, e.y - 24, 'sky', false, 30);
   if (crit) {
     floater(s, 'NAT 20', e.x, e.y - 24, 'yellow', true, 52);
@@ -194,9 +198,11 @@ export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
     flashScreen(s, 0.3);
     sfx(s, 'crit');
   } else {
-    sfx(s, blocked ? 'block' : o.sfx ?? 'hit');
+    // A smash that broke the shield has played shieldBreak already. A blocked hit on a riot shield rings (clang), on a guard's it thuds (block).
+    if (!smashed) sfx(s, blocked ? (hasRiotShield(e) ? 'clang' : 'block') : o.sfx ?? 'hit');
   }
-  s.events.push({ t: 'hit', dmg, crit, x: e.x, y: e.y - BODY_Y, onEnemy: true });
+  // A blow a riot shield bounced did no damage and is not a hit: its sound is the clang.
+  if (dmg > 0) s.events.push({ t: 'hit', dmg, crit, x: e.x, y: e.y - BODY_Y, onEnemy: true });
   s.stats.damageDealt += dealt;
   if (!s.seq && !blocked) s.burst = Math.min(1, s.burst + 0.015);
   hitstop(s, o.hitstop ?? (blocked ? 1 : crit ? 5 : e.hp <= 0 ? 3 : 2));

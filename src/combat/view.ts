@@ -25,6 +25,8 @@ import { petBiting } from '../heroes/dart.ts';
 import { isMarked } from '../heroes/hellfire.ts';
 import { soloHud } from '../heroes/eddie_solo.ts';
 import { ghoulPose, inGlass, mirrorK } from '../enemies/ghoul_hit.ts';
+import { fallK } from '../enemies/twin_fall.ts';
+import { mateOf } from '../enemies/twin.ts';
 import { chimesOn, walkmanHud } from './curse.ts';
 import { onceOf } from '../heroes/talents9.ts';
 
@@ -73,6 +75,17 @@ function enemyView(s: S, e: Enemy): ActorView {
     v.petals = e.demo.petals;
     const pose = e.dead ? undefined : demoPose(e.demo);
     if (pose) v.pose = pose;
+    // A twin in the void: how far down it is.
+    const k = e.dead ? undefined : fallK(e);
+    if (k !== undefined) v.k = k;
+  }
+  // The trooper, the Commander and the twins (enemies/ch5_state.ts): a shield broken for good, the Commander's cracked one, the second twin,
+  // and a trooper walking round the hero.
+  if (e.ch5 && !e.dead) {
+    if (e.ch5.gone) v.broken = true;
+    if (e.ch5.cracked) v.cracked = true;
+    if (e.ch5.second) v.second = true;
+    if (e.kind === 'trooper' && e.ch5.move === 'flank') v.pose = 'flank';
   }
   if (e.ghoul && !e.dead) {
     const pose = ghoulPose(e.ghoul);
@@ -133,12 +146,19 @@ function propView(s: S, p: Prop): PropView {
 const BOSS_NAME: Partial<Record<Enemy['kind'], string>> = { warden: 'WARDEN', demogorgon: 'DEMOGORGON', alpha: 'DEMODOG ALPHA', grigori: 'GRIGORI',
   billy: 'BILLY', flayer: 'MIND FLAYER', pitdemo: 'DEMOGORGON', commander: 'THE COMMANDER', twin: 'THE TWINS' };
 
-/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy or Mind Flayer that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
+/** One bar for both twins: their HP added, and the share of the one that died, which its mate carries. */
+function twinBar(s: S, e: Enemy): { hp: number; hpMax: number } {
+  const mate = mateOf(s, e);
+  const mine = Math.max(0, Math.ceil(e.hp)), max = e.hpMax + (e.ch5?.mateMax ?? 0);
+  return mate ? { hp: mine + Math.max(0, Math.ceil(mate.hp)), hpMax: max + mate.hpMax + (mate.ch5?.mateMax ?? 0) } : { hp: mine, hpMax: max };
+}
+
+/** The first Warden, Demogorgon (the pit one too), Alpha, Grigori, Billy, Mind Flayer, Commander or twin that is awake and standing fills the boss bar. A pinned Billy is at 0 HP. */
 function bossBar(s: S): { name: string; hp: number; hpMax: number; parts?: number[] } | null {
   for (const e of s.enemies) {
     const name = BOSS_NAME[e.kind];
     if (!name || e.dormant || e.dead || e.hp <= 0 || isBillyPinned(e)) continue;
-    const bar = { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
+    const bar = e.kind === 'twin' ? { name, ...twinBar(s, e) } : { name, hp: Math.max(0, Math.ceil(e.hp)), hpMax: e.hpMax };
     // The Mind Flayer's four legs, as the share of HP each has left: 0 for a severed one. The legs never fill the bar themselves.
     return e.flayer ? { ...bar, parts: e.flayer.legs.map((l) => (l.dead || l.hp <= 0 ? 0 : Math.min(1, l.hp / l.hpMax))) } : bar;
   }

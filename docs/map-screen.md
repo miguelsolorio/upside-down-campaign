@@ -89,7 +89,7 @@ Erica runs an ice cream cart and sells the party what it carries into a stage. I
 ## Chapter five on the map
 
 - **Hawkins under lockdown (5.1)** and **the Abyss (5.2)** both sit in the Upside Down half, below the horizon, since the army's town and the Abyss under it are seen from the dark side. 5.1 is in the bottom left, with a LOCKDOWN plate; 5.2 is in the bottom right, under the dark sun, with an ABYSS plate. The route comes down from the Creel House (4.2) to 5.1 and runs across the bottom to 5.2.
-- `MAP_PLACE` in `core/mapdata.ts` gains `lockdown` (5.1) and `abyss` (5.2). The spine placed the nodes (`POS`, `PLACE_OF` and `BEND` in `gfx/map_geo.ts`) and the two plates (`map_land.ts`) as stand-ins: Art draws the army's checkpoint and the floating islands in their place, and keeps the plates clear of the token.
+- `MAP_PLACE` in `core/mapdata.ts` gains `lockdown` (5.1) and `abyss` (5.2). The nodes (`POS`, `PLACE_OF` and `BEND` in `gfx/map_geo.ts`) sit over their landmarks, which `gfx/map_ch5.ts` paints: the lockdown is a floodlight on its mast over a wall of sandbags with its cone dithered across them, and the Abyss is a floating island with a lit house, rock tapering under it and vines off its rim, hung over the dark sun. Each has its plate (`map_land.ts`) under it, pointing up like the tunnels', clear of the token and of the GATE plate. A locked one is greys, like the rest.
 - The chapter strip says Chapter five on those nodes. Entering 5.1 for the first time shows the chapter five card: CHAPTER FIVE, THE LAST CAMPAIGN.
 - 5.2 is the last stage built: it shows the feedback note under its results, and not CHAPTER FIVE CLEAR, which waits for 5.3.
 

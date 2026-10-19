@@ -14,6 +14,8 @@ const DIRS: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, 
 export function buildNav(grid: Grid, rects: Rect4[] = []): Nav {
   const blocked = new Uint8Array(grid.w * grid.h);
   blocked.set(grid.solid.subarray(0, blocked.length));
+  // The void is solid already; naming it keeps the bot off it even for a grid whose drops are not all marked solid.
+  if (grid.drop) for (let i = 0; i < blocked.length; i++) if (grid.drop[i]) blocked[i] = 1;
   for (const r of rects) {
     const x0 = Math.max(0, Math.floor(r.x / TILE)), x1 = Math.min(grid.w - 1, Math.floor((r.x + r.w - 0.001) / TILE));
     const y0 = Math.max(0, Math.floor(r.y / TILE)), y1 = Math.min(grid.h - 1, Math.floor((r.y + r.h - 0.001) / TILE));

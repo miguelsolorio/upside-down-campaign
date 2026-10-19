@@ -1,5 +1,6 @@
 // Props (log, gate, target, lights, bike, sign, van, floodlight, crate, door, console, camera, tank, rack, generator, firebox,
-// vines, arcade, hidden, gap, crack, rift, shutter, cipher, powerbox, breaker) and pickup items.
+// vines, arcade, hidden, gap, crack, rift, shutter, cipher, powerbox, breaker, and the army's truck, tent, sandbags, barricade, barrier, tower,
+// booth and curfew sign, props_army.ts) and pickup items.
 // Static art is cached per kind, size and state; blinking bulbs, glare and sparkles are drawn live.
 //
 // State meaning: log closed = in the way, open = cleared. gate open = swung wide. target closed or off = unhit,
@@ -24,6 +25,7 @@ import { drawSchoolProp, vanTippedArt } from './props_school.ts';
 import { drawTownProp } from './props_town.ts';
 import { drawGateProp } from './props_gate.ts';
 import { drawL78Prop, kioskArt } from './props_l78.ts';
+import { drawArmyProp } from './props_army.ts';
 
 const cache = new Map<string, HTMLCanvasElement>();
 function cached(key: string, build: () => HTMLCanvasElement): HTMLCanvasElement {
@@ -249,7 +251,9 @@ export function drawProp(ctx: Ctx, v: PropView, night = false): void {
     case 'camera': case 'tank': case 'rack': case 'generator': drawLab2Prop(ctx, v, art); return;
     case 'firebox': case 'vines': drawSchoolProp(ctx, v, art, calm()); return;
     case 'arcade': case 'hidden': drawTownProp(ctx, v, art, calm()); return;
-    case 'gap': case 'crack': case 'rift': drawGateProp(ctx, v, art, calm()); return;
+    case 'truck': case 'tent': case 'sandbags': case 'barricade': case 'barrier': case 'tower': case 'booth': case 'curfew': drawArmyProp(ctx, v, art, calm()); return;
+    // A crack 40 px or more on its long side is the checkpoint's boom gate (props_army.ts).
+    case 'gap': case 'crack': case 'rift': if (!drawArmyProp(ctx, v, art, calm())) drawGateProp(ctx, v, art, calm()); return;
     // Stand-ins until Art draws the haunted mirror and the grandfather clock (docs/level-11.md): a frame and a fill.
     case 'mirror': rect(ctx, x, y, w, h, 'ink'); if (v.state !== 'open') rect(ctx, x + 2, y + 2, w - 4, h - 4, 'mist'); return;
     case 'clock': rect(ctx, x, y, w, h, 'soil0'); rect(ctx, x + 3, y + 3, w - 6, 8, v.state === 'open' ? 'grey1' : 'bone'); return;

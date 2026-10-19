@@ -1,5 +1,6 @@
 // The Lab agent: patrols until it sees the hero (aggro radius with line of sight), keeps 70 to 100 px away,
-// backs off if the hero closes in, and fires a tranq dart after a 24-frame red "!".
+// backs off if the hero closes in, and fires a tranq dart after a 24-frame red "!". The Lab agent in hazmat of chapter 5 (agent5) runs the
+// same brain on its own def: every number is read from the enemy's kind.
 import { ENEMY_DEFS } from './defs.ts';
 import type { Enemy, Hero, S } from '../combat/state.ts';
 import { BODY_Y, dist, footBlocked, los, moveBody } from '../combat/space.ts';
@@ -42,7 +43,7 @@ export function backOff(s: S, e: Enemy, hero: Hero, speed: number): boolean {
 }
 
 function fireDart(s: S, e: Enemy, hero: Hero): void {
-  const def = ENEMY_DEFS.agent;
+  const def = ENEMY_DEFS[e.kind];
   const ox = e.x, oy = e.y - BODY_Y;
   const a = Math.atan2(hero.y - BODY_Y - oy, hero.x - ox);
   s.projs.push(newProj({
@@ -54,7 +55,7 @@ function fireDart(s: S, e: Enemy, hero: Hero): void {
 }
 
 export function agentUpdate(s: S, e: Enemy, hero: Hero): void {
-  const def = ENEMY_DEFS.agent;
+  const def = ENEMY_DEFS[e.kind];
   const x = def.x;
   const d = dist(e.x, e.y, hero.x, hero.y);
   const clear = los(s, e.x, e.y, hero.x, hero.y);

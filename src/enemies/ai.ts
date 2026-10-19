@@ -1,6 +1,7 @@
 // Enemy AI driver: shared per-tick upkeep (cooldowns, knockback, stagger, stun, the candy lure), then the
 // kind-specific brain (the bosses skip the stun and the lure: the Demogorgon and the Alpha the stagger too), then a soft push so enemies do not stack on one pixel.
 // A soldier's brain runs the Kamchatka guard too, the riot guard's the camp guard, the Demogorgon's the pit one, each on its own def.
+// A demobat (demobat.ts) flies: it is knocked about without collision, ignores the candy bar and the soft push, and falls when stunned.
 // A pinned Billy is the exception to the order: his reach runs before everything that could skip his turn (a stagger, a hero down).
 // Holds (hold.ts) are checked first every tick, because a confused, stunned or staggered holder never reaches its own brain.
 import { ENEMY_DEFS } from './defs.ts';
@@ -27,6 +28,7 @@ import { updateHolds } from './hold.ts';
 import { vineUpdate } from './vine.ts';
 import { podUpdate } from './pod.ts';
 import { ghoulUpdate, glassUpdate } from './ghoul.ts';
+import { batUpdate, glide, stunBat } from './demobat.ts';
 import { isShielded } from './shield.ts';
 import { setEnemyAnim, stepToward } from './steer.ts';
 import { lostHim } from '../heroes/camo.ts';
@@ -42,12 +44,15 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.grace > 0) e.grace--;
   if (e.noLure > 0) e.noLure--;
   if (e.vx !== 0 || e.vy !== 0) {
-    moveBody(s, e, e.vx, e.vy);
+    // A bat is knocked through walls as it flies through them.
+    if (e.bat) glide(s, e, e.vx, e.vy); else moveBody(s, e, e.vx, e.vy);
     e.vx *= FRICTION; e.vy *= FRICTION;
     if (Math.hypot(e.vx, e.vy) < 0.1) { e.vx = 0; e.vy = 0; }
   }
   // The reach of a pinned Billy climbs and falls whatever else is going on (a hero down, say): it is Eleven's to hold.
   if (isBillyPinned(e)) { billyReach(s, e, hero); return; }
+  // A stunned bat falls to the floor, whatever else holds it.
+  if (e.bat && e.stat.stun > 0) { stunBat(e); return; }
   if (e.stagger > 0) { e.stagger--; legWait(e); setEnemyAnim(e, 'hurt'); return; }
   if (e.stat.stun > 0) { setEnemyAnim(e, 'hurt'); return; }
   // A foe that has lost Lucas to his Camo stands and looks round (heroes/camo.ts).
@@ -64,6 +69,8 @@ function updateOne(s: S, e: Enemy, hero: Hero): void {
   if (e.leg) { legUpdate(s, e, hero); return; }
   // A Creel ghoul floats at the hero and ignores the candy bar too.
   if (e.ghoul) { ghoulUpdate(s, e, hero); return; }
+  // A demobat flies over everything and ignores the candy bar, too.
+  if (e.bat) { batUpdate(s, e, hero); return; }
   // The vine and the pod are rooted: no lure moves them.
   if (e.kind === 'vine') { vineUpdate(s, e, hero); unhide(e); return; }
   if (e.kind === 'pod') { podUpdate(s, e, hero); unhide(e); return; }
@@ -98,7 +105,8 @@ function unhide(e: Enemy): void {
 const rooted = (e: Enemy): boolean => e.kind === 'vine' || e.kind === 'pod' || isBillyPinned(e) || flayerRooted(e);
 
 function separate(s: S): void {
-  const list = s.enemies.filter((e) => !e.dead && !e.dormant);
+  // A flyer passes over the rest: the flock keeps its own slots.
+  const list = s.enemies.filter((e) => !e.dead && !e.dormant && !e.bat);
   for (let i = 0; i < list.length; i++) {
     const a = list[i] as Enemy;
     for (let j = i + 1; j < list.length; j++) {

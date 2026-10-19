@@ -6,7 +6,7 @@
 //                          ring (a 40 frame stun to a flyer), and any mirror or clock it reaches shatters. `crit` makes every hit a crit.
 //   endStand(s, h)         ends the stand and frees him. A swap away or a KO ends it too (stepStand notices).
 // stepStand is the stand-in's own clock: it pulses every 30 frames, the first on frame 30, and ends the stand when it runs out. The
-// module drives pulse() itself instead of calling it.
+// module drives pulse() itself instead of calling it: on the 4.3 roof combat/roof.ts does, a note at a time, with a ring of its own.
 //
 // What gfx sees: a 'riff' fx round him at each pulse, w the ring's diameter. HudView.solo (soloHud) is { t, life, streak 0, ring, beat }.
 import type { HudView } from '../core/types.ts';
@@ -23,8 +23,8 @@ import { eddieHit } from './eddie.ts';
 /** Frames between the stand-in's pulses. */
 export const PULSE_GAP = 30;
 
-/** No flyer exists yet; 4.3's demobats are the first. A pulse stuns one for `flyerStun` frames. */
-function isFlyer(_e: Enemy): boolean { return false; }
+/** A pulse stuns a flyer for `flyerStun` frames: it falls to the floor and anyone can hit it. The demobat is the first. */
+function isFlyer(e: Enemy): boolean { return e.bat !== null; }
 
 /** True while `h` is playing the solo. */
 export function standOn(s: S, h: Hero): boolean {
@@ -46,16 +46,16 @@ export function startStand(s: S, h: Hero): void {
   s.t6.stand = { hero: h, t: 0, life, ring: d.reach, born: s.frame };
 }
 
-/** One pulse of the ring round `h`. */
+/** One pulse of the ring round `h`. On the 4.3 roof the ring is the one the song has widened or narrowed (combat/roof.ts). It reaches a flyer at any height. */
 export function pulse(s: S, h: Hero, crit = false): void {
   const d = HERO_DEFS.eddie.special;
-  const r = s.t6.stand?.ring ?? d.reach;
+  const r = s.roof.on ? s.roof.ring : s.t6.stand?.ring ?? d.reach;
   const cy = h.y - BODY_Y;
   addFx(s, 'riff', h.x, cy, h.dir, 0, 18, r * 2, r * 2);
   sfx(s, 'riff');
   riffRing(s, h.x, cy, r);
   coneHits(s, h, h.aim, r, Math.PI, (e, a) => {
-    eddieHit(s, h, e, { power: d.power, kb: d.kb, angle: a, crit, hitstop: 0, shake: 0.5 });
+    eddieHit(s, h, e, { power: d.power, kb: d.kb, angle: a, crit, hitstop: 0, shake: 0.5, air: true });
     if (isFlyer(e)) e.stat.stun = Math.max(e.stat.stun, d.x.flyerStun);
   });
 }
@@ -92,9 +92,10 @@ export function stepStand(s: S): void {
   endStand(s, h);
 }
 
-/** HudView.solo: null unless Eddie is playing. beat is the frames to the next pulse. */
+/** HudView.solo: null unless Eddie is playing. beat is the frames to the next pulse. On the roof it is the song's: life 0 (the highway knows the length), beat 0. */
 export function soloHud(s: S): HudView['solo'] {
   const st = s.t6.stand;
+  if (s.roof.on) return { t: s.roof.t, life: 0, streak: s.roof.streak, ring: s.roof.ring, beat: 0 };
   if (!st) return null;
   return { t: st.t, life: st.life, streak: 0, ring: st.ring, beat: PULSE_GAP - (st.t % PULSE_GAP) };
 }

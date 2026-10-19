@@ -13,7 +13,8 @@
 // and Eleven is walked up to him once he kneels (bot_billy.ts). Against the Mind Flayer it steps off a warned line, band or pool and hits the
 // nearest leg, then the head when it is down (bot_flayer.ts). It steps out of a ghoul's lunge line during the wind-up (bot_ghoul.ts), slams
 // the pinned pit Demogorgon with Hopper (bot_boss.ts), and under a curse swaps to Max if her Walkman is ready, else to Eddie, and attacks the
-// clock (bot_curse.ts), careless or not. It ignores hazards and cameras.
+// clock (bot_curse.ts), careless or not. Against a flock of demobats a hero who shoots leads, a bat out of a swing's reach is ignored, and a dive's
+// line is left during the wind-up (bot_demobat.ts). It ignores hazards and cameras.
 import type { Dir, EnemyKind, Grid, PropKind, Sim, SimInput, SimView, Vec2 } from '../core/types.ts';
 import { TILE } from '../core/config.ts';
 import { ENEMY_DEFS } from '../enemies/defs.ts';
@@ -24,6 +25,7 @@ import type { Nav, Pos } from './state.ts';
 import { astar, buildNav, nearestFree } from './nav.ts';
 import { createBossSense } from './bot_boss.ts';
 import { createGhoulSense } from './bot_ghoul.ts';
+import { batFoe, createBatSense, isShooter } from './bot_demobat.ts';
 import { createCurseSense } from './bot_curse.ts';
 import { createDashCross } from './bot_dash.ts';
 import { createAlphaSense, howlFirst } from './bot_alpha.ts';
@@ -156,12 +158,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     return [(tx - hx) / d, (ty - hy) / d];
   }
 
-  function foesOf(v: SimView, hx: number, hy: number): Foe[] {
+  function foesOf(v: SimView, hx: number, hy: number, shoots: boolean, reach: number): Foe[] {
     const out: Foe[] = [];
     for (const a of v.actors) {
       // A hidden enemy is faint or gone on screen, so the bot does not see it until Will's Cold spot or its own strike shows it.
       // The Mind Flayer's body and legs are the plan's (bot_flayer.ts), not the nearest foe.
       if (a.kind !== 'enemy' || a.anim === 'ko' || a.hidden === true || a.puddle === true || a.pose === 'rise' || a.id === 'flayer' || a.id === 'flayerleg') continue;
+      // A bat circling out of reach is not a target for a swing (bot_demobat.ts).
+      if (a.id === 'demobat' && !batFoe(a, dist(hx, hy, a.x, a.y), shoots, reach)) continue;
       out.push({
         x: a.x, y: a.y, kind: a.id, d: dist(hx, hy, a.x, a.y), ang: Math.atan2(a.y - hy, a.x - hx),
         dir: a.dir, up: a.guarding === true, windup: a.alert, burning: a.tint === 'orange', pose: a.pose,
@@ -251,6 +255,7 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
 
   const boss = createBossSense({ walkable, clearLine, walkTo });
   const ghoul = createGhoulSense();
+  const bats = createBatSense();
   const curse = createCurseSense();
   const cross = createDashCross();
   const alpha = createAlphaSense();
@@ -319,11 +324,14 @@ export function createBot(opts: { grid: Grid; waypoints: BotWaypoint[]; careless
     // the careful bot took more than the careless one that way (docs/level-11.md, "Result").
     const low = me ? me.hp < me.hpMax * 0.5 : false;
     const leave = boss.dodge(v, hx, hy) ?? alpha.dodge(v, hx, hy, walkable) ?? bil.dodge(v, hx, hy) ?? fl.dodge(v, hx, hy)
-      ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
+      ?? bats.dodge(v, hx, hy, walkable) ?? (low ? ghoul.dodge(v, hx, hy, walkable) : null);
     // Under a curse it goes for the clock, careless or not. A pinned boss has its finisher.
     const pin = boss.finish(v, hx, hy) ?? bil.reach(v, hx, hy, style) ?? curse.plan(v, hx, hy, walkTo);
     const fin = pin ?? (careless ? null : grig.plan(v, hx, hy, style) ?? bil.punish(v, hx, hy, style)) ?? fl.plan(v, hx, hy, style);
-    const foes = foesOf(v, hx, hy).filter((f) => reachable(hx, hy, f));
+    // A flock of demobats in sight: a hero who shoots leads, and the one he relieved comes back when it is gone.
+    const lead = fin ? -1 : bats.lead(v, me, hx, hy);
+    if (lead >= 0 && frame - lastSwap > 40) { out.swapTo = lead; lastSwap = frame; }
+    const foes = foesOf(v, hx, hy, isShooter(me.id), style.reach).filter((f) => reachable(hx, hy, f));
     // In a defense, whatever is nearest the ward comes first. A howling Alpha comes before anything.
     const ward = guardWard.read(v);
     if (ward) foes.sort((p, q) => dist(p.x, p.y, ward.x, ward.y) - dist(q.x, q.y, ward.x, ward.y));

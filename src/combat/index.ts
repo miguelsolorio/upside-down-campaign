@@ -183,6 +183,21 @@
 //   'lit', the 'zap' sfx, an 'arcs' fx w by h its size). Whatever has its feet on a plate then: Grigori is stunned for 180 frames and loses
 //   8 percent of his max HP, and takes full damage times 1.5 from every side meanwhile; any other awake enemy loses 30 percent of its max HP;
 //   the active hero takes 15 and is thrown clear. The breaker is 'closed' again 300 frames after it was lit. openProps never leaves it lit.
+// - The demobat (enemies/demobat.ts, demobat_hit.ts): a flyer. It ignores solid tiles, props and the nav grid, hovers 10 to 14 px up (z) and,
+//   once the hero is within 160 px or its group is woken, circles the active hero at 56 px with the rest of its group, in equal slots. About every
+//   150 frames the group sends one bat down, never two at once: a 20 frame "!" (pose 'crouch') on a line locked at the hero, a 12 frame dive at
+//   4 px a frame (pose 'charge', z falling to 2, power 0.8, the `screech` sfx), then 30 frames climbing back. A swing or an area hit (HitOpts
+//   without `air`) reaches it only while it is low, z under 6; a shot, a beam, the burst and Eddie's pulses (`air`) reach it at any height. A
+//   pulse stuns it for 40 frames: it falls to z 2, pose 'stun', and anyone can hit it. It dies in a few 'spark' fx. A hit that staggers it breaks a
+//   wind-up or a dive. The bot (bot_demobat.ts) steps off a dive's line, ignores a bat it can't reach and swaps to a hero who shoots.
+// - The 4.3 rooftop (combat/roof.ts): Sim.rooftop(true) brings Eddie to the front, planted (anim `cast`, no walking, attacking, flinching or
+//   swapping), and five demobats (group `roof`, run-time, 0 XP, no drop) come up from the burrows and circle him; one is replaced 45 frames after
+//   it dies. Sim.soloNote(hit, perfect): a hit pulses his ring (a crit when perfect) and widens it a step (two when perfect), 24 to 72 px, from 40;
+//   a miss narrows it a step and sends the nearest circling bat down at him for power 0.6. The roof's bats dive only on a miss. Eddie at 0 HP while
+//   it is on is allDown. HudView.solo is { t, life 0, streak, ring, beat 0 } meanwhile. Sim.rooftop(false) ends it and leaves the bats as they are.
+// - Sim.dismissHero(id): the hero leaves the party for good. Gone from the view and the HUD, never swapped to, not counted when the party goes down;
+//   if they were up the party swaps to the next hero who can fight (nobody left is allDown). party() still reports them, after the others. The last
+//   hero in the party can't be dismissed.
 import type { Sim, SimOptions } from '../core/types.ts';
 import { buildSim } from './sim.ts';
 

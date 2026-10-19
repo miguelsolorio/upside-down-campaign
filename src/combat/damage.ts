@@ -7,6 +7,7 @@ import { ENEMY_DEFS } from '../enemies/defs.ts';
 import { breakShield, cancelAttack, guarding, inFront, isShielded } from '../enemies/shield.ts';
 import { demoImmovable, demoPoke, demoSettle, demoStunned, isFinisher } from '../enemies/demo_hit.ts';
 import { ghoulTakes } from '../enemies/ghoul_hit.ts';
+import { batReached } from '../enemies/demobat_hit.ts';
 import { alphaImmovable, alphaTakes } from '../enemies/alpha_hit.ts';
 import { grigoriGuards, grigoriImmovable, grigoriTakes } from '../enemies/grigori_hit.ts';
 import { billyImmovable, billyPoke, billySettle, billyTakes } from '../enemies/billy_hit.ts';
@@ -73,6 +74,8 @@ export interface HitOpts {
   beam?: boolean;
   /** Hopper's ground slam: the only thing that hurts the pinned pit Demogorgon. */
   slam?: boolean;
+  /** Reaches a flyer at any height, as a shot, a beam, the burst and Eddie's pulse do. A swing or an area hit without it reaches a demobat only while it is low. */
+  air?: boolean;
 }
 
 /** Makes an enemy notice the hero, and its group-mates within earshot. */
@@ -90,7 +93,7 @@ export function alertEnemy(s: S, e: Enemy): void {
 
 /** A hero hits an enemy. Returns the damage dealt (0 if the target was already down). */
 export function hitEnemy(s: S, by: Hero, e: Enemy, o: HitOpts): number {
-  if (e.dead || e.dormant || e.hp <= 0 || untouchable(e)) return 0;
+  if (e.dead || e.dormant || e.hp <= 0 || untouchable(e) || !batReached(e, o)) return 0;
   // A boss has poise: the Demogorgon, the Alpha, Grigori, Billy and the Mind Flayer and its legs are never staggered, stunned or broken off a
   // wind-up by a hit.
   const boss = e.demo !== null || e.alpha !== null || e.grigori !== null || e.billy !== null || flayerRooted(e);
@@ -222,8 +225,8 @@ function wound(s: S, h: Hero, dmg: number, angle: number, kb: number, color: 'ho
   h.invuln = Math.max(h.invuln, invuln);
   h.blink = true;
   h.flash = 1;
-  // Hopper's Berserk (Lv 9): low on HP, nothing makes him flinch or knocks him back.
-  if (!berserkUp(h)) {
+  // Hopper's Berserk (Lv 9): low on HP, nothing makes him flinch or knocks him back. Nor does Eddie, while he plays the 4.3 roof.
+  if (!berserkUp(h) && !(s.roof.on && h.id === 'eddie')) {
     h.hurtT = HERO_HURT_FRAMES;
     h.actId++; h.actT = 0; h.act = null;
     h.vx += Math.cos(angle) * kb;

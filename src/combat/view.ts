@@ -25,6 +25,7 @@ import { petBiting } from '../heroes/dart.ts';
 import { isMarked } from '../heroes/hellfire.ts';
 import { soloHud } from '../heroes/eddie_solo.ts';
 import { ghoulPose, inGlass, mirrorK } from '../enemies/ghoul_hit.ts';
+import { batPose } from '../enemies/demobat_hit.ts';
 import { chimesOn, walkmanHud } from './curse.ts';
 import { onceOf } from '../heroes/talents9.ts';
 
@@ -76,6 +77,10 @@ function enemyView(s: S, e: Enemy): ActorView {
   }
   if (e.ghoul && !e.dead) {
     const pose = ghoulPose(e.ghoul);
+    if (pose) v.pose = pose;
+  }
+  if (e.bat && !e.dead) {
+    const pose = batPose(e.bat);
     if (pose) v.pose = pose;
   }
   if (e.alpha && !e.dead) {

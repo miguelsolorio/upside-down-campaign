@@ -283,11 +283,13 @@ export const ENEMY_DEFS: Record<EnemyKind, EnemyDef> = {
   },
   // Chapter 4's second half (docs/level-12.md, docs/level-13.md). Starting numbers: Sim tunes them inside the stages' targets.
   // The demobat (enemies/demobat.ts): orbit, its circle in px; diveEvery, frames between dives in a flock; diveWindup, diveT and
-  // diveSpeed, the dive; climb, frames back up; low, the z under which melee reaches it; stunT, frames stunned by a solo pulse.
+  // diveSpeed, the dive; climb, frames back up; low, the z under which melee reaches it; stunT, frames stunned by a solo pulse; kb, a dive's
+  // shove. roofPower, roofN and roofGap: the 4.3 roof's dive (a miss sends a bat), the flock that circles Eddie and the frames before a
+  // bat replaces one that died.
   demobat: {
     kind: 'demobat', name: 'Demobat', hp: 40, atk: 30, def: 2, speed: 1.4, xp: 6, aggro: 160,
     windup: 20, power: 0.8, cooldown: 150, drop: 0.15, weight: 0.8,
-    x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, roofPower: 0.6 },
+    x: { orbit: 56, diveEvery: 150, diveWindup: 20, diveT: 12, diveSpeed: 4, climb: 30, low: 6, stunT: 40, kb: 2, roofPower: 0.6, roofN: 5, roofGap: 45 },
   },
   // Vecna (enemies/vecna.ts): speedMul scales his timings and walk, chimeEvery the clock's curse (a spawn's x can override both, as
   // 5.3 does). whip*: the vine lash. throw*: Float's debris. heal: the share of his max HP each standing orb gives every healEvery.

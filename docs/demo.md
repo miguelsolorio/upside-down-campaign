@@ -13,6 +13,7 @@ npm run demo -- --sheet                   # also a contact sheet, demo/out/sheet
 npm run demo -- --shot m33,h-picks        # re-record these shots, reuse the cached frames of the rest
 npm run demo -- --jobs 4                  # shots recorded at once (default 3)
 npm run demo -- --encode                  # record nothing, join the cached frames and sound again
+npm run demo -- --encode --crf 21         # the same at lower quality, demo-crf21.mp4: 25 MiB, where demo.mp4 is 47
 ```
 
 A full run takes about two minutes. `--shot` needs the other shots recorded once before, in the same mode (full or draft). Each shot's frames are `demo/out/frames/<id>/00001.png`, and its sound is `demo/out/audio/<id>.pcm`. `demo/out/manifest.json` has one hash per shot: two runs on the same code give the same hashes. A shot whose trigger never fires stops the run and names the shot.

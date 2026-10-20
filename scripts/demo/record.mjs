@@ -7,6 +7,7 @@
 //   --sheet     also write a contact sheet, one frame per shot, to demo/out/sheet.png
 //   --jobs n    how many shots to record at once (default 3)
 //   --encode    record nothing: join the cached frames and sound into the video again
+//   --crf n     x264 quality (default 14, which is about 47 MiB). A different one writes demo-crf<n>.mp4 beside demo.mp4; 21 is 25 MiB, under a 30 MiB upload limit
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -114,8 +115,9 @@ function encode() {
   }
   const wav = join(OUT, 'demo.wav');
   writeFileSync(wav, wavOf(Buffer.concat(pcm)));
-  const mp4 = join(OUT, 'demo.mp4');
-  const quality = draft ? ['-preset', 'veryfast', '-crf', '24'] : ['-preset', 'slow', '-crf', '14'];
+  const crf = value('crf');
+  const mp4 = join(OUT, crf ? `demo-crf${crf}.mp4` : 'demo.mp4');
+  const quality = draft ? ['-preset', 'veryfast', '-crf', crf ?? '24'] : ['-preset', 'slow', '-crf', crf ?? '14'];
   const r = spawnSync(FFMPEG, [
     '-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', join(seq, '%05d.png'), '-i', wav,
     '-vf', 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p', '-c:v', 'libx264', ...quality, '-r', String(FPS),

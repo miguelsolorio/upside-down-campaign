@@ -71,19 +71,21 @@ const LIST = [
     trigger: () => true,
     timeout: 10,
     len: sec(2),
-    // The title's own sky and woods, then the logo drops in with a thud, the party walks up the path and turns round, and the two lines slam in.
+    // The title's own sky, woods and logo, there from the first frame so a paused video shows them. The logo drops a short way into place with a thud, the
+    // party walks up the path and turns round, and the two lines slam in, all before the first second is out.
     card: {
       bg: 'sky',
       music: null,
-      logo: { y: 22, drop: 24, sfx: 'rollLand' },
-      party: { from: 6, len: 44 },
+      logo: { y: 22, drop: 12, rise: 14, sfx: 'rollLand' },
+      party: { len: 28, rise: 30 },
       lines: [
-        { text: '5 CHAPTERS.', y: 76, scale: 3, color: 'white', at: sec(0.85), pop: true, sfx: 'roll' },
-        { text: '11 HEROES.', y: 108, scale: 3, color: 'yellow', at: sec(1.3), pop: true, sfx: 'natTwenty' },
+        { text: '5 CHAPTERS.', y: 76, scale: 3, color: 'white', at: sec(0.35), pop: true, sfx: 'roll' },
+        { text: '11 HEROES.', y: 108, scale: 3, color: 'yellow', at: sec(0.7), pop: true, sfx: 'natTwenty' },
       ],
     },
     cam: [{ at: 0 }],
-    flashes: [{ at: 24, len: 8, alpha: 0.5 }, { at: sec(0.85), len: 6, alpha: 0.3 }, { at: sec(1.3), len: 10, alpha: 0.6 }],
+    // Soft flashes, so a frame paused on one still reads.
+    flashes: [{ at: 12, len: 8, alpha: 0.25 }, { at: sec(0.35), len: 6, alpha: 0.18 }, { at: sec(0.7), len: 10, alpha: 0.3 }],
     audio: { ...CUT, bed: { ...BED } },
   },
 

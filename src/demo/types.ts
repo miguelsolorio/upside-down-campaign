@@ -66,9 +66,9 @@ export interface CardSpec {
   /** The track that plays under it: null for none. Left out, whatever was playing goes on. */
   music?: string | null;
   /** The flickering logo, with its top at this y. With `drop` it falls in from above over that many frames and plays `sfx` as it lands. */
-  logo?: { y: number; at?: number; drop?: number; sfx?: string };
-  /** The party from the title screen walks in from below over `len` frames, starting at `from`, and turns to face the screen. */
-  party?: { from?: number; len: number };
+  logo?: { y: number; at?: number; drop?: number; sfx?: string; /** px above its place it starts, 70 by default */ rise?: number };
+  /** The party from the title screen walks in from below over `len` frames, starting at `from`, and turns to face the screen. `rise` is how many px below its places it starts, 80 by default. */
+  party?: { from?: number; len: number; rise?: number };
   lines: CardLine[];
 }
 

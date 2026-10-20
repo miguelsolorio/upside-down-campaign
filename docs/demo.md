@@ -56,7 +56,7 @@ Every shot is the whole frame at 5x, with no close-ups (`tests/demo-shots.test.t
 
 | Time | Shot | What's on screen | How it starts |
 | --- | --- | --- | --- |
-| 0:00 to 0:02 | `intro` | The title sky and woods. The logo drops in with a thud and a flash, the party walks up the path and turns round, "5 CHAPTERS." and "11 HEROES." slam in with a sound each. The `clock` bed starts. | Page load |
+| 0:00 to 0:02 | `intro` | The title sky and woods, with the logo and the party on screen from the first frame (a paused video shows them). The logo settles with a thud and a flash, the party walks up the path and turns round, "5 CHAPTERS." and "11 HEROES." slam in with a sound each, all inside the first second. The `clock` bed starts. | Page load |
 | 0:02 to 0:18 | `m11` `m12` `m13` `m21` `m23` `m31` `m33` `m41` `m51` `m52` | Ten 1.6 s cuts of play, each with its stage name: Mirkwood, Hawkins Lab, the school and the Demogorgon, the Palace arcade, the Gate and the Alpha, Starcourt, the food court and the Mind Flayer, Kamchatka with Hopper alone, Hawkins under lockdown, the Abyss and the twins. The `clock` bed runs under all of them. | A fight in reach, or the boss bar, or the Alpha's howl |
 | 0:18 to 0:26 | `h-eleven` `h-max` `h-steve` `h-dustin` | Four heroes' specials, 2 s each: Eleven's Mind Blast on Vecna after a swap, Max's skate dash over a gap, Steve's Babysit at the Gate, Dustin's Farrah spray. | The effect's first play (`beam`, `swap`, `taunt`, `flame`) |
 | 0:26 to 0:28 | `h-picks` | The party picks panel on the Hawkins map, from a finished save: Dustin comes off, Lucas goes on. | Title, CONTINUE, the map, then Enter |

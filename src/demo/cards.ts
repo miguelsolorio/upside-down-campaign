@@ -19,7 +19,7 @@ const PARTY: { id: HeroId; x: number; y: number }[] = [
   { id: 'eleven', x: 148, y: 192 },
   { id: 'lucas', x: 186, y: 188 },
 ];
-/** How far below their places they start, in px. */
+/** How far below their places the party starts, and how far above its place the logo does, in px, unless the card says. */
 const WALK_FROM = 80;
 const DROP_FROM = 70;
 const easeOut = (p: number): number => 1 - (1 - p) ** 3;
@@ -52,7 +52,7 @@ export function createCardScene(spec: CardSpec): Scene {
         const walking = p < 1;
         // Heroes in the back row first, so the front one overlaps them.
         for (const h of [...PARTY].sort((a, b) => a.y - b.y)) {
-          const off = Math.round((1 - easeOut(p)) * WALK_FROM);
+          const off = Math.round((1 - easeOut(p)) * (spec.party.rise ?? WALK_FROM));
           bigActor(ctx, h.id, FRAME_X + h.x, h.y + off, 2, t, { dir: walking ? 'up' : 'down', anim: walking ? 'walk' : 'idle' });
         }
       }
@@ -61,7 +61,7 @@ export function createCardScene(spec: CardSpec): Scene {
       if (spec.logo && t >= (spec.logo.at ?? 0)) {
         const drop = spec.logo.drop ?? 0;
         const k = drop ? Math.min(1, (t - (spec.logo.at ?? 0)) / drop) : 1;
-        drawLogo(ctx, t, mid, spec.logo.y - Math.round((1 - easeOut(k)) * DROP_FROM));
+        drawLogo(ctx, t, mid, spec.logo.y - Math.round((1 - easeOut(k)) * (spec.logo.rise ?? DROP_FROM)));
       }
       for (const l of spec.lines) {
         if (t < (l.at ?? 0)) continue;

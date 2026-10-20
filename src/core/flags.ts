@@ -2,6 +2,7 @@
 // ?audio=1 shows the audio lab, ?skip=1 jumps past the title and prologue, ?stage=1.1 picks the stage,
 // ?time=day or ?time=night draws the stage in that light whatever the stage says. ?solo=1 plays the Hellfire solo on its own.
 // ?finale=1 plays the Final Roll for a sample party and then THE END, on their own.
+// ?capture=1 is the demo recorder's mode (core/capture.ts): no animation frame loop, the recorder steps the game itself.
 import type { TimeOfDay } from './types.ts';
 
 /** From ?finale: 1 for the roll the seed gives, or plain, big or gold for the first seed from there whose Final Roll ends that way. */
@@ -17,6 +18,8 @@ export interface Flags {
   /** ?finale=1: the Final Roll for a sample party of four, then THE END (ui/finale_dev.ts). Null when it is off. */
   finale: FinaleMode | null;
   mute: boolean;
+  /** ?capture=1: the recorder steps the game by hand and logs every sound (scripts/demo, docs/demo.md). Off unless asked for. */
+  capture: boolean;
   god: boolean;
   skip: boolean;
   /** ?rush=1: skip the title, the prologue, the chapter card and every dialogue box. */
@@ -49,6 +52,7 @@ function parse(): Flags {
     solo: on('solo'),
     finale: finaleOf(q.get('finale'), on('finale')),
     mute: on('mute'),
+    capture: on('capture'),
     god: on('god'),
     skip: on('skip') || on('rush'),
     rush: on('rush'),

@@ -1,8 +1,14 @@
+import { createCapture, exposeCapture } from './capture.ts';
 import { FPS } from './config.ts';
+import { flags } from './flags.ts';
 import { perfOn, perfRecord } from './perf.ts';
 
-/** Fixed 60 Hz update with a catch-up cap, one render per animation frame. */
+/**
+ * Fixed 60 Hz update with a catch-up cap, one render per animation frame. In capture mode (?capture=1) there is no animation
+ * frame at all: the recorder steps the game through __ud.cap, and nothing runs until it does.
+ */
 export function startLoop(tick: () => void, render: () => void): void {
+  if (flags.capture) { exposeCapture(createCapture(tick, render)); return; }
   const STEP = 1000 / FPS;
   let last = performance.now();
   let acc = 0;

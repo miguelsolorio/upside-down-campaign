@@ -36,6 +36,7 @@ export async function launch(port, extra = []) {
     if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 400));
     return r.result.value;
   };
-  const close = async () => { try { await send('Browser.close'); } catch {} try { proc.kill(); } catch {} };
+  // A browser that dies before it answers would leave Browser.close waiting for ever, so it gets two seconds.
+  const close = async () => { try { await Promise.race([send('Browser.close'), sleep(2000)]); } catch {} try { proc.kill(); } catch {} };
   return { send, evaluate, events, close, sleep };
 }

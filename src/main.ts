@@ -1,5 +1,6 @@
 import * as bindings from './core/bindings.ts';
 import { BASE_W, SCREEN_H, SCREEN_W, setScreenWidth } from './core/config.ts';
+import { CAPTURE_W } from './core/capture.ts';
 import { flags } from './core/flags.ts';
 import { createInput } from './core/input.ts';
 import { startLoop } from './core/loop.ts';
@@ -67,7 +68,7 @@ function fit(l: TouchLayout | null): void {
   stage.classList.toggle('touch', l !== null);
   const f = l
     ? fitScreen(l.game.w, l.game.h, dpr, BASE_W)
-    : fitScreen(innerWidth, innerHeight, dpr, flags.sheet || flags.audio ? BASE_W : undefined);
+    : fitScreen(innerWidth, innerHeight, dpr, flags.capture ? CAPTURE_W : flags.sheet || flags.audio ? BASE_W : undefined);
   setScreenWidth(f.w);
   // Resizing a canvas resets its context, smoothing included.
   if (frame.width !== SCREEN_W || frame.height !== SCREEN_H) {
@@ -95,11 +96,14 @@ addEventListener('pointerup', unlock);
 addEventListener('touchend', unlock);
 
 // Silence the game whenever the page isn't what you're looking at: another window, another tab, or the chat beside it.
+// The recorder's page is never the one in front, and it renders its sound offline, so capture mode leaves this off.
 const syncFocus = (): void => audio.focus(document.hasFocus() && document.visibilityState === 'visible');
-addEventListener('blur', syncFocus);
-addEventListener('focus', syncFocus);
-document.addEventListener('visibilitychange', syncFocus);
-syncFocus();
+if (!flags.capture) {
+  addEventListener('blur', syncFocus);
+  addEventListener('focus', syncFocus);
+  document.addEventListener('visibilitychange', syncFocus);
+  syncFocus();
+}
 
 if (flags.sheet) g.scenes.go(createSheetScene());
 else if (flags.audio) g.scenes.go(createAudioLabScene());
@@ -113,6 +117,9 @@ else startGame(g);
 Object.assign(window, { __ud: { g, audio, bindings, frame } });
 
 registerServiceWorker();
+
+// The recorder's compositor and its offline mix, loaded only when asked for (src/demo, docs/demo.md).
+if (flags.capture) void import('./demo/index.ts');
 
 startLoop(
   () => {

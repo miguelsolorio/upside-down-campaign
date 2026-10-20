@@ -102,6 +102,11 @@ export function unlock(): Graph | null {
   return live.g;
 }
 
+/** The gains the music and effects buses sit at for the current volume settings, so an offline mix can match what the player hears. */
+export function mixLevels(): { music: number; sfx: number } {
+  return { music: taper(vol.music), sfx: taper(vol.sfx) / taper(SFX_DEFAULT) };
+}
+
 function applyLevels(snap: boolean): void {
   if (!live) return;
   const { ctx, g } = live;
@@ -156,9 +161,14 @@ function duckLevel(t: number): number {
   return 1;
 }
 
-/** Dips the music by `db` for `seconds`, then brings it back over about a third of a second. */
-export function duckMusic(g: Graph, seconds: number, db = 6): void {
-  const now = g.ctx.currentTime;
+/** Forgets any duck, for an offline mix that starts again from time zero. */
+export function resetDuck(): void {
+  duckPlan = { start: 0, from: 1, depth: 1, hold: 0 };
+}
+
+/** Dips the music by `db` for `seconds`, then brings it back over about a third of a second. `at` is the context time, now by default. */
+export function duckMusic(g: Graph, seconds: number, db = 6, at?: number): void {
+  const now = at ?? g.ctx.currentTime;
   const from = duckLevel(now);
   const depth = dbToGain(-db);
   const hold = Math.max(now + DUCK_IN + seconds, duckPlan.hold);

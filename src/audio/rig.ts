@@ -17,10 +17,10 @@ export interface Rig {
   readonly routes: Routes;
   /** The track's output. Fade this to stop the track. */
   readonly out: GainNode;
-  /** 0 is the base layer alone. 1 is the full combat mix. Smoothed unless snap is true. */
-  setIntensity(v: number, snap?: boolean): void;
+  /** 0 is the base layer alone. 1 is the full combat mix. Smoothed unless snap is true. `at` is the context time, now by default. */
+  setIntensity(v: number, snap?: boolean, at?: number): void;
   /** Moves the echo's delay to follow a new tempo, so it stays on the beat: a short glide, or at once with snap. Does nothing for a track with no echo. */
-  setBpm(bpm: number, snap?: boolean): void;
+  setBpm(bpm: number, snap?: boolean, at?: number): void;
   dispose(): void;
 }
 
@@ -101,13 +101,13 @@ export function createRig(ctx: BaseAudioContext, dest: AudioNode, track: Track):
   const rig: Rig = {
     routes,
     out,
-    setIntensity(v, snap = false) {
+    setIntensity(v, snap = false, at) {
       const x = hasCombat ? Math.max(0, Math.min(1, v)) : 0;
       if (x === last && !snap) return;
       const rising = Number.isNaN(last) || x > last;
       last = x;
       const mix = mixFor(x);
-      const now = ctx.currentTime;
+      const now = at ?? ctx.currentTime;
       const tau = rising ? TAU_UP : TAU_DOWN;
       const go = (g: Glide, target: number, params: (AudioParam | undefined)[]): void => {
         const from = snap ? target : levelAt(g, now);
@@ -125,12 +125,12 @@ export function createRig(ctx: BaseAudioContext, dest: AudioNode, track: Track):
       go(glide.base, mix.base, [base.gain, sendBase?.gain]);
       go(glide.combat, mix.combat, [combat?.gain, sendCombat?.gain]);
     },
-    setBpm(bpm, snap = false) {
+    setBpm(bpm, snap = false, at) {
       if (!delayNode || !track.echo) return;
       const time = (track.echo.beats * 60) / bpm;
       if (snap) delayNode.delayTime.value = time;
       // A short glide, so the echo's pitch swoops once instead of jumping.
-      else delayNode.delayTime.setTargetAtTime(time, ctx.currentTime, 0.04);
+      else delayNode.delayTime.setTargetAtTime(time, at ?? ctx.currentTime, 0.04);
     },
     dispose() {
       for (const n of nodes) n.disconnect();

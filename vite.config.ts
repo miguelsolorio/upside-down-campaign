@@ -37,6 +37,7 @@ export default {
   base: process.env.BASE_PATH ?? '/',
   cacheDir: '.vite',
   plugins: [snapshotSink()],
-  server: { host: '127.0.0.1', port: 5173, strictPort: true },
+  // The demo recorder (docs/demo.md) writes thousands of frames under demo/out while the dev server runs: nothing there is the game's.
+  server: { host: '127.0.0.1', port: 5173, strictPort: true, watch: { ignored: ['**/demo/out/**'] } },
   build: { target: 'es2022' },
 };

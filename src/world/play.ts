@@ -184,6 +184,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** window.__ud is created after the first scene starts, so this runs again on every tick until it sticks. */
   const play = {
     get sim() { return sim; }, get stage() { return stage; }, get director() { return director; },
+    /** The camera: the world px drawn at the left edge of the screen and at the top of the view. The demo recorder (src/demo) follows heroes with it. */
+    get camera() { return cam; },
     /** For tests and the console: the puzzle hint the party would see now (the puzzle, the hero it names and its line, or null), and a retry from the last lit string. */
     get hint() { const h = puzzles.highlight(); return h ? { puzzle: h.id, hero: h.hero, text: h.hint } : null; },
     retry(): void { retry(); },
@@ -489,7 +491,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (burstCall) drawTopLine(ctx, burstHint(), 'yellow', !!view.hud.boss, !!view.hud.channel);
       // The subtitle sits where the corner controls do, so it replaces them while it shows. A dialogue box does too, or they peek out round it.
       if (hint) drawSubtitle(ctx, hint.text);
-      else if (!dialog.active) drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);
+      else if (!dialog.active && !game.flags.capture) drawControlsCorner(ctx, hintFade, view.hud.party.length === 1);
       bonds.draw(ctx);
       dialog.draw(ctx);
       drawFade(ctx, clearT >= 0 ? (clearT - 10) / (CLEAR_FRAMES - 20) : 0);

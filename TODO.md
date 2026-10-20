@@ -2,6 +2,12 @@
 
 Scope for this pass: chapter 5, the end of the campaign. Level 14 (stage 5.1, Hawkins under lockdown: Hopper back, troopers, the Commander), Level 15 (stage 5.2, the Abyss: islands over the void, the foe Demogorgon, the twins) and Level 16 (stage 5.3, Vecna inside the Mind Flayer: three phases, the channel, the Final Roll, Joyce's axe, the basement epilogue, THE END). Every stage in `docs/game-design.md` is now built, 1.1 to 5.3. The pass before it built chapter 4.
 
+## Demo video
+
+- [x] `npm run demo` records the 45 second video ad into `demo/out/demo.mp4` (`docs/demo.md`): 1920 by 1080, 60 fps, H.264 and AAC, the game's own music and effects. Capture mode (`?capture=1`) steps the game a tick at a time, the shots are data in `scripts/demo/shots.mjs`, and `src/demo/` has the compositor and the offline mix. Two runs give the same frames
+- [ ] Put the chapter 4 epilogue (`story/epilogue.ts`, the party on the hill road over Hawkins after 4.4's clear) into a later re-record. It landed on main after the storyboard was set, so it is not in this cut
+- [ ] Record again whenever a stage, a boss, the HUD or a hero's special changes: a trigger that stops with its shot's name says what moved
+
 ## This pass (levels 14 to 16, chapter 5)
 
 - [x] Calls made under the owner's standing instruction ("go with your recommendation for all steps"), all in `docs/chapter-5.md` and `docs/level-14.md` to `docs/level-16.md`: Hopper locked into 5.1, Will into 5.2, Eleven and Will into 5.3, each catching up to the party; the Commander and the twins as the mini-bosses; the final fight in three phases with a channel that resets instead of failing; a Final Roll that sizes the finish and can't fail; the basement epilogue, THE END, then CAMPAIGN COMPLETE

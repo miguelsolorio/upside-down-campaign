@@ -4,6 +4,7 @@
 // the track, and the first unlock starts it. Effects asked for before that are dropped.
 // Everything is synthesized: pulse, triangle and noise voices through a master gain and a limiter.
 import type { AudioApi } from '../core/types.ts';
+import { capLog, capturing } from '../core/capture.ts';
 import { duckMusic, isAway, isMuted, isRunning, liveGraph, setAway, setMuted, setVolumes, unlock } from './engine.ts';
 import type { Graph } from './engine.ts';
 import { playBlip, playCue } from './cues.ts';
@@ -20,9 +21,12 @@ const MIN_BLIP_GAP = 0.02;
 const lastSfx = new Map<string, number>();
 let lastBlip = -1;
 
-/** The graph, if the context exists and sound is on. Muted or unfocused games make no voices at all. */
+/**
+ * The graph, if the context exists and sound is on. Muted or unfocused games make no voices at all. A capture makes none either:
+ * it logs each call (core/capture.ts) before this is asked, and the recorder renders the sound offline from the log.
+ */
 function audible(): Graph | null {
-  return isMuted() || isAway() ? null : liveGraph();
+  return isMuted() || isAway() || capturing() ? null : liveGraph();
 }
 
 export const audio: AudioApi = {
@@ -33,14 +37,17 @@ export const audio: AudioApi = {
   ready: isRunning,
 
   music(id) {
+    capLog('music', id);
     setWanted(id);
   },
 
   intensity(v) {
+    capLog('intensity', v);
     setLevel(v);
   },
 
   jingle(id) {
+    capLog('jingle', id);
     const g = audible();
     if (!g) return;
     const cue = JINGLES[id];
@@ -49,6 +56,7 @@ export const audio: AudioApi = {
   },
 
   sfx(id, opts) {
+    capLog('sfx', id, { rate: opts?.rate });
     const g = audible();
     if (!g) return;
     const now = g.ctx.currentTime;
@@ -69,6 +77,7 @@ export const audio: AudioApi = {
   },
 
   blip(who) {
+    capLog('blip', who);
     const g = audible();
     if (!g) return;
     const now = g.ctx.currentTime;
@@ -78,6 +87,7 @@ export const audio: AudioApi = {
   },
 
   stinger(id) {
+    capLog('stinger', id);
     const g = audible();
     if (!g) return;
     const cue = STINGERS[id];
@@ -90,7 +100,10 @@ export const audio: AudioApi = {
   isMuted,
   focus: (on) => setAway(!on),
   tracks: () => TRACK_IDS.slice(),
-  phase: setPhase,
+  phase(n) {
+    capLog('phase', n);
+    setPhase(n);
+  },
   musicEnded,
   trackSeconds: (id) => loopSeconds(TRACKS[id]),
   renderOffline,

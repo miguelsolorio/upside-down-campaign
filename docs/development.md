@@ -18,6 +18,7 @@ Then open http://127.0.0.1:5173. Press any key once so the browser lets the soun
 | `npm run preview` | Serve the production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | `node --test tests/*.test.ts` (Node runs the TypeScript directly) |
+| `npm run demo` | Records the 45 second video ad into `demo/out/demo.mp4` (`docs/demo.md`) |
 
 ## Deploying
 
@@ -42,6 +43,7 @@ The build uses a relative base path (`BASE_PATH=./`) so one build works at both.
 | `?stage=1.2` | Jump to a stage (`1.1` to `3.2`) with the party a normal run brings, levels and XP (`ARRIVAL` in `core/campaign.ts`, see `docs/pace.md`): three kids for Mirkwood, all four for the Lab and the school, Will in place of Eleven for 2.1, Mike, Dustin, Max and Steve for 2.2 and 2.3, and Mike, Dustin, Robin and Nancy for 3.1 and 3.2. A jump is a debug run: it keeps its map progress in memory, with the stages before it cleared, and never writes the real save or progress |
 | `?touch=1` | Show the touch controls with a mouse |
 | `?finale=1` | The ending on its own: the Final Roll for a sample party of four (Eleven, Will, Mike, Dustin), then the basement epilogue (the story is on for this hook, and `&rush=1` skips it), then THE END, then again. `?seed=N` changes the dice, and `?finale=plain`, `big` or `gold` finds the first seed from there that ends that way (`ui/finale_dev.ts`) |
+| `?capture=1` | The demo recorder's mode: no animation frame loop, `__ud.cap.step(n)` runs n ticks and a render, and the audio API logs every call (`core/capture.ts`, `docs/demo.md`) |
 | `?mute=1`, `?god=1`, `?level=3`, `?seed=N` | Self-explanatory |
 
 `?bot`, `?god`, `?level` and `?party` runs never touch the save.

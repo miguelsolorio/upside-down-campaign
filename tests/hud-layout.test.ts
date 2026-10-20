@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects, stashCells } from '../src/ui/hudlayout.ts';
+import { CONTENT_DY, BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects, stashCells } from '../src/ui/hudlayout.ts';
 import { STASH_ART } from '../src/ui/hudstash.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { XP_NOTCHES, notchSpans } from '../src/ui/format.ts';
@@ -200,8 +200,11 @@ test('on a wide screen the active hero hugs the band\'s left edge and the meter 
   }
 });
 
-test('at 256 the band changes nothing', () => {
-  assert.deepEqual(hudBand(), { x: 0, w: STRIP_W, top: 0, h: CELL_H });
+test('at 256 the band only moves the contents down to center them', () => {
+  assert.deepEqual(hudBand(), { x: 0, w: STRIP_W, top: CONTENT_DY, h: CELL_H });
+  // The contents ink 16 rows. Above them and above the 2 row border, the gaps match.
+  const above = hudBand().top, below = CELL_H - 2 - (above + 16);
+  assert.equal(above, below);
   assert.equal(leftShift(hudBand()), 0);
   assert.equal(rightShift(hudBand()), 0);
 });

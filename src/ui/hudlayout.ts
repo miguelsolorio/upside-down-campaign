@@ -109,11 +109,13 @@ export function benchPitch(count: number): number {
 
 /** Where the strip's contents go, in screen px: across from x for w, moved down by top, in a strip h tall. */
 export interface HudBand { x: number; w: number; top: number; h: number }
+/** The contents ink rows 0 to 15 of the 18 above the border, so they move down one row to sit centered. */
+export const CONTENT_DY = 1;
 /** The clear band, inset at the sides on a wider screen, and the strip's height. Read when called, so the strip and
  * its clicks always use the current screen. The inset shrinks when the band is barely wider than the strip. */
 export function hudBand(): HudBand {
   const pad = Math.max(0, Math.min(HUD_PAD_X, Math.floor((VIEW_W - STRIP_W) / 2)));
-  return { x: VIEW_X + pad, w: VIEW_W - pad * 2, top: (VIEW_TOP - STRIP_H) / 2, h: VIEW_TOP };
+  return { x: VIEW_X + pad, w: VIEW_W - pad * 2, top: (VIEW_TOP - STRIP_H) / 2 + CONTENT_DY, h: VIEW_TOP };
 }
 /** How far the left-hand contents (active hero, middle) move from where the constants put them. */
 export const leftShift = (b: HudBand): number => b.x;

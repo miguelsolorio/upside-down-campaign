@@ -97,6 +97,9 @@ export interface PropView {
   id: string; kind: PropKind;
   /** Top-left and size in world px. */
   x: number; y: number; w: number; h: number;
+  /** Solid, as the sim has it. A route treats it as a wall by the rule in combat/space.ts propBlocks: solid and not open, or a gap. Absent on the
+   *  stand-ins the sprite sheets and the title build by hand, which no route crosses. */
+  solid?: boolean;
   state: PropState; t: number;
   /** A camera's current cone. angle is in radians, 0 = right, y down. live is false once it is shot. */
   cam?: { angle: number; range: number; half: number; live: boolean };

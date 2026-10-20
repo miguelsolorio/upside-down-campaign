@@ -171,7 +171,7 @@ function puddleView(s: S, e: Enemy): ActorView {
 }
 
 function propView(s: S, p: Prop): PropView {
-  const v: PropView = { id: p.id, kind: p.kind, x: p.x, y: p.y, w: p.w, h: p.h, state: p.state, t: p.t };
+  const v: PropView = { id: p.id, kind: p.kind, x: p.x, y: p.y, w: p.w, h: p.h, state: p.state, t: p.t, solid: p.solid };
   if (p.cam) v.cam = camView(p);
   const k = riftK(s, p);
   if (k !== undefined) v.k = k;

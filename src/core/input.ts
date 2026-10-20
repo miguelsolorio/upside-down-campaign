@@ -49,6 +49,12 @@ export interface InputState {
   wheel(): number;
   /** Where the primary button or a finger went down this tick, in game px, or null. A short click is never lost. */
   clicked(): Vec2 | null;
+  /** clicked(), but null for a finger: a click in the level is mouse and pen only, a phone has its D-pad. */
+  mouseClicked(): Vec2 | null;
+  /** Where the right button went down this tick, in game px, or null. Mouse and pen only. A short click is never lost. */
+  rightClicked(): Vec2 | null;
+  /** The right button is down at poll time, for the specials that charge while their key is held. */
+  rightHeld(): boolean;
   /** A scene says the mouse is over something a click would do, so the page shows a hand cursor. Cleared by poll. */
   point(): void;
   /** Takes and clears a one-line message about the controller (connected, lost), for a toast. */
@@ -111,6 +117,12 @@ export function createInput(opts: InputOptions = {}): InputState {
   let wheelNow = 0;
   let clickLatch: Vec2 | null = null;
   let clickNow: Vec2 | null = null;
+  let mouseLatch: Vec2 | null = null;
+  let mouseNow: Vec2 | null = null;
+  let rightLatch: Vec2 | null = null;
+  let rightNow: Vec2 | null = null;
+  let rightDown = false;
+  let rightNowHeld = false;
   let hand = false;
   let handShown = false;
 
@@ -134,7 +146,10 @@ export function createInput(opts: InputOptions = {}): InputState {
     for (const a of acts) latch.add(a);
   });
   addEventListener('keyup', (e) => { down.delete(e.code); });
-  addEventListener('blur', () => { down.clear(); breakLatch = true; });
+  addEventListener('blur', () => { down.clear(); breakLatch = true; rightDown = false; });
+  // The right button is let go wherever the pointer ends up, or cancelled by the browser, so the Special never sticks down.
+  addEventListener('pointerup', (e) => { if (e.button === 2) rightDown = false; });
+  addEventListener('pointercancel', () => { rightDown = false; });
   // A hidden tab stops the loop, so the pause waits for the first tick after it comes back.
   if (typeof document !== 'undefined') {
     document.addEventListener?.('visibilitychange', () => { if (document.visibilityState === 'hidden') breakLatch = true; });
@@ -156,7 +171,11 @@ export function createInput(opts: InputOptions = {}): InputState {
       const p = place(e);
       if (e.pointerType === 'mouse') at = p;
       if (e.button === 0 && p) clickLatch = p;
+      if (e.button === 0 && p && e.pointerType !== 'touch') mouseLatch = p;
+      if (e.button === 2 && p && e.pointerType !== 'touch') { rightLatch = p; rightDown = true; }
     });
+    // The right button is the Special, so the browser's menu stays shut.
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     // A notch is about 100 px in most browsers and a trackpad sends many small steps, so every 50 px is one step.
     // Turning back drops what was left over the other way. A pinch on a trackpad comes as a wheel with ctrl held, and
     // isn't a scroll.
@@ -259,6 +278,11 @@ export function createInput(opts: InputOptions = {}): InputState {
       typedLatch = new Set<string>();
       clickNow = clickLatch;
       clickLatch = null;
+      mouseNow = mouseLatch;
+      mouseLatch = null;
+      rightNow = rightLatch;
+      rightLatch = null;
+      rightNowHeld = rightDown;
       movedNow = moveLatch;
       moveLatch = false;
       wheelNow = Math.trunc(wheelPx / WHEEL_STEP);
@@ -290,6 +314,9 @@ export function createInput(opts: InputOptions = {}): InputState {
     moved: () => movedNow,
     wheel: () => wheelNow,
     clicked: () => clickNow,
+    mouseClicked: () => mouseNow,
+    rightClicked: () => rightNow,
+    rightHeld: () => rightNowHeld,
     point() { hand = true; },
     notice() {
       const m = message;

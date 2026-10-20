@@ -1,6 +1,6 @@
 // createInput with a controller: edges, the device switch, keys beating a drifting stick, hot-plug notices.
 // Node has no window, so the three browser globals input.ts touches are stubbed here.
-import { test, beforeEach } from 'node:test';
+import { test, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInput, toSimInput } from '../src/core/input.ts';
 import type { InputOptions, InputState } from '../src/core/input.ts';
@@ -335,6 +335,96 @@ test('a mouse click lasts one tick, and only the primary button counts', () => {
   c.send('pointerdown', at(100, 50, 'mouse', 2));
   i.poll();
   assert.equal(i.clicked(), null, 'a right click is not a click');
+});
+
+test('a right click is the Special: rightClicked for one tick, and no click of any kind', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('pointerdown', at(100, 50, 'mouse', 2));
+  i.poll();
+  assert.deepEqual(i.rightClicked(), { x: 100, y: 50 });
+  assert.equal(i.clicked(), null);
+  assert.equal(i.mouseClicked(), null);
+  i.poll();
+  assert.equal(i.rightClicked(), null);
+});
+
+test('a right click that goes down and up within one tick is not lost', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('pointerdown', at(100, 50, 'mouse', 2));
+  fire('pointerup', { button: 2 });
+  i.poll();
+  assert.deepEqual(i.rightClicked(), { x: 100, y: 50 });
+  assert.ok(!i.rightHeld(), 'and it is already let go');
+});
+
+test('a left mouse click gives clicked and mouseClicked the point', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('pointerdown', at(60, 40));
+  i.poll();
+  assert.deepEqual(i.clicked(), { x: 60, y: 40 });
+  assert.deepEqual(i.mouseClicked(), { x: 60, y: 40 });
+  i.poll();
+  assert.equal(i.mouseClicked(), null);
+});
+
+test('a touch is a click but never a mouse click, and a pen counts as a mouse', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  c.send('pointerdown', at(10, 20, 'touch'));
+  i.poll();
+  assert.deepEqual(i.clicked(), { x: 10, y: 20 });
+  assert.equal(i.mouseClicked(), null, 'a finger is not a mouse click');
+  c.send('pointerdown', at(10, 20, 'touch', 2));
+  i.poll();
+  assert.equal(i.rightClicked(), null, 'nor a right click');
+  assert.ok(!i.rightHeld());
+  c.send('pointerdown', at(30, 40, 'pen'));
+  i.poll();
+  assert.deepEqual(i.mouseClicked(), { x: 30, y: 40 });
+  c.send('pointerdown', at(30, 40, 'pen', 2));
+  i.poll();
+  assert.deepEqual(i.rightClicked(), { x: 30, y: 40 });
+});
+
+test('the browser menu stays shut over the game canvas', () => {
+  const c = fakeCanvas();
+  make({ canvas: c.canvas });
+  const preventDefault = mock.fn();
+  c.send('contextmenu', { preventDefault });
+  assert.equal(preventDefault.mock.callCount(), 1);
+});
+
+test('rightHeld is true while the right button is down, and lets go on its pointerup, a cancel or a blur', () => {
+  const c = fakeCanvas();
+  const i = make({ canvas: c.canvas });
+  i.poll();
+  assert.ok(!i.rightHeld(), 'not before the press');
+  c.send('pointerdown', at(100, 50, 'mouse', 2));
+  i.poll();
+  assert.ok(i.rightHeld());
+  i.poll();
+  assert.ok(i.rightHeld(), 'still down on the next tick');
+  fire('pointerup', { button: 0 });
+  i.poll();
+  assert.ok(i.rightHeld(), 'the left button lets go of nothing');
+  fire('pointerup', { button: 2 });
+  i.poll();
+  assert.ok(!i.rightHeld(), 'let go');
+  c.send('pointerdown', at(100, 50, 'mouse', 2));
+  i.poll();
+  assert.ok(i.rightHeld());
+  fire('pointercancel');
+  i.poll();
+  assert.ok(!i.rightHeld(), 'the browser cancelled the press');
+  c.send('pointerdown', at(100, 50, 'mouse', 2));
+  i.poll();
+  assert.ok(i.rightHeld());
+  fire('blur');
+  i.poll();
+  assert.ok(!i.rightHeld(), 'the window lost focus');
 });
 
 test('the wheel gives one step per 50 px or per line, keeps the leftover going the same way, and ignores a pinch', () => {

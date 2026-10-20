@@ -163,10 +163,10 @@ export function slotRects(party: readonly PartyHud[], band: HudBand = hudBand())
   return out;
 }
 
-/** Party index under a point in game px, or -1. The active hero, a KO'd hero, a cursed one and a channeler are not swap targets. */
+/** Party index under a point in game px, or -1. Only a swappable hero is a target: the active hero, a KO'd hero, a cursed one and a channeler are not. */
 export function slotAt(party: readonly PartyHud[], x: number, y: number, band: HudBand = hudBand()): number {
   for (const r of slotRects(party, band)) {
-    if (r.active || r.ko || r.cursed || r.held) continue;
+    if (!swappable(party[r.index])) continue;
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return r.index;
   }
   return -1;
@@ -185,6 +185,20 @@ export function levelRect(party: readonly PartyHud[], band: HudBand = hudBand())
 export function onLevel(party: readonly PartyHud[], x: number, y: number, band: HudBand = hudBand()): boolean {
   const r = levelRect(party, band);
   return !!r && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+}
+
+/** The Crit column's click cell, screen px: the CRIT caption and the d20 under it, the strip's full height, 2 px of slack each side. */
+export function critRect(quarters: number, band: HudBand = hudBand()): Rect {
+  return { x: leftShift(band) + critX(quarters) - 2, y: 0, w: CRIT_W + 4, h: band.h };
+}
+/** True when (x, y), screen px, is on the Crit column. The play scene fires the Crit on a click there once the die is full. */
+export function onCrit(quarters: number, x: number, y: number, band: HudBand = hudBand()): boolean {
+  const r = critRect(quarters, band);
+  return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+}
+/** A hero a click may swap to: on the bench, standing, not hanging under a curse and not on a mark in the channel. The rule slotAt applies. */
+export function swappable(p: PartyHud): boolean {
+  return !p.active && !p.ko && !isCursed(p) && !isHeld(p);
 }
 
 // ---------------------------------------------------------------- the boss bar and its leg pips

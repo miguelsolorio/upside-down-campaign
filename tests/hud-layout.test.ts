@@ -1,10 +1,10 @@
 // Where each hero sits in the HUD strip, and the click that picks one. Pure, so no canvas is needed.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
+import { BASE_W, SCREEN_H, SCREEN_W, setScreenWidth } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { CONTENT_DY, BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, coinText, coinW, critX, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects, stashCells } from '../src/ui/hudlayout.ts';
+import { CONTENT_DY, BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, coinText, coinW, critRect, critX, hudBand, leftShift, levelDx, levelRect, onCrit, onLevel, rightShift, slotAt, slotRects, stashCells, swappable } from '../src/ui/hudlayout.ts';
 import { STASH_ART } from '../src/ui/hudstash.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { XP_NOTCHES, notchSpans } from '../src/ui/format.ts';
@@ -286,4 +286,75 @@ test('the Crit column moves right as the coin count grows, and never touches it 
     assert.ok(critX(q) + CRIT_W < BENCH_START, `${q}: the Crit column ends before the bench`);
   }
   assert.deepEqual([156, 999, 1000, 1234, 9999, 12_345, 1_000_000].map(coinText), ['x156', 'x999', 'x1K', 'x1K', 'x9K', 'x12K', 'x99K']);
+});
+
+// The Crit die as hud.ts draws it. It keeps these two unexported: a die of radius CRIT_R centered at critX + CRIT_R, CRIT_CY
+// under the top of the contents, which sit at band.top.
+const CRIT_R = 4;
+const CRIT_CY = VALUE_Y + 3;
+type Box = { x: number; y: number; w: number; h: number };
+const overlaps = (a: Box, b: Box): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+test('critRect encloses the Crit caption and the die under it, for any coin count', () => {
+  const band = hudBand();
+  for (const q of [0, 99, 1000, 99999]) {
+    const r = critRect(q, band);
+    const x0 = leftShift(band) + critX(q);
+    const captionTop = band.top + CAPTION_Y;
+    assert.ok(r.x <= x0 && r.x + r.w >= x0 + CRIT_W, `${q}: the caption runs ${x0} to ${x0 + CRIT_W}`);
+    assert.ok(r.y <= captionTop && r.y + r.h >= captionTop + 5, `${q}: the caption's five rows`);
+    assert.ok(r.x <= x0 && r.x + r.w >= x0 + 2 * CRIT_R, `${q}: the die's ${2 * CRIT_R} px across`);
+    assert.ok(r.y <= band.top + CRIT_CY - CRIT_R && r.y + r.h >= band.top + CRIT_CY + CRIT_R, `${q}: the die's rows`);
+  }
+});
+
+test('the Crit click cell overlaps no hero, level button, coin column or bench slot, at 256 and on a wide screen', () => {
+  try {
+    for (const width of [BASE_W, 640]) {
+      setScreenWidth(width);
+      const band = hudBand();
+      for (const q of [0, 99, 1000, 99999]) {
+        const c = critRect(q, band);
+        const coins: Box = { x: leftShift(band) + COIN_X, y: 0, w: coinW(q), h: band.h };
+        assert.ok(!overlaps(c, coins), `${width} px, ${q}: the coins`);
+        for (let n = 1; n <= 4; n++) {
+          for (let active = 0; active < n; active++) {
+            const p = party(n, active);
+            const level = levelRect(p, band);
+            assert.ok(!level || !overlaps(c, level), `${width} px, ${q}, ${n} heroes: the level button`);
+            for (const r of slotRects(p, band)) {
+              assert.ok(!overlaps(c, r), `${width} px, ${q}, ${n} heroes, active ${active}: hero ${r.index}`);
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    setScreenWidth(BASE_W);
+  }
+});
+
+test('onCrit is true on the die and the caption, and false 3 px past either side of the cell', () => {
+  const band = hudBand();
+  for (const q of [0, 99999]) {
+    const r = critRect(q, band);
+    const dieX = leftShift(band) + critX(q) + CRIT_R, dieY = band.top + CRIT_CY;
+    assert.ok(onCrit(q, dieX, dieY, band), `${q}: the die's center`);
+    assert.ok(onCrit(q, dieX, band.top + CAPTION_Y, band), `${q}: the caption`);
+    assert.ok(!onCrit(q, r.x - 3, dieY, band), `${q}: 3 px left of the cell`);
+    assert.ok(!onCrit(q, r.x + r.w + 3, dieY, band), `${q}: 3 px right of it`);
+  }
+});
+
+test('swappable is the rule slotAt applies: a benched, standing hero that is not cursed or on a mark', () => {
+  const p = party(4, 0, [2]);
+  for (const r of slotRects(p)) {
+    const [cx, cy] = center(r);
+    assert.equal(slotAt(p, cx, cy), swappable(p[r.index]) ? r.index : -1, `hero ${r.index}`);
+  }
+  assert.equal(swappable(p[0]), false, 'the active hero');
+  assert.equal(swappable(p[1]), true, 'a benched hero');
+  assert.equal(swappable(p[2]), false, 'a KO\'d hero');
+  assert.equal(swappable({ ...p[1], curse: 2 }), false, 'a hero under a curse');
+  assert.equal(swappable({ ...p[1], channeling: true }), false, 'a hero on a mark in the channel');
 });

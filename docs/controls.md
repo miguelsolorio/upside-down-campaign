@@ -10,7 +10,7 @@ Every input the game reads, and the rules behind saving, story and sound. The RE
 | `Z` or `J` | Attack. Melee heroes chain three hits |
 | `X` or `K` | Special. Costs MP. From Lv 6, Will, Nancy and Eleven hold it for a second move: a tap casts the Special when the key comes up, and holding it 0.4 s, while a ring fills round the hero, casts the other one. Dustin does too from Lv 9, until he has called Suzie that stage |
 | `C` and `V` | Back one hero and next hero. Swapping is near instant, so tap to cycle. The shockwave and invulnerability need 1.5 s since the last one |
-| `1` to `4`, or click a portrait | Pick a hero |
+| `1` to `4`, or click a portrait or a hero on the field | Pick a hero |
 | `Space` or `Enter` | Light Joyce's Christmas lights or play an arcade cabinet when one is in reach, otherwise Crit when the d20 in the top bar, labeled CRIT, is full. Also advances dialogue |
 | `U` or `B` | Crit, even next to the lights |
 | `Esc` or `P` | Pause, settings and the character sheet |
@@ -74,6 +74,8 @@ Hints name the Game Boy's buttons while you play by touch. A key or controller p
 ## Mouse
 
 Every menu works with a mouse. The row under the pointer takes the selection, and a click picks it. A click on the active hero's name and level in the HUD opens the character sheet, and they underline under the pointer. Click a volume bar to set it, and click its top lit segment to turn it down one. A click anywhere moves through dialogue, the chapter card and the results screen, the same as Enter. A click on SKIP above the dialogue box skips like `T`, and a click on the title's SKIP STORY line flips it. In CONTROLS, click a key slot to rebind it, scroll with the wheel or the arrows, and click anywhere to cancel. The pointer turns into a hand over anything you can click. Hover is mouse only: a tap on a touch screen still clicks, but nothing lights up under a finger.
+
+In a level, a click on the ground walks the active hero there, round trees and furniture, and a small ring marks the spot. A click on an enemy walks the hero into reach and keeps attacking it until it falls, with a reticle under it. A click on a party member walking behind the hero, or on their portrait in the HUD, swaps to them. A click on the CRIT d20 in the HUD fires the Crit once the die is full. A right click fires the hero's Special toward the pointer, and holding the right button charges the specials that charge on a held key. Any key or controller press for moving, attacking or swapping takes over at once, and the hero stops where they are. A finger tap on a touch screen still only works the HUD. The phone has its own D-pad.
 
 ## Character sheet
 

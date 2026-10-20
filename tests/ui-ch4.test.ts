@@ -26,7 +26,7 @@ import { createPicks, rowOf } from '../src/ui/picks_logic.ts';
 import { COLS_WIDE, LOCK_W, MAX_POOL, bondTag, cardRect, cellRect, markRect, markWidth, picksLayout } from '../src/ui/picks_layout.ts';
 import type { PicksLayout } from '../src/ui/picks_layout.ts';
 import { drawHud } from '../src/ui/hud.ts';
-import { ACTIVE_KEY_X, BENCH_FACE_DX, BENCH_START, CURSE_H, CURSE_PIPS, CURSE_PIP_GAP, CURSE_PIP_H, CURSE_PIP_W, FACE_Y, KEY_DX, LEFT_X, TAPE_ACTIVE_Y, TAPE_BENCH_Y, TAPE_H, TAPE_MARK_DY, TAPE_W, XP_Y, cursePipsDx, showsKeys, slotAt, slotRects, tapeSpot } from '../src/ui/hudlayout.ts';
+import { CONTENT_DY, ACTIVE_KEY_X, BENCH_FACE_DX, BENCH_START, CURSE_H, CURSE_PIPS, CURSE_PIP_GAP, CURSE_PIP_H, CURSE_PIP_W, FACE_Y, KEY_DX, LEFT_X, TAPE_ACTIVE_Y, TAPE_BENCH_Y, TAPE_H, TAPE_MARK_DY, TAPE_W, XP_Y, cursePipsDx, showsKeys, slotAt, slotRects, tapeSpot } from '../src/ui/hudlayout.ts';
 import { CURSE_FRAME, PIP_SOUNDED, PIP_WAITING, cursePips, tapeLook, tapePixels } from '../src/ui/hudcurse.ts';
 import { createCharSheetScene } from '../src/ui/charsheet.ts';
 import type { CharSheetHero } from '../src/ui/charsheet.ts';
@@ -202,7 +202,8 @@ const hudOf = (party: PartyHud[], walkman: HudView['walkman'] = null): HudView =
 const strip = (hud: HudView, device: 'keyboard' | 'gamepad' = 'keyboard'): FakeCanvas => {
   const c = screen(256, 24);
   drawHud(ctxOf(c), hud, 0, { device });
-  return c;
+  // The strip's contents sit CONTENT_DY rows down to be centered. Read them from their own top, as the layout places them.
+  return { ...c, px: c.px.slice(CONTENT_DY * c.w) };
 };
 /** True when every pixel of the box is the strip's own ink. */
 const clear = (c: FakeCanvas, r: Rect): boolean => {
@@ -221,7 +222,7 @@ test('a hero alone has his portrait, name, level and bars, no bench and no swap 
   const c = strip(hudOf(lone));
   // The key's place beside the portrait, and the whole bench's, are bare strip.
   assert.ok(clear(c, { x: ACTIVE_KEY_X, y: 0, w: LEFT_X - ACTIVE_KEY_X - 1, h: 9 }), 'no key by the portrait');
-  assert.ok(clear(c, { x: BENCH_START - 4, y: 0, w: 256 - BENCH_START + 4, h: STRIP_H - 2 }), 'nothing where the bench goes');
+  assert.ok(clear(c, { x: BENCH_START - 4, y: 0, w: 256 - BENCH_START + 4, h: STRIP_H - 2 - CONTENT_DY }), 'nothing where the bench goes');
   // He is there: the amber frame, and ink-free pixels in the name row and the XP row.
   assert.ok(isColor(c, 1, 5, 'amber'), 'the active frame');
   assert.ok(!clear(c, { x: LEFT_X, y: 1, w: 40, h: 7 }), 'his name');

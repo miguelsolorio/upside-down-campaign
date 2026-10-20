@@ -6,7 +6,7 @@ import { BASE_W, CLEAR_MAX, FRAME_X, HUD_PAD_X, HUD_PAD_Y, MAX_W, SCREEN_H, SCRE
 import { cameraSnap, createCamera } from '../src/core/camera.ts';
 import { clientToGame } from '../src/core/pointer.ts';
 import { fitScreen } from '../src/core/viewport.ts';
-import { hudBand } from '../src/ui/hudlayout.ts';
+import { CONTENT_DY, hudBand } from '../src/ui/hudlayout.ts';
 
 afterEach(() => setScreenWidth(BASE_W));
 
@@ -124,7 +124,7 @@ test('clicks and the HUD follow the live width', () => {
   const box = { left: 0, top: 0, width: 536 * 3, height: SCREEN_H * 3 };
   const mid = clientToGame(box.width / 2, box.height / 2, box);
   assert.ok(mid && mid.x === 268 && mid.y === SCREEN_H / 2);
-  assert.deepEqual(hudBand(), { x: 44 + HUD_PAD_X, w: 448 - HUD_PAD_X * 2, top: HUD_PAD_Y, h: STRIP_H + HUD_PAD_Y * 2 });
+  assert.deepEqual(hudBand(), { x: 44 + HUD_PAD_X, w: 448 - HUD_PAD_X * 2, top: HUD_PAD_Y + CONTENT_DY, h: STRIP_H + HUD_PAD_Y * 2 });
   setScreenWidth(264);
-  assert.deepEqual(hudBand(), { x: 4, w: 256, top: HUD_PAD_Y, h: STRIP_H + HUD_PAD_Y * 2 }, 'a band just wider than the strip gets a smaller inset');
+  assert.deepEqual(hudBand(), { x: 4, w: 256, top: HUD_PAD_Y + CONTENT_DY, h: STRIP_H + HUD_PAD_Y * 2 }, 'a band just wider than the strip gets a smaller inset');
 });

@@ -11,7 +11,7 @@ import type { ColorName } from '../src/gfx/palette.ts';
 import { SCREEN_W, VIEW_TOP } from '../src/core/config.ts';
 import { hurtChannel } from '../src/combat/channel.ts';
 import { drawHud } from '../src/ui/hud.ts';
-import { BOSS_BAR_H, BOSS_BAR_W, CHANNEL_GAP, NEXT_DY, bossLayout, channelBars, slotAt, slotRects } from '../src/ui/hudlayout.ts';
+import { CONTENT_DY, BOSS_BAR_H, BOSS_BAR_W, CHANNEL_GAP, NEXT_DY, bossLayout, channelBars, slotAt, slotRects } from '../src/ui/hudlayout.ts';
 import { COUNT_FILL, toneOf } from '../src/ui/hudchannel.ts';
 import { FINALE_PHASES, bossTitle, secondsLeft } from '../src/ui/format.ts';
 import { kind, rig, steps, still, toChannel, toSpider, until } from './finale-helpers.ts';
@@ -199,9 +199,9 @@ test('the held mark stands where a key would, in the hero\'s own color, and a sw
   const free = draw(hudOf({ party: party([]) }));
   for (const r of slotRects(party(['eleven', 'will'])).filter((x) => x.held)) {
     const frame = toneOf(r.n === 3 ? 'eleven' : 'will').frame;
-    const face: Rect = { x: r.px, y: 2, w: 11, h: 11 };
+    const face: Rect = { x: r.px, y: 2 + CONTENT_DY, w: 11, h: 11 };
     assert.ok(inBox(held, face, frame) >= 30, `${frame} frames slot ${r.n}'s face`);
-    const key: Rect = { x: r.x + 2, y: 5, w: 3, h: 5 };
+    const key: Rect = { x: r.x + 2, y: 5 + CONTENT_DY, w: 3, h: 5 };
     assert.ok(inBox(held, key, frame) >= 6, `slot ${r.n} wears the ring where the key was`);
     assert.equal(inBox(free, key, frame), 0, 'and the key is what stands there when nothing is held');
   }

@@ -99,6 +99,20 @@
       ],
       "port": 5193,
       "autoPort": false
+    },
+    {
+      "name": "mouse-controls",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5195",
+        "--strictPort"
+      ],
+      "port": 5195,
+      "autoPort": false
     }
   ]
 }

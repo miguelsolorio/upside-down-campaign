@@ -21,6 +21,8 @@ import type { PuzzleDef } from './types.ts';
 import { isNear } from './puzzles.ts';
 import { SPARKLES, TALENT_TO, ringRadius, sparkle, talentShowing } from './levelfx.ts';
 import type { LevelFx } from './levelfx.ts';
+import { MARK_FRAMES } from './mouseplay.ts';
+import type { MouseMark } from './mouseplay.ts';
 import { BANDS } from './klaxon.ts';
 import { drawHeart } from './heart.ts';
 
@@ -307,6 +309,31 @@ export function drawPuzzleCaret(ctx: Ctx, r: { x: number; y: number; w: number; 
   const x = Math.max(VIEW_X + 1, Math.min(VIEW_X + VIEW_W - 8, Math.round(r.x + r.w / 2 - cam.x) - 3));
   const y = up ? Math.max(VIEW_TOP + 1, bottom + 1 + bob) : Math.min(SUBTITLE_Y - 12, top - 9 - bob);
   drawIcon(ctx, up ? 'cursorUp' : 'cursorDown', x, y, t);
+}
+
+/** Ticks between the two sizes of a live mouse mark. */
+const MARK_PULSE = 8;
+/** The mouse marks, one string per row, X for a pixel: the walk ring is 9 by 5 and lies flat on the ground, the attack reticle is the four ends of a 13 by 7 ellipse. Each has a smaller twin for the pulse. */
+const RING = ['..XXXXX..', '.X.....X.', 'X.......X', '.X.....X.', '..XXXXX..'];
+const RING_SMALL = ['.XXXXX.', 'X.....X', '.XXXXX.'];
+const RETICLE = ['......X......', '......X......', '.............', 'XX.........XX', '.............', '......X......', '......X......'];
+const RETICLE_SMALL = ['.....X.....', '.....X.....', 'XX.......XX', '.....X.....', '.....X.....'];
+
+/** The mouse's mark: a small ring on the spot a click sent the hero to, or a reticle under the foe it sent him at (world/mouseplay.ts MouseMark). It pulses while the goal is live and blinks out over MARK_FRAMES after it ends. */
+export function drawClickMark(ctx: Ctx, m: MouseMark, cam: Camera, _t: number): void {
+  // After the goal ends the mark blinks out, shown for four ticks and hidden for four, and is gone at MARK_FRAMES.
+  if (!m.live && (m.age >= MARK_FRAMES || ((m.age >> 2) & 1) !== 0)) return;
+  // The pulse is the same mark one pixel smaller on every other beat. Reduce flashing keeps it steady.
+  const small = m.live && !settings.reduceFlashing && Math.floor(m.age / MARK_PULSE) % 2 === 1;
+  const walk = m.kind === 'walk';
+  const rows = walk ? (small ? RING_SMALL : RING) : (small ? RETICLE_SMALL : RETICLE);
+  const x0 = Math.round(m.x - cam.x) - ((rows[0] as string).length >> 1), y0 = Math.round(m.y - cam.y + VIEW_TOP) - (rows.length >> 1);
+  clipped(ctx, VIEW_X, VIEW_TOP, VIEW_W, SCREEN_H - VIEW_TOP, () => {
+    ctx.fillStyle = walk ? PAL.leaf : PAL.hot;
+    rows.forEach((row, dy) => {
+      for (let dx = 0; dx < row.length; dx++) if (row[dx] === 'X') ctx.fillRect(x0 + dx, y0 + dy, 1, 1);
+    });
+  });
 }
 
 /** One line centered low on the screen on a dark strip, like a film subtitle. It stays put while the camera moves. */

@@ -38,9 +38,11 @@ import { createMemoryFade } from './memory.ts';
 import { calm, createEnding } from './ending.ts';
 import { SONG_BOT } from './rooftop.ts';
 import { liveSongs } from './songs.ts';
+import { createMousePlay } from './mouseplay.ts';
+import { readMouse, wantsHand } from './mouseglue.ts';
 import { stormFlash } from './storm.ts';
 import { createKlaxon } from './klaxon.ts';
-import { drawCallout, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld, puzzleHint } from './render.ts';
+import { drawCallout, drawClickMark, drawControlsCorner, drawFade, drawFlash, drawKlaxon, drawLevelFx, drawPuzzleCaret, drawSubtitle, drawTopLine, drawWorld, puzzleHint } from './render.ts';
 import type { PlayOptions } from './types.ts';
 
 const IDLE: SimInput = {
@@ -123,6 +125,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** The note highway's songs (songs.ts): the rooftop's, which takes the whole keyboard, and Eddie's riff, which takes the action keys. */
   const songs = liveSongs(() => sim, () => (bot ? SONG_BOT : undefined));
   const arcade = createArcade({ sim: () => sim, view: () => view, show, close: closeOverlay });
+  /** The mouse's walk and attack goal for the active hero (mouseplay.ts). Keys and the pad win over it, and the bot never uses it. */
+  const mouse = createMousePlay(stage.grid);
   /** The final fight's finish (ending.ts): the Final Roll, Joyce and her axe, then the stage's clear beat. */
   const ending = createEnding({
     roll: (e, done) => { const sc = createFinalRollScene({ heroes: e.heroes, roll: e.roll, onDone: () => { closeOverlay(sc); done(); } }); show(sc); },
@@ -208,7 +212,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
   }
 
   /** Puts a scene over the frozen level. */
-  function show(sc: Scene): void { overlay = sc; game.scenes.push(sc); }
+  function show(sc: Scene): void { overlay = sc; mouse.reset(); game.scenes.push(sc); }
 
   function closeOverlay(sc: Scene): void {
     if (game.scenes.top() === sc) game.scenes.pop();
@@ -231,6 +235,7 @@ export function createPlayScene(opts: PlayOptions): Scene {
   /** Rebuilds the sim at the checkpoint with this progress and puts the director and the screen back to match. */
   function restart(p: Progress): void {
     build(p.party, checkpoint, p.skip, p.open);
+    mouse.reset();
     director.restore(checkpoint.state);
     levelFx.clear();
     klaxon.clear();
@@ -296,13 +301,15 @@ export function createPlayScene(opts: PlayOptions): Scene {
     audio.sfx('pause');
   }
 
-  /** The keys and pad, plus a click on a HUD portrait, which is a swap to that hero. */
+  /** The keys and pad, then the mouse: a click on a HUD portrait or a party member on the field is a swap to that hero, and the driver (mouseplay.ts) turns a click on the ground or a foe into movement and attacks. */
   function playerInput(g: Game): SimInput {
     // Space uses the lights or cabinet in reach, and with none in reach it's the burst key. `prompt` is last tick's, the one on screen.
     const keys = toSimInput(g.input, !prompt);
     const click = g.input.clicked();
     const slot = click ? slotAt(view.hud.party, click.x, click.y) : -1;
-    return slot >= 0 ? { ...keys, swapTo: slot } : keys;
+    const m = readMouse(g.input, view, cam);
+    const swapTo = slot >= 0 ? slot : m.swapTo;
+    return mouse.drive(swapTo >= 0 ? { ...keys, swapTo } : keys, m.tick, view, sim.heroPos());
   }
 
   // ---------------------------------------------------------------- events, lights
@@ -399,9 +406,10 @@ export function createPlayScene(opts: PlayOptions): Scene {
       if (deferred.length > 0) for (const fn of deferred.splice(0)) fn();
       // Esc or Start pause over a dialogue box too, so START OVER and QUIT stay in reach. The window or the controller going away holds a level only while something moves.
       if (!bot && wipeT < 0 && clearT < 0 && (g.input.pressed('pause') || (!dialog.active && g.input.interrupted()))) { pause(); return; }
-      if (dialog.active) { prompt = null; burstCall = false; dialog.update(g); return; }
+      if (dialog.active) { prompt = null; burstCall = false; mouse.reset(); dialog.update(g); return; }
 
       const frozen = scare !== null || wipeT >= 0 || clearT >= 0 || ending.holds();
+      if (bot || frozen || songs.holds) mouse.reset();
       // A click on the active hero's name and level opens their character sheet. The view is last tick's, the one on screen.
       const click = g.input.clicked();
       const lead = view.hud.party.find((m) => m.active);
@@ -440,6 +448,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       audio.intensity(sim.aggro() ? 1 : 0);
       const look = ending.focus() ?? view.focus;
       cameraFollow(cam, look.x, look.y, stage.wPx, stage.hPx);
+      // A foe, a benched hero or the lit Crit column under the mouse is a button too.
+      if (!bot && !frozen && wantsHand(g.input.hover(), view, cam)) g.input.point();
       if (!scare) glowLevel = 1;
       if (leftHome) hintFade = Math.min(1, hintFade + 1 / HINT_FADE_FRAMES);
       if (speech && ++speech.t > SPEECH_FRAMES) speech = null;
@@ -466,6 +476,8 @@ export function createPlayScene(opts: PlayOptions): Scene {
       drawWorld(ctx, stage, boom >= 0 ? boomView(shown, boom, g.settings.shake) : shown, cam, g.frame, { hitboxes: sim.dev.hitboxes, figure: fig, light: { level: glowLevel, flicker: scare ? 2.2 : 0 }, memory: memory.k(), flash: stage.storm ? stormFlash(g.frame, g.settings.reduceFlashing) : 0, joyce: ending.joyce() });
       drawFlash(ctx, Math.max(shown.flash, ending.flash(g.settings.reduceFlashing)));
       drawLevelFx(ctx, levelFx.list(), view, cam);
+      const mk = mouse.marker();
+      if (mk) drawClickMark(ctx, mk, cam, g.frame);
       drawKlaxon(ctx, klaxon.level(g.settings.reduceFlashing));
       // While the party is at a puzzle it's stuck on, the caret points at the prop and a subtitle says who to try.
       const stuck = puzzles.highlight();

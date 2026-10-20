@@ -80,6 +80,18 @@ export const CRIT_X = 170;
 export const CRIT_W = 'CRIT'.length * 4 - 1;
 /** The columns end here, and the bench starts after them. */
 export const CLUSTER_END = CRIT_X + CRIT_W;
+/** The least room between the coin count and the Crit column. */
+export const CRIT_GAP = 5;
+/** The coin count as drawn: "x156" up to 999, then whole thousands as "x1K" to "x99K", so it never runs past four glyphs. */
+export function coinText(quarters: number): string {
+  const q = Math.max(0, Math.floor(quarters));
+  if (q < 1000) return `x${q}`;
+  return `x${Math.min(99, Math.floor(q / 1000))}K`;
+}
+/** The coin column's width for a count: the coin, a 2 px gap and the count in 6 px glyphs. */
+export const coinW = (quarters: number): number => 9 + coinText(quarters).length * 6 - 1;
+/** Where the Crit column starts: CRIT_X, or further right when the coin count is wider than two digits. */
+export const critX = (quarters: number): number => Math.max(CRIT_X, COIN_X + coinW(quarters) + CRIT_GAP);
 /** The active hero's portrait box and its click cell. */
 export const ACTIVE_CELL = { x: 0, y: 0, w: 20, h: CELL_H };
 /** The name row: the name, a 6 px gap, then LVn, all in 6 px glyphs. The level starts this far right of LEFT_X. */

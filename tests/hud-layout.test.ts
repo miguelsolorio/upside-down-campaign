@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { SCREEN_H, SCREEN_W } from '../src/core/config.ts';
 import { clientToGame, hitIndex, inRect } from '../src/core/pointer.ts';
 import { TINY_GLYPHS } from '../src/gfx/data/font.ts';
-import { CONTENT_DY, BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects, stashCells } from '../src/ui/hudlayout.ts';
+import { CONTENT_DY, BENCH_END, BENCH_FACE_DX, BENCH_PITCH, BENCH_START, BENCH_W, CAPTION_Y, CELL_H, CLUSTER_END, COIN_W, COIN_X, CRIT_W, CRIT_X, INSPIRE_X, LEFT_X, MP_BAR_W, MP_X, STASH_CELL_GAP, STASH_ICON_W, STASH_X, STASH_Y, STRIP_W, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, benchPitch, coinText, coinW, critX, hudBand, leftShift, levelDx, levelRect, onLevel, rightShift, slotAt, slotRects, stashCells } from '../src/ui/hudlayout.ts';
 import { STASH_ART } from '../src/ui/hudstash.ts';
 import { HERO_DEFS } from '../src/heroes/defs.ts';
 import { XP_NOTCHES, notchSpans } from '../src/ui/format.ts';
@@ -274,4 +274,16 @@ test('the mini icons are as wide as the layout says and as tall as the caption r
       for (const ch of row) assert.ok(ch === '.' || art.map[ch], `${item} uses only colors it names`);
     }
   }
+});
+
+test('the Crit column moves right as the coin count grows, and never touches it or the bench', () => {
+  assert.equal(critX(0), CRIT_X, 'two digits or fewer: where it always was');
+  assert.equal(critX(99), CRIT_X);
+  assert.ok(critX(156) > CRIT_X, 'three digits push it right');
+  for (const q of [0, 9, 99, 100, 156, 999, 1000, 1234, 9999, 10_000, 54_321, 1_000_000]) {
+    const end = COIN_X + coinW(q);
+    assert.ok(critX(q) >= end + 5, `${q}: Crit starts ${critX(q) - end} px after "${coinText(q)}"`);
+    assert.ok(critX(q) + CRIT_W < BENCH_START, `${q}: the Crit column ends before the bench`);
+  }
+  assert.deepEqual([156, 999, 1000, 1234, 9999, 12_345, 1_000_000].map(coinText), ['x156', 'x999', 'x1K', 'x1K', 'x9K', 'x12K', 'x99K']);
 });

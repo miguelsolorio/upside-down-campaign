@@ -20,7 +20,7 @@ import type { Ctx } from './kit.ts';
 import { DIE_DIM, DIE_GOLD, drawDie } from './die.ts';
 import type { DieScheme } from './die.ts';
 import { drawStash } from './hudstash.ts';
-import { ACTIVE_KEY_X, BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, CRIT_X, FACE_Y, INSPIRE_X, KEY_DX, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, cursePipsDx, heldDx, hudBand, leftShift, levelDx, showsKeys, slotRects, tapeSpot } from './hudlayout.ts';
+import { ACTIVE_KEY_X, BOSS_BAR_H, BOSS_BAR_W, CAPTION_Y, COIN_X, FACE_Y, INSPIRE_X, KEY_DX, LEFT_X, MP_BAR_W, MP_X, VALUE_H, VALUE_Y, XP_H, XP_W, XP_Y, bossLayout, coinText, critX, cursePipsDx, heldDx, hudBand, leftShift, levelDx, showsKeys, slotRects, tapeSpot } from './hudlayout.ts';
 import type { BossLayout, SlotRect } from './hudlayout.ts';
 import { CURSE_FRAME, drawCurse, drawTape } from './hudcurse.ts';
 import { COUNT_BACK, COUNT_FILL, drawChannelers, drawCountdown, drawHeld, toneOf } from './hudchannel.ts';
@@ -96,7 +96,7 @@ function drawCoins(ctx: Ctx, hud: HudView, t: number): void {
     drawText(ctx, `${Math.ceil(hud.inspiration)}S`, INSPIRE_X + 10, 1, 'yellow');
   } else drawTinyText(ctx, 'COINS', COIN_X, CAPTION_Y, CAPTION_COLOR);
   drawIcon(ctx, 'quarter', COIN_X, VALUE_Y, t);
-  drawText(ctx, `x${hud.quarters}`, COIN_X + 9, VALUE_Y, 'white');
+  drawText(ctx, coinText(hud.quarters), COIN_X + 9, VALUE_Y, 'white');
 }
 
 /** One benched hero: the shortcut key and a small face, left to right.
@@ -128,8 +128,10 @@ function drawSlot(ctx: Ctx, p: PartyHud, r: SlotRect, t: number, ready: number, 
 /** The Crit column: a CRIT caption over a small d20 that fills with light from the bottom, and glows gold with sparks once
  * the Crit is ready. The caption lights up with it. */
 function drawMeter(ctx: Ctx, hud: HudView, t: number): void {
-  drawTinyText(ctx, 'CRIT', CRIT_X, CAPTION_Y, hud.burstReady ? 'yellow' : CAPTION_COLOR);
-  const cx = CRIT_X + CRIT_R;
+  // The column moves right when the coin count is wider than two digits, so the two never touch.
+  const x = critX(hud.quarters);
+  drawTinyText(ctx, 'CRIT', x, CAPTION_Y, hud.burstReady ? 'yellow' : CAPTION_COLOR);
+  const cx = x + CRIT_R;
   if (!hud.burstReady) {
     drawDie(ctx, cx, CRIT_CY, CRIT_R, { scheme: DIE_DIM, lit: hud.burst, litScheme: METER_LIT });
     return;

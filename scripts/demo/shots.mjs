@@ -175,11 +175,8 @@ const LIST = [
     card: {
       bg: 'sky',
       music: 'static',
-      logo: { y: 56 },
-      lines: [
-        { text: 'PLAY FREE IN YOUR BROWSER', y: 132, scale: 2, color: 'white', at: sec(0.6) },
-        { text: 'MIGUELSOLORIO.GITHUB.IO/UPSIDE-DOWN-CAMPAIGN', y: 162, scale: 1, color: 'yellow', at: sec(1.2) },
-      ],
+      logo: { y: 62 },
+      lines: [{ text: 'PLAY FREE IN YOUR BROWSER', y: 140, scale: 2, color: 'white', at: sec(0.6) }],
     },
     cam: [{ at: 0 }],
     fadeOut: sec(1.5),

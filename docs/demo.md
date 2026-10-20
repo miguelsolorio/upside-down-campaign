@@ -64,7 +64,7 @@ Every shot is the whole frame at 5x, with no close-ups (`tests/demo-shots.test.t
 | 0:31.5 to 0:34.5 | `k-vecna` | Vecna's lair (4.4). | The first orb |
 | 0:34.5 to 0:37 | `k-channel` | The Channel in 5.3: Eleven and Will on their marks under the Mind Flayer. | The channel's clock starts |
 | 0:37 to 0:40 | `k-roll` | The Final Roll on `?finale=gold`: the fourth die lands and NAT 20 flashes. The die and its sound are on the same frame. | The third die has landed |
-| 0:40 to 0:45 | `end` | The logo over the title sky, "PLAY FREE IN YOUR BROWSER", miguelsolorio.github.io/upside-down-campaign, a fade out over the last 1.5 s. | Page load |
+| 0:40 to 0:45 | `end` | The logo over the title sky, "PLAY FREE IN YOUR BROWSER" with no address, a fade out over the last 1.5 s. | Page load |
 
 The Final Roll's landing sound and its settled die share a frame by construction: the scene plays a sound on the tick its clock reaches the landing, and draws the settled die on the frame after that tick, which is when the sound is heard (`tests/capture.test.ts` checks it, and the recorded frames and sound agree).
 

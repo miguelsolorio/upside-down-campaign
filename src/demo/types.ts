@@ -51,7 +51,13 @@ export interface FlashOn { sfx: string[]; len?: number; alpha?: number; gap?: nu
 
 export interface KeyPress { at: number; code: string; hold?: number }
 
-export interface CardLine { text: string; y: number; scale?: number; color?: string; at?: number }
+export interface CardLine {
+  text: string; y: number; scale?: number; color?: string; at?: number;
+  /** Slams in: one scale too big for its first four frames, then its own size. */
+  pop?: boolean;
+  /** An effect played on the frame it appears. */
+  sfx?: string;
+}
 
 /** A title card the page draws itself, in game pixels, as a scene (see cards.ts). */
 export interface CardSpec {
@@ -59,8 +65,10 @@ export interface CardSpec {
   bg: 'sky' | 'ink';
   /** The track that plays under it: null for none. Left out, whatever was playing goes on. */
   music?: string | null;
-  /** The flickering logo, with its top at this y. */
-  logo?: { y: number; at?: number };
+  /** The flickering logo, with its top at this y. With `drop` it falls in from above over that many frames and plays `sfx` as it lands. */
+  logo?: { y: number; at?: number; drop?: number; sfx?: string };
+  /** The party from the title screen walks in from below over `len` frames, starting at `from`, and turns to face the screen. */
+  party?: { from?: number; len: number };
   lines: CardLine[];
 }
 

@@ -7,7 +7,7 @@
 //   --sheet     also write a contact sheet, one frame per shot, to demo/out/sheet.png
 //   --jobs n    how many shots to record at once (default 3)
 //   --encode    record nothing: join the cached frames and sound into the video again
-//   --crf n     x264 quality (default 14, which is about 47 MiB). A different one writes demo-crf<n>.mp4 beside demo.mp4; 21 is 25 MiB, under a 30 MiB upload limit
+//   --crf n     x264 quality (default 14, which is about 48 MiB). A different one writes demo-crf<n>.mp4 beside demo.mp4; 21 is 28 MiB, under a 30 MiB upload limit
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

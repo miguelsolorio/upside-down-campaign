@@ -59,6 +59,10 @@ test('a shot keeps its camera, captions, keys and flashes inside its own length'
   }
 });
 
+test('every shot is the whole frame: the owner asked for no close-ups', () => {
+  for (const s of SHOTS) for (const k of s.cam) assert.ok(k.zoom === undefined && !k.push && k.follow === undefined, `${s.id} has a punch-in or a push`);
+});
+
 test('shots that share a bed of music run one track straight through', () => {
   let at = 0;
   let first = -1;

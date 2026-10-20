@@ -31,6 +31,20 @@
   <meta name="twitter:description" content="An 8-bit Stranger Things fan tribute. Not affiliated with Netflix.">
   <meta name="twitter:image" content="%VITE_SITE_URL%/social/og.png">
   <meta name="twitter:image:alt" content="Dustin, Mike, Eleven and Lucas on a path into the woods, under the red Stranger Things logo">
+  <!-- Google Analytics, the same property as miguelsolorio.com and the other games. Skipped on a local server so
+       development, tests and the demo recorder don't count as visits. -->
+  <script>
+    if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-PDB3DT24E5';
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', 'G-PDB3DT24E5');
+    }
+  </script>
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none; }
     /* A finger plays the game: no panning, zooming, text selection, callouts or tap flashes. */

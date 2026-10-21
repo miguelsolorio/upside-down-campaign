@@ -9,6 +9,7 @@ One stage, five to eight minutes. World builds it, Story writes the words, Sim s
 - Darkness: 0.8 in the woods, 0.35 in the yard and under the Lab road floodlights. The active hero carries a flashlight (radius 52 px). Lamps, Christmas lights and floodlights are light sources.
 - Music: `mirkwood`. The combat layer fades in while `sim.aggro()` is true.
 - Party: Mike (active), Dustin, Lucas. Eleven joins at the shed. Everyone starts at Lv 1.
+- The scare's shape is the Demogorgon (`src/gfx/figure.ts`, a walker in profile with the `STALKER` shape): hunched forward on a long neck, the head low and ahead of the body, walking on its knuckles, no face. About 26 px tall and 20 long, black with the far limbs in ink. 1.2 and 1.3 draw the same one, facing the way their path runs.
 
 ## Beats
 

@@ -113,6 +113,20 @@
       ],
       "port": 5195,
       "autoPort": false
+    },
+    {
+      "name": "dark-figure",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5196",
+        "--strictPort"
+      ],
+      "port": 5196,
+      "autoPort": false
     }
   ]
 }

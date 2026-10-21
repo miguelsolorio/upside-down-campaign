@@ -16,6 +16,7 @@ import type { Glow } from '../gfx/index.ts';
 import { outlinedText } from '../gfx/outline.ts';
 import { PAL } from '../gfx/palette.ts';
 import type { ColorName } from '../gfx/palette.ts';
+import { drawScareFigure } from '../gfx/figure.ts';
 import type { Stage } from './stage.ts';
 import type { PuzzleDef } from './types.ts';
 import { isNear } from './puzzles.ts';
@@ -56,31 +57,6 @@ export interface WorldOpts {
   flash?: number;
   /** Joyce with her axe, running in at the end of the final fight (world/ending.ts): drawn in the painter's order with the rest. */
   joyce?: ActorView | null;
-}
-
-// ---------------------------------------------------------------- the scare figure
-/** A tall, thin silhouette with no face. Its eyes are a second pass, drawn over the body. */
-function drawFigure(ctx: Ctx, x: number, y: number, t: number, eyes: boolean): void {
-  const bx = Math.round(x), by = Math.round(y);
-  const sway = Math.round(Math.sin(t / 6));
-  const gait = (t >> 3) & 1;
-  if (eyes) {
-    ctx.fillStyle = PAL.hot;
-    ctx.fillRect(bx - 2 + sway, by - 26, 1, 1);
-    ctx.fillRect(bx + 1 + sway, by - 26, 1, 1);
-    return;
-  }
-  ctx.fillStyle = PAL.black;
-  ctx.fillRect(bx - 3, by - 10, 2, 10 - gait);
-  ctx.fillRect(bx + 1, by - 10, 2, 9 + gait);
-  ctx.fillRect(bx - 4 + sway, by - 22, 8, 13);
-  ctx.fillRect(bx - 7 + sway, by - 22, 2, 17);
-  ctx.fillRect(bx + 5 + sway, by - 22, 2, 19);
-  ctx.fillRect(bx - 3 + sway, by - 29, 6, 8);
-  ctx.fillRect(bx - 5 + sway, by - 27, 2, 1);
-  ctx.fillRect(bx + 3 + sway, by - 28, 2, 1);
-  ctx.fillStyle = PAL.ink;
-  ctx.fillRect(bx - 5 + sway, by - 21, 1, 12);
 }
 
 // ---------------------------------------------------------------- world pass
@@ -192,7 +168,8 @@ export function drawWorld(ctx: Ctx, stage: Stage, view: SimView, cam: Camera, t:
   for (const a of view.actors) {
     if (a.kind === 'hero' && a.bar) drawHeroBar(ctx, a, hpBarColor(a.bar.hp, a.bar.hpMax, t, settings.reduceFlashing));
   }
-  if (o.figure) { drawFigure(ctx, o.figure.x, o.figure.y, t, false); drawFigure(ctx, o.figure.x, o.figure.y, t, true); }
+  // The scare's shape, the Demogorgon (gfx/figure.ts), over everything that stands, facing the way its path runs.
+  if (o.figure) drawScareFigure(ctx, o.figure.x, o.figure.y, t, stage.scare);
   for (const f of view.fx) drawFx(ctx, f);
   for (const f of view.floaters) drawFloater(ctx, f);
   if (o.hitboxes) drawBoxes(ctx, view);
